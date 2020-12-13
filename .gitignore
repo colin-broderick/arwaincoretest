@@ -48,3 +48,10 @@ Thumbs.db
 *.mov
 *.wmv
 
+.build
+.mbed
+projectfiles
+*.py*
+mbed-os
+BUILD
+
