@@ -13,16 +13,9 @@
 
 extern int shutdown;
 extern Mutex full_buffer_lock;
+extern Mutex vel_buffer_lock;
 extern std::deque<std::array<float, 6>> imu_full_buffer;
-
-// Buffers for storing acceleration, gyroscope, and velocity data.
-std::vector<std::array<float, 3>> a_fall_buffer;
-std::vector<std::array<float, 3>> g_fall_buffer;
-std::vector<std::array<float, 3>> v_fall_buffer;
-
-std::vector<std::array<float, 3>> a_stance_buffer;
-std::vector<std::array<float, 3>> g_stance_buffer;
-std::vector<std::array<float, 3>> v_stance_buffer;
+extern std::deque<std::array<float, 3>> vel_full_buffer;
 
 // State flags.
 int die = 0;
@@ -58,43 +51,6 @@ Kernel::Clock::time_point now()
     return Kernel::Clock::now();
 }
 
-// Update the internal data buffer with a new entry.
-int update(float ax, float ay, float az, float gx, float gy, float gz, float vx, float vy, float vz)
-{
-    last_update = now();
-    fall_lock.lock();
-    a_fall_buffer.push_back(std::array<float, 3>{ax, ay, az});
-    g_fall_buffer.push_back(std::array<float, 3>{gx, gy, gz});
-    v_fall_buffer.push_back(std::array<float, 3>{vx, vy, vz});
-    fall_lock.unlock();
-
-    stance_lock.lock();
-    a_stance_buffer.push_back(std::array<float, 3>{ax, ay, az});
-    g_stance_buffer.push_back(std::array<float, 3>{gx, gy, gz});
-    v_stance_buffer.push_back(std::array<float, 3>{vx, vy, vz});
-    stance_lock.unlock();
-
-    return 1;
-}
-
-// Clear the buffers use for detecting stance.
-int empty_stance_buffers()
-{
-    a_stance_buffer.clear();
-    g_stance_buffer.clear();
-    v_stance_buffer.clear();
-    return 1;
-}
-
-// Clear the buffers used for detecting freefall and entanglement.
-int empty_fall_buffers()
-{
-    a_fall_buffer.clear();
-    g_fall_buffer.clear();
-    v_fall_buffer.clear();
-    return 1;
-}
-
 // Check if falling flag set.
 int is_falling()
 {
@@ -115,27 +71,21 @@ int is_entangled()
     return ret;
 }
 
-// Empty all buffers and reset all flags.
-int reset()
+// Calculates the mean magnitude of a (x,3) sized deque for floats.
+float buffer_mean(std::deque<std::array<float, 3>> buffer)
 {
-    fall_lock.lock();
-    stance_lock.lock();
-
-    a_fall_buffer.clear();
-    g_fall_buffer.clear();
-    v_fall_buffer.clear();
-    a_stance_buffer.clear();
-    g_stance_buffer.clear();
-    v_stance_buffer.clear();
-    falling = 0;
-    entangled = 0;
-    horizontal = 0;
-    climbing = 0;
-    stance = "inactive";
-
-    fall_lock.unlock();
-    stance_lock.unlock();
-    return 1;
+    float mean = 0.0;
+    for (unsigned int i=0; i < buffer.size(); i++)
+    {
+        float square_sum = 0;
+        for (unsigned int j=0; j < 3; j++)
+        {
+            square_sum += buffer[i][j]*buffer[i][j];
+        }
+        mean += sqrt(square_sum);
+    }
+    mean /= buffer.size();
+    return mean;
 }
 
 // Calculates the mean magnitude of a (x,3) sized vector for floats.
@@ -183,18 +133,42 @@ int run_fall_detect()
 
     std::vector<float> struggle_window(10);
 
-    while (!die)
-    {
-        ThisThread::sleep_for(freefall_dt);
+    auto time = Kernel::Clock::now();
+    auto interval = 100 * 1ms;
 
-        fall_lock.lock();
-        a_mean_magnitude = buffer_mean(a_fall_buffer);
-        g_mean_magnitude = buffer_mean(g_fall_buffer);
-        v_mean_magnitude = buffer_mean(v_fall_buffer);
+    while (!shutdown)
+    {
+        // Grab the imu_data to be used, i.e. most recent second of imu_data.
+        full_buffer_lock.lock();
+        std::deque<std::array<float, 6>> imu_data = imu_full_buffer;
+        full_buffer_lock.unlock();
+
+        vel_buffer_lock.lock();
+        std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
+        vel_buffer_lock.lock();
+
+        // Separate accel and gyro buffers; bit more convenient this way.
+        std::vector<std::array<float, 3>> accel_data;
+        std::vector<std::array<float, 3>> gyro_data;
+        for (int i = 0; i < 20; i++)
+        {
+            accel_data.push_back(std::array<float, 3>{
+                imu_data[i][0], imu_data[i][1], imu_data[i][2]
+            });
+            gyro_data.push_back(std::array<float, 3>{
+                imu_data[i][3], imu_data[i][4], imu_data[i][5]
+            });
+        }
+
+        a_mean_magnitude = buffer_mean(accel_data);
+        g_mean_magnitude = buffer_mean(gyro_data);
+        v_mean_magnitude = buffer_mean(vel_data);
 
         if (a_mean_magnitude < a_threshold)
         {
+            fall_lock.lock();
             falling = 1;
+            fall_lock.unlock();
         }
         a_twitch = abs(a_mean_magnitude - gravity);
         tmp_struggle = (a_twitch + g_mean_magnitude) / (v_mean_magnitude + sfactor);
@@ -202,14 +176,16 @@ int run_fall_detect()
         struggle = struggle_mean(struggle_window);
         if (struggle > struggle_threshold)
         {
+            fall_lock.lock();
             entangled = 1;
+            fall_lock.unlock();
         }
 
         count = (count + 1) % 10;
 
-        empty_fall_buffers();
-
-        fall_lock.unlock();
+        // Wait until the next tick.
+        time = time + interval;
+        ThisThread::sleep_until(time);
     }
 
     return 1;
@@ -223,7 +199,7 @@ float activity(float a, float g, float v)
 }
 
 // Returns the index of the largest element in a 3-array of floats. Think np.argmax().
-int biggest_axis(float arr[3])
+int biggest_axis(std::array<float, 3> arr)
 {
     int axis;
     if (arr[0] > arr[1] && arr[0] > arr[2])
@@ -243,25 +219,69 @@ int biggest_axis(float arr[3])
 
 // Check whether subject is horizontal or vertical.
 int is_horizontal()
-{
-    return horizontal;
+{  
+    stance_lock.lock();
+    int ret = horizontal;
+    stance_lock.unlock();
+    return ret;
 }
 
-// Return the column-wise means of a size (x, 3) vector
-int get_means(float arr[], std::vector<std::array<float, 3>> source_vector)
+std::array<float, 3> get_means(std::deque<std::array<float, 3>> source_vector)
 {
+    std::array<float, 3> ret;
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
-        arr[0] += abs(v_stance_buffer[i][0]);
-        arr[1] += abs(v_stance_buffer[i][1]);
-        arr[2] += abs(v_stance_buffer[i][2]);
+        ret[0] += abs(source_vector[i][0]);
+        ret[1] += abs(source_vector[i][1]);
+        ret[2] += abs(source_vector[i][2]);
     }
-    arr[0] /= length;
-    arr[1] /= length;
-    arr[2] /= length;
+    ret[0] /= length;
+    ret[1] /= length;
+    ret[2] /= length;
 
-    return 1;
+    return ret;
+}
+
+std::array<float, 6> get_means(std::deque<std::array<float, 6>> source_vector)
+{
+    std::array<float, 6> ret;
+    unsigned int length = source_vector.size();
+    for (unsigned int i = 0; i < length; i++)
+    {
+        ret[0] += abs(source_vector[i][0]);
+        ret[1] += abs(source_vector[i][1]);
+        ret[2] += abs(source_vector[i][2]);
+        ret[3] += abs(source_vector[i][3]);
+        ret[4] += abs(source_vector[i][4]);
+        ret[5] += abs(source_vector[i][5]);
+    }
+    ret[0] /= length;
+    ret[1] /= length;
+    ret[2] /= length;
+    ret[3] /= length;
+    ret[4] /= length;
+    ret[5] /= length;
+
+    return ret;
+}
+
+// Return the column-wise means of a size (x, 3) vector
+std::array<float, 3> get_means(std::vector<std::array<float, 3>> source_vector)
+{
+    std::array<float, 3> ret;
+    unsigned int length = source_vector.size();
+    for (unsigned int i = 0; i < length; i++)
+    {
+        ret[0] += abs(source_vector[i][0]);
+        ret[1] += abs(source_vector[i][1]);
+        ret[2] += abs(source_vector[i][2]);
+    }
+    ret[0] /= length;
+    ret[1] /= length;
+    ret[2] /= length;
+
+    return ret;
 }
 
 // This is the stance detection main loop. Periodically check value of die to decide whether to quit.
@@ -281,14 +301,32 @@ int run_stance_detect()
 
     while (!shutdown)
     {
-        // Grab the data to be used, i.e. most recent second of data.
+        // Grab the imu_data to be used, i.e. most recent second of imu_data.
         full_buffer_lock.lock();
-        std::deque<std::array<float, 6>> data = imu_full_buffer;
+        std::deque<std::array<float, 6>> imu_data = imu_full_buffer;
+        full_buffer_lock.unlock();
+
+        vel_buffer_lock.lock();
+        std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
+        vel_buffer_lock.lock();
+
+        // Separate accel and gyro buffers; bit more convenient this way.
+        std::vector<std::array<float, 3>> accel_data;
+        std::vector<std::array<float, 3>> gyro_data;
+        for (int i = 0; i < imu_data.size(); i++)
+        {
+            accel_data.push_back(std::array<float, 3>{
+                imu_data[i][0], imu_data[i][1], imu_data[i][2]
+            });
+            gyro_data.push_back(std::array<float, 3>{
+                imu_data[i][3], imu_data[i][4], imu_data[i][5]
+            });
+        }
 
         // Determine which axis has the largest value of acceleration. If not the same as vertical axis, subject must be horizontal.
-        float accel_means[3];
-        get_means(accel_means, gyro_meansimu_full_buffer);
+        std::array<float, 3> accel_means = get_means(accel_data);
         int primary_axis = biggest_axis(accel_means);
+        stance_lock.lock();
         if (primary_axis != vertical_axis)
         {
             horizontal = 1;
@@ -297,12 +335,13 @@ int run_stance_detect()
         {
             horizontal = 0;
         }
+        stance_lock.unlock();
 
         // If the axis with the highest average speed is the same as the vertical axis, subject must be climbing.
         // If the speed on the vertical axis exceed the climbing threshold, the subject must be climibing.
-        float speed_means[3];
-        get_means(speed_means, v_stance_buffer);
+        auto speed_means = get_means(vel_data);
         speed_axis = biggest_axis(speed_means);
+        stance_lock.lock();
         if (speed_axis == primary_axis || speed_means[vertical_axis] > climbing_threshold)
         {
             climbing = 1;
@@ -311,10 +350,11 @@ int run_stance_detect()
         {
             climbing = 0;
         }
+        stance_lock.unlock();
 
-        a_mean_magnitude = buffer_mean(a_stance_buffer);
-        g_mean_magnitude = buffer_mean(g_stance_buffer);
-        v_mean_magnitude = buffer_mean(v_stance_buffer);
+        a_mean_magnitude = buffer_mean(accel_data);
+        g_mean_magnitude = buffer_mean(gyro_data);
+        v_mean_magnitude = buffer_mean(vel_data);
         act = activity(a_mean_magnitude, g_mean_magnitude, v_mean_magnitude);
 
         // Horizontal and slow => inactive
@@ -323,6 +363,7 @@ int run_stance_detect()
         // Vertical and slow with high activity => searching
         // Vertical and moderate speed => walking
         // Vertical and high speed => running
+        stance_lock.lock();
         if (horizontal)
         {
             if (v_mean_magnitude < crawling_threshold)
@@ -356,9 +397,6 @@ int run_stance_detect()
                 stance = "running";
             }
         }
-
-        // Reset and release buffers.
-        empty_stance_buffers();
         stance_lock.unlock();
 
         // Wait until the next tick.
@@ -400,35 +438,4 @@ int get_stance()
     }
     stance_lock.unlock();
     return ret;
-}
-
-// Set the value of 'die' to 1 to instruct the detector to stop.
-int kill()
-{
-    die = 1;
-    return 1;
-}
-
-// Create detector threads and start spinning.
-int start()
-{
-    last_update = now();
-    Thread fall_thread;
-    Thread stance_thread;
-    fall_thread.start(run_fall_detect);
-    stance_thread.start(run_stance_detect);
-
-    printf("Detector threads started\n");
-
-    while (!die)
-    {
-        ThisThread::sleep_for(1s);
-    }
-    
-    fall_thread.join();
-    stance_thread.join();
-
-    printf("Detector threads ended\n");
-
-    return 1;
 }

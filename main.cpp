@@ -23,6 +23,10 @@
 // IMU data buffers.
 std::deque<std::array<float, 6>> imu_full_buffer;
 std::deque<std::array<float, 6>> imu_stepped_buffer;
+std::deque<std::array<float, 3>> vel_full_buffer;
+
+
+void efaroe_step(std::array<float, 3> gyro);
 
 
 // Open serial connection for debugging.
@@ -36,6 +40,7 @@ unsigned int window_size = 200;
 
 Mutex full_buffer_lock;
 Mutex stepped_buffer_lock;
+Mutex vel_buffer_lock;
 
 
 void imu_reader()
@@ -64,14 +69,6 @@ void imu_reader()
         serial.write("Connected IMU\n", 14);
     }
 
-    // Pre-populated the accel_full_buffer with zeros.
-    full_buffer_lock.lock();
-    for (unsigned int i = 0; i < window_size; i++)
-    {
-        imu_full_buffer.push_back(std::array<float, 6>{0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
-    }
-    full_buffer_lock.unlock();
-
     // Start reading the IMU into the accel_full_buffer.
     auto time = Kernel::Clock::now();
     auto interval = (1000 / window_size) * 1ms;
@@ -97,17 +94,13 @@ void imu_reader()
         imu_full_buffer.pop_front();
         full_buffer_lock.unlock();
 
-        // printf(
-        //     "%i,%i,%i,%i,%i,%i\t%u\n",
-        //     int(imu_full_buffer[199][0]*1024),
-        //     int(imu_full_buffer[199][1]*1024),
-        //     int(imu_full_buffer[199][2]*1024),
-        //     int(imu_full_buffer[199][3]*1024),
-        //     int(imu_full_buffer[199][4]*1024),
-        //     int(imu_full_buffer[199][5]*1024),
-        //     imu_full_buffer.size()
-        // );
-        
+        // Perform an efaroe step to update orientation.
+        efaroe_step(std::array<float, 3>{
+            sensor.gx,
+            sensor.gy,
+            sensor.gz
+        });
+   
         count++;
         if (count % window_size == 0)
         {
@@ -233,9 +226,68 @@ void imu_stepper()
     }
 }
 
+int transmit_lora()
+{
+    // TODO: Set up radio.
+
+    // Set up timing.
+    auto time = Kernel::Clock::now();
+    auto interval = 1000 * 1ms;
+
+    while (!shutdown)
+    {
+        // TODO: Read all relevant data, respecting mutex locks.
+        // TODO: Build data packet for transmission.
+        // TODO: Send transmission.
+        
+        // TODO: Maybe a read loop?
+        
+        // Wait until next tick
+        time = time + interval;
+        ThisThread::sleep_until(time);
+    }
+
+    return 1;
+}
+
+int predict_velocity()
+{
+    // TODO: Set up NPU and feed in model.
+
+    // Set up timing.
+    auto time = Kernel::Clock::now();
+    auto interval = 50 * 1ms;
+
+    while (!shutdown)
+    {
+        // TODO: Make velocity prediction
+        std::array<float, 3> vel = std::array<float, 3>{0, 0, 0};
+
+        // Add velocity to buffer.
+        vel_buffer_lock.lock();
+        vel_full_buffer.push_back(vel);
+        vel_full_buffer.pop_front();
+        vel_buffer_lock.unlock();
+
+        // TODO Integrate new vel onto position. Keep a position history or just the current value?
+
+        time = time + interval;
+        ThisThread::sleep_until(time);
+    }
+
+    return 1;
+}
 
 int main()
 {
+    // Preload buffers
+    for (unsigned int i = 0; i < window_size; i++)
+    {
+        imu_full_buffer.push_back(std::array<float, 6>{0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+        imu_stepped_buffer.push_back(std::array<float, 6>{0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+        vel_full_buffer.push_back(std::array<float, 3>{0.0, 0.0, 0.0});
+    }
+
     // Start the IMU thread
     Thread imu_full_thread;
     imu_full_thread.start(imu_reader);
@@ -244,11 +296,17 @@ int main()
     Thread imu_step_thread;
     imu_step_thread.start(imu_stepper);
 
+    Thread velocity_prediction;
+    velocity_prediction.start(predict_velocity);
+
     Thread fall_detection;
     fall_detection.start(run_fall_detect);
 
     Thread stance_detection;
     stance_detection.start(run_stance_detect);
+
+    Thread radio_thread;
+    radio_thread.start(transmit_lora);
 
     // Spin until shutdown signal received.
     while (!shutdown)
@@ -259,6 +317,8 @@ int main()
     // Wait for all threads to terminate.
     imu_full_thread.join();
     imu_step_thread.join();
+    velocity_prediction.join();
     fall_detection.join();
     stance_detection.join();
+    radio_thread.join();
 }
