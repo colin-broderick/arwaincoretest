@@ -7,10 +7,6 @@
 #include <array>
 #include <deque>
 
-
-// #include "Kernel.h"
-// #include "mbed.h"
-#include "utils.h"
 #include "stance.h"
 
 extern int shutdown;
@@ -147,7 +143,7 @@ int run_fall_detect()
 
         vel_buffer_lock.lock();
         std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
-        vel_buffer_lock.lock();
+        vel_buffer_lock.unlock();
 
         // Separate accel and gyro buffers; bit more convenient this way.
         std::vector<std::array<float, 3>> accel_data;
@@ -189,8 +185,6 @@ int run_fall_detect()
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
-        std::cout << "Called quit fall_detect\n" << std::endl;
-
 
     return 1;
 }
@@ -312,12 +306,12 @@ int run_stance_detect()
 
         vel_buffer_lock.lock();
         std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
-        vel_buffer_lock.lock();
+        vel_buffer_lock.unlock();
 
         // Separate accel and gyro buffers; bit more convenient this way.
         std::vector<std::array<float, 3>> accel_data;
         std::vector<std::array<float, 3>> gyro_data;
-        for (int i = 0; i < imu_data.size(); i++)
+        for (unsigned int i = 0; i < imu_data.size(); i++)
         {
             accel_data.push_back(std::array<float, 3>{
                 imu_data[i][0], imu_data[i][1], imu_data[i][2]
@@ -407,8 +401,6 @@ int run_stance_detect()
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
-
-    std::cout << "Called quit stance_detect\n" << std::endl;
 
     return 1;
 }
