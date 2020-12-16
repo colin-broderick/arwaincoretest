@@ -2,18 +2,20 @@
 #include <mutex>
 #include <chrono>
 #include <vector>
+#include <thread>
 #include <math.h>
 #include <array>
 #include <deque>
 
 
-#include "Kernel.h"
-#include "mbed.h"
+// #include "Kernel.h"
+// #include "mbed.h"
+#include "utils.h"
 #include "stance.h"
 
 extern int shutdown;
-extern Mutex full_buffer_lock;
-extern Mutex vel_buffer_lock;
+extern std::mutex full_buffer_lock;
+extern std::mutex vel_buffer_lock;
 extern std::deque<std::array<float, 6>> imu_full_buffer;
 extern std::deque<std::array<float, 3>> vel_full_buffer;
 
@@ -37,18 +39,18 @@ float running_threshold = 3;
 float walking_threshold = 0.5;
 float active_threshold = 20;
 
-Mutex fall_lock;
-Mutex stance_lock;
-Kernel::Clock::time_point last_update;
+std::mutex fall_lock;
+std::mutex stance_lock;
+std::chrono::_V2::system_clock::time_point last_update;
 
-Thread fall_thread;
-Thread stance_thread;
+std::thread fall_thread;
+std::thread stance_thread;
 
 
 // Get current time.
-Kernel::Clock::time_point now()
+std::chrono::_V2::system_clock::time_point now()
 {
-    return Kernel::Clock::now();
+    return std::chrono::system_clock::now();
 }
 
 // Check if falling flag set.
@@ -133,8 +135,8 @@ int run_fall_detect()
 
     std::vector<float> struggle_window(10);
 
-    auto time = Kernel::Clock::now();
-    auto interval = 100 * 1ms;
+    auto time = now();
+    std::chrono::milliseconds interval(100);
 
     while (!shutdown)
     {
@@ -185,8 +187,10 @@ int run_fall_detect()
 
         // Wait until the next tick.
         time = time + interval;
-        ThisThread::sleep_until(time);
+        std::this_thread::sleep_until(time);
     }
+        std::cout << "Called quit fall_detect\n" << std::endl;
+
 
     return 1;
 }
@@ -296,8 +300,8 @@ int run_stance_detect()
     int vertical_axis = 2;
     int speed_axis;
 
-    auto time = Kernel::Clock::now();
-    auto interval = 1000 * 1ms;
+    auto time = now();
+    std::chrono::milliseconds interval(1000);
 
     while (!shutdown)
     {
@@ -401,8 +405,10 @@ int run_stance_detect()
 
         // Wait until the next tick.
         time = time + interval;
-        ThisThread::sleep_until(time);
+        std::this_thread::sleep_until(time);
     }
+
+    std::cout << "Called quit stance_detect\n" << std::endl;
 
     return 1;
 }
