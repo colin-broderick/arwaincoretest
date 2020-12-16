@@ -17,11 +17,29 @@
 #include <mutex>
 
 
+#define STATUS_FALLING 1U
+#define STATUS_ENTANGLED 2U
+#define STATUS_INACTIVE 3U
+#define STATUS_WALKING 4U
+#define STATUS_SEARCHING 5U
+#define STATUS_CRAWLING 6U
+#define STATUS_RUNNING 7U
+#define STATUS_UNKNOWN_STANCE 8U
+
+#define VELOCITY_PREDICTION_INTERVAL 50
+#define LORA_TRANSMISSION_INTERVAL 1000
+
+#define POSITION_BUFFER_LEN 200
+#define VELOCITY_BUFFER_LEN 200
+#define IMU_BUFFER_LEN 200
+
 // IMU data buffers.
 std::deque<std::array<float, 6>> imu_full_buffer;
 std::deque<std::array<float, 6>> imu_stepped_buffer;
 std::deque<std::array<float, 3>> vel_full_buffer;
+std::deque<std::array<float, 3>> position_buffer;
 
+extern std::string stance;
 
 void efaroe_step(std::array<float, 3> gyro);
 
@@ -35,7 +53,10 @@ unsigned int window_size = 200;
 std::mutex full_buffer_lock;
 std::mutex stepped_buffer_lock;
 std::mutex vel_buffer_lock;
+std::mutex status_flag_lock;
+std::mutex position_buffer_lock;
 
+int status_flags = 0;
 
 /// Reads the IMU at 200 Hz, and runs orientation updates. Run this as a thread.
 void bmi270_reader()
@@ -257,7 +278,7 @@ int transmit_lora()
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(1000);
+    std::chrono::milliseconds interval(LORA_TRANSMISSION_INTERVAL);
 
     while (!shutdown)
     {
@@ -283,9 +304,11 @@ int predict_velocity()
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(50);
+    std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
 
     std::array<float, 3> vel;
+
+    float interval_seconds = (float)VELOCITY_PREDICTION_INTERVAL/1000.0;
 
     while (!shutdown)
     {
@@ -298,7 +321,17 @@ int predict_velocity()
         vel_full_buffer.pop_front();
         vel_buffer_lock.unlock();
 
-        // TODO Integrate new vel onto position. Keep a position history or just the current value?
+        // Integrate new velocity onto position.
+        position_buffer_lock.lock();
+        position_buffer.push_back(
+            std::array<float, 3>{
+                position_buffer[POSITION_BUFFER_LEN][0] + interval_seconds * vel[0],
+                position_buffer[POSITION_BUFFER_LEN][1] + interval_seconds * vel[1],
+                position_buffer[POSITION_BUFFER_LEN][2] + interval_seconds * vel[2]
+            }
+        );
+        position_buffer.pop_front();
+        position_buffer_lock.unlock();
 
         // Wait until next tick.
         time = time + interval;
@@ -315,18 +348,77 @@ void sigint_handler(int signal)
     shutdown = 1;
 }
 
+/// TODO This might be unnecessary; since the stuff it's setting up only matter to the LoRa thread,
+/// it may as well be done there.
+void alert_system()
+{
+    // todo setup
+
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(1000);
+
+    while (!shutdown)
+    {
+        // TODO make checks.
+        status_flag_lock.lock();
+        status_flags = 0;
+        if (is_falling())
+        {
+            status_flags |= STATUS_FALLING;
+        }
+        if (is_entangled())
+        {
+            status_flags |= STATUS_ENTANGLED;
+        }
+        if (stance == "inactive")
+        {
+            status_flags |= STATUS_INACTIVE;
+        }
+        else if (stance == "walking")
+        {
+            status_flags |= STATUS_WALKING;
+        }
+        else if (stance == "crawling")
+        {
+            status_flags |= STATUS_CRAWLING;
+        }
+        else if (stance == "searching")
+        {
+            status_flags |= STATUS_SEARCHING;
+        }
+        else if (stance == "unknown")
+        {
+            status_flags |= STATUS_UNKNOWN_STANCE;
+        }
+        status_flag_lock.unlock();
+        // TODO update status flags.
+        
+        // Wait until next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
+}
+
 /// mainloop
 int main()
 {
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
 
-    // Preload buffers
-    for (unsigned int i = 0; i < window_size; i++)
+    // Preload buffers.
+    for (unsigned int i = 0; i < IMU_BUFFER_LEN; i++)
     {
-        imu_full_buffer.push_back(std::array<float, 6>{0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
-        imu_stepped_buffer.push_back(std::array<float, 6>{0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
-        vel_full_buffer.push_back(std::array<float, 3>{0.0, 0.0, 0.0});
+        imu_full_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
+        imu_stepped_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
+    }
+    for (unsigned int i = 0; i < VELOCITY_BUFFER_LEN; i++)
+    {
+        vel_full_buffer.push_back(std::array<float, 3>{0, 0, 0});
+    }
+    for (unsigned int i = 0; i < POSITION_BUFFER_LEN; i++)
+    {
+        position_buffer.push_back(std::array<float, 3>{0, 0, 0});
     }
 
     // Start threads
@@ -336,6 +428,7 @@ int main()
     std::thread fall_detection(run_fall_detect);
     std::thread stance_detection(run_stance_detect);
     std::thread radio_thread(transmit_lora);
+    std::thread alert_thread(alert_system);
 
     // Spin until shutdown signal received.
     std::chrono::milliseconds delay(1000);
@@ -351,4 +444,5 @@ int main()
     fall_detection.join();
     stance_detection.join();
     radio_thread.join();
+    alert_thread.join();
 }
