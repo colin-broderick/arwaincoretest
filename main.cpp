@@ -1,14 +1,9 @@
-#include "BufferedSerial.h"
-#include "I2C.h"
-#include "Kernel.h"
-#include "PinNames.h"
-#include "ThisThread.h"
-#include "mbed.h"
-#include "LSM6DS33.h"
-#include "mbed_thread.h"
+#include "utils.h"
 #include "quaternions.h"
 #include "stance.h"
+#include "pi_utils.h"
 
+#include <csignal>
 #include <iostream>
 #include <chrono>
 #include <cstdio>
@@ -18,6 +13,8 @@
 #include <array>
 #include <math.h>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 
 // IMU data buffers.
@@ -28,89 +25,74 @@ std::deque<std::array<float, 3>> vel_full_buffer;
 
 void efaroe_step(std::array<float, 3> gyro);
 
-
-// Open serial connection for debugging.
-BufferedSerial serial(USBTX, USBRX);
-
 // Kill flag for all threads.
 int shutdown = 0;
 
 unsigned int step_size = 50;
 unsigned int window_size = 200;
 
-Mutex full_buffer_lock;
-Mutex stepped_buffer_lock;
-Mutex vel_buffer_lock;
+std::mutex full_buffer_lock;
+std::mutex stepped_buffer_lock;
+std::mutex vel_buffer_lock;
 
 
-void imu_reader()
+void bmi270_reader()
 {
-    serial.set_baud(9600);
-    int address = 0x6a << 1;
-
-
     // Initialize the IMU.
-    LSM6DS33 sensor(p28, p27, address);
-    unsigned int response = sensor.begin(
-        LSM6DS33::G_SCALE_245DPS,
-        LSM6DS33::A_SCALE_8G,
-        LSM6DS33::G_ODR_104,
-        LSM6DS33::A_ODR_104
-    );
-
-    // Check the IMU responded.
-    if (response != 0x69)
+    std::string path = "../calib.txt";
+    if (init_bmi270(1, path) != 0)
     {
-        serial.write("No reponse from IMU\n", 20);
+        printf("Node failed to start\n");
         exit(1);
     }
-    else
-    {
-        serial.write("Connected IMU\n", 14);
-    }
+
+    vec_scaled_output accel_data;
+    vec_scaled_output gyro_data;
+    vec_scaled_output mag_data;
 
     // Start reading the IMU into the accel_full_buffer.
-    auto time = Kernel::Clock::now();
-    auto interval = (1000 / window_size) * 1ms;
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(50);
 
     int count = 0;
 
     while (!shutdown)
     {
         // Read current sensor values.
-        sensor.readAccel();
-        sensor.readGyro();
+        get_bmi270_data(&accel_data, &gyro_data);
 
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         full_buffer_lock.lock();
         imu_full_buffer.push_back(std::array<float, 6>{
-            sensor.ax,
-            sensor.ay,
-            sensor.az,
-            sensor.gx,
-            sensor.gy,
-            sensor.gz
+            accel_data.x,
+            accel_data.y,
+            accel_data.z,
+            gyro_data.x,
+            gyro_data.y,
+            gyro_data.z
         });
         imu_full_buffer.pop_front();
         full_buffer_lock.unlock();
 
         // Perform an efaroe step to update orientation.
         efaroe_step(std::array<float, 3>{
-            sensor.gx,
-            sensor.gy,
-            sensor.gz
+            gyro_data.x,
+            gyro_data.y,
+            gyro_data.z
         });
    
         count++;
         if (count % window_size == 0)
         {
-            printf("%i\n", count);
+            std::cout << count << std::endl;
         }
         
         // Wait until the next tick.
         time = time + interval;
-        ThisThread::sleep_until(time);
+        std::this_thread::sleep_until(time);
     }
+    std::cout << "Called quit imu_reader\n" << std::endl;
+
 }
 
 
@@ -207,10 +189,9 @@ void efaroe_step(std::array<float, 3> gyro)
 
 void imu_stepper()
 {
-    auto time = Kernel::Clock::now();
-    auto interval = 1000/(window_size/step_size) * 1ms;
-
-
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(1000/window_size);
+    
     while (!shutdown)
     {
         // Copy existing full buffer into stepped buffer
@@ -222,8 +203,10 @@ void imu_stepper()
 
         // Wait until the next tick.
         time = time + interval;
-        ThisThread::sleep_until(time);
+        std::this_thread::sleep_until(time);
     }
+        std::cout << "Called quit imu_stepper\n" << std::endl;
+
 }
 
 int transmit_lora()
@@ -231,11 +214,12 @@ int transmit_lora()
     // TODO: Set up radio.
 
     // Set up timing.
-    auto time = Kernel::Clock::now();
-    auto interval = 1000 * 1ms;
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(1000);
 
     while (!shutdown)
     {
+        // std::cout << "LoRa tick\n" << std::endl;
         // TODO: Read all relevant data, respecting mutex locks.
         // TODO: Build data packet for transmission.
         // TODO: Send transmission.
@@ -244,8 +228,9 @@ int transmit_lora()
         
         // Wait until next tick
         time = time + interval;
-        ThisThread::sleep_until(time);
+        std::this_thread::sleep_until(time);
     }
+    std::cout << "Called quit transmit_lora\n" << std::endl;
 
     return 1;
 }
@@ -255,13 +240,16 @@ int predict_velocity()
     // TODO: Set up NPU and feed in model.
 
     // Set up timing.
-    auto time = Kernel::Clock::now();
-    auto interval = 50 * 1ms;
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(50);
+
+    std::array<float, 3> vel;
 
     while (!shutdown)
     {
+        std::cout << "vel tick\n" << std::endl;
         // TODO: Make velocity prediction
-        std::array<float, 3> vel = std::array<float, 3>{0, 0, 0};
+        vel = std::array<float, 3>{0, 0, 0};
 
         // Add velocity to buffer.
         vel_buffer_lock.lock();
@@ -270,16 +258,27 @@ int predict_velocity()
         vel_buffer_lock.unlock();
 
         // TODO Integrate new vel onto position. Keep a position history or just the current value?
-
+        std::cout << "here\n" << std::endl;
         time = time + interval;
-        ThisThread::sleep_until(time);
+        std::this_thread::sleep_until(time);
     }
+    std::cout << "Called quit predict_velocity\n" << std::endl;
+
 
     return 1;
 }
 
+void sigint_handler(int signal)
+{
+    std::cout << "Called quit\n" << std::endl;
+    shutdown = 1;
+}
+
 int main()
 {
+    // Prepare keyboard interrupt signal handler to enable graceful exit.
+    std::signal(SIGINT, sigint_handler);
+
     // Preload buffers
     for (unsigned int i = 0; i < window_size; i++)
     {
@@ -288,30 +287,19 @@ int main()
         vel_full_buffer.push_back(std::array<float, 3>{0.0, 0.0, 0.0});
     }
 
-    // Start the IMU thread
-    Thread imu_full_thread;
-    imu_full_thread.start(imu_reader);
-
-    // Start thread for binning imu in packets every step_size steps.
-    Thread imu_step_thread;
-    imu_step_thread.start(imu_stepper);
-
-    Thread velocity_prediction;
-    velocity_prediction.start(predict_velocity);
-
-    Thread fall_detection;
-    fall_detection.start(run_fall_detect);
-
-    Thread stance_detection;
-    stance_detection.start(run_stance_detect);
-
-    Thread radio_thread;
-    radio_thread.start(transmit_lora);
+    // Start threads
+    std::thread imu_full_thread(bmi270_reader);
+    std::thread imu_step_thread(imu_stepper);
+    std::thread velocity_prediction(predict_velocity);
+    std::thread fall_detection(run_fall_detect);
+    std::thread stance_detection(run_stance_detect);
+    std::thread radio_thread(transmit_lora);
 
     // Spin until shutdown signal received.
+    std::chrono::milliseconds delay(1000);
     while (!shutdown)
     {
-        ThisThread::sleep_for(1s);
+        std::this_thread::sleep_for(delay);
     }
 
     // Wait for all threads to terminate.
