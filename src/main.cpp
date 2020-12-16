@@ -1,64 +1,117 @@
-#include "quaternions.h"
-#include "stance.h"
-#include "pi_utils.h"
-#include "madgwick.h"
-
 #include <csignal>
 #include <iostream>
+#include <sstream>
 #include <chrono>
 #include <cstdio>
 #include <ctime>
 #include <string>
 #include <deque>
+#include <stdint.h>
 #include <array>
 #include <math.h>
 #include <vector>
 #include <thread>
 #include <mutex>
 
+#include "quaternions.h"
+#include "stance.h"
+#include "pi_utils.h"
+#include "madgwick.h"
+#include "math_util.h"
 
-#define STATUS_FALLING 1U
-#define STATUS_ENTANGLED 2U
-#define STATUS_INACTIVE 3U
-#define STATUS_WALKING 4U
-#define STATUS_SEARCHING 5U
-#define STATUS_CRAWLING 6U
-#define STATUS_RUNNING 7U
-#define STATUS_UNKNOWN_STANCE 8U
+// Status codes.
+unsigned int STATUS_FALLING = 1;
+unsigned int STATUS_ENTANGLED = 2;
+unsigned int STATUS_INACTIVE = 1 << 2;
+unsigned int STATUS_WALKING = 2 << 2;
+unsigned int STATUS_SEARCHING = 3 << 2;
+unsigned int STATUS_CRAWLING = 4 << 2;
+unsigned int STATUS_RUNNING = 5 << 2;
+unsigned int STATUS_UNKNOWN_STANCE = 6 << 2;
 
-#define VELOCITY_PREDICTION_INTERVAL 50
-#define LORA_TRANSMISSION_INTERVAL 1000
+// Characteristics of the sliding window for data fed to the NPU.
+unsigned int STEP_SIZE = 50;
+unsigned int WINDOW_SIZE = 200;
 
-#define POSITION_BUFFER_LEN 200
-#define VELOCITY_BUFFER_LEN 200
-#define IMU_BUFFER_LEN 200
+// Time intervals, all in milliseconds.
+unsigned int IMU_READING_INTERVAL = 5;
+unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
+unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
+unsigned int ALERT_SYSTEM_INTERVAL = 1000;
+
+// Buffer sizes.
+unsigned int POSITION_BUFFER_LEN = 200;
+unsigned int VELOCITY_BUFFER_LEN = 200;
+unsigned int ORIENTATION_BUFFER_LEN = 200;
+unsigned int IMU_BUFFER_LEN = 200;
 
 // IMU data buffers.
 std::deque<std::array<float, 6>> imu_full_buffer;
 std::deque<std::array<float, 6>> imu_stepped_buffer;
 std::deque<std::array<float, 3>> vel_full_buffer;
 std::deque<std::array<float, 3>> position_buffer;
+std::deque<std::array<float, 3>> euler_orientation_buffer;
 
 extern std::string stance;
+int status_flags = 0;
 
 void efaroe_step(std::array<float, 3> gyro);
 
 // Kill flag for all threads.
 int shutdown = 0;
 
-unsigned int step_size = 50;
-unsigned int window_size = 200;
-
-
+// Mutex locks.
 std::mutex full_buffer_lock;
 std::mutex stepped_buffer_lock;
 std::mutex vel_buffer_lock;
 std::mutex status_flag_lock;
 std::mutex position_buffer_lock;
+extern std::mutex stance_lock;
+std::mutex orientation_buffer_lock;
 
-int status_flags = 0;
+void std_output()
+{
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(1000);
 
-/// Reads the IMU at 200 Hz, and runs orientation updates. Run this as a thread.
+    std::stringstream ss;
+
+    while (!shutdown)
+    {
+        // Add position to the string stream.        
+        position_buffer_lock.lock();
+        ss << "Position: " << position_buffer.back()[0] << "," << position_buffer.back()[1] << "," << position_buffer.back()[2] << std::endl;
+        position_buffer_lock.unlock();
+
+        // TODO: Add orientation to the string stream.
+        orientation_buffer_lock.lock();
+        ss << "Orientation: " << euler_orientation_buffer.back()[0] << "," << euler_orientation_buffer.back()[1] << "," << euler_orientation_buffer.back()[2] << std::endl;;
+        orientation_buffer_lock.unlock();
+
+        // TODO: Add stance to the string stream.
+        stance_lock.lock();
+        ss << "Stance: " << stance << std::endl;
+        stance_lock.unlock();
+
+        // TODO: Add fall/entanglement to the string stream.
+
+
+        // Print the string.
+        std::cout << ss.str();
+
+        // Clear the stringstream.
+        ss.str("");
+        ss << std::endl;
+
+        // Wait until next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
+}
+
+
+/// Reads the IMU at (1000/IMU_READING_INTERVAL) Hz, and runs orientation updates at the same frequency.
 void bmi270_reader()
 {
     // Initialize the IMU.
@@ -79,7 +132,7 @@ void bmi270_reader()
     int count = 0;
 
     Madgwick orientation_filter;
-    orientation_filter.begin(200);
+    orientation_filter.begin(1000/IMU_READING_INTERVAL);
 
     while (!shutdown)
     {
@@ -109,6 +162,16 @@ void bmi270_reader()
             accel_data.z
         );
 
+        orientation_buffer_lock.lock();
+        euler_orientation_buffer.push_back(std::array<float, 3>{
+            orientation_filter.getRoll(),
+            orientation_filter.getPitch(),
+            orientation_filter.getYaw()
+        });
+        euler_orientation_buffer.pop_front();
+        orientation_buffer_lock.unlock();
+
+
         // Perform an efaroe step to update orientation.
         // efaroe_step(std::array<float, 3>{
         //     gyro_data.x,
@@ -116,45 +179,17 @@ void bmi270_reader()
         //     gyro_data.z
         // });
    
-        count++;
-        if (count % window_size == 0)
-        {
-            std::cout << (int)(count/200) << std::endl;
-            std::cout << orientation_filter.getRoll() << "," << orientation_filter.getPitch() << "," << orientation_filter.getYaw() << std::endl;
-        }
+        // count++;
+        // if (count % WINDOW_SIZE == 0)
+        // {
+        //     std::cout << (int)(count/WINDOW_SIZE) << std::endl;
+        //     std::cout << orientation_filter.getRoll() << "," << orientation_filter.getPitch() << "," << orientation_filter.getYaw() << std::endl;
+        // }
         
         // Wait until the next tick.
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
-}
-
-/// Computes the cross product of two 3-vectors. The result is a new 3-vector.
-std::array<double, 3> cross(std::array<double, 3> v1, std::array<double, 3> v2)
-{
-    std::array<double, 3> res;
-    res[0] = v1[1] * v2[2] - v2[1] * v1[2];
-    res[1] = v1[0] * v2[2] - v2[0] * v1[2];
-    res[2] = v1[0] * v2[1] - v2[0] * v1[1];
-    return res;
-}
-
-/// Computes the L2 norm of a 3-vector as a double.
-double norm(std::array<float, 3> arr)
-{
-    double res;
-    res = arr[0] * arr[0] + arr[1] * arr[1] + arr[2] * arr[2];
-    res = sqrt(res);
-    return (double)res;
-}
-
-/// Computes the L2 norm of a 3-vector as a double.
-double norm(std::array<double, 3> arr)
-{
-    double res;
-    res = arr[0] * arr[0] + arr[1] * arr[1] + arr[2] * arr[2];
-    res = sqrt(res);
-    return res;
 }
 
 
@@ -254,7 +289,7 @@ double norm(std::array<double, 3> arr)
 void imu_stepper()
 {
     auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(1000/window_size);
+    std::chrono::milliseconds interval(1000/WINDOW_SIZE * STEP_SIZE);
     
     while (!shutdown)
     {
@@ -271,7 +306,7 @@ void imu_stepper()
     }
 }
 
-
+/// Periodically sends the most recent position and status information via LoRa.
 int transmit_lora()
 {
     // TODO: Set up radio.
@@ -280,13 +315,33 @@ int transmit_lora()
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval(LORA_TRANSMISSION_INTERVAL);
 
+    std::array<float, 3> position;
+    unsigned int status;
+
+
     while (!shutdown)
     {
         // std::cout << "LoRa tick\n" << std::endl;
         // TODO: Read all relevant data, respecting mutex locks.
-        // TODO: Build data packet for transmission.
+        // Get positions as uint16
+        position_buffer_lock.lock();
+        position = position_buffer.back();
+        position_buffer_lock.unlock();
+        uint64_t x = (uint64_t)position[0];
+        uint64_t y = (uint64_t)position[1];
+        uint64_t z = (uint64_t)position[2];
+
+        // Get current status flags.
+        status_flag_lock.lock();
+        status = (uint64_t)status_flags;
+        status_flag_lock.unlock();
+
+        // Build packet for transmission.
+        uint64_t packet = (x << 48) | (y << 32) | (z << 16) | (status);
+    
         // TODO: Send transmission.
-        
+        // std::cout << packet << std::endl;
+
         // TODO: Maybe a read loop?
         
         // Wait until next tick
@@ -356,7 +411,7 @@ void alert_system()
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(1000);
+    std::chrono::milliseconds interval(ALERT_SYSTEM_INTERVAL);
 
     while (!shutdown)
     {
@@ -420,6 +475,10 @@ int main()
     {
         position_buffer.push_back(std::array<float, 3>{0, 0, 0});
     }
+    for (unsigned int i = 0; i < ORIENTATION_BUFFER_LEN; i++)
+    {
+        euler_orientation_buffer.push_back(std::array<float, 3>{0, 0, 0});
+    }
 
     // Start threads
     std::thread imu_full_thread(bmi270_reader);
@@ -429,6 +488,7 @@ int main()
     std::thread stance_detection(run_stance_detect);
     std::thread radio_thread(transmit_lora);
     std::thread alert_thread(alert_system);
+    std::thread logging_thread(std_output);
 
     // Spin until shutdown signal received.
     std::chrono::milliseconds delay(1000);
@@ -445,4 +505,5 @@ int main()
     stance_detection.join();
     radio_thread.join();
     alert_thread.join();
+    logging_thread.join();
 }

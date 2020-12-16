@@ -15,7 +15,11 @@ extern std::mutex vel_buffer_lock;
 extern std::deque<std::array<float, 6>> imu_full_buffer;
 extern std::deque<std::array<float, 3>> vel_full_buffer;
 
-// State flags.
+// Time intervals, all in milliseconds.
+unsigned int STANCE_DETECTION_INTERVAL = 1000;
+unsigned int FALL_DETECTION_INTERVAL = 100;
+
+// Status flags.
 int die = 0;
 int falling = 0;
 int entangled = 0;
@@ -24,8 +28,6 @@ int climbing = 0;
 std::string stance;
 
 // Thresholds and constants.
-std::chrono::milliseconds freefall_dt{100};  // Delay between freefall/entanglement assessments.
-std::chrono::milliseconds stance_dt{1000};   // Delay between stance assessments.
 float a_threshold = 3;
 float struggle_threshold = 3;
 float gravity = 9.8;
@@ -70,7 +72,7 @@ int is_entangled()
 }
 
 // Calculates the mean magnitude of a (x,3) sized deque for floats.
-float buffer_mean(std::deque<std::array<float, 3>> buffer)
+float buffer_mean_magnitude(std::deque<std::array<float, 3>> buffer)
 {
     float mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -87,7 +89,7 @@ float buffer_mean(std::deque<std::array<float, 3>> buffer)
 }
 
 // Calculates the mean magnitude of a (x,3) sized vector for floats.
-float buffer_mean(std::vector<std::array<float, 3>> buffer)
+float buffer_mean_magnitude(std::vector<std::array<float, 3>> buffer)
 {
     float mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -103,15 +105,15 @@ float buffer_mean(std::vector<std::array<float, 3>> buffer)
     return mean;
 }
 
-// Calculates the mean of a vector of floats.
-float struggle_mean(std::vector<float> struggles)
+/// Calculates the mean of a vector of floats.
+float vector_mean(std::vector<float> values)
 {
     float mean = 0;
-    for (unsigned int i = 0; i < struggles.size(); i++)
+    for (unsigned int i = 0; i < values.size(); i++)
     {
-        mean += struggles[i];
+        mean += values[i];
     }
-    return mean/struggles.size();
+    return mean/values.size();
 }
 
 // This is the fall detection main loop. Periodically check 'die' to decide whether to quit.
@@ -132,7 +134,7 @@ int run_fall_detect()
     std::vector<float> struggle_window(10);
 
     auto time = now();
-    std::chrono::milliseconds interval(100);
+    std::chrono::milliseconds interval(FALL_DETECTION_INTERVAL);
 
     while (!shutdown)
     {
@@ -158,9 +160,9 @@ int run_fall_detect()
             });
         }
 
-        a_mean_magnitude = buffer_mean(accel_data);
-        g_mean_magnitude = buffer_mean(gyro_data);
-        v_mean_magnitude = buffer_mean(vel_data);
+        a_mean_magnitude = buffer_mean_magnitude(accel_data);
+        g_mean_magnitude = buffer_mean_magnitude(gyro_data);
+        v_mean_magnitude = buffer_mean_magnitude(vel_data);
 
         if (a_mean_magnitude < a_threshold)
         {
@@ -171,7 +173,7 @@ int run_fall_detect()
         a_twitch = abs(a_mean_magnitude - gravity);
         tmp_struggle = (a_twitch + g_mean_magnitude) / (v_mean_magnitude + sfactor);
         struggle_window[count] = tmp_struggle;
-        struggle = struggle_mean(struggle_window);
+        struggle = vector_mean(struggle_window);
         if (struggle > struggle_threshold)
         {
             fall_lock.lock();
@@ -295,7 +297,7 @@ int run_stance_detect()
     int speed_axis;
 
     auto time = now();
-    std::chrono::milliseconds interval(1000);
+    std::chrono::milliseconds interval(STANCE_DETECTION_INTERVAL);
 
     while (!shutdown)
     {
@@ -350,9 +352,9 @@ int run_stance_detect()
         }
         stance_lock.unlock();
 
-        a_mean_magnitude = buffer_mean(accel_data);
-        g_mean_magnitude = buffer_mean(gyro_data);
-        v_mean_magnitude = buffer_mean(vel_data);
+        a_mean_magnitude = buffer_mean_magnitude(accel_data);
+        g_mean_magnitude = buffer_mean_magnitude(gyro_data);
+        v_mean_magnitude = buffer_mean_magnitude(vel_data);
         act = activity(a_mean_magnitude, g_mean_magnitude, v_mean_magnitude);
 
         // Horizontal and slow => inactive
