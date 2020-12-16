@@ -3,7 +3,6 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <ros/package.h>
 
 #include "bmi2.h"
 #include "bmi270.h"
@@ -36,7 +35,7 @@ int main(int argc, char **argv)
         delay_ms(10);
     }
     
-    std::string path = ros::package::getPath("imu_bmi270")+"/calib.txt";
+    std::string path = "./calib.txt";
     
     std::cout << "Saving calibration file to: " << path << "\n";
     

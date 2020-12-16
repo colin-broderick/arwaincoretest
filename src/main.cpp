@@ -1,4 +1,3 @@
-#include "utils.h"
 #include "quaternions.h"
 #include "stance.h"
 #include "pi_utils.h"
@@ -30,6 +29,7 @@ int shutdown = 0;
 
 unsigned int step_size = 50;
 unsigned int window_size = 200;
+
 
 std::mutex full_buffer_lock;
 std::mutex stepped_buffer_lock;
@@ -91,8 +91,6 @@ void bmi270_reader()
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
-    std::cout << "Called quit imu_reader\n" << std::endl;
-
 }
 
 
@@ -205,9 +203,8 @@ void imu_stepper()
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
-        std::cout << "Called quit imu_stepper\n" << std::endl;
-
 }
+
 
 int transmit_lora()
 {
@@ -230,7 +227,6 @@ int transmit_lora()
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
-    std::cout << "Called quit transmit_lora\n" << std::endl;
 
     return 1;
 }
@@ -247,7 +243,6 @@ int predict_velocity()
 
     while (!shutdown)
     {
-        std::cout << "vel tick\n" << std::endl;
         // TODO: Make velocity prediction
         vel = std::array<float, 3>{0, 0, 0};
 
@@ -258,12 +253,11 @@ int predict_velocity()
         vel_buffer_lock.unlock();
 
         // TODO Integrate new vel onto position. Keep a position history or just the current value?
-        std::cout << "here\n" << std::endl;
+
+        // Wait until next tick.
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
-    std::cout << "Called quit predict_velocity\n" << std::endl;
-
 
     return 1;
 }

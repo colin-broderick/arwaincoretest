@@ -1,0 +1,6 @@
+#!/bin/bash
+cd src
+echo "Building main"
+g++ -o ../build/main main.cpp quaternions.cpp stance.cpp bmi2.c bmi270.c bmm150.c pi_utils.cpp -pthread -li2c -Wall
+echo "Building calibrator"
+g++ -o ../build/calibrate calibrate_bmi270.cpp bmi2.c bmi270.c pi_utils.cpp bmm150.c -li2c
