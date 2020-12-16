@@ -90,9 +90,9 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     // Configure accelerometer
     struct bmi2_sens_config accelerometerConfig;
     accelerometerConfig.type = BMI2_ACCEL;
-    accelerometerConfig.cfg.acc.odr = BMI2_ACC_ODR_1600HZ;
+    accelerometerConfig.cfg.acc.odr = BMI2_ACC_ODR_400HZ;
     accelerometerConfig.cfg.acc.bwp = BMI2_ACC_NORMAL_AVG4;
-    accelerometerConfig.cfg.acc.filter_perf = 1;
+    accelerometerConfig.cfg.acc.filter_perf = 0;
     accelerometerConfig.cfg.acc.range = BMI2_ACC_RANGE_16G;
     bmi2_set_sensor_config(&accelerometerConfig, 1, &bmi270);
     bmi2_do_crt(&bmi270);
@@ -103,9 +103,9 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     // Configure gyroscope
     struct bmi2_sens_config gyroscopeConfig;
     gyroscopeConfig.type = BMI2_GYRO;
-    gyroscopeConfig.cfg.gyr.odr = BMI2_GYR_ODR_1600HZ;
+    gyroscopeConfig.cfg.gyr.odr = BMI2_GYR_ODR_400HZ;
     gyroscopeConfig.cfg.gyr.bwp = BMI2_GYR_NORMAL_MODE;
-    gyroscopeConfig.cfg.gyr.filter_perf = 1;
+    gyroscopeConfig.cfg.gyr.filter_perf = 0;
     gyroscopeConfig.cfg.gyr.ois_range = BMI2_GYR_OIS_2000;
     gyroscopeConfig.cfg.gyr.range = BMI2_GYR_RANGE_2000;
     gyroscopeConfig.cfg.gyr.noise_perf = 1;
