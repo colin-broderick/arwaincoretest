@@ -10,7 +10,7 @@
 #include "stance.h"
 
 extern int shutdown;
-extern std::mutex full_buffer_lock;
+extern std::mutex imu_buffer_lock;
 extern std::mutex vel_buffer_lock;
 extern std::deque<std::array<float, 6>> imu_full_buffer;
 extern std::deque<std::array<float, 3>> vel_full_buffer;
@@ -139,9 +139,9 @@ int run_fall_detect()
     while (!shutdown)
     {
         // Grab the imu_data to be used, i.e. most recent second of imu_data.
-        full_buffer_lock.lock();
+        imu_buffer_lock.lock();
         std::deque<std::array<float, 6>> imu_data = imu_full_buffer;
-        full_buffer_lock.unlock();
+        imu_buffer_lock.unlock();
 
         vel_buffer_lock.lock();
         std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
@@ -302,9 +302,9 @@ int run_stance_detect()
     while (!shutdown)
     {
         // Grab the imu_data to be used, i.e. most recent second of imu_data.
-        full_buffer_lock.lock();
+        imu_buffer_lock.lock();
         std::deque<std::array<float, 6>> imu_data = imu_full_buffer;
-        full_buffer_lock.unlock();
+        imu_buffer_lock.unlock();
 
         vel_buffer_lock.lock();
         std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
