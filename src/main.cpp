@@ -51,6 +51,7 @@ std::deque<std::array<float, 6>> imu_stepped_buffer;
 std::deque<std::array<float, 3>> vel_full_buffer;
 std::deque<std::array<float, 3>> position_buffer;
 std::deque<std::array<float, 3>> euler_orientation_buffer;
+std::deque<std::array<float, 4>> quat_orientation_buffer;
 
 extern std::string stance;
 int status_flags = 0;
@@ -81,17 +82,18 @@ void std_output()
     {
         // Add position to the string stream.        
         position_buffer_lock.lock();
-        ss << "Position: " << position_buffer.back()[0] << "," << position_buffer.back()[1] << "," << position_buffer.back()[2] << std::endl;
+        ss << "Position:        (" << position_buffer.back()[0] << ", " << position_buffer.back()[1] << ", " << position_buffer.back()[2] << ")" << std::endl;
         position_buffer_lock.unlock();
 
-        // TODO: Add orientation to the string stream.
+        // Add Euler and quaternion orientations to the string stream.
         orientation_buffer_lock.lock();
-        ss << "Orientation: " << euler_orientation_buffer.back()[0] << "," << euler_orientation_buffer.back()[1] << "," << euler_orientation_buffer.back()[2] << std::endl;;
+        ss << "Orientation (E): (" << euler_orientation_buffer.back()[0] << ", " << euler_orientation_buffer.back()[1] << ", " << euler_orientation_buffer.back()[2] << ")" << std::endl;;
+        ss << "Orientation (Q): (" << quat_orientation_buffer.back()[0] << ", " << quat_orientation_buffer.back()[1] << ", " << quat_orientation_buffer.back()[2] << ", " << quat_orientation_buffer.back()[3] << ")" << std::endl;
         orientation_buffer_lock.unlock();
 
-        // TODO: Add stance to the string stream.
+        // Add stance to the string stream.
         stance_lock.lock();
-        ss << "Stance: " << stance << std::endl;
+        ss << "Stance:          " << stance << std::endl;
         stance_lock.unlock();
 
         // TODO: Add fall/entanglement to the string stream.
@@ -169,6 +171,13 @@ void bmi270_reader()
             orientation_filter.getYaw()
         });
         euler_orientation_buffer.pop_front();
+        quat_orientation_buffer.push_back(std::array<float, 4>{
+            orientation_filter.getW(),
+            orientation_filter.getX(),
+            orientation_filter.getY(),
+            orientation_filter.getZ()
+        });
+        quat_orientation_buffer.pop_front();
         orientation_buffer_lock.unlock();
 
 
@@ -415,7 +424,7 @@ void alert_system()
 
     while (!shutdown)
     {
-        // TODO make checks.
+        // Update status flags.
         status_flag_lock.lock();
         status_flags = 0;
         if (is_falling())
@@ -447,7 +456,6 @@ void alert_system()
             status_flags |= STATUS_UNKNOWN_STANCE;
         }
         status_flag_lock.unlock();
-        // TODO update status flags.
         
         // Wait until next tick.
         time = time + interval;
@@ -478,6 +486,7 @@ int main()
     for (unsigned int i = 0; i < ORIENTATION_BUFFER_LEN; i++)
     {
         euler_orientation_buffer.push_back(std::array<float, 3>{0, 0, 0});
+        quat_orientation_buffer.push_back(std::array<float, 4>{0, 0, 0, 0});
     }
 
     // Start threads
