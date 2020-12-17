@@ -12,12 +12,17 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <fstream>
 
 #include "quaternions.h"
 #include "stance.h"
 #include "pi_utils.h"
 #include "madgwick.h"
 #include "math_util.h"
+#include "utils.h"
+
+// #define LOGGING
+#define LOGGING2
 
 // Status codes.
 unsigned int STATUS_FALLING = 1;
@@ -50,8 +55,8 @@ std::deque<std::array<float, 6>> imu_full_buffer;
 std::deque<std::array<float, 6>> imu_stepped_buffer;
 std::deque<std::array<float, 3>> vel_full_buffer;
 std::deque<std::array<float, 3>> position_buffer;
-std::deque<std::array<float, 3>> euler_orientation_buffer;
-std::deque<std::array<float, 4>> quat_orientation_buffer;
+std::deque<euler_orientation_t> euler_orientation_buffer;
+std::deque<quat_orientation_t> quat_orientation_buffer;
 
 extern std::string stance;
 int status_flags = 0;
@@ -62,7 +67,7 @@ void efaroe_step(std::array<float, 3> gyro);
 int shutdown = 0;
 
 // Mutex locks.
-std::mutex full_buffer_lock;
+std::mutex imu_buffer_lock;
 std::mutex stepped_buffer_lock;
 std::mutex vel_buffer_lock;
 std::mutex status_flag_lock;
@@ -87,8 +92,8 @@ void std_output()
 
         // Add Euler and quaternion orientations to the string stream.
         orientation_buffer_lock.lock();
-        ss << "Orientation (E): (" << euler_orientation_buffer.back()[0] << ", " << euler_orientation_buffer.back()[1] << ", " << euler_orientation_buffer.back()[2] << ")" << std::endl;;
-        ss << "Orientation (Q): (" << quat_orientation_buffer.back()[0] << ", " << quat_orientation_buffer.back()[1] << ", " << quat_orientation_buffer.back()[2] << ", " << quat_orientation_buffer.back()[3] << ")" << std::endl;
+        ss << "Orientation (E): (" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << std::endl;;
+        ss << "Orientation (Q): (" << quat_orientation_buffer.back().w << ", " << quat_orientation_buffer.back().x << ", " << quat_orientation_buffer.back().y << ", " << quat_orientation_buffer.back().z << ")" << std::endl;
         orientation_buffer_lock.unlock();
 
         // Add stance to the string stream.
@@ -124,10 +129,6 @@ void bmi270_reader()
         exit(1);
     }
 
-    // Buffers for IMU data.
-    vec_scaled_output accel_data;
-    vec_scaled_output gyro_data;
-
     // Set up timing.
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval(5);
@@ -136,23 +137,47 @@ void bmi270_reader()
     Madgwick orientation_filter;
     orientation_filter.begin(1000/IMU_READING_INTERVAL);
 
+    // Local buffers for IMU data
+    vec_scaled_output accel_data;
+    vec_scaled_output gyro_data;
+    euler_orientation_t euler_data;
+    quat_orientation_t quat_data;
+
+    #ifdef LOGGING
+    // Open file handles for data logging.
+    std::ofstream acce_file("../acce.txt");
+    std::ofstream gyro_file("../gyro.txt");
+    std::ofstream euler_file("../euler_orientation.txt");
+    std::ofstream quat_file("../quat_orientation.txt");
+    std::ofstream mag_file("../mag.txt");
+
+    // File headers
+    acce_file << "# time x y z" << std::endl;
+    gyro_file << "# time x y z" << std::endl;
+    mag_file << "# time x y z" << std::endl;
+    euler_file << "# time roll pitch roll" << std::endl;
+    quat_file << "# time w x y z" << std::endl;
+    #endif
+
     while (!shutdown)
     {
         // Read current sensor values.
         get_bmi270_data(&accel_data, &gyro_data);
 
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
-        full_buffer_lock.lock();
+        imu_buffer_lock.lock();
         imu_full_buffer.push_back(std::array<float, 6>{
-            accel_data.x,
-            accel_data.y,
-            accel_data.z,
-            gyro_data.x,
-            gyro_data.y,
-            gyro_data.z
+            accel_data.x, accel_data.y, accel_data.z,
+            gyro_data.x, gyro_data.y, gyro_data.z
         });
         imu_full_buffer.pop_front();
-        full_buffer_lock.unlock();
+        imu_buffer_lock.unlock();
+
+        #ifdef LOGGING
+        // Log IMU to file.
+        acce_file << time << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << std::endl;
+        gyro_file << time << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << std::endl;
+        #endif
 
         // Perform a Madgwick step
         orientation_filter.updateIMU(
@@ -164,22 +189,30 @@ void bmi270_reader()
             accel_data.z
         );
 
+        // Extract Euler orientation from filter.
+        euler_data.roll = orientation_filter.getRoll();
+        euler_data.pitch = orientation_filter.getPitch();
+        euler_data.yaw = orientation_filter.getYaw();
+
+        // Extract quaternion orientation from filter.
+        quat_data.w = orientation_filter.getW();
+        quat_data.x = orientation_filter.getX();
+        quat_data.y = orientation_filter.getY();
+        quat_data.z = orientation_filter.getZ();
+
+        // Add orientation information to buffers.
         orientation_buffer_lock.lock();
-        euler_orientation_buffer.push_back(std::array<float, 3>{
-            orientation_filter.getRoll(),
-            orientation_filter.getPitch(),
-            orientation_filter.getYaw()
-        });
+        euler_orientation_buffer.push_back(euler_data);
         euler_orientation_buffer.pop_front();
-        quat_orientation_buffer.push_back(std::array<float, 4>{
-            orientation_filter.getW(),
-            orientation_filter.getX(),
-            orientation_filter.getY(),
-            orientation_filter.getZ()
-        });
+        quat_orientation_buffer.push_back(quat_data);
         quat_orientation_buffer.pop_front();
         orientation_buffer_lock.unlock();
 
+        #ifdef LOGGING
+        // Log orientation information to file.
+        euler_file << time << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << std::endl;
+        quat_file << time << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << std::endl;;
+        #endif
 
         // Perform an efaroe step to update orientation.
         // efaroe_step(std::array<float, 3>{
@@ -199,6 +232,15 @@ void bmi270_reader()
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
+
+    #ifdef LOGGING
+    // Close all file handles.
+    acce_file.close();
+    gyro_file.close();
+    euler_file.close();
+    quat_file.close();
+    mag_file.close();
+    #endif
 }
 
 
@@ -303,10 +345,10 @@ void imu_stepper()
     while (!shutdown)
     {
         // Copy existing full buffer into stepped buffer
-        full_buffer_lock.lock();
+        imu_buffer_lock.lock();
         stepped_buffer_lock.lock();
         imu_stepped_buffer = imu_full_buffer;
-        full_buffer_lock.unlock();
+        imu_buffer_lock.unlock();
         stepped_buffer_lock.unlock();
 
         // Wait until the next tick.
@@ -327,6 +369,11 @@ int transmit_lora()
     std::array<float, 3> position;
     unsigned int status;
 
+    #ifdef LOGGING
+    // Open file handles for data logging.
+    std::ofstream lora_file("../lora_log.txt");
+    lora_file << "# time packet" << std::endl;
+    #endif
 
     while (!shutdown)
     {
@@ -352,11 +399,21 @@ int transmit_lora()
         // std::cout << packet << std::endl;
 
         // TODO: Maybe a read loop?
-        
+
+        // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
+        #ifdef LOGGING
+        lora_file << time << " " << packet << std::endl;
+        #endif
+
         // Wait until next tick
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
+
+    #ifdef LOGGING
+    // Close log file handle.
+    lora_file.close();
+    #endif
 
     return 1;
 }
@@ -371,11 +428,28 @@ int predict_velocity()
     std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
 
     std::array<float, 3> vel;
+    std::array<float, 3> pos;
+    std::deque<std::array<float, 6>> imu;
 
     float interval_seconds = (float)VELOCITY_PREDICTION_INTERVAL/1000.0;
 
+    #ifdef LOGGING
+    // Open files for logging.
+    std::ofstream velocity_file("../velocity.txt");
+    std::ofstream position_file("../position.txt");
+    velocity_file << "# time x y z" << std::endl;
+    position_file << "# time x y z" << std::endl;
+    #endif
+
     while (!shutdown)
     {
+        // Grab latest IMU packet
+        imu_buffer_lock.lock();
+        imu = imu_full_buffer;
+        imu_buffer_lock.unlock();
+
+        // TODO World align latest IMU data; (IMU \op orientation = world-aligned-imu)
+
         // TODO: Make velocity prediction
         vel = std::array<float, 3>{0, 0, 0};
 
@@ -385,22 +459,33 @@ int predict_velocity()
         vel_full_buffer.pop_front();
         vel_buffer_lock.unlock();
 
-        // Integrate new velocity onto position.
+        // Iterate velocity onto position to get new position.
+        pos[0] = pos[0] + interval_seconds * vel[0];
+        pos[1] = pos[1] + interval_seconds * vel[1];
+        pos[2] = pos[2] + interval_seconds * vel[2];
+        
+        // Update position buffer.
         position_buffer_lock.lock();
-        position_buffer.push_back(
-            std::array<float, 3>{
-                position_buffer[POSITION_BUFFER_LEN][0] + interval_seconds * vel[0],
-                position_buffer[POSITION_BUFFER_LEN][1] + interval_seconds * vel[1],
-                position_buffer[POSITION_BUFFER_LEN][2] + interval_seconds * vel[2]
-            }
-        );
+        position_buffer.push_back(pos);
         position_buffer.pop_front();
         position_buffer_lock.unlock();
+
+        #ifdef LOGGING
+        // Add position and velocity data to file.
+        velocity_file << time << " " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
+        position_file << time << " " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+        #endif
 
         // Wait until next tick.
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
+
+    #ifdef LOGGING
+    // Close file handle(s).
+    velocity_file.close();
+    position_file.close();
+    #endif
 
     return 1;
 }
@@ -463,6 +548,56 @@ void alert_system()
     }
 }
 
+/// This is a template for implementing new functionality.
+void thread_template()
+{
+    // TODO DECLARE ANY LOCAL VARIABLES OUTSIDE THE WHILE LOOP.
+    float var;
+    float from_global;
+    
+    // TODO IF LOGGING, OPEN FILE HANDLES.
+    #ifdef LOGGING2
+    std::ofstream log_file("../log_file.txt");
+    log_file << "# time value1" << std::endl;
+    #endif
+
+    // TODO CONFIGURE TIMING INTERVAL.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(1000);
+
+    // TODO START LOOP, RESPECTING SHUTDOWN FLAG.
+    while (!shutdown)
+    {
+        // TODO GLOBAL DATA INTO LOCAL BUFFERS BEFORE USE. RESPECT MUTEX LOCKS.
+        position_buffer_lock.lock();
+        from_global = 1.5;
+        position_buffer_lock.unlock();
+
+        // TODO UPDATE LOCAL VARS.
+        var = 3.0 + from_global;
+
+        // TODO IF LOGGING, UPDATE LOG FILE.
+        #ifdef LOGGING2
+        log_file << time << " " << var << std::endl;
+        #endif
+
+        // TODO ADD NEW VALUES TO GLOBAL BUFFER, RESPECTING MUTEX LOCKS.
+        position_buffer_lock.lock();
+        position_buffer.push_back(std::array<float, 3>{var, 0, 0});
+        position_buffer_lock.unlock();
+
+        // TODO WAIT UNTIL NEXT TIME INTERVAL.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
+
+    // TODO IF LOGGING, CLOSE FILE HANDLES.
+    #ifdef LOGGING2
+    log_file.close();
+    #endif
+}
+
+
 /// mainloop
 int main()
 {
@@ -485,8 +620,8 @@ int main()
     }
     for (unsigned int i = 0; i < ORIENTATION_BUFFER_LEN; i++)
     {
-        euler_orientation_buffer.push_back(std::array<float, 3>{0, 0, 0});
-        quat_orientation_buffer.push_back(std::array<float, 4>{0, 0, 0, 0});
+        euler_orientation_buffer.push_back(euler_orientation_t{0, 0, 0});
+        quat_orientation_buffer.push_back(quat_orientation_t{0, 0, 0});
     }
 
     // Start threads
