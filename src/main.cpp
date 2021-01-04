@@ -13,14 +13,13 @@
 #include <thread>
 #include <mutex>
 #include <fstream>
+#include <filesystem>
 
 #include "quaternions.h"
 #include "stance.h"
 #include "pi_utils.h"
 #include "madgwick.h"
 #include "math_util.h"
-
-#define LOGGING
 
 // Status codes.
 unsigned int STATUS_FALLING = 1;
@@ -142,11 +141,11 @@ void bmi270_reader()
 
     #ifdef LOGGING
     // Open file handles for data logging.
-    std::ofstream acce_file("../acce.txt");
-    std::ofstream gyro_file("../gyro.txt");
-    std::ofstream euler_file("../euler_orientation.txt");
-    std::ofstream quat_file("../quat_orientation.txt");
-    std::ofstream mag_file("../mag.txt");
+    std::ofstream acce_file("./data/acce.txt");
+    std::ofstream gyro_file("./data/gyro.txt");
+    std::ofstream euler_file("./data/euler_orientation.txt");
+    std::ofstream quat_file("./data/quat_orientation.txt");
+    std::ofstream mag_file("./data/mag.txt");
 
     // File headers
     acce_file << "# time x y z" << std::endl;
@@ -277,7 +276,7 @@ int transmit_lora()
 
     #ifdef LOGGING
     // Open file handles for data logging.
-    std::ofstream lora_file("../lora_log.txt");
+    std::ofstream lora_file("./data/lora_log.txt");
     lora_file << "# time packet" << std::endl;
     #endif
 
@@ -341,8 +340,8 @@ int predict_velocity()
 
     #ifdef LOGGING
     // Open files for logging.
-    std::ofstream velocity_file("../velocity.txt");
-    std::ofstream position_file("../position.txt");
+    std::ofstream velocity_file("./data/velocity.txt");
+    std::ofstream position_file("./data/position.txt");
     velocity_file << "# time x y z" << std::endl;
     position_file << "# time x y z" << std::endl;
     #endif
@@ -460,10 +459,10 @@ void thread_template()
     // TODO DECLARE ANY LOCAL VARIABLES OUTSIDE THE WHILE LOOP.
     float var;
     float from_global;
-    
+
     // TODO IF LOGGING, OPEN FILE HANDLES.
     #ifdef LOGGING
-    std::ofstream log_file("../log_file.txt");
+    std::ofstream log_file("./data/log_file.txt");
     log_file << "# time value1" << std::endl;
     #endif
 
@@ -510,6 +509,14 @@ int main()
 {
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
+
+    #ifdef LOGGING
+    // Create output directory if it doesn't already exist.
+    if (!std::filesystem::is_directory("./data"))
+    {
+        std::filesystem::create_directory("./data");
+    }
+    #endif
 
     // Preload buffers.
     for (unsigned int i = 0; i < IMU_BUFFER_LEN; i++)

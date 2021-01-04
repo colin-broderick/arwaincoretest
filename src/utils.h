@@ -1,3 +1,6 @@
+#define LOGGING
+
+
 typedef struct euler_orientation_t
 {
     float roll;

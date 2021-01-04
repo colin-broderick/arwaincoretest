@@ -6,8 +6,10 @@
 #include <math.h>
 #include <array>
 #include <deque>
+#include <fstream>
 
 #include "stance.h"
+#include "utils.h"
 
 extern int shutdown;
 extern std::mutex imu_buffer_lock;
@@ -131,6 +133,12 @@ int run_fall_detect()
     int count = 0;
     float struggle = 0;
 
+    #ifdef LOGGING
+    // Open file for logging
+    std::ofstream freefall_file("./data/freefall.txt");
+    freefall_file << "# time freefall entanglement" << std::endl;
+    #endif    
+
     std::vector<float> struggle_window(10);
 
     auto time = now();
@@ -181,12 +189,21 @@ int run_fall_detect()
             fall_lock.unlock();
         }
 
+        #ifdef LOGGING
+        // Log current time and status to file.
+        freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << std::endl;
+        #endif
+
         count = (count + 1) % 10;
 
         // Wait until the next tick.
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
+
+    #ifdef LOGGING
+    freefall_file.close();
+    #endif
 
     return 1;
 }
@@ -296,6 +313,11 @@ int run_stance_detect()
     int vertical_axis = 2;
     int speed_axis;
 
+    #ifdef LOGGING
+    std::ofstream stance_file("./data/stance.txt");
+    stance_file << "# time stance" << std::endl;
+    #endif
+
     auto time = now();
     std::chrono::milliseconds interval(STANCE_DETECTION_INTERVAL);
 
@@ -398,6 +420,10 @@ int run_stance_detect()
             }
         }
         stance_lock.unlock();
+
+        #ifdef LOGGING
+        stance_file << time.time_since_epoch().count() << " " << stance << std::endl;
+        #endif
 
         // Wait until the next tick.
         time = time + interval;
