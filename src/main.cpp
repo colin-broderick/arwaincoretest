@@ -19,7 +19,6 @@
 #include "pi_utils.h"
 #include "madgwick.h"
 #include "math_util.h"
-#include "utils.h"
 
 #define LOGGING
 
@@ -51,6 +50,7 @@ unsigned int IMU_BUFFER_LEN = 200;
 
 // IMU data buffers.
 std::deque<std::array<float, 6>> imu_full_buffer;
+std::deque<std::array<float, 6>> world_imu_buffer;
 std::deque<std::array<float, 6>> imu_stepped_buffer;
 std::deque<std::array<float, 3>> vel_full_buffer;
 std::deque<std::array<float, 3>> position_buffer;
@@ -67,6 +67,7 @@ int shutdown = 0;
 
 // Mutex locks.
 std::mutex imu_buffer_lock;
+std::mutex world_imu_buffer_lock;
 std::mutex stepped_buffer_lock;
 std::mutex vel_buffer_lock;
 std::mutex status_flag_lock;
@@ -128,17 +129,14 @@ void bmi270_reader()
         exit(1);
     }
 
-    // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(5);
-    int count = 0;
-
     Madgwick orientation_filter;
     orientation_filter.begin(1000/IMU_READING_INTERVAL);
 
     // Local buffers for IMU data
     vec_scaled_output accel_data;
     vec_scaled_output gyro_data;
+    vec_scaled_output world_accel_data;
+    vec_scaled_output world_gyro_data;
     euler_orientation_t euler_data;
     quat_orientation_t quat_data;
 
@@ -157,6 +155,10 @@ void bmi270_reader()
     euler_file << "# time roll pitch roll" << std::endl;
     quat_file << "# time w x y z" << std::endl;
     #endif
+
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(5);
 
     while (!shutdown)
     {
@@ -207,25 +209,22 @@ void bmi270_reader()
         quat_orientation_buffer.pop_front();
         orientation_buffer_lock.unlock();
 
+        // TODO Add world-aligned IMU to its own buffer.
+        world_accel_data = world_align(accel_data, quat_data);
+        world_gyro_data = world_align(gyro_data, quat_data);
+        world_imu_buffer_lock.lock();
+        world_imu_buffer.push_back(std::array<float, 6>{
+            world_accel_data.x, world_accel_data.y, world_accel_data.z,
+            world_gyro_data.x, world_gyro_data.y, world_gyro_data.z
+        });
+        world_imu_buffer.pop_front();
+        world_imu_buffer_lock.unlock();
+
         #ifdef LOGGING
         // Log orientation information to file.
         euler_file << time.time_since_epoch().count() << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << std::endl;
         quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << std::endl;;
         #endif
-
-        // Perform an efaroe step to update orientation.
-        // efaroe_step(std::array<float, 3>{
-        //     gyro_data.x,
-        //     gyro_data.y,
-        //     gyro_data.z
-        // });
-   
-        // count++;
-        // if (count % WINDOW_SIZE == 0)
-        // {
-        //     std::cout << (int)(count/WINDOW_SIZE) << std::endl;
-        //     std::cout << orientation_filter.getRoll() << "," << orientation_filter.getPitch() << "," << orientation_filter.getYaw() << std::endl;
-        // }
         
         // Wait until the next tick.
         time = time + interval;
@@ -241,98 +240,6 @@ void bmi270_reader()
     mag_file.close();
     #endif
 }
-
-
-// class efaroe
-// {
-//     public:
-
-//         std::array<float, 3> gyro_bias;
-//         std::array<float, 3> emf;
-//         float zeta;
-//         int last_read;
-//         int use_mag;
-//         float gyro_error;
-//         float true_error;
-//         float beta;
-//         quaternion q;
-//         int conv_count;
-//         float uk_dip = -67*3.14159/180;
-
-//         efaroe(quaternion initial_quaternion, std::array<float, 3> gyro_bias, float gyro_error, int use_mag)
-//         {
-//             this->gyro_bias = gyro_bias;
-//             this->emf = std::array<float, 3>{cos(uk_dip), 0, sin(uk_dip)};
-//             this->zeta = sqrt(3) * 1e-2;
-//             this->last_read = 0;
-//             this->use_mag = use_mag;
-
-//             this->q = initial_quaternion;
-//             this->gyro_error = gyro_error;
-//             this->true_error = gyro_error;
-//             this->beta = sqrt(3) * this->gyro_error;
-//             this->conv_count = -1;
-//         }
-
-//         void update(int reading_time, std::array<float, 6> imu)
-//         {
-//             if (conv_count >= 0)
-//             {
-//                 conv_count = conv_count -1;
-//                 if (conv_count == 0)
-//                 {
-//                     gyro_error = true_error;
-//                     beta = sqrt(3) * gyro_error;
-//                 }
-//             }
-
-//             if (last_read == 0)
-//             {
-//                 last_read = reading_time;
-//                 return;
-//             }
-//             else {
-//                 float dt = reading_time - last_read;
-//                 if (dt > 1)
-//                 {
-//                     dt = 1;
-//                 }
-//                 last_read = reading_time;
-//             }
-
-//             double acce_norm = norm(std::array<double, 3>{imu[0], imu[1], imu[2]});
-//             std::array<double, 3> acce{
-//                 imu[0] / acce_mag,
-//                 imu[1] / acce_mag,
-//                 imu[2] / acce_mag
-//             };
-//             std::array<double, 3> jac_a{
-//                 q.getIm_i() * q.getIm_k() * 2 - q.getRe() * q.getIm_j() * 2, 
-//                 q.getRe() * q.getIm_i() * 2 + q.getIm_j() * q.getIm_k() * 2,
-//                 1 - (2 * q.getIm_i() * q.getIm_i()) - (2 * q.getIm_j() * q.getIm_j())
-//             };
-
-//             // Get normalized gradient.
-//             std::array<double, 3> grad = cross(jac_a, acce);
-//             double grad_norm = norm(grad);
-//             grad = std::array<double, 3>{
-//                 grad[0]/grad_norm,
-//                 grad[1]/grad_norm,
-//                 grad[2]/grad_norm
-//             };
-
-//             g_b = gyro_bias + (grad * dt * zeta);
-//             gyro = gyro_raw - g_b;
-
-//             a_v = 
-//         }
-// };
-
-
-// void efaroe_step(std::array<float, 3> gyro)
-// {
-
-// }
 
 /// TODO: I think this might be unneeded. Make sure, then remove.
 /// Makes a copy of the full imu buffer after every nth time step.
@@ -608,6 +515,7 @@ int main()
     for (unsigned int i = 0; i < IMU_BUFFER_LEN; i++)
     {
         imu_full_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
+        world_imu_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
         imu_stepped_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
     }
     for (unsigned int i = 0; i < VELOCITY_BUFFER_LEN; i++)
