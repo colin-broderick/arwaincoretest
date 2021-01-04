@@ -21,8 +21,7 @@
 #include "math_util.h"
 #include "utils.h"
 
-// #define LOGGING
-#define LOGGING2
+#define LOGGING
 
 // Status codes.
 unsigned int STATUS_FALLING = 1;
@@ -175,8 +174,8 @@ void bmi270_reader()
 
         #ifdef LOGGING
         // Log IMU to file.
-        acce_file << time << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << std::endl;
-        gyro_file << time << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << std::endl;
+        acce_file << time.time_since_epoch().count() << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << std::endl;
+        gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << std::endl;
         #endif
 
         // Perform a Madgwick step
@@ -210,8 +209,8 @@ void bmi270_reader()
 
         #ifdef LOGGING
         // Log orientation information to file.
-        euler_file << time << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << std::endl;
-        quat_file << time << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << std::endl;;
+        euler_file << time.time_since_epoch().count() << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << std::endl;
+        quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << std::endl;;
         #endif
 
         // Perform an efaroe step to update orientation.
@@ -402,7 +401,7 @@ int transmit_lora()
 
         // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
         #ifdef LOGGING
-        lora_file << time << " " << packet << std::endl;
+        lora_file << time.time_since_epoch().count() << " " << packet << std::endl;
         #endif
 
         // Wait until next tick
@@ -472,8 +471,8 @@ int predict_velocity()
 
         #ifdef LOGGING
         // Add position and velocity data to file.
-        velocity_file << time << " " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
-        position_file << time << " " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+        velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
+        position_file << time.time_since_epoch().count() << " " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
         #endif
 
         // Wait until next tick.
@@ -556,13 +555,14 @@ void thread_template()
     float from_global;
     
     // TODO IF LOGGING, OPEN FILE HANDLES.
-    #ifdef LOGGING2
+    #ifdef LOGGING
     std::ofstream log_file("../log_file.txt");
     log_file << "# time value1" << std::endl;
     #endif
 
     // TODO CONFIGURE TIMING INTERVAL.
     auto time = std::chrono::system_clock::now();
+    // auto time = std::chrono::time_point_cast<std::chrono::milliseconds>
     std::chrono::milliseconds interval(1000);
 
     // TODO START LOOP, RESPECTING SHUTDOWN FLAG.
@@ -577,8 +577,8 @@ void thread_template()
         var = 3.0 + from_global;
 
         // TODO IF LOGGING, UPDATE LOG FILE.
-        #ifdef LOGGING2
-        log_file << time << " " << var << std::endl;
+        #ifdef LOGGING
+        log_file << time.time_since_epoch().count() << var << std::endl;
         #endif
 
         // TODO ADD NEW VALUES TO GLOBAL BUFFER, RESPECTING MUTEX LOCKS.
@@ -592,7 +592,7 @@ void thread_template()
     }
 
     // TODO IF LOGGING, CLOSE FILE HANDLES.
-    #ifdef LOGGING2
+    #ifdef LOGGING
     log_file.close();
     #endif
 }
@@ -635,6 +635,7 @@ int main()
     std::thread logging_thread(std_output);
 
     // Spin until shutdown signal received.
+    // TODO Probably don't actually need this loop. Should just block at the first join and continue when able.
     std::chrono::milliseconds delay(1000);
     while (!shutdown)
     {
