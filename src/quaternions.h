@@ -20,11 +20,11 @@
  
     class quaternion
     {
-        //  q = a + ib + jc + kd
-        double a, b, c, d;
-        
         public:
         
+        //  q = a + ib + jc + kd
+        double a, b, c, d;
+
         // constructor
         quaternion(double real=0, double im_i=0, double im_j=0, double im_k=0);
         
