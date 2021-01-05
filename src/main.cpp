@@ -130,18 +130,18 @@ void std_output()
         {
             // Add position to the string stream.        
             position_buffer_lock.lock();
-            ss << "Position:        (" << position_buffer.back()[0] << ", " << position_buffer.back()[1] << ", " << position_buffer.back()[2] << ")" << std::endl;
+            ss << "Position:        (" << position_buffer.back()[0] << ", " << position_buffer.back()[1] << ", " << position_buffer.back()[2] << ")" << "\n";
             position_buffer_lock.unlock();
 
             // Add Euler and quaternion orientations to the string stream.
             orientation_buffer_lock.lock();
-            ss << "Orientation (E): (" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << std::endl;;
-            ss << "Orientation (Q): (" << quat_orientation_buffer.back().w << ", " << quat_orientation_buffer.back().x << ", " << quat_orientation_buffer.back().y << ", " << quat_orientation_buffer.back().z << ")" << std::endl;
+            ss << "Orientation (E): (" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << "\n";;
+            ss << "Orientation (Q): (" << quat_orientation_buffer.back().w << ", " << quat_orientation_buffer.back().x << ", " << quat_orientation_buffer.back().y << ", " << quat_orientation_buffer.back().z << ")" << "\n";
             orientation_buffer_lock.unlock();
 
             // Add stance to the string stream.
             stance_lock.lock();
-            ss << "Stance:          " << stance << std::endl;
+            ss << "Stance:          " << stance << "\n";
             stance_lock.unlock();
 
             // TODO: Add fall/entanglement to the string stream.
@@ -152,7 +152,7 @@ void std_output()
 
             // Clear the stringstream.
             ss.str("");
-            ss << std::endl;
+            ss << "\n";
 
             // Wait until next tick.
             time = time + interval;
@@ -201,11 +201,11 @@ void bmi270_reader()
         mag_file.open(folder_date_string + "/mag.txt");
 
         // File headers
-        acce_file << "# time x y z" << std::endl;
-        gyro_file << "# time x y z" << std::endl;
-        mag_file << "# time x y z" << std::endl;
-        euler_file << "# time roll pitch roll" << std::endl;
-        quat_file << "# time w x y z" << std::endl;
+        acce_file << "# time x y z" << "\n";
+        gyro_file << "# time x y z" << "\n";
+        mag_file << "# time x y z" << "\n";
+        euler_file << "# time roll pitch roll" << "\n";
+        quat_file << "# time w x y z" << "\n";
     }
 
     // Set up timing.
@@ -229,8 +229,8 @@ void bmi270_reader()
         // Log IMU to file.
         if (log_to_file)
         {
-            acce_file << time.time_since_epoch().count() << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << std::endl;
-            gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << std::endl;
+            acce_file << time.time_since_epoch().count() << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << "\n";
+            gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
         }
 
         // Perform a Madgwick step
@@ -276,8 +276,8 @@ void bmi270_reader()
         // Log orientation information to file.
         if (log_to_file)
         {
-            euler_file << time.time_since_epoch().count() << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << std::endl;
-            quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << std::endl;;
+            euler_file << time.time_since_epoch().count() << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << "\n";
+            quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";;
         }
         
         // Wait until the next tick.
@@ -337,12 +337,12 @@ int transmit_lora()
     if (log_to_file)
     {
         lora_file.open(folder_date_string + "/lora_log.txt");
-        lora_file << "# time packet" << std::endl;
+        lora_file << "# time packet" << "\n";
     }
 
     while (!shutdown)
     {
-        // std::cout << "LoRa tick\n" << std::endl;
+        // std::cout << "LoRa tick\n" << "\n";
         // TODO: Read all relevant data, respecting mutex locks.
         // Get positions as uint16
         position_buffer_lock.lock();
@@ -361,14 +361,14 @@ int transmit_lora()
         uint64_t packet = (x << 48) | (y << 32) | (z << 16) | (status);
     
         // TODO: Send transmission.
-        // std::cout << packet << std::endl;
+        // std::cout << packet << "\n";
 
         // TODO: Maybe a read loop?
 
         // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
         if (log_to_file)
         {
-            lora_file << time.time_since_epoch().count() << " " << packet << std::endl;
+            lora_file << time.time_since_epoch().count() << " " << packet << "\n";
         }
         
         // Wait until next tick
@@ -409,8 +409,8 @@ int predict_velocity()
     {
         velocity_file.open(folder_date_string + "/velocity.txt");
         position_file.open(folder_date_string + "/position.txt");
-        velocity_file << "# time x y z" << std::endl;
-        position_file << "# time x y z" << std::endl;
+        velocity_file << "# time x y z" << "\n";
+        position_file << "# time x y z" << "\n";
     }
 
     while (!shutdown)
@@ -445,8 +445,8 @@ int predict_velocity()
         // Add position and velocity data to file.
         if (log_to_file)
         {
-            velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
-            position_file << time.time_since_epoch().count() << " " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+            velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << "\n";
+            position_file << time.time_since_epoch().count() << " " << pos[0] << " " << pos[1] << " " << pos[2] << "\n";
         }
 
         // Wait until next tick.
@@ -467,7 +467,7 @@ int predict_velocity()
 /// Captures keyboard interrupt. Waits for threads to end then program exits.
 void sigint_handler(int signal)
 {
-    std::cout << "\nReceived SIGINT - closing\n" << std::endl;
+    std::cout << "\nReceived SIGINT - closing\n" << "\n";
     shutdown = 1;
 }
 
@@ -535,7 +535,7 @@ void thread_template()
     if (log_to_file)
     {
         log_file.open(folder_date_string + "/log_file.txt");
-        log_file << "# time value1" << std::endl;
+        log_file << "# time value1" << "\n";
     }
 
     // TODO CONFIGURE TIMING INTERVAL.
@@ -557,7 +557,7 @@ void thread_template()
         // TODO IF LOGGING, UPDATE LOG FILE.
         if (log_to_file)
         {
-            log_file << time.time_since_epoch().count() << var << std::endl;
+            log_file << time.time_since_epoch().count() << var << "\n";
         }
 
         // TODO ADD NEW VALUES TO GLOBAL BUFFER, RESPECTING MUTEX LOCKS.
@@ -585,13 +585,18 @@ int main(int argc, char **argv)
 
     // Determine logging behaviour from command line arguments.
     InputParser input(argc, argv);
+    if (input.contains("-h") || input.contains("-help"))
+    {
+        // TODO Output help text.
+        exit(1);
+    }
     if (input.contains("-lstd"))
     {
         log_to_std = 1;
     }
     if (input.contains("-lfile"))
     {
-        std::cout << "Logging to file" << std::endl;
+        std::cout << "Logging to file" << "\n";
         log_to_file = 1;
     }
     if (input.contains("-conf"))
@@ -600,16 +605,16 @@ int main(int argc, char **argv)
     }
     if (!input.contains("-lstd") && !input.contains("-lfile"))
     {
-        std::cout << "No logging enabled - you probably want to use -lstd or -lfile or both" << std::endl;
+        std::cout << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
     }
 
     // Create output directory if it doesn't already exist.
     if (log_to_file)
     {
-        folder_date_string = datetimestring();
-        if (!std::filesystem::is_directory("./data_" + folder_date_string))
+        folder_date_string = "./data_" + datetimestring();
+        if (!std::filesystem::is_directory(folder_date_string))
         {
-            std::filesystem::create_directory("./data_" + folder_date_string);
+            std::filesystem::create_directory(folder_date_string);
         }
     }
 
