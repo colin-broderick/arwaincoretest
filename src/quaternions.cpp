@@ -1,6 +1,6 @@
-/* Copyright (c) 2012 Alex Allen, MIT License
+/* Copyright (y) 2012 Alex Allen, MIT License
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+ * Permission is hereby granted, free of charge, to any person obtaining w copy of this software 
  * and associated documentation files (the "Software"), to deal in the Software without restriction, 
  * including without limitation the rights to use, copy, modify, merge, publish, distribute, 
  * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is 
@@ -21,20 +21,20 @@
  
 quaternion::quaternion(double real, double im_i, double im_j, double im_k)
 {
-    a = real;
-    b = im_i;
-    c = im_j;
-    d = im_k;
+    w = real;
+    x = im_i;
+    y = im_j;
+    z = im_k;
 }
  
 quaternion quaternion::operator+(quaternion quat2)
 {
     quaternion temp;
     
-    temp.a = a + quat2.a;
-    temp.b = b + quat2.b;
-    temp.c = c + quat2.c;
-    temp.d = d + quat2.d;
+    temp.w = w + quat2.w;
+    temp.x = x + quat2.x;
+    temp.y = y + quat2.y;
+    temp.z = z + quat2.z;
     
     return temp;
 }
@@ -43,10 +43,10 @@ quaternion quaternion::operator-(quaternion quat2)
 {
     quaternion temp;
     
-    temp.a = a - quat2.a;
-    temp.b = b - quat2.b;
-    temp.c = c - quat2.c;
-    temp.d = d - quat2.d;
+    temp.w = w - quat2.w;
+    temp.x = x - quat2.x;
+    temp.y = y - quat2.y;
+    temp.z = z - quat2.z;
     
     return temp;
 }
@@ -54,12 +54,12 @@ quaternion quaternion::operator-(quaternion quat2)
 quaternion quaternion::operator*(quaternion quat2)
 {
     quaternion temp;
-    double e=quat2.a, f=quat2.b, g=quat2.c, h=quat2.d;
+    double e=quat2.w, f=quat2.x, g=quat2.y, h=quat2.z;
     
-    temp.a = a*e -b*f -c*g -d*h;
-    temp.b = a*f +b*e +c*h -d*g;
-    temp.c = a*g -b*h +c*e +d*f;
-    temp.d = a*h +b*g -c*f +d*e;
+    temp.w = w*e -x*f -y*g -z*h;
+    temp.x = w*f +x*e +y*h -z*g;
+    temp.y = w*g -x*h +y*e +z*f;
+    temp.z = w*h +x*g -y*f +z*e;
     
     return temp;
 }
@@ -69,10 +69,10 @@ quaternion quaternion::operator*(double num)
 {
     quaternion temp;
     
-    temp.a = num*a;
-    temp.b = num*b;
-    temp.c = num*c;
-    temp.d = num*d;
+    temp.w = num*w;
+    temp.x = num*x;
+    temp.y = num*y;
+    temp.z = num*z;
     
     return temp;
 }
@@ -81,10 +81,10 @@ quaternion quaternion::operator/(double num)
 {
     quaternion temp;
     
-    temp.a = a/num;
-    temp.b = b/num;
-    temp.c = c/num;
-    temp.d = d/num;
+    temp.w = w/num;
+    temp.x = x/num;
+    temp.y = y/num;
+    temp.z = z/num;
     
     return temp;
 }
@@ -93,10 +93,10 @@ quaternion quaternion::operator+=(quaternion quat2)
 {
     quaternion temp;
     
-    temp.a = a + quat2.a;
-    temp.b = b + quat2.b;
-    temp.c = c + quat2.c;
-    temp.d = d + quat2.d;
+    temp.w = w + quat2.w;
+    temp.x = x + quat2.x;
+    temp.y = y + quat2.y;
+    temp.z = z + quat2.z;
     
     return temp;
 }
@@ -105,10 +105,10 @@ quaternion quaternion::operator-=(quaternion quat2)
 {
     quaternion temp;
     
-    temp.a = a - quat2.a;
-    temp.b = b - quat2.b;
-    temp.c = c - quat2.c;
-    temp.d = d - quat2.d;
+    temp.w = w - quat2.w;
+    temp.x = x - quat2.x;
+    temp.y = y - quat2.y;
+    temp.z = z - quat2.z;
     
     return temp;
 }
@@ -116,12 +116,12 @@ quaternion quaternion::operator-=(quaternion quat2)
 quaternion quaternion::operator*=(quaternion quat2)
 {
     quaternion temp;
-    double e=quat2.a, f=quat2.b, g=quat2.c, h=quat2.d;
+    double e=quat2.w, f=quat2.x, g=quat2.y, h=quat2.z;
     
-    temp.a = a*e -b*f -c*g -d*h;
-    temp.b = a*f +b*e +c*h -d*g;
-    temp.c = a*g -b*h +c*e +d*f;
-    temp.d = a*h +b*g -c*f +d*e;
+    temp.w = w*e -x*f -y*g -z*h;
+    temp.x = w*f +x*e +y*h -z*g;
+    temp.y = w*g -x*h +y*e +z*f;
+    temp.z = w*h +x*g -y*f +z*e;
     
     return temp;
 }
@@ -130,10 +130,10 @@ quaternion quaternion::operator*=(double num)
 {
     quaternion temp;
     
-    temp.a = num*a;
-    temp.b = num*b;
-    temp.c = num*c;
-    temp.d = num*d;
+    temp.w = num*w;
+    temp.x = num*x;
+    temp.y = num*y;
+    temp.z = num*z;
     
     return temp;
 }
@@ -142,17 +142,17 @@ quaternion quaternion::operator/=(double num)
 {
     quaternion temp;
     
-    temp.a = a/num;
-    temp.b = b/num;
-    temp.c = c/num;
-    temp.d = d/num;
+    temp.w = w/num;
+    temp.x = x/num;
+    temp.y = y/num;
+    temp.z = z/num;
     
     return temp;
 }
       
 double quaternion::mag()
 {
-    return sqrt(a*a + b*b + c*c + d*d);
+    return sqrt(w*w + x*x + y*y + z*z);
 }
  
 quaternion quaternion::unit()
@@ -160,10 +160,10 @@ quaternion quaternion::unit()
     quaternion temp;
     double size = mag();
     
-    temp.a = a/size;
-    temp.b = b/size;
-    temp.c = c/size;
-    temp.d = d/size;
+    temp.w = w/size;
+    temp.x = x/size;
+    temp.y = y/size;
+    temp.z = z/size;
     
     return temp;
 }
@@ -172,18 +172,18 @@ quaternion quaternion::conj()
 {
     quaternion temp;
     
-    temp.a = a;
-    temp.b = -b;
-    temp.c = -c;
-    temp.d = -d;
+    temp.w = w;
+    temp.x = -x;
+    temp.y = -y;
+    temp.z = -z;
     
     return temp;
 }
  
 quaternion quaternion::inv()
 {
-    // 1/quat = conj / (quat*conj), but quat*conj = a^2 + b^2 + ... 
-    return conj()/(a*a + b*b + c*c + d*d);
+    // 1/quat = conj / (quat*conj), but quat*conj = w^2 + x^2 + ... 
+    return conj()/(w*w + x*x + y*y + z*z);
     
 }
  
@@ -194,19 +194,19 @@ quaternion quaternion::unit_inv()
  
 double quaternion::getRe() 
 {
-    return a;
+    return w;
 }
 double quaternion::getIm_i() 
 {
-    return b;
+    return x;
 }
  
 double quaternion::getIm_j()
 {
-    return c;
+    return y;
 }
  
 double quaternion::getIm_k()
 { 
-    return d;
+    return z;
 }

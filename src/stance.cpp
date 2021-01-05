@@ -12,10 +12,15 @@
 #include "utils.h"
 
 extern int shutdown;
+extern std::string folder_date_string;
 extern std::mutex imu_buffer_lock;
 extern std::mutex vel_buffer_lock;
 extern std::deque<std::array<float, 6>> imu_full_buffer;
 extern std::deque<std::array<float, 3>> vel_full_buffer;
+
+// Flags for logging behaviour, declared and defined in main.cpp.
+extern int logging_file;
+extern int logging_std;
 
 // Time intervals, all in milliseconds.
 unsigned int STANCE_DETECTION_INTERVAL = 1000;
@@ -133,11 +138,14 @@ int run_fall_detect()
     int count = 0;
     float struggle = 0;
 
-    #ifdef LOGGING
+    
     // Open file for logging
-    std::ofstream freefall_file("./data/freefall.txt");
-    freefall_file << "# time freefall entanglement" << std::endl;
-    #endif    
+    std::ofstream freefall_file;
+    if (logging_file)
+    {
+        freefall_file.open(folder_date_string + "/freefall.txt");
+        freefall_file << "# time freefall entanglement" << std::endl;
+    }
 
     std::vector<float> struggle_window(10);
 
@@ -189,10 +197,11 @@ int run_fall_detect()
             fall_lock.unlock();
         }
 
-        #ifdef LOGGING
         // Log current time and status to file.
-        freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << std::endl;
-        #endif
+        if (logging_file)
+        {
+            freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << std::endl;
+        }
 
         count = (count + 1) % 10;
 
@@ -201,9 +210,10 @@ int run_fall_detect()
         std::this_thread::sleep_until(time);
     }
 
-    #ifdef LOGGING
-    freefall_file.close();
-    #endif
+    if (logging_file)
+    {
+        freefall_file.close();
+    }
 
     return 1;
 }
@@ -313,11 +323,14 @@ int run_stance_detect()
     int vertical_axis = 2;
     int speed_axis;
 
-    #ifdef LOGGING
-    std::ofstream stance_file("./data/stance.txt");
-    stance_file << "# time stance" << std::endl;
-    #endif
-
+    // File handle for logging.
+    std::ofstream stance_file;
+    if (logging_file)
+    {
+        stance_file.open(folder_date_string + "/stance.txt");
+        stance_file << "# time stance" << std::endl;
+    }
+    
     auto time = now();
     std::chrono::milliseconds interval(STANCE_DETECTION_INTERVAL);
 
@@ -421,9 +434,10 @@ int run_stance_detect()
         }
         stance_lock.unlock();
 
-        #ifdef LOGGING
-        stance_file << time.time_since_epoch().count() << " " << stance << std::endl;
-        #endif
+        if (logging_file)
+        {
+            stance_file << time.time_since_epoch().count() << " " << stance << std::endl;
+        }
 
         // Wait until the next tick.
         time = time + interval;
