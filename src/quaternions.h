@@ -1,6 +1,6 @@
 /* Copyright (c) 2012 Alex Allen, MIT License
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+ * Permission is hereby granted, free of charge, to any person obtaining w copy of this software 
  * and associated documentation files (the "Software"), to deal in the Software without restriction, 
  * including without limitation the rights to use, copy, modify, merge, publish, distribute, 
  * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is 
@@ -22,8 +22,8 @@
     {
         public:
         
-        //  q = a + ib + jc + kd
-        double a, b, c, d;
+        //  q = w + ix + jy + kz
+        double w, x, y, z;
 
         // constructor
         quaternion(double real=0, double im_i=0, double im_j=0, double im_k=0);

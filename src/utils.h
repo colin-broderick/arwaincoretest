@@ -1,4 +1,6 @@
-#define LOGGING
+#include <string>
+#include <sstream>
+#include <ctime>
 
 
 typedef struct euler_orientation_t
@@ -29,3 +31,6 @@ typedef struct position_t
     float y;
     float z;
 } position_t;
+
+// Date/time as a string in the form YYYY_MM_DD_HH_mm_ss.
+std::string datetimestring();
