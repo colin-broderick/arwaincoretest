@@ -19,8 +19,8 @@ extern std::deque<std::array<float, 6>> imu_full_buffer;
 extern std::deque<std::array<float, 3>> vel_full_buffer;
 
 // Flags for logging behaviour, declared and defined in main.cpp.
-extern int logging_file;
-extern int logging_std;
+extern int log_to_file;
+extern int log_to_std;
 
 // Time intervals, all in milliseconds.
 unsigned int STANCE_DETECTION_INTERVAL = 1000;
@@ -34,15 +34,8 @@ int horizontal = 0;
 int climbing = 0;
 std::string stance;
 
-// Thresholds and constants.
-float a_threshold = 3;
-float struggle_threshold = 3;
-float gravity = 9.8;
-float climbing_threshold = 1;
-float crawling_threshold = 0.5;
-float running_threshold = 3;
-float walking_threshold = 0.5;
-float active_threshold = 20;
+// Configuration file location.
+extern std::string config_file;
 
 std::mutex fall_lock;
 std::mutex stance_lock;
@@ -50,7 +43,6 @@ std::chrono::_V2::system_clock::time_point last_update;
 
 std::thread fall_thread;
 std::thread stance_thread;
-
 
 // Get current time.
 std::chrono::_V2::system_clock::time_point now()
@@ -130,6 +122,11 @@ int run_fall_detect()
     float g_mean_magnitude;
     float v_mean_magnitude;
 
+    // Read thresholds and constants from config file.
+    float a_threshold = get_config<float>(config_file, "a_threshold");
+    float struggle_threshold = get_config<float>(config_file, "struggle_threshold");
+    float gravity = get_config<float>(config_file, "gravity");
+
     float a_twitch;
     float tmp_struggle;
 
@@ -138,10 +135,11 @@ int run_fall_detect()
     int count = 0;
     float struggle = 0;
 
+    // TODO Get thresholds from config file.
     
     // Open file for logging
     std::ofstream freefall_file;
-    if (logging_file)
+    if (log_to_file)
     {
         freefall_file.open(folder_date_string + "/freefall.txt");
         freefall_file << "# time freefall entanglement" << std::endl;
@@ -198,7 +196,7 @@ int run_fall_detect()
         }
 
         // Log current time and status to file.
-        if (logging_file)
+        if (log_to_file)
         {
             freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << std::endl;
         }
@@ -210,7 +208,7 @@ int run_fall_detect()
         std::this_thread::sleep_until(time);
     }
 
-    if (logging_file)
+    if (log_to_file)
     {
         freefall_file.close();
     }
@@ -320,12 +318,19 @@ int run_stance_detect()
 
     float act;
 
+    // Read thresholds and constants from config file.
+    float climbing_threshold = get_config<float>(config_file, "climbing_threshold");
+    float crawling_threshold = get_config<float>(config_file, "crawling_threshold");
+    float running_threshold = get_config<float>(config_file, "running_threshold");
+    float walking_threshold = get_config<float>(config_file, "walking_threshold");
+    float active_threshold = get_config<float>(config_file, "active_threshold");
+
     int vertical_axis = 2;
     int speed_axis;
 
     // File handle for logging.
     std::ofstream stance_file;
-    if (logging_file)
+    if (log_to_file)
     {
         stance_file.open(folder_date_string + "/stance.txt");
         stance_file << "# time stance" << std::endl;
@@ -434,7 +439,7 @@ int run_stance_detect()
         }
         stance_lock.unlock();
 
-        if (logging_file)
+        if (log_to_file)
         {
             stance_file << time.time_since_epoch().count() << " " << stance << std::endl;
         }

@@ -48,9 +48,12 @@ unsigned int VELOCITY_BUFFER_LEN = 200;
 unsigned int ORIENTATION_BUFFER_LEN = 200;
 unsigned int IMU_BUFFER_LEN = 200;
 
+// Default config file location.
+std::string config_file = "./arwain.conf";
+
 // Flags for whether to produce various log outputs.
-int logging_std = 0;
-int logging_file = 0;
+int log_to_std = 0;
+int log_to_file = 0;
 
 // Name for data folder
 std::string folder_date_string;
@@ -113,7 +116,7 @@ class InputParser{
 
 void std_output()
 {
-    if (logging_std)
+    if (log_to_std)
     {
         // Set up timing, including pause while IMU warms up.
         std::chrono::milliseconds interval(1000);
@@ -188,7 +191,7 @@ void bmi270_reader()
     std::ofstream quat_file;
     std::ofstream mag_file;
 
-    if (logging_file)
+    if (log_to_file)
     {
         // Open file handles for data logging.
         acce_file.open(folder_date_string + "/acce.txt");
@@ -224,7 +227,7 @@ void bmi270_reader()
         imu_buffer_lock.unlock();
 
         // Log IMU to file.
-        if (logging_file)
+        if (log_to_file)
         {
             acce_file << time.time_since_epoch().count() << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << std::endl;
             gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << std::endl;
@@ -271,7 +274,7 @@ void bmi270_reader()
         world_imu_buffer_lock.unlock();
 
         // Log orientation information to file.
-        if (logging_file)
+        if (log_to_file)
         {
             euler_file << time.time_since_epoch().count() << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << std::endl;
             quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << std::endl;;
@@ -284,7 +287,7 @@ void bmi270_reader()
 
     
     // Close all file handles.
-    if (logging_file)
+    if (log_to_file)
     {
         acce_file.close();
         gyro_file.close();
@@ -331,7 +334,7 @@ int transmit_lora()
     unsigned int status;
 
     // Open file handles for data logging.
-    if (logging_file)
+    if (log_to_file)
     {
         lora_file.open(folder_date_string + "/lora_log.txt");
         lora_file << "# time packet" << std::endl;
@@ -363,7 +366,7 @@ int transmit_lora()
         // TODO: Maybe a read loop?
 
         // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
-        if (logging_file)
+        if (log_to_file)
         {
             lora_file << time.time_since_epoch().count() << " " << packet << std::endl;
         }
@@ -374,7 +377,7 @@ int transmit_lora()
     }
 
     // Close log file handle.
-    if (logging_file)
+    if (log_to_file)
     {
         lora_file.close();
     }
@@ -402,7 +405,7 @@ int predict_velocity()
     float interval_seconds = (float)VELOCITY_PREDICTION_INTERVAL/1000.0;
 
     // Open files for logging.
-    if (logging_file)
+    if (log_to_file)
     {
         velocity_file.open(folder_date_string + "/velocity.txt");
         position_file.open(folder_date_string + "/position.txt");
@@ -440,7 +443,7 @@ int predict_velocity()
         position_buffer_lock.unlock();
 
         // Add position and velocity data to file.
-        if (logging_file)
+        if (log_to_file)
         {
             velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
             position_file << time.time_since_epoch().count() << " " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
@@ -452,7 +455,7 @@ int predict_velocity()
     }
 
     // Close file handle(s).
-    if (logging_file)
+    if (log_to_file)
     {
         velocity_file.close();
         position_file.close();
@@ -529,7 +532,7 @@ void thread_template()
     std::ofstream log_file;
 
     // TODO IF LOGGING, OPEN FILE HANDLES.
-    if (logging_file)
+    if (log_to_file)
     {
         log_file.open(folder_date_string + "/log_file.txt");
         log_file << "# time value1" << std::endl;
@@ -552,7 +555,7 @@ void thread_template()
         var = 3.0 + from_global;
 
         // TODO IF LOGGING, UPDATE LOG FILE.
-        if (logging_file)
+        if (log_to_file)
         {
             log_file << time.time_since_epoch().count() << var << std::endl;
         }
@@ -568,7 +571,7 @@ void thread_template()
     }
 
     // TODO IF LOGGING, CLOSE FILE HANDLES.
-    if (logging_file)
+    if (log_to_file)
     {
         log_file.close();
     }
@@ -584,12 +587,16 @@ int main(int argc, char **argv)
     InputParser input(argc, argv);
     if (input.contains("-lstd"))
     {
-        logging_std = 1;
+        log_to_std = 1;
     }
     if (input.contains("-lfile"))
     {
         std::cout << "Logging to file" << std::endl;
-        logging_file = 1;
+        log_to_file = 1;
+    }
+    if (input.contains("-conf"))
+    {
+        config_file = input.getCmdOption("-conf");
     }
     if (!input.contains("-lstd") && !input.contains("-lfile"))
     {
@@ -597,7 +604,7 @@ int main(int argc, char **argv)
     }
 
     // Create output directory if it doesn't already exist.
-    if (logging_file)
+    if (log_to_file)
     {
         folder_date_string = datetimestring();
         if (!std::filesystem::is_directory("./data_" + folder_date_string))
