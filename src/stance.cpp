@@ -142,7 +142,7 @@ int run_fall_detect()
     if (log_to_file)
     {
         freefall_file.open(folder_date_string + "/freefall.txt");
-        freefall_file << "# time freefall entanglement" << std::endl;
+        freefall_file << "# time freefall entanglement" << "\n";
     }
 
     std::vector<float> struggle_window(10);
@@ -198,7 +198,7 @@ int run_fall_detect()
         // Log current time and status to file.
         if (log_to_file)
         {
-            freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << std::endl;
+            freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << "\n";
         }
 
         count = (count + 1) % 10;
@@ -333,7 +333,7 @@ int run_stance_detect()
     if (log_to_file)
     {
         stance_file.open(folder_date_string + "/stance.txt");
-        stance_file << "# time stance" << std::endl;
+        stance_file << "# time stance" << "\n";
     }
     
     auto time = now();
@@ -441,7 +441,7 @@ int run_stance_detect()
 
         if (log_to_file)
         {
-            stance_file << time.time_since_epoch().count() << " " << stance << std::endl;
+            stance_file << time.time_since_epoch().count() << " " << stance << "\n";
         }
 
         // Wait until the next tick.

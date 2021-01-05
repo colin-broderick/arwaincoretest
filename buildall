@@ -1,6 +1,6 @@
 #!/bin/bash
 cd src
 echo "Building main"
-g++ -std=c++17 -o ../build/main main.cpp quaternions.cpp stance.cpp bmi2.c bmi270.c bmm150.c pi_utils.cpp utils.cpp madgwick.cpp math_util.cpp -pthread -li2c -lstdc++fs -Wall
+g++ -std=c++17 -o ../build/main main.cpp quaternions.cpp stance.cpp bmi2.c bmi270.c bmm150.c pi_utils.cpp utils.cpp madgwick.cpp math_util.cpp -pthread -li2c -lstdc++fs -Wall -pg
 echo "Building calibrator"
 g++ -std=c++17 -o ../build/calibrate calibrate_bmi270.cpp bmi2.c bmi270.c pi_utils.cpp bmm150.c -li2c -lstdc++fs -Wall
