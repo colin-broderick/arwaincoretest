@@ -587,20 +587,31 @@ int main(int argc, char **argv)
     InputParser input(argc, argv);
     if (input.contains("-h") || input.contains("-help"))
     {
-        // TODO Output help text.
+        // Output help text.
+        std::cout << "Run without arguments for no logging\n";
+        std::cout << "Arguments:\n";
+        std::cout << "  -lstd        Log friendly output to stdout\n";
+        std::cout << "               Files are stored in ./data_<datetime>\n";
+        std::cout << "  -lfile       Record sensor data to file\n";
+        std::cout << "  -h           Show this help text\n";
+        std::cout << "\n";
+
         exit(1);
     }
     if (input.contains("-lstd"))
     {
+        // Enable stdout logging.
         log_to_std = 1;
     }
     if (input.contains("-lfile"))
     {
+        // Enable file logging.
         std::cout << "Logging to file" << "\n";
         log_to_file = 1;
     }
     if (input.contains("-conf"))
     {
+        // If alternate configuration file supplied, read it instead of default.
         config_file = input.getCmdOption("-conf");
     }
     if (!input.contains("-lstd") && !input.contains("-lfile"))
