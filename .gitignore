@@ -56,3 +56,4 @@ mbed-os
 BUILD
 mbed-os.lib
 data_*
+build
