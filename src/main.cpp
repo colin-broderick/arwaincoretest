@@ -61,7 +61,6 @@ std::string folder_date_string;
 // IMU data buffers.
 std::deque<std::array<float, 6>> imu_full_buffer;
 std::deque<std::array<float, 6>> world_imu_buffer;
-std::deque<std::array<float, 6>> imu_stepped_buffer;
 std::deque<std::array<float, 3>> vel_full_buffer;
 std::deque<std::array<float, 3>> position_buffer;
 std::deque<euler_orientation_t> euler_orientation_buffer;
@@ -78,7 +77,6 @@ int shutdown = 0;
 // Mutex locks.
 std::mutex imu_buffer_lock;
 std::mutex world_imu_buffer_lock;
-std::mutex stepped_buffer_lock;
 std::mutex vel_buffer_lock;
 std::mutex status_flag_lock;
 std::mutex position_buffer_lock;
@@ -266,28 +264,6 @@ void bmi270_reader()
         euler_file.close();
         quat_file.close();
         mag_file.close();
-    }
-}
-
-/// TODO: I think this might be unneeded. Make sure, then remove.
-/// Makes a copy of the full imu buffer after every nth time step.
-void imu_stepper()
-{
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(1000/WINDOW_SIZE * STEP_SIZE);
-    
-    while (!shutdown)
-    {
-        // Copy existing full buffer into stepped buffer
-        imu_buffer_lock.lock();
-        stepped_buffer_lock.lock();
-        imu_stepped_buffer = imu_full_buffer;
-        imu_buffer_lock.unlock();
-        stepped_buffer_lock.unlock();
-
-        // Wait until the next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
     }
 }
 
@@ -606,7 +582,6 @@ int main(int argc, char **argv)
     {
         imu_full_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
         world_imu_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
-        imu_stepped_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
     }
     for (unsigned int i = 0; i < VELOCITY_BUFFER_LEN; i++)
     {
@@ -624,7 +599,6 @@ int main(int argc, char **argv)
 
     // Start threads
     std::thread imu_full_thread(bmi270_reader);
-    std::thread imu_step_thread(imu_stepper);
     std::thread velocity_prediction(predict_velocity);
     std::thread fall_detection(run_fall_detect);
     std::thread stance_detection(run_stance_detect);
@@ -642,7 +616,6 @@ int main(int argc, char **argv)
 
     // Wait for all threads to terminate.
     imu_full_thread.join();
-    imu_step_thread.join();
     velocity_prediction.join();
     fall_detection.join();
     stance_detection.join();
