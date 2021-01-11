@@ -67,6 +67,9 @@ std::deque<euler_orientation_t> euler_orientation_buffer;
 std::deque<quat_orientation_t> quat_orientation_buffer;
 
 extern std::string stance;
+extern int horizontal;
+extern int entangled;
+extern int falling;
 int status_flags = 0;
 
 void efaroe_step(std::array<float, 3> gyro);
@@ -103,6 +106,11 @@ void std_output()
             ss << "Position:        (" << position_buffer.back()[0] << ", " << position_buffer.back()[1] << ", " << position_buffer.back()[2] << ")" << "\n";
             position_buffer_lock.unlock();
 
+            // Add stance to the string stream.
+            stance_lock.lock();
+            
+            stance_lock.unlock();
+
             // Add Euler and quaternion orientations to the string stream.
             orientation_buffer_lock.lock();
             ss << "Orientation (E): (" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << "\n";;
@@ -110,19 +118,18 @@ void std_output()
             orientation_buffer_lock.unlock();
 
             // Add stance to the string stream.
-            stance_lock.lock();
-            ss << "Stance:          " << stance << "\n";
-            stance_lock.unlock();
-
-            // TODO: Add fall/entanglement to the string stream.
-
+            std::string fall = is_falling() ? "ON" : "OFF";
+            std::string entd = is_entangled() ? "ON" : "OFF";
+            std::string ori = is_horizontal() ? "horizontal" : "vertical";
+            ss << "Stance:          " << stance << ", " <<  ori << "\n";
+            ss << "Fall flag:       " << fall << "\n";
+            ss << "Entangled flag:  " << entd << "\n";
 
             // Print the string.
-            std::cout << ss.str();
+            std::cout << ss.str() << std::endl;
 
             // Clear the stringstream.
             ss.str("");
-            ss << "\n";
 
             // Wait until next tick.
             time = time + interval;

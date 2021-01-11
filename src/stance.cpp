@@ -39,7 +39,6 @@ extern std::string config_file;
 
 std::mutex fall_lock;
 std::mutex stance_lock;
-std::chrono::_V2::system_clock::time_point last_update;
 
 std::thread fall_thread;
 std::thread stance_thread;
@@ -325,7 +324,7 @@ int run_stance_detect()
     float walking_threshold = get_config<float>(config_file, "walking_threshold");
     float active_threshold = get_config<float>(config_file, "active_threshold");
 
-    int vertical_axis = 2;
+    int vertical_axis = 1;
     int speed_axis;
 
     // File handle for logging.
