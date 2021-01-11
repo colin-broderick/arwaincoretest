@@ -239,7 +239,7 @@ void bmi270_reader()
         quat_orientation_buffer.pop_front();
         orientation_buffer_lock.unlock();
 
-        // TODO Add world-aligned IMU to its own buffer.
+        // Add world-aligned IMU to its own buffer.
         world_accel_data = world_align(accel_data, quat_data);
         world_gyro_data = world_align(gyro_data, quat_data);
         world_imu_buffer_lock.lock();
@@ -375,8 +375,6 @@ int predict_velocity()
         imu = imu_full_buffer;
         imu_buffer_lock.unlock();
 
-        // TODO World align latest IMU data; (IMU \op orientation = world-aligned-imu)
-
         // TODO: Make velocity prediction
         vel = std::array<float, 3>{0, 0, 0};
 
@@ -477,55 +475,56 @@ void alert_system()
     }
 }
 
-/// This is a template for implementing new functionality.
+/// This function is never called. It should be considered a template
+/// for implementing new threaded functionality. All existing threads
+/// follow approximately this design pattern.
 void thread_template()
 {
-    // TODO DECLARE ANY LOCAL VARIABLES OUTSIDE THE WHILE LOOP.
+    // DECLARE ANY LOCAL VARIABLES OUTSIDE THE WHILE LOOP.
     float var;
     float from_global;
 
     std::ofstream log_file;
 
-    // TODO IF LOGGING, OPEN FILE HANDLES.
+    // IF LOGGING, OPEN FILE HANDLES.
     if (log_to_file)
     {
         log_file.open(folder_date_string + "/log_file.txt");
         log_file << "# time value1" << "\n";
     }
 
-    // TODO CONFIGURE TIMING INTERVAL.
+    // CONFIGURE TIMING INTERVAL.
     auto time = std::chrono::system_clock::now();
-    // auto time = std::chrono::time_point_cast<std::chrono::milliseconds>
     std::chrono::milliseconds interval(1000);
 
-    // TODO START LOOP, RESPECTING SHUTDOWN FLAG.
+    // START LOOP, RESPECTING SHUTDOWN FLAG.
     while (!shutdown)
     {
-        // TODO GLOBAL DATA INTO LOCAL BUFFERS BEFORE USE. RESPECT MUTEX LOCKS.
+        // GLOBAL DATA INTO LOCAL BUFFERS BEFORE USE. RESPECT MUTEX LOCKS.
         position_buffer_lock.lock();
         from_global = 1.5;
         position_buffer_lock.unlock();
 
-        // TODO UPDATE LOCAL VARS.
+        // UPDATE LOCAL VARS.
         var = 3.0 + from_global;
 
-        // TODO IF LOGGING, UPDATE LOG FILE.
+        // IF LOGGING, UPDATE LOG FILE.
         if (log_to_file)
         {
             log_file << time.time_since_epoch().count() << var << "\n";
         }
 
-        // TODO ADD NEW VALUES TO GLOBAL BUFFER, RESPECTING MUTEX LOCKS.
+        // ADD NEW VALUES TO GLOBAL BUFFER, RESPECTING MUTEX LOCKS.
         position_buffer_lock.lock();
         position_buffer.push_back(std::array<float, 3>{var, 0, 0});
         position_buffer_lock.unlock();
 
-        // TODO WAIT UNTIL NEXT TIME INTERVAL.
+        // WAIT UNTIL NEXT TIME INTERVAL.
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
 
-    // TODO IF LOGGING, CLOSE FILE HANDLES.
+    // IF LOGGING, CLOSE FILE HANDLES.
     if (log_to_file)
     {
         log_file.close();
@@ -612,14 +611,6 @@ int main(int argc, char **argv)
     std::thread radio_thread(transmit_lora);
     std::thread alert_thread(alert_system);
     std::thread logging_thread(std_output);
-
-    // Spin until shutdown signal received.
-    // TODO Probably don't actually need this loop. Should just block at the first join and continue when able.
-    std::chrono::milliseconds delay(1000);
-    while (!shutdown)
-    {
-        std::this_thread::sleep_for(delay);
-    }
 
     // Wait for all threads to terminate.
     imu_full_thread.join();
