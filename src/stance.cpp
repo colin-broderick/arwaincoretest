@@ -133,8 +133,6 @@ int run_fall_detect()
 
     int count = 0;
     float struggle = 0;
-
-    // TODO Get thresholds from config file.
     
     // Open file for logging
     std::ofstream freefall_file;
@@ -218,7 +216,15 @@ int run_fall_detect()
 // Gives a measure of intensity of activity based on values of a, g, v.
 float activity(float a, float g, float v)
 {
-    // TODO
+    // TODO Need to discover a decent metric of `activity`.
+    // The metric should read high when accelerations are high,
+    // or gyroscope readings are high, or both acceleration and
+    // gyro are high. It should read low when acceleration and gyro
+    // are low.
+
+    // This metric isn't great since you can have very high acceleration with
+    // near-zero gyration, incorrectly resulting is a low activity reading.
+    // Perhaps max(acceleration, gyration, acceleration*gyration)
     return a*g;
 }
 
