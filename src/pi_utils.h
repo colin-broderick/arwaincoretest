@@ -1,11 +1,11 @@
+#ifndef PI_UTILS_H
+#define PI_UTILS_H
+
 #include <stdio.h>
 #include <string>
 #include "bmi2.h"
 #include "bmi270.h"
 #include "bmm150.h"
-
-#ifndef R_I2C_H_
-#define R_I2C_H_
 
 typedef struct vec_scaled_output
 {
@@ -28,5 +28,4 @@ int8_t bmm150_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, u
 int8_t bmm150_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
 
 
-#endif /* R_I2C_H_ */
-
+#endif

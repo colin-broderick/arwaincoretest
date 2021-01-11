@@ -16,42 +16,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef QUAT
+#ifndef QUAT_H
+#define QUAT_H
  
-    class quaternion
-    {
-        public:
-        
-        //  q = w + ix + jy + kz
-        double w, x, y, z;
+class quaternion
+{
+    public:
+    
+    //  q = w + ix + jy + kz
+    double w, x, y, z;
 
-        // constructor
-        quaternion(double real=0, double im_i=0, double im_j=0, double im_k=0);
-        
-        // useful operators
-        quaternion operator+(quaternion quat2);
-        quaternion operator-(quaternion quat2);
-        quaternion operator*(quaternion quat2);
-        quaternion operator*(double num);
-        quaternion operator/(double num);
-        quaternion operator+=(quaternion quat2);
-        quaternion operator-=(quaternion quat2);
-        quaternion operator*=(quaternion quat2);
-        quaternion operator*=(double num);
-        quaternion operator/=(double num);
-        
-        double mag(); // magnitude
-        quaternion unit(); // returns unit quaternion
-        quaternion conj(); // returns the conjugate
-        quaternion inv(); // returns the inverse
-        quaternion unit_inv(); // inverse for unit quaternion
-        
-        // access to the class' private parts
-        double getRe(); // return real component
-        double getIm_i(); // return i component
-        double getIm_j(); // return j component
-        double getIm_k(); // return k component
-    };
+    // constructor
+    quaternion(double real=0, double im_i=0, double im_j=0, double im_k=0);
+    
+    // useful operators
+    quaternion operator+(quaternion quat2);
+    quaternion operator-(quaternion quat2);
+    quaternion operator*(quaternion quat2);
+    quaternion operator*(double num);
+    quaternion operator/(double num);
+    quaternion operator+=(quaternion quat2);
+    quaternion operator-=(quaternion quat2);
+    quaternion operator*=(quaternion quat2);
+    quaternion operator*=(double num);
+    quaternion operator/=(double num);
+    
+    double mag(); // magnitude
+    quaternion unit(); // returns unit quaternion
+    quaternion conj(); // returns the conjugate
+    quaternion inv(); // returns the inverse
+    quaternion unit_inv(); // inverse for unit quaternion
+    
+    // access to the class' private parts
+    double getRe(); // return real component
+    double getIm_i(); // return i component
+    double getIm_j(); // return j component
+    double getIm_k(); // return k component
+};
  
-#define QUAT 1
 #endif
