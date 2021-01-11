@@ -1,3 +1,6 @@
+#ifndef MATH_UTIL_H
+#define MATH_UTIL_H
+
 #include <math.h>
 #include <array>
 #include "utils.h"
@@ -20,3 +23,5 @@ vec_scaled_output world_align(vec_scaled_output vec, quat_orientation_t orientat
 
 /// Rotates a pair of 3-vectors, represented as a single 6-vector, according to a quaternion orientation.
 std::array<float, 6> world_align(std::array<float, 6> imu, quat_orientation_t orientation);
+
+#endif

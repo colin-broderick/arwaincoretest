@@ -1,3 +1,6 @@
+#ifndef STANCE_H
+#define STANCE_H
+
 #include <vector>
 #include <array>
 #include <chrono>
@@ -23,3 +26,5 @@ int run_stance_detect();
 int get_stance();
 int kill();
 int start();
+
+#endif
