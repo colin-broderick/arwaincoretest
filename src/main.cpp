@@ -14,13 +14,14 @@
 #include <thread>
 #include <mutex>
 #include <fstream>
-#include <filesystem>
+#include <experimental/filesystem>
 
 #include "quaternions.h"
 #include "stance.h"
 #include "pi_utils.h"
 #include "madgwick.h"
 #include "math_util.h"
+#include "rknn_api.h"
 
 // Status codes.
 unsigned int STATUS_FALLING = 1;
@@ -577,9 +578,9 @@ int main(int argc, char **argv)
     if (log_to_file)
     {
         folder_date_string = "./data_" + datetimestring();
-        if (!std::filesystem::is_directory(folder_date_string))
+        if (!std::experimental::filesystem::is_directory(folder_date_string))
         {
-            std::filesystem::create_directory(folder_date_string);
+            std::experimental::filesystem::create_directory(folder_date_string);
         }
     }
 
