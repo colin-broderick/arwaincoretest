@@ -18,10 +18,10 @@
 
 #include "quaternions.h"
 #include "stance.h"
-#include "pi_utils.h"
+#include "imu_utils.h"
 #include "madgwick.h"
 #include "math_util.h"
-#include "rknn_api.h"
+// #include "rknn_api.h"
 
 // Status codes.
 unsigned int STATUS_FALLING = 1;
