@@ -6,7 +6,7 @@
 
 #include "bmi2.h"
 #include "bmi270.h"
-#include "pi_utils.h"
+#include "imu_utils.h"
 
 int main(int argc, char **argv)
 {

@@ -12,10 +12,8 @@
 extern "C" {
     #include <linux/i2c-dev.h>
     #include "smbus.h"
-//    #include <i2c/smbus.h>
 }		
-#include "pi_utils.h"
-#include <linux/i2c.h>
+#include "imu_utils.h"
 
 
 int file_i2c = -1;
@@ -33,7 +31,7 @@ float acc_scale, gyr_scale, mag_scale;
 int i2c_init(int addr)
 {
 	//----- OPEN THE I2C BUS -----
-	char *filename = (char*)"/dev/i2c-1";
+	char *filename = (char*)"/dev/i2c-4";
 	if ((file_i2c = open(filename, O_RDWR)) < 0)
 	{
 		//ERROR HANDLING: you can check errno to see what went wrong
@@ -93,7 +91,7 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     struct bmi2_sens_config accelerometerConfig;
     accelerometerConfig.type = BMI2_ACCEL;
     accelerometerConfig.cfg.acc.odr = BMI2_ACC_ODR_400HZ;
-    accelerometerConfig.cfg.acc.bwp = BMI2_ACC_NORMAL_AVG4;
+    accelerometerConfig.cfg.acc.bwp = BMI2_ACC_OSR2_AVG2;
     accelerometerConfig.cfg.acc.filter_perf = 0;
     accelerometerConfig.cfg.acc.range = BMI2_ACC_RANGE_16G;
     bmi2_set_sensor_config(&accelerometerConfig, 1, &bmi270);
