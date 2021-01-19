@@ -384,6 +384,8 @@ int rknn_outputs_get(rknn_context context, uint32_t n_outputs, rknn_output outpu
 */
 int rknn_outputs_release(rknn_context context, uint32_t n_ouputs, rknn_output outputs[]);
 
+int rknn(char *argv[]);
+
 #ifdef __cplusplus
 } //extern "C"
 #endif

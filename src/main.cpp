@@ -345,6 +345,7 @@ int transmit_lora()
 int predict_velocity()
 {
     // TODO: Set up NPU and feed in model.
+    // TODO: Merge the inference code into this function. Will need further abstraction.
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
