@@ -4,6 +4,7 @@
 #include <fstream>
 #include <array>
 #include <string>
+#include <chrono>
 
 namespace arwain {
 
@@ -25,8 +26,6 @@ class BinLog
 {
     private:
         std::string location;
-        unsigned int buf_len;
-        // float buf[10];
         std::ofstream handle;
         int filemode = arwain::read;
         long long seek = 0;
@@ -36,8 +35,10 @@ class BinLog
         BinLog(std::string filename, int filetype);
         
         // Operators
-        void operator<<(std::array<float, 3> vals);
-        void operator<<(unsigned long long val);
+        arwain::BinLog & operator<<(std::array<float, 3> vals);
+        arwain::BinLog & operator<<(unsigned long long val);
+        arwain::BinLog & operator<<(int val);
+        arwain::BinLog & operator<<(std::chrono::_V2::system_clock::time_point time);
         
         // File IO/control functions.
         int close();
@@ -46,6 +47,6 @@ class BinLog
         long long getFileSize();
 };
 
-} // end of namespace arwain
+} // End of namespace arwain.
 
 #endif
