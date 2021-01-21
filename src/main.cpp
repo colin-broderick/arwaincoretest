@@ -513,6 +513,8 @@ void thread_template()
         // IF LOGGING, UPDATE LOG FILE.
         if (log_to_file)
         {
+            // If using arwain binary logging (under development) just do
+            // log_file << time << data_array;
             log_file << time.time_since_epoch().count() << var << "\n";
         }
 
@@ -622,4 +624,6 @@ int main(int argc, char **argv)
     radio_thread.join();
     alert_thread.join();
     logging_thread.join();
+
+    return 1;
 }

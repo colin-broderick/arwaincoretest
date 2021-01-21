@@ -1,3 +1,38 @@
+/*
+WIP
+
+Binary data logger for the ARWAIN project.
+
+The logger is designed to
+* Produce smaller log files by writing binary data rather than strings
+* Be more performant at write time by bypassing the need for things like
+  string conversions as much as possible.
+
+A side effect is that the data can not be read without the associated reader
+and/or knowledge of the file schemas.
+
+No attention has been paid to read time as it is not considered performance-
+sensitive. I would expect it to be faster since there will still be no string
+work, but it might be slower, and I don't intend to check.
+
+Example:
+  An acceleration file is formatted as such:
+    The first 20 bytes are a standard set of bytes identifying this file as
+    an accelerometer log file, implying the following schema:
+    Each subsequent block of 20 bytes is a unique record;
+
+      bytes   | data
+    ----------|---------------------------
+      0-7     | timestamp as a long long
+      8-11    | acceleration x as a float
+      12-15   | acceleration y as a float
+      16-19   | acceleration z as a float
+
+Files that are flushed and closed correctly will end with an identifying sequence.
+The reader should be able to handle a file without the ending sequence, but will
+not be expected to handle a file without the starting sequence.
+*/
+
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
@@ -5,16 +40,24 @@
 #include "bin_log.h"
 
 // Example for dev/test
-// int main()
-// {
-//     read("data.bin");
-//     arwain::BinLog log1("data.bin", arwain::accelwrite);
-//     std::array<float, 3> data{4.1, 5, 6};
-//     read("data.bin");
-//     log1 << data;
-//     log1.close();
-//     std::cout << log1.getFileSize() << std::endl;
-// }
+int main2()
+{
+    arwain::BinLog log1("data.bin", arwain::accelwrite);
+    std::array<float, 3> data1{4.1, 5, 6};
+    unsigned long long data2 = 5;
+    auto time = std::chrono::system_clock::now();
+    // write float array
+    log1 << data1;
+    //write long long
+    log1 << data2;
+    //write time
+    log1 << time;
+    //write all
+    log1 << data1 << data2 << time;
+    log1.close();
+    std::cout << log1.getFileSize() << std::endl;
+    return 1;
+}
 
 // Constructor creates/opens the file ready for writing.
 arwain::BinLog::BinLog(std::string filename, int filetype)
@@ -23,7 +66,6 @@ arwain::BinLog::BinLog(std::string filename, int filetype)
     {
         filemode = arwain::write;
         location = filename;
-        buf_len = 3 * sizeof(float);
         handle.open(location, std::ofstream::out|std::ofstream::app|std::ofstream::binary);
     }
     else
@@ -34,7 +76,7 @@ arwain::BinLog::BinLog(std::string filename, int filetype)
 }
 
 // Send an array of three floats, e.g. accel data, to the log file.
-void arwain::BinLog::operator<<(std::array<float, 3> vals)
+arwain::BinLog & arwain::BinLog::operator<<(std::array<float, 3> vals)
 {
     float buf[3];
     for (unsigned int i = 0; i < vals.size(); i++)
@@ -42,14 +84,32 @@ void arwain::BinLog::operator<<(std::array<float, 3> vals)
         buf[i] = vals[i];
     }
     handle.write((char*)buf, vals.size()*sizeof(float));
+    return *this;
 }
 
 // Send a long long (i.e. timestamp) to the file.
-void arwain::BinLog::operator<<(unsigned long long val)
+arwain::BinLog & arwain::BinLog::operator<<(unsigned long long val)
 {
     // TODO This feels hacky.
     unsigned long long buf[1] = {val};
     handle.write((char*)buf, sizeof(unsigned long long));
+    return *this;
+}
+
+// Send an int to the file.
+arwain::BinLog & arwain::BinLog::operator<<(int val)
+{
+    // TODO This feels hacky.
+    int buf[1] = {val};
+    handle.write((char*)buf, sizeof(int));
+    return *this;
+}
+
+arwain::BinLog & arwain::BinLog::operator<<(std::chrono::_V2::system_clock::time_point time)
+{
+    std::chrono::milliseconds::rep buf[1] = {time.time_since_epoch().count()};
+    handle.write((char*)buf, sizeof(std::chrono::milliseconds::rep));
+    return *this;
 }
 
 // Flush and close the file handle. No further writing will be possible.
