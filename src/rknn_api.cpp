@@ -112,7 +112,8 @@ int rknn(char *argv[])
         // TODO Get next data sample
 
 
-        // Set input data TODO: Lots to check here
+        // Set input data
+        // TODO: Lots to check here
         rknn_input inputs[1];
         memset(inputs, 0, sizeof(inputs));
         inputs[0].index = 0;
@@ -162,8 +163,7 @@ int rknn(char *argv[])
     }
     /////////////////////////// END LOOP //////////////////////////////////////////
 
-    // Release
-    // TODO: Not sure what's happening here
+    // Release only after inference is complete.
     if (ctx >= 0)
     {
         rknn_destroy(ctx);

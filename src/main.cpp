@@ -21,7 +21,7 @@
 #include "imu_utils.h"
 #include "madgwick.h"
 #include "math_util.h"
-// #include "rknn_api.h"
+#include "rknn_api.h"
 
 // Status codes.
 unsigned int STATUS_FALLING = 1;
@@ -426,7 +426,7 @@ void sigint_handler(int signal)
     shutdown = 1;
 }
 
-/// TODO This might be unnecessary; since the stuff it's setting up only matter to the LoRa thread,
+/// TODO This might be unnecessary; since the stuff it's setting up only matters to the LoRa thread,
 /// it may as well be done there.
 void alert_system()
 {
