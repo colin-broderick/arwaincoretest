@@ -122,9 +122,9 @@ int run_fall_detect()
     float v_mean_magnitude;
 
     // Read thresholds and constants from config file.
-    float a_threshold = get_config<float>(config_file, "a_threshold");
-    float struggle_threshold = get_config<float>(config_file, "struggle_threshold");
-    float gravity = get_config<float>(config_file, "gravity");
+    float a_threshold = arwain::get_config<float>(config_file, "a_threshold");
+    float struggle_threshold = arwain::get_config<float>(config_file, "struggle_threshold");
+    float gravity = arwain::get_config<float>(config_file, "gravity");
 
     float a_twitch;
     float tmp_struggle;
@@ -324,11 +324,11 @@ int run_stance_detect()
     float act;
 
     // Read thresholds and constants from config file.
-    float climbing_threshold = get_config<float>(config_file, "climbing_threshold");
-    float crawling_threshold = get_config<float>(config_file, "crawling_threshold");
-    float running_threshold = get_config<float>(config_file, "running_threshold");
-    float walking_threshold = get_config<float>(config_file, "walking_threshold");
-    float active_threshold = get_config<float>(config_file, "active_threshold");
+    float climbing_threshold = arwain::get_config<float>(config_file, "climbing_threshold");
+    float crawling_threshold = arwain::get_config<float>(config_file, "crawling_threshold");
+    float running_threshold = arwain::get_config<float>(config_file, "running_threshold");
+    float walking_threshold = arwain::get_config<float>(config_file, "walking_threshold");
+    float active_threshold = arwain::get_config<float>(config_file, "active_threshold");
 
     int vertical_axis = 1;
     int speed_axis;
