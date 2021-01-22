@@ -22,6 +22,7 @@
 #include "madgwick.h"
 #include "math_util.h"
 #include "rknn_api.h"
+#include "input_parser.h"
 
 // Status codes.
 unsigned int STATUS_FALLING = 1;
@@ -542,7 +543,7 @@ int main(int argc, char **argv)
     std::signal(SIGINT, sigint_handler);
 
     // Determine logging behaviour from command line arguments.
-    InputParser input(argc, argv);
+    arwain::InputParser input(argc, argv);
     if (input.contains("-h") || input.contains("-help"))
     {
         // Output help text.
