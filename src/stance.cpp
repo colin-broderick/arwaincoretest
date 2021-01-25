@@ -43,12 +43,6 @@ std::mutex stance_lock;
 std::thread fall_thread;
 std::thread stance_thread;
 
-// Get current time.
-std::chrono::_V2::system_clock::time_point now()
-{
-    return std::chrono::system_clock::now();
-}
-
 // Check if falling flag set.
 int is_falling()
 {

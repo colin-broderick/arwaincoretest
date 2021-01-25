@@ -23,6 +23,7 @@
 #include "math_util.h"
 #include "rknn_api.h"
 #include "input_parser.h"
+#include "bin_log.h"
 
 // Status codes.
 unsigned int STATUS_FALLING = 1;
@@ -85,8 +86,8 @@ std::mutex world_imu_buffer_lock;
 std::mutex vel_buffer_lock;
 std::mutex status_flag_lock;
 std::mutex position_buffer_lock;
-extern std::mutex stance_lock;
 std::mutex orientation_buffer_lock;
+extern std::mutex stance_lock;
 
 
 void std_output()
@@ -342,6 +343,36 @@ int transmit_lora()
     return 1;
 }
 
+// Overload array operator*.
+template <class T, class U>
+T operator*(const T& a1, U scalar)
+{
+  T a;
+  for (typename T::size_type i = 0; i < a1.size(); i++)
+    a[i] = a1[i]*scalar;
+  return a;
+}
+
+// Overload array operator-.
+template <class T>
+T operator-(const T& a1, const T& a2)
+{
+  T a;
+  for (typename T::size_type i = 0; i < a1.size(); i++)
+    a[i] = a1[i] - a2[i];
+  return a;
+}
+
+// Overload array operator+.
+template <class T>
+T operator+(const T& a1, const T& a2)
+{
+  T a;
+  for (typename T::size_type i = 0; i < a1.size(); i++)
+    a[i] = a1[i] + a2[i];
+  return a;
+}
+
 /// Sets up and runs velocity prediction using the NPU. Run as a thread.
 int predict_velocity()
 {
@@ -352,15 +383,28 @@ int predict_velocity()
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
 
-    std::array<float, 3> vel;
+    // TEST Get the filter weight parameter(s) from the config file.
+    float npu_weight = arwain::get_config<float>(config_file, "npu_vel_weight_confidence");
+
+    // Initialize buffers to contain working values.
+    std::array<float, 3> vel;                    // The sum of npu_vel and imu_vel_delta.
+    std::array<float, 3> npu_vel;                // To hold the neural network prediction of velocity.
+    std::array<float, 3> vel_previous;           // Contains the velocity calculation from the previous loop.
+    std::array<float, 3> npu_vel_delta;          // Stores the difference between the npu velocity prediction and vel_previous.
+    std::array<float, 3> imu_vel_delta;          // To integrate the velocity based on IMU readings.
     std::array<float, 3> pos;
-    std::deque<std::array<float, 6>> imu;
+    std::deque<std::array<float, 6>> imu;        // To contain the last second of IMU data.
+    std::deque<std::array<float, 6>> imu_latest; // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
 
     // File handles for logging.
     std::ofstream position_file;
     std::ofstream velocity_file;
 
+    // Time in seconds between inferences.
     float interval_seconds = (float)VELOCITY_PREDICTION_INTERVAL/1000.0;
+
+    // TEST How far back to look in the IMU buffer for integration.
+    int backtrack = (int)((1000/IMU_READING_INTERVAL)*interval_seconds);
 
     // Open files for logging.
     if (log_to_file)
@@ -379,13 +423,37 @@ int predict_velocity()
         imu_buffer_lock.unlock();
 
         // TODO: Make velocity prediction
-        vel = std::array<float, 3>{0, 0, 0};
+        npu_vel = std::array<float, 3>{0, 0, 0};
+        
+        // TEST Find the change in velocity from the last period, as predicted by the npu.
+        npu_vel_delta = npu_vel - vel_previous;
 
-        // Add velocity to buffer.
+        // TEST Get last interval worth of IMU data.
+        imu_latest = {imu.end() - backtrack, imu.end()};
+
+        // TEST Single integrate the small IMU slice to get delta-v over the period.
+        imu_vel_delta = {0, 0, 0};
+        for (unsigned int i = 0; i < imu_latest.size(); i++)
+        {
+            for (unsigned int j = 0; j < 3; j++)
+            {
+                // TODO Check the offset of +3; if acc comes first this should be zero.
+                imu_vel_delta[j] = imu_vel_delta[j] + imu_latest[i][j+3]*IMU_READING_INTERVAL;
+            }
+        }
+
+        // TEST Weighted combination of velocity deltas from NPU and IMU integration.
+        vel = npu_vel_delta*npu_weight + imu_vel_delta*(1-npu_weight);
+
+        // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
+        vel = vel + vel_previous;
         vel_buffer_lock.lock();
         vel_full_buffer.push_back(vel);
         vel_full_buffer.pop_front();
         vel_buffer_lock.unlock();
+
+        // TEST Store the velocity for use in the next loop (saves having to access the buffer for a single element).
+        vel_previous = vel;
 
         // Iterate velocity onto position to get new position.
         pos[0] = pos[0] + interval_seconds * vel[0];
@@ -487,6 +555,9 @@ void thread_template()
     float var;
     float from_global;
 
+    // IF LOGGING, CREATE FILE HANDLE
+    // If using arwain binary logging (under development) just do
+    // arwain::BinLog log_file("file_name.txt", arwain::accelwrite)
     std::ofstream log_file;
 
     // IF LOGGING, OPEN FILE HANDLES.

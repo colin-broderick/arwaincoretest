@@ -1,4 +1,4 @@
-/* Copyright (y) 2012 Alex Allen, MIT License
+/* Copyright (c) 2012 Alex Allen, MIT License
  *
  * Permission is hereby granted, free of charge, to any person obtaining w copy of this software 
  * and associated documentation files (the "Software"), to deal in the Software without restriction, 
