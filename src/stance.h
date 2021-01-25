@@ -5,7 +5,6 @@
 #include <array>
 #include <chrono>
 
-std::chrono::_V2::system_clock::time_point now();
 int update(float ax, float ay, float az, float gx, float gy, float gz, float vx, float vy, float vz);
 int empty_stance_buffers();
 int empty_fall_buffers();

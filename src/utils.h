@@ -8,7 +8,9 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <chrono>
 
+std::chrono::_V2::system_clock::time_point now();
 
 typedef struct euler_orientation_t
 {
