@@ -42,8 +42,6 @@ class BinLog
         
         // File IO/control functions.
         int close();
-        int readLine();
-        int read();
         long long getFileSize();
 };
 

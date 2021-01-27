@@ -137,19 +137,3 @@ long long arwain::BinLog::getFileSize()
     }
     return ret;
 }
-
-// TODO: Read the entire file into some data structure.
-int arwain::BinLog::read()
-{
-    return 1;
-}
-
-// TODO: Read one line of the file and advance seek to the next line.
-int arwain::BinLog::readLine()
-{
-    if (seek < getFileSize())
-    {
-
-    }
-    return 1;
-}
