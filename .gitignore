@@ -57,3 +57,4 @@ BUILD
 mbed-os.lib
 data_*
 build
+.vscode/

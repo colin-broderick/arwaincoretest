@@ -373,6 +373,19 @@ T operator+(const T& a1, const T& a2)
   return a;
 }
 
+std::array<float, 3> integrate(std::deque<std::array<float, 6>> data, unsigned int dt, unsigned int offset = 0)
+{
+    std::array<float, 3> integrated_data = {0, 0, 0};
+    for (unsigned int i = 0; i < data.size(); i++)
+    {
+        for (unsigned int j; j < 3; j++)
+        {
+            integrated_data[j] = integrated_data[j] + data[i][j + offset] * dt;
+        }
+    }
+    return integrated_data;
+}
+
 /// Sets up and runs velocity prediction using the NPU. Run as a thread.
 int predict_velocity()
 {
@@ -432,15 +445,7 @@ int predict_velocity()
         imu_latest = {imu.end() - backtrack, imu.end()};
 
         // TEST Single integrate the small IMU slice to get delta-v over the period.
-        imu_vel_delta = {0, 0, 0};
-        for (unsigned int i = 0; i < imu_latest.size(); i++)
-        {
-            for (unsigned int j = 0; j < 3; j++)
-            {
-                // TODO Check the offset of +3; if acc comes first this should be zero.
-                imu_vel_delta[j] = imu_vel_delta[j] + imu_latest[i][j+3]*IMU_READING_INTERVAL;
-            }
-        }
+        imu_vel_delta = integrate(imu_latest, interval_seconds);
 
         // TEST Weighted combination of velocity deltas from NPU and IMU integration.
         vel = npu_vel_delta*npu_weight + imu_vel_delta*(1-npu_weight);
@@ -488,7 +493,7 @@ int predict_velocity()
     return 1;
 }
 
-/// Captures keyboard interrupt. Waits for threads to end then program exits.
+/// Captures keyboard interrupt to set shutdown flag.
 void sigint_handler(int signal)
 {
     std::cout << "\nReceived SIGINT - closing\n" << "\n";
