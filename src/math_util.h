@@ -8,7 +8,23 @@
 #include "quaternions.h"
 
 /// Computes the cross product of two 3-vectors. The result is a new 3-vector.
-std::array<double, 3> cross(std::array<double, 3> v1, std::array<double, 3> v2);
+template <class T>
+T cross(T v1, T v2)
+{
+    /*
+    Computes the cross product using determinant formula:
+
+    a x b = |  i   j   k | = i(a1a1 - b1a2) + j(a0b2 - b0a2) + k(a0b1 - b0a1)
+            | a0  a1  a2 |
+            | b0  b1  b2 |
+
+    */
+    T res;
+    res[0] = v1[1] * v2[2] - v2[1] * v1[2];
+    res[1] = v1[0] * v2[2] - v2[0] * v1[2];
+    res[2] = v1[0] * v2[1] - v2[0] * v1[1];
+    return res;
+}
 
 /// Computes the L2 norm of a 3-vector as a double.
 double norm(std::array<float, 3> arr);
