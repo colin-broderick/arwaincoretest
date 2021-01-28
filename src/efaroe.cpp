@@ -3,20 +3,20 @@
 
 eFaroe::eFaroe(quaternion initial_quaternion, std::array<double, 3> gyro_bias, double gyro_error, int use_mag)
 {
-    gyro_bias = {0, 0, 0};
+    gyro_bias = gyro_bias;
     gyro_error = 0.05;
-    uk_dip = -67*3.14159265/180.0;
+    uk_dip = -67.0*3.14159265/180.0;
     emf = {cos(uk_dip), sin(uk_dip)};
-    zeta = sqrt(3) * 0.01;
+    zeta = sqrt(3) * 1e-2;
     last_read = 0;
     use_mag = use_mag;
     
-    if (initial_quaternion == quaternion{1, 0, 0, 0})
+    if (initial_quaternion == quaternion{0, 0, 0, 0})
     {
         q = {1, 0, 0, 0};
         gyro_error = 100;
-        true_error = gyro_error;
-        beta = sqrt(3) * gyro_error;
+        true_error = 100;
+        beta = sqrt(3) * 100;
         conv_count = 100;
     }
     else
@@ -29,10 +29,19 @@ eFaroe::eFaroe(quaternion initial_quaternion, std::array<double, 3> gyro_bias, d
     }
 }
 
-void eFaroe::update(unsigned long timestamp, double ax, double ay, double az, double gx, double gy, double gz)
+/** \brief Update the internal state of the orientation filter by supplying acceleratometer and gyroscope values.
+ *
+ *  \param timestamp Timestamp of the supplied data in nanoseconds.
+ *  \param ax x-axis accelerometer value in m/s2
+ *  \param ay y-axis accelerometer value in m/s2
+ *  \param az x-axis accelerometer value in m/s2
+ *  \param gx x-axis gyroscope value in rad/s
+ *  \param gy y-axis gyroscope value in rad/s
+ *  \param gz z-axis gyroscope value in rad/s
+ *  \return Nothing; updates internal state.
+ */
+void eFaroe::update(double timestamp, double ax, double ay, double az, double gx, double gy, double gz)
 {
-    double dt;
-
     if (conv_count > 0)
     {
         conv_count--;
@@ -50,17 +59,17 @@ void eFaroe::update(unsigned long timestamp, double ax, double ay, double az, do
     if (last_read == 0)
     {
         // Confirm timestamp has usable type/value
-        last_read = timestamp;
+        last_read = timestamp/1e9;
         return;
     }
     else
     {
-        dt = timestamp - last_read;
+        dt = timestamp/1e9 - last_read;
         if (dt > 1)
         {
             dt = 1;
         }
-        last_read = timestamp;
+        last_read = timestamp/1e9;
     }
     
     // Normalize acceleration.
@@ -71,9 +80,9 @@ void eFaroe::update(unsigned long timestamp, double ax, double ay, double az, do
     
     // Construct Jacobian.
     std::array<double, 3> jac_a{
-        q.x*2.0*q.z - q.w*2.0*q.y,
-        q.w*2.0*q.x + q.y*2.0*q.z,
-        1.0 - 2.0*q.x*q.x - 2.0*q.y*q.y
+        q.x*2*q.z - q.w*2*q.y,
+        q.w*2*q.x + q.y*2*q.z,
+        1 - 2*q.x*q.x - 2*q.y*q.y
     };
 
     // Calculate gradient.
@@ -105,15 +114,10 @@ void eFaroe::update(unsigned long timestamp, double ax, double ay, double az, do
     quaternion qav{0, a_v[0], a_v[1], a_v[2]};
 
     // Calculate delta orientation quaternion.
-    quaternion dq{
-        0.5*q.w*qav.w,
-        0.5*q.x*qav.x,
-        0.5*q.y*qav.y,
-        0.5*q.z*qav.z
-    };
-    
-    dq = q*qav*0.5;
+    quaternion dq = q*qav*0.5;
     q = (q + dq).unit();
+
+    computed_angles = 0;
 }
 
 double eFaroe::getW()
@@ -138,17 +142,29 @@ double eFaroe::getZ()
 
 double eFaroe::getPitch()
 {
-    return pitch;
+    if (!computed_angles)
+    {
+        computeAngles();
+    }
+    return pitch * degrees_per_radian;
 }
 
 double eFaroe::getYaw()
 {
-    return yaw;
+    if (!computed_angles)
+    {
+        computeAngles();
+    }
+    return yaw * degrees_per_radian + 180.0;
 }
 
 double eFaroe::getRoll()
 {
-    return roll;
+    if (!computed_angles)
+    {
+        computeAngles();
+    }
+    return roll * degrees_per_radian;
 }
 
 quaternion eFaroe::getQuat()
@@ -156,10 +172,18 @@ quaternion eFaroe::getQuat()
     return q;
 }
 
-std::array<double, 3> eFaroe::getEuler()
+void eFaroe::computeAngles()
 {
     roll = atan2f(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y);
     pitch = asinf(-2.0f * (q.x*q.z - q.w*q.y));
     yaw = atan2f(q.x*q.y + q.w*q.z, 0.5f - q.y*q.y - q.z*q.z);
-    return std::array<double, 3>{pitch, yaw, roll};
+}
+
+std::array<double, 3> eFaroe::getEuler()
+{
+    if (!computed_angles)
+    {
+        computeAngles();
+    }
+    return std::array<double, 3>{roll, pitch, yaw};
 }
