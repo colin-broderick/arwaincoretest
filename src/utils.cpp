@@ -1,8 +1,14 @@
 #include <sstream>
+#include <thread>
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
+
 #include "utils.h"
+#include "imu_utils.h"
+
+extern int shutdown;
 
 // Get current time.
 std::chrono::_V2::system_clock::time_point now()
@@ -75,4 +81,36 @@ std::string datetimestring()
     }
 
     return ss.str();
+}
+
+void test_imu()
+{
+    // Initialize the IMU.
+    std::string path = "../calib.txt";
+    if (init_bmi270(0, path) != 0)
+    {
+        printf("Node failed to start\n");
+        exit(1);
+    }
+
+    // Local buffers for IMU data
+    vec_scaled_output accel_data;
+    vec_scaled_output gyro_data;
+
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(5);
+
+    while (!shutdown)
+    {
+        get_bmi270_data(&accel_data, &gyro_data);
+
+        // Display IMU data.
+        std::cout << time.time_since_epoch().count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";
+
+        // Wait until the next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+
+    }
 }

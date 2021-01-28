@@ -633,10 +633,16 @@ int main(int argc, char **argv)
         std::cout << "  -lstd        Log friendly output to stdout\n";
         std::cout << "  -lfile       Record sensor data to file - files are stored in ./data_<datetime>\n";
         std::cout << "  -conf        Specify alternate configuration file\n";
+        std::cout << "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n";
         std::cout << "  -h           Show this help text\n";
         std::cout << "\n";
 
         exit(1);
+    }
+    if (input.contains("-testimu"))
+    {
+        test_imu();
+        return 1;
     }
     if (input.contains("-lstd"))
     {

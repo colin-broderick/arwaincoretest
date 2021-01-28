@@ -74,4 +74,6 @@ T get_config(std::string filename, std::string option)
 }
 } /* end namespace arwain */
 
+void test_imu();
+
 #endif

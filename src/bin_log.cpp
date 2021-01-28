@@ -39,8 +39,10 @@ not be expected to handle a file without the starting sequence.
 
 #include "bin_log.h"
 
-// Example for dev/test
-int main2()
+/** \brief An example BinLog file is created and written, for testing purposes.
+ * \return 1 for success.
+ */
+int example()
 {
     arwain::BinLog log1("data.bin", arwain::accelwrite);
     std::array<float, 3> data1{4.1, 5, 6};
@@ -59,7 +61,10 @@ int main2()
     return 1;
 }
 
-// Constructor creates/opens the file ready for writing.
+/** \brief Constructor creates/opens the file ready for writing.
+ * \param filename Location of file to record into. Will be appended without checks if it already exists.
+ * \param filetype The revelant filetype from the arwain::filetypes enum.
+ */
 arwain::BinLog::BinLog(std::string filename, int filetype)
 {
     if (filetype == arwain::accelwrite || filetype == arwain::gyrowrite || filetype == arwain::magwrite)
