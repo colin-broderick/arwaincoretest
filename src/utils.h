@@ -19,14 +19,6 @@ typedef struct euler_orientation_t
     float yaw;
 } euler_orientation_t;
 
-typedef struct quat_orientation_t
-{
-    float w;
-    float x;
-    float y;
-    float z;
-} quat_orientation_t;
-
 typedef struct velocity_t
 {
     float x;
