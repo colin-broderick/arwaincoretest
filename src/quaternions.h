@@ -18,7 +18,10 @@
 
 #ifndef QUAT_H
 #define QUAT_H
- 
+
+#include <math.h>
+
+
 class quaternion
 {
     public:

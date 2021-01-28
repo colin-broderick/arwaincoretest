@@ -17,7 +17,6 @@
  */
  
 #include "quaternions.h"
-#include <math.h>
 
 /** \brief Quaternion constructor. We always use the (w, x, y, z) convention, never (x, y, z, w).
  * \param real The real (w) component of the quaternion.
