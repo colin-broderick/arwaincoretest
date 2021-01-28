@@ -1,6 +1,13 @@
 #include "efaroe.h"
 
 
+/** \brief Constructor for eFaroe class.
+ * eFaroe is an orientation filter which uses acceleration and angular velocity measurements from accelerometer and gyroscope to attempt to track current orientation.
+ * \param initial_quaternion The known initial orientation as a quaternion. Use {1, 0, 0, 0} if unknown.
+ * \param gyro_bias The known constant bias in the gyroscope. Use zeroes if unknown.
+ * \param gyro_error TODO not sure what this is for.
+ * \param use_mag Whether to use magnetometer data for the orientation filter. TODO Not yet implemented so should always be zero.
+ */
 eFaroe::eFaroe(quaternion initial_quaternion, std::array<double, 3> gyro_bias, double gyro_error, int use_mag)
 {
     gyro_bias = gyro_bias;
@@ -30,7 +37,6 @@ eFaroe::eFaroe(quaternion initial_quaternion, std::array<double, 3> gyro_bias, d
 }
 
 /** \brief Update the internal state of the orientation filter by supplying acceleratometer and gyroscope values.
- *
  *  \param timestamp Timestamp of the supplied data in nanoseconds.
  *  \param ax x-axis accelerometer value in m/s2
  *  \param ay y-axis accelerometer value in m/s2
@@ -120,26 +126,41 @@ void eFaroe::update(double timestamp, double ax, double ay, double az, double gx
     computed_angles = 0;
 }
 
+/** \brief Get the real component of the orientation quaternion.
+ * \return Real quaternion component.
+ */
 double eFaroe::getW()
 {
     return q.w;
 }
 
+/** \brief Get the i/x component of the orientation quaternion.
+ * \return i/x component of the orientation quaternion.
+ */
 double eFaroe::getX()
 {
     return q.x;
 }
 
+/** \brief Get the j/y component of the orientation quaternion.
+ * \return j/y component of the orientation quaternion.
+ */
 double eFaroe::getY()
 {
     return q.y;
 }
 
+/** \brief Get the k/z component of the orientation quaternion.
+ * \return k/z component of the orientation quaternion.
+ */
 double eFaroe::getZ()
 {
     return q.z;
 }
 
+/** \brief Get the pitch Euler angle.
+ * \return Pitch Euler angle.
+ */
 double eFaroe::getPitch()
 {
     if (!computed_angles)
@@ -149,6 +170,9 @@ double eFaroe::getPitch()
     return pitch * degrees_per_radian;
 }
 
+/** \brief Get the yaw Euler angle.
+ * \return Yaw Euler angle.
+ */
 double eFaroe::getYaw()
 {
     if (!computed_angles)
@@ -158,6 +182,9 @@ double eFaroe::getYaw()
     return yaw * degrees_per_radian + 180.0;
 }
 
+/** \brief Get the roll Euler angle.
+ * \return Roll Euler angle.
+ */
 double eFaroe::getRoll()
 {
     if (!computed_angles)
@@ -167,11 +194,18 @@ double eFaroe::getRoll()
     return roll * degrees_per_radian;
 }
 
+/** \brief Get the full orientation quaternion.
+ * \return Full orientation quaternion.
+ */
 quaternion eFaroe::getQuat()
 {
     return q;
 }
 
+/** \brief Update internally stored Euler angles in degrees.
+ * For performance reasons these angles are only updated when they are requested.
+ * \return Nothing; updates internal state.
+ */
 void eFaroe::computeAngles()
 {
     roll = atan2f(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y);
@@ -179,6 +213,10 @@ void eFaroe::computeAngles()
     yaw = atan2f(q.x*q.y + q.w*q.z, 0.5f - q.y*q.y - q.z*q.z);
 }
 
+/** \brief Retrieve the orientation in the Euler angle representation.
+ * If the internally stored angles are not up to date, they will be updated before returning..
+ * \return Euler angles in degrees, in the order roll, pitch, yaw.
+ */
 std::array<double, 3> eFaroe::getEuler()
 {
     if (!computed_angles)

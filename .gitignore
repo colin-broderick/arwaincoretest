@@ -58,3 +58,5 @@ mbed-os.lib
 data_*
 build
 .vscode/
+html/
+latex/

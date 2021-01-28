@@ -18,7 +18,13 @@
  
 #include "quaternions.h"
 #include <math.h>
- 
+
+/** \brief Quaternion constructor. We always use the (w, x, y, z) convention, never (x, y, z, w).
+ * \param real The real (w) component of the quaternion.
+ * \param im_i The i imaginary component of the quaternion.
+ * \param im_j The j imaginary component of the quaternion.
+ * \param im_k The k imaginary component of the quaternion.
+ */
 quaternion::quaternion(double real, double im_i, double im_j, double im_k)
 {
     w = real;
@@ -26,7 +32,17 @@ quaternion::quaternion(double real, double im_i, double im_j, double im_k)
     y = im_j;
     z = im_k;
 }
- 
+
+/** \brief Add two quaternions.
+ * Quaternions are added element-wise as
+ * \f$ w = w_1 + w_2 \f$,
+ * \f$x = x_1 + x_2\f$,
+ * \f$y = y_1 + y_2\f$,
+ * \f$z = z_1 + z_2\f$.
+ * Quaternion addition is associative and commutative.
+ * \param quat2 The quaternion to be added.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator+(quaternion quat2)
 {
     quaternion temp;
@@ -38,7 +54,11 @@ quaternion quaternion::operator+(quaternion quat2)
     
     return temp;
 }
- 
+
+/** \brief See quaternion addition.
+ * \param quat2 A quaternion to subtract.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator-(quaternion quat2)
 {
     quaternion temp;
@@ -50,7 +70,12 @@ quaternion quaternion::operator-(quaternion quat2)
     
     return temp;
 }
- 
+
+/** \brief Quaternions follow a special multiplication rule.
+ * TODO Fill in the full description of quaternion multiplication.
+ * \param quat2 Another quaternion by which to multiply.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator*(quaternion quat2)
 {
     quaternion temp;
@@ -63,8 +88,11 @@ quaternion quaternion::operator*(quaternion quat2)
     
     return temp;
 }
- 
- 
+
+/** \brief Scalar multiplication of quaternions is done element-wise.
+ * \param num Scalar by which to multiply the quaternion.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator*(double num)
 {
     quaternion temp;
@@ -76,7 +104,11 @@ quaternion quaternion::operator*(double num)
     
     return temp;
 }
- 
+
+/** \brief Division by a scalar is done element-wise.
+ * \param num Scalar by which to divide the quaternion.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator/(double num)
 {
     quaternion temp;
@@ -88,7 +120,10 @@ quaternion quaternion::operator/(double num)
     
     return temp;
 }
- 
+
+/** \brief See quaternion addition.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator+=(quaternion quat2)
 {
     quaternion temp;
@@ -100,7 +135,10 @@ quaternion quaternion::operator+=(quaternion quat2)
     
     return temp;
 }
- 
+
+/** \brief See quaternion subtraction.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator-=(quaternion quat2)
 {
     quaternion temp;
@@ -112,7 +150,10 @@ quaternion quaternion::operator-=(quaternion quat2)
     
     return temp;
 }
- 
+
+/** \brief See quaternion multiplication.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator*=(quaternion quat2)
 {
     quaternion temp;
@@ -126,6 +167,9 @@ quaternion quaternion::operator*=(quaternion quat2)
     return temp;
 }
  
+/** \brief See quaternion scalar multiplication.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator*=(double num)
 {
     quaternion temp;
@@ -137,7 +181,10 @@ quaternion quaternion::operator*=(double num)
     
     return temp;
 }
- 
+
+/** \brief See quaternion scalar division.
+ * \return A new quaternion.
+ */
 quaternion quaternion::operator/=(double num)
 {
     quaternion temp;
@@ -150,6 +197,10 @@ quaternion quaternion::operator/=(double num)
     return temp;
 }
 
+/** \brief Compares quaternions for equality.
+ * Two quaternions are considered equivalent if all corresponding elements are equal.
+ * \return 0 for inequality, 1 for equality.
+ */
 int quaternion::operator==(quaternion q2)
 {
     int ret = 1;
@@ -171,12 +222,19 @@ int quaternion::operator==(quaternion q2)
     }
     return ret;
 }
-      
+
+/** \brief The L2 norm of the quaternion as an array.
+ * \return Scalar value representing the L2 norm of the quaternion.
+ */
 double quaternion::mag()
 {
     return sqrt(w*w + x*x + y*y + z*z);
 }
- 
+
+/** \brief Normalize a quaterion.
+ * A quaternion is considered normal if its L2 norm is equal to 1.
+ * \return A normalized quaternion.
+ */
 quaternion quaternion::unit()
 {
     quaternion temp;
@@ -189,7 +247,11 @@ quaternion quaternion::unit()
     
     return temp;
 }
- 
+
+/** \brief Conjugates the quaternion.
+ * A quaternion is conjugates by negating all its imaginary components.
+ * \return A new quaternion.
+ */
 quaternion quaternion::conj()
 {
     quaternion temp;
@@ -202,32 +264,53 @@ quaternion quaternion::conj()
     return temp;
 }
  
+/** \brief Invert a quaterion.
+ * TODO No idea how quaternion inversion works.
+ * \return A new quaternion.
+ */
 quaternion quaternion::inv()
 {
     // 1/quat = conj / (quat*conj), but quat*conj = w^2 + x^2 + ... 
     return conj()/(w*w + x*x + y*y + z*z);
     
 }
- 
+
+/** \brief Conjugate a quaternion.
+ * TODO: What makes this different to the conjugation method?
+ * \return A new quaternion.
+ */
 quaternion quaternion::unit_inv()
 {
     return this->conj();
 }
  
+/** \brief Get the value of the real component.
+ * \return Real/w component of the quaternion.
+ */
 double quaternion::getRe() 
 {
     return w;
 }
+
+/** \brief Get the value of the first imaginary component.
+ * \return Imaginary/i component of the quaternion.
+ */
 double quaternion::getIm_i() 
 {
     return x;
 }
  
+/** \brief Get the value of the second imaginary component.
+ * \return Imaginary/j component of the quaternion.
+ */
 double quaternion::getIm_j()
 {
     return y;
 }
- 
+
+/** \brief Get the value of the third imaginary component.
+ * \return Imaginary/z component of the quaternion.
+ */
 double quaternion::getIm_k()
 { 
     return z;
