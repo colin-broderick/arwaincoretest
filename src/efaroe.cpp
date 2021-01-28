@@ -1,9 +1,7 @@
 #include "efaroe.h"
-#include <iomanip>
 
-std::array<float, 3> cross(std::array<float, 3> a, std::array<float, 3> b);
 
-eFaroe::eFaroe(quaternion initial_quaternion, std::array<float, 3> gyro_bias, float gyro_error, int use_mag)
+eFaroe::eFaroe(quaternion initial_quaternion, std::array<double, 3> gyro_bias, double gyro_error, int use_mag)
 {
     gyro_bias = {0, 0, 0};
     gyro_error = 0.05;
@@ -31,9 +29,9 @@ eFaroe::eFaroe(quaternion initial_quaternion, std::array<float, 3> gyro_bias, fl
     }
 }
 
-void eFaroe::update(unsigned long timestamp, float ax, float ay, float az, float gx, float gy, float gz)
+void eFaroe::update(unsigned long timestamp, double ax, double ay, double az, double gx, double gy, double gz)
 {
-    float dt;
+    double dt;
 
     if (conv_count > 0)
     {
@@ -46,10 +44,8 @@ void eFaroe::update(unsigned long timestamp, float ax, float ay, float az, float
         }
     }
 
-    // std::cout << std::setprecision(10) << last_read << "," << timestamp << "\n";
-
-    std::array<float, 3> acc = {ax, ay, az};
-    std::array<float, 3> gyr = {gx, gy, gz};
+    std::array<double, 3> acc = {ax, ay, az};
+    std::array<double, 3> gyr = {gx, gy, gz};
 
     if (last_read == 0)
     {
@@ -68,41 +64,41 @@ void eFaroe::update(unsigned long timestamp, float ax, float ay, float az, float
     }
     
     // Normalize acceleration.
-    float a_norm = 1.0/sqrt(ax*ax+ay*ay+az*az);
+    double a_norm = 1.0/sqrt(ax*ax+ay*ay+az*az);
     ax = ax*a_norm;
     ay = ay*a_norm;
     az = az*a_norm;
     
     // Construct Jacobian.
-    std::array<float, 3> jac_a{
+    std::array<double, 3> jac_a{
         q.x*2.0*q.z - q.w*2.0*q.y,
         q.w*2.0*q.x + q.y*2.0*q.z,
         1.0 - 2.0*q.x*q.x - 2.0*q.y*q.y
     };
 
     // Calculate gradient.
-    std::array<float, 3> grad = cross(jac_a, acc);
+    std::array<double, 3> grad = cross(jac_a, acc);
 
     // Normalize gradient.
-    float grad_norm = 1.0/sqrt(grad[0]*grad[0]+grad[1]*grad[1]+grad[2]*grad[2]);
+    double grad_norm = 1.0/sqrt(grad[0]*grad[0]+grad[1]*grad[1]+grad[2]*grad[2]);
     grad[0] = grad[0]*grad_norm;
     grad[1] = grad[0]*grad_norm;
     grad[2] = grad[0]*grad_norm;
 
     // TODO Calculate new gyro_bias?
-    std::array<float, 3> g_b;
+    std::array<double, 3> g_b;
     g_b[0] = gyro_bias[0] + grad[0]*dt*zeta;
     g_b[1] = gyro_bias[1] + grad[1]*dt*zeta;
     g_b[2] = gyro_bias[2] + grad[2]*dt*zeta;
 
     // Subtract gyro bias.
-    std::array<float, 3> gyro;
+    std::array<double, 3> gyro;
     gyro[0] = gyr[0] - g_b[0];
     gyro[1] = gyr[1] - g_b[1];
     gyro[2] = gyr[2] - g_b[2];
     
     // TODO What is this?
-    std::array<float, 3> a_v;
+    std::array<double, 3> a_v;
     a_v[0] = dt*(gyro[0]-beta*grad[0]);
     a_v[1] = dt*(gyro[1]-beta*grad[1]);
     a_v[2] = dt*(gyro[2]-beta*grad[2]);
@@ -120,49 +116,37 @@ void eFaroe::update(unsigned long timestamp, float ax, float ay, float az, float
     q = (q + dq).unit();
 }
 
-// Computes vectors cross product of two 3-vectors.
-std::array<float, 3> cross(std::array<float, 3> a, std::array<float, 3> b)
-{
-    std::array<float, 3> ret{
-          a[1]*b[2] - b[1]*a[2],
-        -(a[0]*b[2] - b[0]*a[2]),
-          a[0]*b[1] - b[0]*a[1],
-    };
-    return ret;
-}
-
-
-float eFaroe::getW()
+double eFaroe::getW()
 {
     return q.w;
 }
 
-float eFaroe::getX()
+double eFaroe::getX()
 {
     return q.x;
 }
 
-float eFaroe::getY()
+double eFaroe::getY()
 {
     return q.y;
 }
 
-float eFaroe::getZ()
+double eFaroe::getZ()
 {
     return q.z;
 }
 
-float eFaroe::getPitch()
+double eFaroe::getPitch()
 {
     return pitch;
 }
 
-float eFaroe::getYaw()
+double eFaroe::getYaw()
 {
     return yaw;
 }
 
-float eFaroe::getRoll()
+double eFaroe::getRoll()
 {
     return roll;
 }
@@ -172,10 +156,10 @@ quaternion eFaroe::getQuat()
     return q;
 }
 
-std::array<float, 3> eFaroe::getEuler()
+std::array<double, 3> eFaroe::getEuler()
 {
     roll = atan2f(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y);
     pitch = asinf(-2.0f * (q.x*q.z - q.w*q.y));
     yaw = atan2f(q.x*q.y + q.w*q.z, 0.5f - q.y*q.y - q.z*q.z);
-    return std::array<float, 3>{pitch, yaw, roll};
+    return std::array<double, 3>{pitch, yaw, roll};
 }
