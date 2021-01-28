@@ -1,3 +1,6 @@
+#ifndef EFAROE_H
+#define EFAROE_H
+
 #include <array>
 #include <iostream>
 #include <math.h>
@@ -43,3 +46,5 @@ class eFaroe
 
         quaternion q;
 };
+
+#endif

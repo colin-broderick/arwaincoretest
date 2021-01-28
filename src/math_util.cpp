@@ -32,7 +32,7 @@ double norm(std::array<double, 3> arr)
 }
 
 /// Rotates a 3-vector according to a quaternion orientation.
-std::array<float, 3> world_align(std::array<float, 3> vec, quat_orientation_t orientation)
+std::array<float, 3> world_align(std::array<float, 3> vec, quaternion orientation)
 {
     // Convert the 3-vector into a quaternion.
     quaternion quat_vec((double)0, (double)vec[0], (double)vec[1], (double)vec[2]);
@@ -52,7 +52,7 @@ std::array<float, 3> world_align(std::array<float, 3> vec, quat_orientation_t or
 }
 
 /// Rotates a 3-vector according to a quaternion orientation.
-vec_scaled_output world_align(vec_scaled_output vec, quat_orientation_t orientation)
+vec_scaled_output world_align(vec_scaled_output vec, quaternion orientation)
 {
     // Convert the 3-vector into a quaternion.
     quaternion quat_vec((double)0, (double)vec.x, (double)vec.y, (double)vec.z);
@@ -72,7 +72,7 @@ vec_scaled_output world_align(vec_scaled_output vec, quat_orientation_t orientat
 }
 
 /// Rotates a pair of 3-vectors, represented as a single 6-vector, according to a quaternion orientation.
-std::array<float, 6> world_align(std::array<float, 6> imu, quat_orientation_t orientation)
+std::array<float, 6> world_align(std::array<float, 6> imu, quaternion orientation)
 {
     // Split out the acceleration and gyroscope parts of the 6-vector.
     std::array<float, 3> acce = std::array<float, 3>{

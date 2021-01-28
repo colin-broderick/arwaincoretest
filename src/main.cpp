@@ -68,7 +68,7 @@ std::deque<std::array<float, 6>> world_imu_buffer;
 std::deque<std::array<float, 3>> vel_full_buffer;
 std::deque<std::array<float, 3>> position_buffer;
 std::deque<euler_orientation_t> euler_orientation_buffer;
-std::deque<quat_orientation_t> quat_orientation_buffer;
+std::deque<quaternion> quat_orientation_buffer;
 
 extern std::string stance;
 extern int horizontal;
@@ -162,7 +162,7 @@ void bmi270_reader()
     vec_scaled_output world_accel_data;
     vec_scaled_output world_gyro_data;
     euler_orientation_t euler_data;
-    quat_orientation_t quat_data;
+    quaternion quat_data;
 
     // File handles for logging.
     std::ofstream acce_file;
@@ -686,7 +686,7 @@ int main(int argc, char **argv)
     for (unsigned int i = 0; i < ORIENTATION_BUFFER_LEN; i++)
     {
         euler_orientation_buffer.push_back(euler_orientation_t{0, 0, 0});
-        quat_orientation_buffer.push_back(quat_orientation_t{0, 0, 0, 0});
+        quat_orientation_buffer.push_back(quaternion{0, 0, 0, 0});
     }
 
     // Start threads
