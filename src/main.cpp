@@ -20,6 +20,7 @@
 #include "stance.h"
 #include "imu_utils.h"
 #include "madgwick.h"
+#include "efaroe.h"
 #include "math_util.h"
 #include "rknn_api.h"
 #include "input_parser.h"
@@ -75,8 +76,6 @@ extern int entangled;
 extern int falling;
 int status_flags = 0;
 
-void efaroe_step(std::array<float, 3> gyro);
-
 // Kill flag for all threads.
 int shutdown = 0;
 
@@ -116,8 +115,8 @@ void std_output()
 
             // Add Euler and quaternion orientations to the string stream.
             orientation_buffer_lock.lock();
-            ss << "Orientation (E): (" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << "\n";;
-            ss << "Orientation (Q): (" << quat_orientation_buffer.back().w << ", " << quat_orientation_buffer.back().x << ", " << quat_orientation_buffer.back().y << ", " << quat_orientation_buffer.back().z << ")" << "\n";
+            ss << "Orientation (ME):(" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << "\n";;
+            ss << "Orientation (MQ):(" << quat_orientation_buffer.back().w << ", " << quat_orientation_buffer.back().x << ", " << quat_orientation_buffer.back().y << ", " << quat_orientation_buffer.back().z << ")" << "\n";
             orientation_buffer_lock.unlock();
 
             // Add stance to the string stream.
@@ -153,6 +152,7 @@ void bmi270_reader()
         exit(1);
     }
 
+    // Initialize orientation filter.
     Madgwick orientation_filter;
     orientation_filter.begin(1000/IMU_READING_INTERVAL);
 
@@ -184,7 +184,7 @@ void bmi270_reader()
         acce_file << "# time x y z" << "\n";
         gyro_file << "# time x y z" << "\n";
         mag_file << "# time x y z" << "\n";
-        euler_file << "# time roll pitch roll" << "\n";
+        euler_file << "# time roll pitch yaw" << "\n";
         quat_file << "# time w x y z" << "\n";
     }
 
@@ -257,7 +257,7 @@ void bmi270_reader()
         if (log_to_file)
         {
             euler_file << time.time_since_epoch().count() << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << "\n";
-            quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";;
+            quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
         }
         
         // Wait until the next tick.
@@ -300,7 +300,6 @@ int transmit_lora()
 
     while (!shutdown)
     {
-        // std::cout << "LoRa tick\n" << "\n";
         // TODO: Read all relevant data, respecting mutex locks.
         // Get positions as uint16
         position_buffer_lock.lock();
@@ -373,14 +372,15 @@ T operator+(const T& a1, const T& a2)
   return a;
 }
 
-std::array<float, 3> integrate(std::deque<std::array<float, 6>> data, unsigned int dt, unsigned int offset = 0)
+std::array<float, 3> integrate(std::deque<std::array<float, 6>> data, float dt, unsigned int offset = 0)
 {
+    std::array<float, 3> acc_mean = {-0.182194123, -0.59032666517, 9.86202363151991};
     std::array<float, 3> integrated_data = {0, 0, 0};
     for (unsigned int i = 0; i < data.size(); i++)
     {
-        for (unsigned int j; j < 3; j++)
+        for (unsigned int j = 0; j < 3; j++)
         {
-            integrated_data[j] = integrated_data[j] + data[i][j + offset] * dt;
+            integrated_data[j] = integrated_data[j] + (data[i][j + offset] - acc_mean[j]) * dt;
         }
     }
     return integrated_data;
@@ -391,6 +391,8 @@ int predict_velocity()
 {
     // TODO: Set up NPU and feed in model.
     // TODO: Merge the inference code into this function. Will need further abstraction.
+    std::chrono::milliseconds presleep(1000);
+    std::this_thread::sleep_for(presleep*3);
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
@@ -414,7 +416,7 @@ int predict_velocity()
     std::ofstream velocity_file;
 
     // Time in seconds between inferences.
-    float interval_seconds = (float)VELOCITY_PREDICTION_INTERVAL/1000.0;
+    float interval_seconds = ((float)(VELOCITY_PREDICTION_INTERVAL))/1000.0;
 
     // TEST How far back to look in the IMU buffer for integration.
     int backtrack = (int)((1000/IMU_READING_INTERVAL)*interval_seconds);
@@ -445,7 +447,7 @@ int predict_velocity()
         imu_latest = {imu.end() - backtrack, imu.end()};
 
         // TEST Single integrate the small IMU slice to get delta-v over the period.
-        imu_vel_delta = integrate(imu_latest, interval_seconds);
+        imu_vel_delta = integrate(imu_latest, interval_seconds );
 
         // TEST Weighted combination of velocity deltas from NPU and IMU integration.
         vel = npu_vel_delta*npu_weight + imu_vel_delta*(1-npu_weight);
@@ -496,8 +498,11 @@ int predict_velocity()
 /// Captures keyboard interrupt to set shutdown flag.
 void sigint_handler(int signal)
 {
-    std::cout << "\nReceived SIGINT - closing\n" << "\n";
-    shutdown = 1;
+    if (signal == SIGINT)
+    {
+        std::cout << "\nReceived SIGINT - closing\n" << "\n";
+        shutdown = 1;
+    }
 }
 
 /// TODO This might be unnecessary; since the stuff it's setting up only matters to the LoRa thread,
@@ -626,8 +631,8 @@ int main(int argc, char **argv)
         std::cout << "Run without arguments for no logging\n";
         std::cout << "Arguments:\n";
         std::cout << "  -lstd        Log friendly output to stdout\n";
-        std::cout << "               Files are stored in ./data_<datetime>\n";
-        std::cout << "  -lfile       Record sensor data to file\n";
+        std::cout << "  -lfile       Record sensor data to file - files are stored in ./data_<datetime>\n";
+        std::cout << "  -conf        Specify alternate configuration file\n";
         std::cout << "  -h           Show this help text\n";
         std::cout << "\n";
 
@@ -651,7 +656,7 @@ int main(int argc, char **argv)
     }
     if (!input.contains("-lstd") && !input.contains("-lfile"))
     {
-        std::cout << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
+        std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
     }
 
     // Create output directory if it doesn't already exist.
@@ -681,7 +686,7 @@ int main(int argc, char **argv)
     for (unsigned int i = 0; i < ORIENTATION_BUFFER_LEN; i++)
     {
         euler_orientation_buffer.push_back(euler_orientation_t{0, 0, 0});
-        quat_orientation_buffer.push_back(quat_orientation_t{0, 0, 0});
+        quat_orientation_buffer.push_back(quat_orientation_t{0, 0, 0, 0});
     }
 
     // Start threads

@@ -149,6 +149,28 @@ quaternion quaternion::operator/=(double num)
     
     return temp;
 }
+
+int quaternion::operator==(quaternion q2)
+{
+    int ret = 1;
+    if (w != q2.w)
+    {
+        ret = 0;
+    }
+    if (x != q2.x)
+    {
+        ret = 0;
+    }
+    if (y != q2.y)
+    {
+        ret = 0;
+    }
+    if (z != q2.z)
+    {
+        ret = 0;
+    }
+    return ret;
+}
       
 double quaternion::mag()
 {

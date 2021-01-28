@@ -219,7 +219,7 @@ float activity(float a, float g, float v)
     // This metric isn't great since you can have very high acceleration with
     // near-zero gyration, incorrectly resulting is a low activity reading.
     // Perhaps max(acceleration, gyration, acceleration*gyration)
-    return a*g;
+    return a*g+v-v;
 }
 
 // Returns the index of the largest element in a 3-array of floats. Think np.argmax().

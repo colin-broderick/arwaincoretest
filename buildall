@@ -12,6 +12,7 @@ echo "Building main"
         imu_utils.cpp \
         utils.cpp \
         madgwick.cpp \
+        efaroe.cpp \
         math_util.cpp \
         bin_log.cpp \
         input_parser.cpp \
