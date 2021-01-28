@@ -40,6 +40,8 @@ class quaternion
     quaternion operator*=(quaternion quat2);
     quaternion operator*=(double num);
     quaternion operator/=(double num);
+    int operator==(quaternion q2);
+
     
     double mag(); // magnitude
     quaternion unit(); // returns unit quaternion
