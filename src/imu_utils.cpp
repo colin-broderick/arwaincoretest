@@ -31,7 +31,7 @@ float acc_scale, gyr_scale, mag_scale;
 int i2c_init(int addr)
 {
 	//----- OPEN THE I2C BUS -----
-	char *filename = (char*)"/dev/i2c-4";
+	char *filename = (char*)"/dev/i2c-1";
 	if ((file_i2c = open(filename, O_RDWR)) < 0)
 	{
 		//ERROR HANDLING: you can check errno to see what went wrong

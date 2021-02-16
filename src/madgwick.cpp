@@ -15,26 +15,21 @@
 // 19/02/2012	SOH Madgwick	Magnetometer measurement is normalised
 //
 //=============================================================================================
+//
+// This file modified by Greeve to bring comments in line with the rest of the project,
+// and to match APIs with another library, but functionality is not changed.
+//
+//=============================================================================================
 
-//-------------------------------------------------------------------------------------------
-// Header files
 
 #include "madgwick.h"
 #include <math.h>
 
-//-------------------------------------------------------------------------------------------
-// Definitions
-
 #define sampleFreqDef   512.0f          // sample frequency in Hz
 #define betaDef         0.1f            // 2 * proportional gain
 
-
-//============================================================================================
-// Functions
-
-//-------------------------------------------------------------------------------------------
-// AHRS algorithm update
-
+/** \brief Constructor using default sample frequency.
+ */
 Madgwick::Madgwick() {
 	beta = betaDef;
 	q0 = 1.0f;
@@ -45,6 +40,33 @@ Madgwick::Madgwick() {
 	anglesComputed = 0;
 }
 
+/** \brief Constructor using custom sample frequency.
+ * \param sample_frequency The anticipated update frequency in Hz.
+ */
+Madgwick::Madgwick(float sample_frequency)
+{
+	beta = betaDef;
+	q0 = 1.0f;
+	q1 = 0.0f;
+	q2 = 0.0f;
+	q3 = 0.0f;
+	invSampleFreq = 1.0f / sample_frequency;
+	anglesComputed = 0;
+}
+
+/** \brief Update internal orientation state using IMU and magnetometer data.
+ *  \param timestamp Timestamp of the supplied data in nanoseconds.
+ *  \param gx x-axis gyroscope value in rad/s
+ *  \param gy y-axis gyroscope value in rad/s
+ *  \param gz z-axis gyroscope value in rad/s
+ *  \param ax x-axis accelerometer value in m/s2
+ *  \param ay y-axis accelerometer value in m/s2
+ *  \param az x-axis accelerometer value in m/s2
+ *  \param mx x-axis magnetfic field strength
+ *  \param my y-axis magnetfic field strength
+ *  \param mz z-axis magnetfic field strength
+ *  \return Nothing; updates internal state.
+ */
 void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz) {
 	float recipNorm;
 	float s0, s1, s2, s3;
@@ -147,19 +169,41 @@ void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az
 	anglesComputed = 0;
 }
 
-//-------------------------------------------------------------------------------------------
-// IMU algorithm update
+/** \brief This is a dummy function to allow eFaroe and Madgwick filters to use the same API - timestamp is not used.
+ *  \param timestamp Timestamp of the supplied data in nanoseconds.
+ *  \param gx x-axis gyroscope value in rad/s
+ *  \param gy y-axis gyroscope value in rad/s
+ *  \param gz z-axis gyroscope value in rad/s
+ *  \param ax x-axis accelerometer value in m/s2
+ *  \param ay y-axis accelerometer value in m/s2
+ *  \param az x-axis accelerometer value in m/s2
+ *  \return Nothing; updates internal state.
+ */
+void Madgwick::updateIMU(double timestamp, float gx, float gy, float gz, float ax, float ay, float az)
+{
+	updateIMU(gx, gy, gz, ax, ay, az);
+}
 
+/** \brief Update internal state using new IMU reading, without magnetometer data.
+ *  \param gx x-axis gyroscope value in rad/s
+ *  \param gy y-axis gyroscope value in rad/s
+ *  \param gz z-axis gyroscope value in rad/s
+ *  \param ax x-axis accelerometer value in m/s2
+ *  \param ay y-axis accelerometer value in m/s2
+ *  \param az x-axis accelerometer value in m/s2
+ *  \return Nothing; updates internal state.
+ */
 void Madgwick::updateIMU(float gx, float gy, float gz, float ax, float ay, float az) {
 	float recipNorm;
 	float s0, s1, s2, s3;
 	float qDot1, qDot2, qDot3, qDot4;
 	float _2q0, _2q1, _2q2, _2q3, _4q0, _4q1, _4q2 ,_8q1, _8q2, q0q0, q1q1, q2q2, q3q3;
 
+	// This factor isn't required because our sensor already operates in radians/sec.
 	// Convert gyroscope degrees/sec to radians/sec
-	gx *= 0.0174533f;
-	gy *= 0.0174533f;
-	gz *= 0.0174533f;
+	// gx *= 0.0174533f;
+	// gy *= 0.0174533f;
+	// gz *= 0.0174533f;
 
 	// Rate of change of quaternion from gyroscope
 	qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
@@ -224,10 +268,10 @@ void Madgwick::updateIMU(float gx, float gy, float gz, float ax, float ay, float
 	anglesComputed = 0;
 }
 
-//-------------------------------------------------------------------------------------------
-// Fast inverse square-root
-// See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
-
+/** \brief Fast inverse square-root - see http://en.wikipedia.org/wiki/Fast_inverse_square_root.
+ * \param x Find square root of this number.
+ * \return The square root of x.
+ */
 float Madgwick::invSqrt(float x) {
 	float halfx = 0.5f * x;
 	float y = x;
@@ -238,8 +282,6 @@ float Madgwick::invSqrt(float x) {
 	y = y * (1.5f - (halfx * y * y));
 	return y;
 }
-
-//-------------------------------------------------------------------------------------------
 
 void Madgwick::computeAngles()
 {

@@ -38,15 +38,15 @@ eFaroe::eFaroe(quaternion initial_quaternion, std::array<double, 3> gyro_bias, d
 
 /** \brief Update the internal state of the orientation filter by supplying acceleratometer and gyroscope values.
  *  \param timestamp Timestamp of the supplied data in nanoseconds.
- *  \param ax x-axis accelerometer value in m/s2
- *  \param ay y-axis accelerometer value in m/s2
- *  \param az x-axis accelerometer value in m/s2
  *  \param gx x-axis gyroscope value in rad/s
  *  \param gy y-axis gyroscope value in rad/s
  *  \param gz z-axis gyroscope value in rad/s
+ *  \param ax x-axis accelerometer value in m/s2
+ *  \param ay y-axis accelerometer value in m/s2
+ *  \param az x-axis accelerometer value in m/s2
  *  \return Nothing; updates internal state.
  */
-void eFaroe::update(double timestamp, double ax, double ay, double az, double gx, double gy, double gz)
+void eFaroe::updateIMU(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az)
 {
     if (conv_count > 0)
     {
