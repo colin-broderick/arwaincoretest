@@ -153,8 +153,14 @@ void bmi270_reader()
     }
 
     // Initialize orientation filter.
-    Madgwick orientation_filter;
-    orientation_filter.begin(1000/IMU_READING_INTERVAL);
+    Madgwick orientation_filter{(float)(1000.0/IMU_READING_INTERVAL)};
+
+    // eFaroe orientation_filter{
+    //     quaternion{1,0,0,0},
+    //     {0,0,0},
+    //     0,
+    //     0
+    // };
 
     // Local buffers for IMU data
     vec_scaled_output accel_data;
@@ -213,8 +219,9 @@ void bmi270_reader()
             gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
         }
 
-        // Perform a Madgwick step
+        // Perform an orientation filter step
         orientation_filter.updateIMU(
+            time.time_since_epoch().count(),
             gyro_data.x,
             gyro_data.y,
             gyro_data.z,

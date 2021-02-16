@@ -1,7 +1,19 @@
 #!/bin/bash
+
+if [[ "$1" == "rock" ]]; then
+  COMPILER=~/firefly/proj/firefly-sdk/buildroot/output/rockchip_rk1808/host/bin/aarch64-linux-g++
+elif [[ "$1" == "pi" ]]; then
+  COMPILER=g++
+else
+  echo "Choose a compiler by specifying pi or rock"
+  exit
+fi
+
+# exit
+
 cd src
 echo "Building main"
-~/firefly/proj/firefly-sdk/buildroot/output/rockchip_rk1808/host/bin/aarch64-linux-g++ \
+$COMPILER \
     -o ../build/main \
         main.cpp \
         quaternions.cpp \
@@ -21,12 +33,10 @@ echo "Building main"
     -pthread \
     -lstdc++fs \
     -ldl \
-    -L/home/colin/firefly/proj/firefly-sdk/buildroot/output/rockchip_rk1808/target/usr/lib \
-        -lrknn_api \
-        -li2c \
+    -li2c \
     && \
 echo "Building calibrator"
-~/firefly/proj/firefly-sdk/buildroot/output/rockchip_rk1808/host/bin/aarch64-linux-g++ \
+$COMPILER \
     -o ../build/calibrate \
         calibrate_bmi270.cpp \
         bmi2.c \
@@ -36,8 +46,7 @@ echo "Building calibrator"
     -std=c++17 \
     -Wall \
     -lstdc++fs \
-    -L/home/colin/firefly/proj/firefly-sdk/buildroot/output/rockchip_rk1808/target/usr/lib \
-        -li2c \
+    -li2c \
     && \
 echo "Copying main executable to Rockchip"
 scp ../build/main root@192.168.2.114:/root/main

@@ -32,14 +32,14 @@ class eFaroe
         );
 
         // Update methods.
-        void update(
+        void updateIMU(
             double timestamp, // time in milliseconds
-            double ax,
-            double ay,
-            double az,        // Accelerations in m/s2
             double gx,
             double gy,
-            double gz         // Angular velocities in rads/s
+            double gz,         // Angular velocities in rads/s
+            double ax,
+            double ay,
+            double az        // Accelerations in m/s2
         );
 
         // Orientation getters.
