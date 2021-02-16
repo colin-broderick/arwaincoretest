@@ -4,7 +4,7 @@
 Pipe the output from arwain -lstd into this process to launch a vpython
 visualization of DCM orientation, e.g.
 
-    ./arwain | ./visualisation.py
+    ./arwain -lstd | ./visualisation.py
 
 For testing visualization only. Requires vpython:
     
