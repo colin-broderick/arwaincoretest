@@ -1,9 +1,10 @@
+#ifndef STANCE_H
+#define STANCE_H
+
 #include <vector>
+#include <array>
+#include <chrono>
 
-#include "Kernel.h"
-#include "mbed.h"
-
-Kernel::Clock::time_point now();
 int update(float ax, float ay, float az, float gx, float gy, float gz, float vx, float vy, float vz);
 int empty_stance_buffers();
 int empty_fall_buffers();
@@ -21,3 +22,5 @@ int run_stance_detect();
 int get_stance();
 int kill();
 int start();
+
+#endif

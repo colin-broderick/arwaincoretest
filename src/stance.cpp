@@ -2,22 +2,31 @@
 #include <mutex>
 #include <chrono>
 #include <vector>
+#include <thread>
 #include <math.h>
 #include <array>
 #include <deque>
+#include <fstream>
 
-
-#include "Kernel.h"
-#include "mbed.h"
 #include "stance.h"
+#include "utils.h"
 
 extern int shutdown;
-extern Mutex full_buffer_lock;
-extern Mutex vel_buffer_lock;
+extern std::string folder_date_string;
+extern std::mutex imu_buffer_lock;
+extern std::mutex vel_buffer_lock;
 extern std::deque<std::array<float, 6>> imu_full_buffer;
 extern std::deque<std::array<float, 3>> vel_full_buffer;
 
-// State flags.
+// Flags for logging behaviour, declared and defined in main.cpp.
+extern int log_to_file;
+extern int log_to_std;
+
+// Time intervals, all in milliseconds.
+unsigned int STANCE_DETECTION_INTERVAL = 1000;
+unsigned int FALL_DETECTION_INTERVAL = 100;
+
+// Status flags.
 int die = 0;
 int falling = 0;
 int entangled = 0;
@@ -25,31 +34,14 @@ int horizontal = 0;
 int climbing = 0;
 std::string stance;
 
-// Thresholds and constants.
-std::chrono::milliseconds freefall_dt{100};  // Delay between freefall/entanglement assessments.
-std::chrono::milliseconds stance_dt{1000};   // Delay between stance assessments.
-float a_threshold = 3;
-float struggle_threshold = 3;
-float gravity = 9.8;
-float climbing_threshold = 1;
-float crawling_threshold = 0.5;
-float running_threshold = 3;
-float walking_threshold = 0.5;
-float active_threshold = 20;
+// Configuration file location.
+extern std::string config_file;
 
-Mutex fall_lock;
-Mutex stance_lock;
-Kernel::Clock::time_point last_update;
+std::mutex fall_lock;
+std::mutex stance_lock;
 
-Thread fall_thread;
-Thread stance_thread;
-
-
-// Get current time.
-Kernel::Clock::time_point now()
-{
-    return Kernel::Clock::now();
-}
+std::thread fall_thread;
+std::thread stance_thread;
 
 // Check if falling flag set.
 int is_falling()
@@ -72,7 +64,7 @@ int is_entangled()
 }
 
 // Calculates the mean magnitude of a (x,3) sized deque for floats.
-float buffer_mean(std::deque<std::array<float, 3>> buffer)
+float buffer_mean_magnitude(std::deque<std::array<float, 3>> buffer)
 {
     float mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -89,7 +81,7 @@ float buffer_mean(std::deque<std::array<float, 3>> buffer)
 }
 
 // Calculates the mean magnitude of a (x,3) sized vector for floats.
-float buffer_mean(std::vector<std::array<float, 3>> buffer)
+float buffer_mean_magnitude(std::vector<std::array<float, 3>> buffer)
 {
     float mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -105,15 +97,15 @@ float buffer_mean(std::vector<std::array<float, 3>> buffer)
     return mean;
 }
 
-// Calculates the mean of a vector of floats.
-float struggle_mean(std::vector<float> struggles)
+/// Calculates the mean of a vector of floats.
+float vector_mean(std::vector<float> values)
 {
     float mean = 0;
-    for (unsigned int i = 0; i < struggles.size(); i++)
+    for (unsigned int i = 0; i < values.size(); i++)
     {
-        mean += struggles[i];
+        mean += values[i];
     }
-    return mean/struggles.size();
+    return mean/values.size();
 }
 
 // This is the fall detection main loop. Periodically check 'die' to decide whether to quit.
@@ -123,6 +115,11 @@ int run_fall_detect()
     float g_mean_magnitude;
     float v_mean_magnitude;
 
+    // Read thresholds and constants from config file.
+    float a_threshold = arwain::get_config<float>(config_file, "a_threshold");
+    float struggle_threshold = arwain::get_config<float>(config_file, "struggle_threshold");
+    float gravity = arwain::get_config<float>(config_file, "gravity");
+
     float a_twitch;
     float tmp_struggle;
 
@@ -130,22 +127,30 @@ int run_fall_detect()
 
     int count = 0;
     float struggle = 0;
+    
+    // Open file for logging
+    std::ofstream freefall_file;
+    if (log_to_file)
+    {
+        freefall_file.open(folder_date_string + "/freefall.txt");
+        freefall_file << "# time freefall entanglement" << "\n";
+    }
 
     std::vector<float> struggle_window(10);
 
-    auto time = Kernel::Clock::now();
-    auto interval = 100 * 1ms;
+    auto time = now();
+    std::chrono::milliseconds interval(FALL_DETECTION_INTERVAL);
 
     while (!shutdown)
     {
         // Grab the imu_data to be used, i.e. most recent second of imu_data.
-        full_buffer_lock.lock();
+        imu_buffer_lock.lock();
         std::deque<std::array<float, 6>> imu_data = imu_full_buffer;
-        full_buffer_lock.unlock();
+        imu_buffer_lock.unlock();
 
         vel_buffer_lock.lock();
         std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
-        vel_buffer_lock.lock();
+        vel_buffer_lock.unlock();
 
         // Separate accel and gyro buffers; bit more convenient this way.
         std::vector<std::array<float, 3>> accel_data;
@@ -160,9 +165,9 @@ int run_fall_detect()
             });
         }
 
-        a_mean_magnitude = buffer_mean(accel_data);
-        g_mean_magnitude = buffer_mean(gyro_data);
-        v_mean_magnitude = buffer_mean(vel_data);
+        a_mean_magnitude = buffer_mean_magnitude(accel_data);
+        g_mean_magnitude = buffer_mean_magnitude(gyro_data);
+        v_mean_magnitude = buffer_mean_magnitude(vel_data);
 
         if (a_mean_magnitude < a_threshold)
         {
@@ -173,7 +178,7 @@ int run_fall_detect()
         a_twitch = abs(a_mean_magnitude - gravity);
         tmp_struggle = (a_twitch + g_mean_magnitude) / (v_mean_magnitude + sfactor);
         struggle_window[count] = tmp_struggle;
-        struggle = struggle_mean(struggle_window);
+        struggle = vector_mean(struggle_window);
         if (struggle > struggle_threshold)
         {
             fall_lock.lock();
@@ -181,11 +186,22 @@ int run_fall_detect()
             fall_lock.unlock();
         }
 
+        // Log current time and status to file.
+        if (log_to_file)
+        {
+            freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << "\n";
+        }
+
         count = (count + 1) % 10;
 
         // Wait until the next tick.
         time = time + interval;
-        ThisThread::sleep_until(time);
+        std::this_thread::sleep_until(time);
+    }
+
+    if (log_to_file)
+    {
+        freefall_file.close();
     }
 
     return 1;
@@ -194,8 +210,16 @@ int run_fall_detect()
 // Gives a measure of intensity of activity based on values of a, g, v.
 float activity(float a, float g, float v)
 {
-    // TODO
-    return a*g;
+    // TODO Need to discover a decent metric of `activity`.
+    // The metric should read high when accelerations are high,
+    // or gyroscope readings are high, or both acceleration and
+    // gyro are high. It should read low when acceleration and gyro
+    // are low.
+
+    // This metric isn't great since you can have very high acceleration with
+    // near-zero gyration, incorrectly resulting is a low activity reading.
+    // Perhaps max(acceleration, gyration, acceleration*gyration)
+    return a*g+v-v;
 }
 
 // Returns the index of the largest element in a 3-array of floats. Think np.argmax().
@@ -293,27 +317,42 @@ int run_stance_detect()
 
     float act;
 
-    int vertical_axis = 2;
+    // Read thresholds and constants from config file.
+    float climbing_threshold = arwain::get_config<float>(config_file, "climbing_threshold");
+    float crawling_threshold = arwain::get_config<float>(config_file, "crawling_threshold");
+    float running_threshold = arwain::get_config<float>(config_file, "running_threshold");
+    float walking_threshold = arwain::get_config<float>(config_file, "walking_threshold");
+    float active_threshold = arwain::get_config<float>(config_file, "active_threshold");
+
+    int vertical_axis = 1;
     int speed_axis;
 
-    auto time = Kernel::Clock::now();
-    auto interval = 1000 * 1ms;
+    // File handle for logging.
+    std::ofstream stance_file;
+    if (log_to_file)
+    {
+        stance_file.open(folder_date_string + "/stance.txt");
+        stance_file << "# time stance" << "\n";
+    }
+    
+    auto time = now();
+    std::chrono::milliseconds interval(STANCE_DETECTION_INTERVAL);
 
     while (!shutdown)
     {
         // Grab the imu_data to be used, i.e. most recent second of imu_data.
-        full_buffer_lock.lock();
+        imu_buffer_lock.lock();
         std::deque<std::array<float, 6>> imu_data = imu_full_buffer;
-        full_buffer_lock.unlock();
+        imu_buffer_lock.unlock();
 
         vel_buffer_lock.lock();
         std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
-        vel_buffer_lock.lock();
+        vel_buffer_lock.unlock();
 
         // Separate accel and gyro buffers; bit more convenient this way.
         std::vector<std::array<float, 3>> accel_data;
         std::vector<std::array<float, 3>> gyro_data;
-        for (int i = 0; i < imu_data.size(); i++)
+        for (unsigned int i = 0; i < imu_data.size(); i++)
         {
             accel_data.push_back(std::array<float, 3>{
                 imu_data[i][0], imu_data[i][1], imu_data[i][2]
@@ -352,9 +391,9 @@ int run_stance_detect()
         }
         stance_lock.unlock();
 
-        a_mean_magnitude = buffer_mean(accel_data);
-        g_mean_magnitude = buffer_mean(gyro_data);
-        v_mean_magnitude = buffer_mean(vel_data);
+        a_mean_magnitude = buffer_mean_magnitude(accel_data);
+        g_mean_magnitude = buffer_mean_magnitude(gyro_data);
+        v_mean_magnitude = buffer_mean_magnitude(vel_data);
         act = activity(a_mean_magnitude, g_mean_magnitude, v_mean_magnitude);
 
         // Horizontal and slow => inactive
@@ -399,9 +438,14 @@ int run_stance_detect()
         }
         stance_lock.unlock();
 
+        if (log_to_file)
+        {
+            stance_file << time.time_since_epoch().count() << " " << stance << "\n";
+        }
+
         // Wait until the next tick.
         time = time + interval;
-        ThisThread::sleep_until(time);
+        std::this_thread::sleep_until(time);
     }
 
     return 1;
