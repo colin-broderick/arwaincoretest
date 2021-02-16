@@ -14,7 +14,7 @@ fi
 cd src
 echo "Building main"
 $COMPILER \
-    -o ../build/main \
+    -o ../build/arwain \
         main.cpp \
         quaternions.cpp \
         stance.cpp \

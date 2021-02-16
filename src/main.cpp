@@ -26,6 +26,10 @@
 #include "input_parser.h"
 #include "bin_log.h"
 
+// Whether to use magnetometer readings for orientation filter.
+int USE_MAGNETOMETER;
+int LOG_MAGNETOMETER;
+
 // Status codes.
 unsigned int STATUS_FALLING = 1;
 unsigned int STATUS_ENTANGLED = 2;
@@ -52,8 +56,9 @@ unsigned int VELOCITY_BUFFER_LEN = 200;
 unsigned int ORIENTATION_BUFFER_LEN = 200;
 unsigned int IMU_BUFFER_LEN = 200;
 
-// Default config file location.
+// Default config file locations.
 std::string config_file = "./arwain.conf";
+std::string bmi270_calib_file = "./calib.txt";
 
 // Flags for whether to produce various log outputs.
 int log_to_std = 0;
@@ -94,7 +99,7 @@ void std_output()
     if (log_to_std)
     {
         // Set up timing, including pause while IMU warms up.
-        std::chrono::milliseconds interval(1000);
+        std::chrono::milliseconds interval(100);
         std::this_thread::sleep_for(interval*3);
         auto time = std::chrono::system_clock::now();
 
@@ -115,8 +120,8 @@ void std_output()
 
             // Add Euler and quaternion orientations to the string stream.
             orientation_buffer_lock.lock();
-            ss << "Orientation (ME):(" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << "\n";;
-            ss << "Orientation (MQ):(" << quat_orientation_buffer.back().w << ", " << quat_orientation_buffer.back().x << ", " << quat_orientation_buffer.back().y << ", " << quat_orientation_buffer.back().z << ")" << "\n";
+            ss << "Orientation (E): (" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << "\n";;
+            ss << "Orientation (Q): (" << quat_orientation_buffer.back().w << ", " << quat_orientation_buffer.back().x << ", " << quat_orientation_buffer.back().y << ", " << quat_orientation_buffer.back().z << ")" << "\n";
             orientation_buffer_lock.unlock();
 
             // Add stance to the string stream.
@@ -144,23 +149,16 @@ void std_output()
 /// Reads the IMU at (1000/IMU_READING_INTERVAL) Hz, and runs orientation updates at the same frequency.
 void bmi270_reader()
 {
-    // Initialize the IMU.
-    std::string path = "../calib.txt";
-    if (init_bmi270(0, path) != 0)
-    {
-        printf("Node failed to start\n");
-        exit(1);
-    }
-
     // Initialize orientation filter.
     Madgwick orientation_filter{(float)(1000.0/IMU_READING_INTERVAL)};
-
     // eFaroe orientation_filter{
-    //     quaternion{1,0,0,0},
+    //     quaternion{0,1,0,0},
     //     {0,0,0},
-    //     0,
+    //     100,
     //     0
     // };
+
+    int count = 0;
 
     // Local buffers for IMU data
     vec_scaled_output accel_data;
@@ -175,7 +173,6 @@ void bmi270_reader()
     std::ofstream gyro_file;
     std::ofstream euler_file;
     std::ofstream quat_file;
-    std::ofstream mag_file;
 
     if (log_to_file)
     {
@@ -184,12 +181,10 @@ void bmi270_reader()
         gyro_file.open(folder_date_string + "/gyro.txt");
         euler_file.open(folder_date_string + "/euler_orientation.txt");
         quat_file.open(folder_date_string + "/quat_orientation.txt");
-        mag_file.open(folder_date_string + "/mag.txt");
 
         // File headers
         acce_file << "# time x y z" << "\n";
         gyro_file << "# time x y z" << "\n";
-        mag_file << "# time x y z" << "\n";
         euler_file << "# time roll pitch yaw" << "\n";
         quat_file << "# time w x y z" << "\n";
     }
@@ -200,6 +195,18 @@ void bmi270_reader()
 
     while (!shutdown)
     {
+        // Check for lag condition. It's not unusual to see this for a few moments while everything spins up,
+        // but it should not be seen again.
+        // This only reliably detects long term lag, not occasional blips. 
+        if (count % 100 == 0)
+        {
+            auto delay = now() - time;
+            if (delay > interval)
+            {
+                std::cout << "Sensor lag detected! " << delay.count() << " ns\n";
+            }
+        }
+
         // Read current sensor values.
         get_bmi270_data(&accel_data, &gyro_data);
 
@@ -267,7 +274,9 @@ void bmi270_reader()
             quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
         }
         
+
         // Wait until the next tick.
+        count++;
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
@@ -280,7 +289,6 @@ void bmi270_reader()
         gyro_file.close();
         euler_file.close();
         quat_file.close();
-        mag_file.close();
     }
 }
 
@@ -640,11 +648,14 @@ int main(int argc, char **argv)
         std::cout << "  -lstd        Log friendly output to stdout\n";
         std::cout << "  -lfile       Record sensor data to file - files are stored in ./data_<datetime>\n";
         std::cout << "  -conf        Specify alternate configuration file\n";
+        std::cout << "  -calib       Specify the location of the magnetometer calibration file, default ./calib.txt\n";
         std::cout << "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n";
         std::cout << "  -h           Show this help text\n";
+        std::cout << "Example usage:\n";
+        std::cout << "  ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile";
         std::cout << "\n";
 
-        exit(1);
+        return 1;
     }
     if (input.contains("-testimu"))
     {
@@ -666,6 +677,11 @@ int main(int argc, char **argv)
     {
         // If alternate configuration file supplied, read it instead of default.
         config_file = input.getCmdOption("-conf");
+    }
+    if (input.contains("-calib"))
+    {
+        // If alternate BMI270 magnetometer calibration file specified, use it instead of default.
+        bmi270_calib_file = input.getCmdOption("-calib");
     }
     if (!input.contains("-lstd") && !input.contains("-lfile"))
     {
@@ -702,7 +718,18 @@ int main(int argc, char **argv)
         quat_orientation_buffer.push_back(quaternion{0, 0, 0, 0});
     }
 
-    // Start threads
+    // Get IMU configuration from config file.
+    USE_MAGNETOMETER = arwain::get_config<int>(config_file, "use_magnetometer_for_filtering");
+    LOG_MAGNETOMETER = arwain::get_config<int>(config_file, "log_magnetometer");
+
+    // Initialize the IMU.
+    if (init_bmi270(USE_MAGNETOMETER || LOG_MAGNETOMETER, bmi270_calib_file) != 0)
+    {
+        std::cout << "IMU failed to start" << "\n";
+        return -1;
+    }
+
+    // Start threads.
     std::thread imu_full_thread(bmi270_reader);
     std::thread velocity_prediction(predict_velocity);
     std::thread fall_detection(run_fall_detect);
