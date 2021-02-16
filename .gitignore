@@ -51,7 +51,6 @@ Thumbs.db
 .build
 .mbed
 projectfiles
-*.py*
 mbed-os
 BUILD
 mbed-os.lib
