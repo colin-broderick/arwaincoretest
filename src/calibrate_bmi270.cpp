@@ -17,10 +17,11 @@ int main(int argc, char **argv)
     
     if (init_bmi270(1, "no_calib_here") != 0)
     {
-        printf("Node failed to start\n");
+        std::cout << "Sensor failed to start\n";
         return 1;
     }
     
+    std::cout << "Roll the device through all orientations for a period of 30 seconds\n";
     for(int i=0; i<n_sec*100; i++)
     {
         get_bmm150_data(&mag_d);
@@ -29,7 +30,7 @@ int main(int argc, char **argv)
         z.push_back(mag_d.z);
         
         if (i%100 == 0){
-            printf("T = %ds\n", i/100);
+            std::cout << "T = " << (int)(i/100) << "\n";
         }
         
         delay_ms(10);
@@ -109,7 +110,5 @@ int main(int argc, char **argv)
     printf("Corrected Y range is [%f, %f]\n", corrected_min_y, corrected_max_y);
     printf("Corrected Z range is [%f, %f]\n", corrected_min_z, corrected_max_z);
 
-    
     return 0;
 }
-

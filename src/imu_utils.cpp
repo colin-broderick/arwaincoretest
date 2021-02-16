@@ -217,7 +217,7 @@ void read_calib_data(std::string path)
     mag_calib_scale.y = 1;
     mag_calib_scale.z = 1;
     if (!source)  {
-	printf("No calibration file found, magnetometer will only use on-board calibration");
+	printf("No calibration file found, magnetometer will only use on-board calibration\n");
     }
     else
     {
