@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv)
 {
-    struct vec_scaled_output mag_d;
+    struct vector3 mag_d;
     std::vector<float> x, y, z;
     
     int n_sec = 30;

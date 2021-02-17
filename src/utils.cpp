@@ -94,8 +94,8 @@ void test_imu()
     }
 
     // Local buffers for IMU data
-    vec_scaled_output accel_data;
-    vec_scaled_output gyro_data;
+    vector3 accel_data;
+    vector3 gyro_data;
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();

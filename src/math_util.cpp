@@ -42,7 +42,7 @@ std::array<float, 3> world_align(std::array<float, 3> vec, quaternion orientatio
 }
 
 /// Rotates a 3-vector according to a quaternion orientation.
-vec_scaled_output world_align(vec_scaled_output vec, quaternion orientation)
+vector3 world_align(vector3 vec, quaternion orientation)
 {
     // Convert the 3-vector into a quaternion.
     quaternion quat_vec((double)0, (double)vec.x, (double)vec.y, (double)vec.z);
@@ -52,7 +52,7 @@ vec_scaled_output world_align(vec_scaled_output vec, quaternion orientation)
     quaternion oriented_quat_vec = quat_ori * quat_vec * quat_ori.conj();
 
     // Cast the rotated quaternion back into a 3-vector.
-    vec_scaled_output oriented_vec{
+    vector3 oriented_vec{
         (float)oriented_quat_vec.x,
         (float)oriented_quat_vec.y,
         (float)oriented_quat_vec.z
