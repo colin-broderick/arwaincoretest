@@ -26,7 +26,7 @@ class eFaroe
         // Constructors.
         eFaroe(
             quaternion initial_quaternion,
-            std::array<double, 3> gyro_bias,
+            vector3 gyro_bias,
             double gyro_error,
             int use_mag
         );
@@ -61,7 +61,7 @@ class eFaroe
         quaternion q;
 
         // Gyroscope properties.
-        std::array<double, 3> gyro_bias;
+        vector3 gyro_bias;
         double gyro_error;
         double true_error;
 
