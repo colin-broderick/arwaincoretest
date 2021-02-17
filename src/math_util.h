@@ -20,26 +20,26 @@ T cross(T v1, T v2)
 
     */
     T res;
-    res[0] = v1[1] * v2[2] - v2[1] * v1[2];
-    res[1] = -(v1[0] * v2[2] - v2[0] * v1[2]);
-    res[2] = v1[0] * v2[1] - v2[0] * v1[1];
+    res.x = v1.y * v2.z - v2.y * v1.z;
+    res.y = -(v1.x * v2.z - v2.x * v1.z);
+    res.z = v1.x * v2.y - v2.x * v1.y;
     return res;
 }
 
 /// Computes the L2 norm of a 3-vector as a double.
-double norm(std::array<float, 3> arr);
+double norm(std::array<double, 3> arr);
 
 /// Computes the L2 norm of a 3-vector as a double.
 double norm(std::array<double, 3> arr);
 
 /// Rotates a 3-vector according to a quaternion orientation.
-std::array<float, 3> world_align(std::array<float, 3> vec, quaternion orientation);
+std::array<double, 3> world_align(std::array<double, 3> vec, quaternion orientation);
 
 /// Rotates a 3-vector according to a quaternion orientation.
 vector3 world_align(vector3 vec, quaternion orientation);
 
 /// Rotates a pair of 3-vectors, represented as a single 6-vector, according to a quaternion orientation.
-std::array<float, 6> world_align(std::array<float, 6> imu, quaternion orientation);
+std::array<double, 6> world_align(std::array<double, 6> imu, quaternion orientation);
 
 template <class T>
 int sign(T value)

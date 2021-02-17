@@ -30,6 +30,7 @@ $COMPILER \
         input_parser.cpp \
     -std=c++17 \
     -Wall \
+    -Wno-psabi \
     -pthread \
     -lstdc++fs \
     -ldl \
@@ -45,6 +46,7 @@ $COMPILER \
         bmm150.c \
     -std=c++17 \
     -Wall \
+    -Wno-psabi \
     -lstdc++fs \
     -li2c \
     && \

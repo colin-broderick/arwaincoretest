@@ -68,10 +68,10 @@ int log_to_file = 0;
 std::string folder_date_string;
 
 // IMU data buffers.
-std::deque<std::array<float, 6>> imu_full_buffer;
-std::deque<std::array<float, 6>> world_imu_buffer;
-std::deque<std::array<float, 3>> vel_full_buffer;
-std::deque<std::array<float, 3>> position_buffer;
+std::deque<std::array<double, 6>> imu_full_buffer;
+std::deque<std::array<double, 6>> world_imu_buffer;
+std::deque<std::array<double, 3>> vel_full_buffer;
+std::deque<std::array<double, 3>> position_buffer;
 std::deque<euler_orientation_t> euler_orientation_buffer;
 std::deque<quaternion> quat_orientation_buffer;
 
@@ -154,7 +154,7 @@ void std_output()
 void bmi270_reader()
 {
     // Initialize orientation filter.
-    // Madgwick orientation_filter{(float)(1000.0/IMU_READING_INTERVAL)};
+    // Madgwick orientation_filter{(double)(1000.0/IMU_READING_INTERVAL)};
 
     eFaroe orientation_filter{
         quaternion{0,0,0,0},
@@ -219,7 +219,7 @@ void bmi270_reader()
 
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         imu_buffer_lock.lock();
-        imu_full_buffer.push_back(std::array<float, 6>{
+        imu_full_buffer.push_back(std::array<double, 6>{
             accel_data.x, accel_data.y, accel_data.z,
             gyro_data.x, gyro_data.y, gyro_data.z
         });
@@ -267,7 +267,7 @@ void bmi270_reader()
         world_accel_data = world_align(accel_data, quat_data);
         world_gyro_data = world_align(gyro_data, quat_data);
         world_imu_buffer_lock.lock();
-        world_imu_buffer.push_back(std::array<float, 6>{
+        world_imu_buffer.push_back(std::array<double, 6>{
             world_accel_data.x, world_accel_data.y, world_accel_data.z,
             world_gyro_data.x, world_gyro_data.y, world_gyro_data.z
         });
@@ -309,7 +309,7 @@ int transmit_lora()
 
     std::ofstream lora_file;
 
-    std::array<float, 3> position;
+    std::array<double, 3> position;
     unsigned int status;
 
     // Open file handles for data logging.
@@ -393,10 +393,10 @@ T operator+(const T& a1, const T& a2)
   return a;
 }
 
-std::array<float, 3> integrate(std::deque<std::array<float, 6>> data, float dt, unsigned int offset = 0)
+std::array<double, 3> integrate(std::deque<std::array<double, 6>> data, double dt, unsigned int offset = 0)
 {
-    std::array<float, 3> acc_mean = {-0.182194123, -0.59032666517, 9.86202363151991};
-    std::array<float, 3> integrated_data = {0, 0, 0};
+    std::array<double, 3> acc_mean = {-0.182194123, -0.59032666517, 9.86202363151991};
+    std::array<double, 3> integrated_data = {0, 0, 0};
     for (unsigned int i = 0; i < data.size(); i++)
     {
         for (unsigned int j = 0; j < 3; j++)
@@ -420,24 +420,24 @@ int predict_velocity()
     std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
 
     // TEST Get the filter weight parameter(s) from the config file.
-    float npu_weight = arwain::get_config<float>(config_file, "npu_vel_weight_confidence");
+    double npu_weight = arwain::get_config<double>(config_file, "npu_vel_weight_confidence");
 
     // Initialize buffers to contain working values.
-    std::array<float, 3> vel;                    // The sum of npu_vel and imu_vel_delta.
-    std::array<float, 3> npu_vel;                // To hold the neural network prediction of velocity.
-    std::array<float, 3> vel_previous;           // Contains the velocity calculation from the previous loop.
-    std::array<float, 3> npu_vel_delta;          // Stores the difference between the npu velocity prediction and vel_previous.
-    std::array<float, 3> imu_vel_delta;          // To integrate the velocity based on IMU readings.
-    std::array<float, 3> pos;
-    std::deque<std::array<float, 6>> imu;        // To contain the last second of IMU data.
-    std::deque<std::array<float, 6>> imu_latest; // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
+    std::array<double, 3> vel;                    // The sum of npu_vel and imu_vel_delta.
+    std::array<double, 3> npu_vel;                // To hold the neural network prediction of velocity.
+    std::array<double, 3> vel_previous;           // Contains the velocity calculation from the previous loop.
+    std::array<double, 3> npu_vel_delta;          // Stores the difference between the npu velocity prediction and vel_previous.
+    std::array<double, 3> imu_vel_delta;          // To integrate the velocity based on IMU readings.
+    std::array<double, 3> pos;
+    std::deque<std::array<double, 6>> imu;        // To contain the last second of IMU data.
+    std::deque<std::array<double, 6>> imu_latest; // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
 
     // File handles for logging.
     std::ofstream position_file;
     std::ofstream velocity_file;
 
     // Time in seconds between inferences.
-    float interval_seconds = ((float)(VELOCITY_PREDICTION_INTERVAL))/1000.0;
+    double interval_seconds = ((double)(VELOCITY_PREDICTION_INTERVAL))/1000.0;
 
     // TEST How far back to look in the IMU buffer for integration.
     int backtrack = (int)((1000/IMU_READING_INTERVAL)*interval_seconds);
@@ -459,7 +459,7 @@ int predict_velocity()
         imu_buffer_lock.unlock();
 
         // TODO: Make velocity prediction
-        npu_vel = std::array<float, 3>{0, 0, 0};
+        npu_vel = std::array<double, 3>{0, 0, 0};
         
         // TEST Find the change in velocity from the last period, as predicted by the npu.
         npu_vel_delta = npu_vel - vel_previous;
@@ -583,8 +583,8 @@ void alert_system()
 void thread_template()
 {
     // DECLARE ANY LOCAL VARIABLES OUTSIDE THE WHILE LOOP.
-    float var;
-    float from_global;
+    double var;
+    double from_global;
 
     // IF LOGGING, CREATE FILE HANDLE
     // If using arwain binary logging (under development) just do
@@ -623,7 +623,7 @@ void thread_template()
 
         // ADD NEW VALUES TO GLOBAL BUFFER, RESPECTING MUTEX LOCKS.
         position_buffer_lock.lock();
-        position_buffer.push_back(std::array<float, 3>{var, 0, 0});
+        position_buffer.push_back(std::array<double, 3>{var, 0, 0});
         position_buffer_lock.unlock();
 
         // WAIT UNTIL NEXT TIME INTERVAL.
@@ -707,16 +707,16 @@ int main(int argc, char **argv)
     // Preload buffers.
     for (unsigned int i = 0; i < IMU_BUFFER_LEN; i++)
     {
-        imu_full_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
-        world_imu_buffer.push_back(std::array<float, 6>{0, 0, 0, 0, 0, 0});
+        imu_full_buffer.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
+        world_imu_buffer.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
     }
     for (unsigned int i = 0; i < VELOCITY_BUFFER_LEN; i++)
     {
-        vel_full_buffer.push_back(std::array<float, 3>{0, 0, 0});
+        vel_full_buffer.push_back(std::array<double, 3>{0, 0, 0});
     }
     for (unsigned int i = 0; i < POSITION_BUFFER_LEN; i++)
     {
-        position_buffer.push_back(std::array<float, 3>{0, 0, 0});
+        position_buffer.push_back(std::array<double, 3>{0, 0, 0});
     }
     for (unsigned int i = 0; i < ORIENTATION_BUFFER_LEN; i++)
     {
