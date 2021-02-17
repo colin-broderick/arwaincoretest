@@ -21,7 +21,7 @@ T cross(T v1, T v2)
     */
     T res;
     res[0] = v1[1] * v2[2] - v2[1] * v1[2];
-    res[1] = v1[0] * v2[2] - v2[0] * v1[2];
+    res[1] = -(v1[0] * v2[2] - v2[0] * v1[2]);
     res[2] = v1[0] * v2[1] - v2[0] * v1[1];
     return res;
 }
@@ -40,5 +40,32 @@ vector3 world_align(vector3 vec, quaternion orientation);
 
 /// Rotates a pair of 3-vectors, represented as a single 6-vector, according to a quaternion orientation.
 std::array<float, 6> world_align(std::array<float, 6> imu, quaternion orientation);
+
+template <class T>
+int sign(T value)
+{
+    if (value < 0)
+    {
+        return -1;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+// Determines which of a pair of numbers is closer to zero, i.e. smallest magnitude.
+template <class T, class U>
+double smallest(T val1, U val2)
+{
+    if (abs(val1) < abs(val2))
+    {
+        return (double)val1;
+    }
+    else
+    {
+        return (double)val2;
+    }
+}
 
 #endif

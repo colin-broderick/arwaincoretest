@@ -95,8 +95,8 @@ std::mutex orientation_buffer_lock;
 extern std::mutex stance_lock;
 
 // Sensor biases.
-// vector3 gyro_bias = {0, 0, 0};
-vector3 gyro_bias = {0.012643, -0.00235, 0.002019};
+vector3 gyro_bias = {0, 0, 0};
+// vector3 gyro_bias = {0.012643, -0.00235, 0.002019};
 vector3 accel_bias = {0, 0, 0};
 
 void std_output()
@@ -104,7 +104,7 @@ void std_output()
     if (log_to_std)
     {
         // Set up timing, including pause while IMU warms up.
-        std::chrono::milliseconds interval(1000);
+        std::chrono::milliseconds interval(100);
         std::this_thread::sleep_for(interval*3);
         auto time = std::chrono::system_clock::now();
 
@@ -150,22 +150,22 @@ void std_output()
     }
 }
 
-
 /// Reads the IMU at (1000/IMU_READING_INTERVAL) Hz, and runs orientation updates at the same frequency.
 void bmi270_reader()
 {
     // Initialize orientation filter.
-    Madgwick orientation_filter{(float)(1000.0/IMU_READING_INTERVAL)};
-    // eFaroe orientation_filter{
-    //     quaternion{0,1,0,0},
-    //     {0,0,0},
-    //     100,
-    //     0
-    // };
+    // Madgwick orientation_filter{(float)(1000.0/IMU_READING_INTERVAL)};
+
+    eFaroe orientation_filter{
+        quaternion{0,0,0,0},
+        gyro_bias,
+        100,
+        0
+    };
 
     int count = 0;
 
-    // Local buffers for IMU data
+    // Local buffers for IMU data.
     vector3 accel_data;
     vector3 gyro_data;
     vector3 world_accel_data;
@@ -203,14 +203,14 @@ void bmi270_reader()
         // Check for lag condition. It's not unusual to see this for a few moments while everything spins up,
         // but it should not be seen again.
         // This only reliably detects long term lag, not occasional blips. 
-        if (count % 100 == 0)
-        {
-            auto delay = now() - time;
-            if (delay > interval)
-            {
-                std::cout << "Sensor lag detected! " << delay.count() << " ns\n";
-            }
-        }
+        // if (count % 100 == 0)
+        // {
+        //     auto delay = now() - time;
+        //     if (delay > interval)
+        //     {
+        //         std::cout << "Sensor lag detected! " << delay.count() << " ns\n";
+        //     }
+        // }
 
         // Read current sensor values.
         get_bmi270_data(&accel_data, &gyro_data);

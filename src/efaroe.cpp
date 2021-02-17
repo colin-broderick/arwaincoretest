@@ -8,7 +8,7 @@
  * \param gyro_error TODO not sure what this is for.
  * \param use_mag Whether to use magnetometer data for the orientation filter. TODO Not yet implemented so should always be zero.
  */
-eFaroe::eFaroe(quaternion initial_quaternion, std::array<double, 3> gyro_bias, double gyro_error, int use_mag)
+eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, int use_mag)
 {
     gyro_bias = gyro_bias;
     gyro_error = 0.05;
@@ -21,8 +21,8 @@ eFaroe::eFaroe(quaternion initial_quaternion, std::array<double, 3> gyro_bias, d
     if (initial_quaternion == quaternion{0, 0, 0, 0})
     {
         q = {1, 0, 0, 0};
+        true_error = gyro_error;
         gyro_error = 100;
-        true_error = 100;
         beta = sqrt(3) * 100;
         conv_count = 100;
     }
@@ -59,8 +59,8 @@ void eFaroe::updateIMU(double timestamp, double gx, double gy, double gz,  doubl
         }
     }
 
-    std::array<double, 3> acc = {ax, ay, az};
-    std::array<double, 3> gyr = {gx, gy, gz};
+    vector3 acc{ax, ay, az};
+    vector3 gyr{gx, gy, gz};
 
     // Convert timestamp to seconds.
     timestamp = timestamp/1e9;
@@ -82,45 +82,35 @@ void eFaroe::updateIMU(double timestamp, double gx, double gy, double gz,  doubl
     }
     
     // Normalize acceleration.
-    double a_norm = 1.0/sqrt(ax*ax+ay*ay+az*az);
-    ax = ax*a_norm;
-    ay = ay*a_norm;
-    az = az*a_norm;
+    acc = acc/acc.magnitude();
     
     // Construct Jacobian.
-    std::array<double, 3> jac_a{
+    vector3 jac_a{
         q.x*2*q.z - q.w*2*q.y,
         q.w*2*q.x + q.y*2*q.z,
         1 - 2*q.x*q.x - 2*q.y*q.y
     };
 
     // Calculate gradient.
-    std::array<double, 3> grad = cross(jac_a, acc);
+    vector3 grad = cross(jac_a, acc);
 
     // Normalize gradient.
-    double grad_norm = 1.0/sqrt(grad[0]*grad[0]+grad[1]*grad[1]+grad[2]*grad[2]);
-    grad[0] = grad[0]*grad_norm;
-    grad[1] = grad[0]*grad_norm;
-    grad[2] = grad[0]*grad_norm;
+    grad = grad/grad.magnitude();
 
     // TODO Calculate new gyro_bias?
-    std::array<double, 3> g_b;
-    g_b[0] = gyro_bias[0] + grad[0]*dt*zeta;
-    g_b[1] = gyro_bias[1] + grad[1]*dt*zeta;
-    g_b[2] = gyro_bias[2] + grad[2]*dt*zeta;
+    vector3 g_b = gyro_bias + grad * dt * zeta;
 
     // Subtract gyro bias.
-    std::array<double, 3> gyro;
-    gyro[0] = gyr[0] - g_b[0];
-    gyro[1] = gyr[1] - g_b[1];
-    gyro[2] = gyr[2] - g_b[2];
-    
+    vector3 gyro = gyr - g_b;
+
+    // EXPERIMENTAL Gyro bias filter.
+    // gyro_bias[0] = gyro_bias[0] + smallest(sign(gyro[0])*0.005, gyro[0]*0.0001);
+    // gyro_bias[1] = gyro_bias[1] + smallest(sign(gyro[1])*0.005, gyro[1]*0.0001);
+    // gyro_bias[2] = gyro_bias[2] + smallest(sign(gyro[2])*0.005, gyro[2]*0.0001);
+
     // TODO What is this?
-    std::array<double, 3> a_v;
-    a_v[0] = dt*(gyro[0]-beta*grad[0]);
-    a_v[1] = dt*(gyro[1]-beta*grad[1]);
-    a_v[2] = dt*(gyro[2]-beta*grad[2]);
-    quaternion qav{0, a_v[0], a_v[1], a_v[2]};
+    vector3 a_v = (gyro - grad*beta)*dt;
+    quaternion qav{0, a_v.x, a_v.y, a_v.z};
 
     // Calculate delta orientation quaternion.
     quaternion dq = q*qav*0.5;
