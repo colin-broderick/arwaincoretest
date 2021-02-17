@@ -24,7 +24,7 @@ struct bmi2_sensor_data acce;
 struct bmi2_sensor_data gyro;
 struct bmi2_sensor_data magn;
 
-vec_scaled_output mag_calib_offset, mag_calib_scale;
+vector3 mag_calib_offset, mag_calib_scale;
 
 float acc_scale, gyr_scale, mag_scale;
 
@@ -86,7 +86,6 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     uint8_t sensorList[] = {BMI2_ACCEL, BMI2_GYRO, BMI2_AUX};
     bmi2_sensor_enable(&sensorList[0], 1, &bmi270);
     
-
     // Configure accelerometer
     struct bmi2_sens_config accelerometerConfig;
     accelerometerConfig.type = BMI2_ACCEL;
@@ -96,10 +95,10 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     accelerometerConfig.cfg.acc.range = BMI2_ACC_RANGE_16G;
     bmi2_set_sensor_config(&accelerometerConfig, 1, &bmi270);
     bmi2_do_crt(&bmi270);
-    
+
     // Enable gyroscope
     bmi2_sensor_enable(&sensorList[1], 1, &bmi270);
-    
+        
     // Configure gyroscope
     struct bmi2_sens_config gyroscopeConfig;
     gyroscopeConfig.type = BMI2_GYRO;
@@ -111,7 +110,6 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     gyroscopeConfig.cfg.gyr.noise_perf = 1;
     bmi2_set_sensor_config(&gyroscopeConfig, 1, &bmi270);
     
-
     //Magnetometer setup
     if (mag_enabled){	
 	// Enable magnetometer
@@ -163,7 +161,7 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     return 0;
 }
 
-int get_bmi270_data(struct vec_scaled_output *acc, struct vec_scaled_output *gyr)
+int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr)
 {
     int rslt;
     rslt = bmi2_get_sensor_data(&acce, 1, &bmi270);
@@ -190,7 +188,7 @@ int get_bmi270_data(struct vec_scaled_output *acc, struct vec_scaled_output *gyr
     return 0;
 }
 
-int get_bmm150_data(struct vec_scaled_output *mag)
+int get_bmm150_data(struct vector3 *mag)
 {
     int rslt;
     rslt = bmm150_read_mag_data(&bmm150);
@@ -332,7 +330,3 @@ int8_t bmm150_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, ui
 {
     return bmi2_read_aux_man_mode(reg_addr, reg_data, length, &bmi270);
 }
-
-
-
-

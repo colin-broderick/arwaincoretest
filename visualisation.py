@@ -10,9 +10,12 @@ For testing visualization only. Requires vpython:
     
     pip3 install vpython
 
+Angles and times are logged to file for analysis.
+
 """
 
 import sys
+import time
 
 from vpython import *
 
@@ -32,20 +35,29 @@ X = vector(1, 0, 0)
 Y = vector(0, 1, 0)
 Z = vector(0, 0, 1)
 
-angles = [0, 0, 0]
+rad_angles = [0, 0, 0]
+first_angles = None
 
-for line in sys.stdin:
-    if "Orientation (E)" in line:
-        bx.rotate(angle=-angles[2], axis=Y)
-        bx.rotate(angle=-angles[1], axis=Z)
-        bx.rotate(angle=-angles[0], axis=X)
+start = time.time()
 
-        ## Parse angles from the orientation string.
-        angles = [float(angle)*pi/180 for angle in line[18:-2].split(",")]
+with open("log.txt", "w") as f:
+    for line in sys.stdin:
+        if "Orientation (E)" in line:
+            bx.rotate(angle=-rad_angles[2], axis=Y)
+            bx.rotate(angle=-rad_angles[1], axis=Z)
+            bx.rotate(angle=-rad_angles[0], axis=X)
 
-        ## Rotate by the change in angle.
-        bx.rotate(angle=angles[0], axis=X)
-        bx.rotate(angle=angles[1], axis=Z)
-        bx.rotate(angle=angles[2], axis=Y)
+            ## Parse angles from the orientation string.
+            deg_angles = [float(angle) for angle in line[18:-2].split(",")]
+            rad_angles = [angle*pi/180 for angle in deg_angles]
+            
+            if first_angles is None:
+                first_angles = deg_angles[:]
 
-        print(angles)
+            ## Rotate by the change in angle.
+            bx.rotate(angle=rad_angles[0], axis=X)
+            bx.rotate(angle=rad_angles[1], axis=Z)
+            bx.rotate(angle=rad_angles[2], axis=Y)
+
+            print(deg_angles)
+            f.write(str(time.time()) + " " + str(deg_angles) + "\n")

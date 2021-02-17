@@ -36,7 +36,7 @@ double norm(std::array<double, 3> arr);
 std::array<float, 3> world_align(std::array<float, 3> vec, quaternion orientation);
 
 /// Rotates a 3-vector according to a quaternion orientation.
-vec_scaled_output world_align(vec_scaled_output vec, quaternion orientation);
+vector3 world_align(vector3 vec, quaternion orientation);
 
 /// Rotates a pair of 3-vectors, represented as a single 6-vector, according to a quaternion orientation.
 std::array<float, 6> world_align(std::array<float, 6> imu, quaternion orientation);

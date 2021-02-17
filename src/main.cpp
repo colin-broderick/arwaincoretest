@@ -75,6 +75,7 @@ std::deque<std::array<float, 3>> position_buffer;
 std::deque<euler_orientation_t> euler_orientation_buffer;
 std::deque<quaternion> quat_orientation_buffer;
 
+// Stance flags.
 extern std::string stance;
 extern int horizontal;
 extern int entangled;
@@ -93,13 +94,17 @@ std::mutex position_buffer_lock;
 std::mutex orientation_buffer_lock;
 extern std::mutex stance_lock;
 
+// Sensor biases.
+// vector3 gyro_bias = {0, 0, 0};
+vector3 gyro_bias = {0.012643, -0.00235, 0.002019};
+vector3 accel_bias = {0, 0, 0};
 
 void std_output()
 {
     if (log_to_std)
     {
         // Set up timing, including pause while IMU warms up.
-        std::chrono::milliseconds interval(100);
+        std::chrono::milliseconds interval(1000);
         std::this_thread::sleep_for(interval*3);
         auto time = std::chrono::system_clock::now();
 
@@ -161,10 +166,10 @@ void bmi270_reader()
     int count = 0;
 
     // Local buffers for IMU data
-    vec_scaled_output accel_data;
-    vec_scaled_output gyro_data;
-    vec_scaled_output world_accel_data;
-    vec_scaled_output world_gyro_data;
+    vector3 accel_data;
+    vector3 gyro_data;
+    vector3 world_accel_data;
+    vector3 world_gyro_data;
     euler_orientation_t euler_data;
     quaternion quat_data;
 
@@ -209,6 +214,8 @@ void bmi270_reader()
 
         // Read current sensor values.
         get_bmi270_data(&accel_data, &gyro_data);
+        accel_data = accel_data - accel_bias;
+        gyro_data = gyro_data - gyro_bias;
 
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         imu_buffer_lock.lock();
@@ -226,7 +233,7 @@ void bmi270_reader()
             gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
         }
 
-        // Perform an orientation filter step
+        // Perform an orientation filter step.
         orientation_filter.updateIMU(
             time.time_since_epoch().count(),
             gyro_data.x,
@@ -274,7 +281,6 @@ void bmi270_reader()
             quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
         }
         
-
         // Wait until the next tick.
         count++;
         time = time + interval;
@@ -735,7 +741,7 @@ int main(int argc, char **argv)
     std::thread fall_detection(run_fall_detect);
     std::thread stance_detection(run_stance_detect);
     std::thread radio_thread(transmit_lora);
-    std::thread alert_thread(alert_system);
+    // std::thread alert_thread(alert_system);
     std::thread logging_thread(std_output);
 
     // Wait for all threads to terminate.
@@ -744,7 +750,7 @@ int main(int argc, char **argv)
     fall_detection.join();
     stance_detection.join();
     radio_thread.join();
-    alert_thread.join();
+    // alert_thread.join();
     logging_thread.join();
 
     return 1;

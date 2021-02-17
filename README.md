@@ -5,7 +5,9 @@ This repository is for development and testing of the ARWAIN C++ rewrite.
 It has been written using only the C++ standard library so should be portable to various hardware with very little work.
 
 It is almost feature-complete but no features have been formally tested. Missing feautres are
+
 1. NPU inference, though NCS2 inference is partially written
+
 2. LoRa communication
 
 ## Build
