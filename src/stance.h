@@ -5,19 +5,19 @@
 #include <array>
 #include <chrono>
 
-int update(float ax, float ay, float az, float gx, float gy, float gz, float vx, float vy, float vz);
+int update(double ax, double ay, double az, double gx, double gy, double gz, double vx, double vy, double vz);
 int empty_stance_buffers();
 int empty_fall_buffers();
 int is_falling();
 int is_entangled();
 int reset();
-float buffer_mean(std::vector<std::array<float, 3>> buffer);
-float struggle_mean(std::vector<float> struggles);
+double buffer_mean(std::vector<std::array<double, 3>> buffer);
+double struggle_mean(std::vector<double> struggles);
 int run_fall_detect();
-float activity(float a, float g, float v);
-int biggest_axis(float arr[3]);
+double activity(double a, double g, double v);
+int biggest_axis(double arr[3]);
 int is_horizontal();
-int get_means(float arr[], std::vector<std::array<float, 3>> source_vector);
+int get_means(double arr[], std::vector<std::array<double, 3>> source_vector);
 int run_stance_detect();
 int get_stance();
 int kill();

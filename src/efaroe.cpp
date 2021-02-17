@@ -64,10 +64,8 @@ void eFaroe::updateIMU(double timestamp, double gx, double gy, double gz,  doubl
 
     // Convert timestamp to seconds.
     timestamp = timestamp/1e9;
-
     if (last_read == 0)
     {
-        // Confirm timestamp has usable type/value
         last_read = timestamp;
         return;
     }
@@ -97,16 +95,14 @@ void eFaroe::updateIMU(double timestamp, double gx, double gy, double gz,  doubl
     // Normalize gradient.
     grad = grad/grad.magnitude();
 
-    // TODO Calculate new gyro_bias?
+    // Calculate new gyro_bias?
     vector3 g_b = gyro_bias + grad * dt * zeta;
 
     // Subtract gyro bias.
     vector3 gyro = gyr - g_b;
 
     // EXPERIMENTAL Gyro bias filter.
-    // gyro_bias[0] = gyro_bias[0] + smallest(sign(gyro[0])*0.005, gyro[0]*0.0001);
-    // gyro_bias[1] = gyro_bias[1] + smallest(sign(gyro[1])*0.005, gyro[1]*0.0001);
-    // gyro_bias[2] = gyro_bias[2] + smallest(sign(gyro[2])*0.005, gyro[2]*0.0001);
+    gyro_bias = gyro_bias + gyro*0.0001;
 
     // TODO What is this?
     vector3 a_v = (gyro - grad*beta)*dt;

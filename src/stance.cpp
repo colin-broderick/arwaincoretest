@@ -15,8 +15,8 @@ extern int shutdown;
 extern std::string folder_date_string;
 extern std::mutex imu_buffer_lock;
 extern std::mutex vel_buffer_lock;
-extern std::deque<std::array<float, 6>> imu_full_buffer;
-extern std::deque<std::array<float, 3>> vel_full_buffer;
+extern std::deque<std::array<double, 6>> imu_full_buffer;
+extern std::deque<std::array<double, 3>> vel_full_buffer;
 
 // Flags for logging behaviour, declared and defined in main.cpp.
 extern int log_to_file;
@@ -63,13 +63,13 @@ int is_entangled()
     return ret;
 }
 
-// Calculates the mean magnitude of a (x,3) sized deque for floats.
-float buffer_mean_magnitude(std::deque<std::array<float, 3>> buffer)
+// Calculates the mean magnitude of a (x,3) sized deque for doubles.
+double buffer_mean_magnitude(std::deque<std::array<double, 3>> buffer)
 {
-    float mean = 0.0;
+    double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
     {
-        float square_sum = 0;
+        double square_sum = 0;
         for (unsigned int j=0; j < 3; j++)
         {
             square_sum += buffer[i][j]*buffer[i][j];
@@ -80,13 +80,13 @@ float buffer_mean_magnitude(std::deque<std::array<float, 3>> buffer)
     return mean;
 }
 
-// Calculates the mean magnitude of a (x,3) sized vector for floats.
-float buffer_mean_magnitude(std::vector<std::array<float, 3>> buffer)
+// Calculates the mean magnitude of a (x,3) sized vector for doubles.
+double buffer_mean_magnitude(std::vector<std::array<double, 3>> buffer)
 {
-    float mean = 0.0;
+    double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
     {
-        float square_sum = 0;
+        double square_sum = 0;
         for (unsigned int j=0; j < 3; j++)
         {
             square_sum += buffer[i][j]*buffer[i][j];
@@ -97,10 +97,10 @@ float buffer_mean_magnitude(std::vector<std::array<float, 3>> buffer)
     return mean;
 }
 
-/// Calculates the mean of a vector of floats.
-float vector_mean(std::vector<float> values)
+/// Calculates the mean of a vector of doubles.
+double vector_mean(std::vector<double> values)
 {
-    float mean = 0;
+    double mean = 0;
     for (unsigned int i = 0; i < values.size(); i++)
     {
         mean += values[i];
@@ -111,22 +111,22 @@ float vector_mean(std::vector<float> values)
 // This is the fall detection main loop. Periodically check 'die' to decide whether to quit.
 int run_fall_detect()
 {
-    float a_mean_magnitude;
-    float g_mean_magnitude;
-    float v_mean_magnitude;
+    double a_mean_magnitude;
+    double g_mean_magnitude;
+    double v_mean_magnitude;
 
     // Read thresholds and constants from config file.
-    float a_threshold = arwain::get_config<float>(config_file, "a_threshold");
-    float struggle_threshold = arwain::get_config<float>(config_file, "struggle_threshold");
-    float gravity = arwain::get_config<float>(config_file, "gravity");
+    double a_threshold = arwain::get_config<double>(config_file, "a_threshold");
+    double struggle_threshold = arwain::get_config<double>(config_file, "struggle_threshold");
+    double gravity = arwain::get_config<double>(config_file, "gravity");
 
-    float a_twitch;
-    float tmp_struggle;
+    double a_twitch;
+    double tmp_struggle;
 
-    float sfactor = 1;
+    double sfactor = 1;
 
     int count = 0;
-    float struggle = 0;
+    double struggle = 0;
     
     // Open file for logging
     std::ofstream freefall_file;
@@ -136,7 +136,7 @@ int run_fall_detect()
         freefall_file << "# time freefall entanglement" << "\n";
     }
 
-    std::vector<float> struggle_window(10);
+    std::vector<double> struggle_window(10);
 
     auto time = now();
     std::chrono::milliseconds interval(FALL_DETECTION_INTERVAL);
@@ -145,22 +145,22 @@ int run_fall_detect()
     {
         // Grab the imu_data to be used, i.e. most recent second of imu_data.
         imu_buffer_lock.lock();
-        std::deque<std::array<float, 6>> imu_data = imu_full_buffer;
+        std::deque<std::array<double, 6>> imu_data = imu_full_buffer;
         imu_buffer_lock.unlock();
 
         vel_buffer_lock.lock();
-        std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
+        std::deque<std::array<double, 3>> vel_data = vel_full_buffer;
         vel_buffer_lock.unlock();
 
         // Separate accel and gyro buffers; bit more convenient this way.
-        std::vector<std::array<float, 3>> accel_data;
-        std::vector<std::array<float, 3>> gyro_data;
+        std::vector<std::array<double, 3>> accel_data;
+        std::vector<std::array<double, 3>> gyro_data;
         for (int i = 0; i < 20; i++)
         {
-            accel_data.push_back(std::array<float, 3>{
+            accel_data.push_back(std::array<double, 3>{
                 imu_data[i][0], imu_data[i][1], imu_data[i][2]
             });
-            gyro_data.push_back(std::array<float, 3>{
+            gyro_data.push_back(std::array<double, 3>{
                 imu_data[i][3], imu_data[i][4], imu_data[i][5]
             });
         }
@@ -208,7 +208,7 @@ int run_fall_detect()
 }
 
 // Gives a measure of intensity of activity based on values of a, g, v.
-float activity(float a, float g, float v)
+double activity(double a, double g, double v)
 {
     // TODO Need to discover a decent metric of `activity`.
     // The metric should read high when accelerations are high,
@@ -222,8 +222,8 @@ float activity(float a, float g, float v)
     return a*g+v-v;
 }
 
-// Returns the index of the largest element in a 3-array of floats. Think np.argmax().
-int biggest_axis(std::array<float, 3> arr)
+// Returns the index of the largest element in a 3-array of doubles. Think np.argmax().
+int biggest_axis(std::array<double, 3> arr)
 {
     int axis;
     if (arr[0] > arr[1] && arr[0] > arr[2])
@@ -250,9 +250,9 @@ int is_horizontal()
     return ret;
 }
 
-std::array<float, 3> get_means(std::deque<std::array<float, 3>> source_vector)
+std::array<double, 3> get_means(std::deque<std::array<double, 3>> source_vector)
 {
-    std::array<float, 3> ret;
+    std::array<double, 3> ret;
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
@@ -267,9 +267,9 @@ std::array<float, 3> get_means(std::deque<std::array<float, 3>> source_vector)
     return ret;
 }
 
-std::array<float, 6> get_means(std::deque<std::array<float, 6>> source_vector)
+std::array<double, 6> get_means(std::deque<std::array<double, 6>> source_vector)
 {
-    std::array<float, 6> ret;
+    std::array<double, 6> ret;
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
@@ -291,9 +291,9 @@ std::array<float, 6> get_means(std::deque<std::array<float, 6>> source_vector)
 }
 
 // Return the column-wise means of a size (x, 3) vector
-std::array<float, 3> get_means(std::vector<std::array<float, 3>> source_vector)
+std::array<double, 3> get_means(std::vector<std::array<double, 3>> source_vector)
 {
-    std::array<float, 3> ret;
+    std::array<double, 3> ret;
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
@@ -311,18 +311,18 @@ std::array<float, 3> get_means(std::vector<std::array<float, 3>> source_vector)
 // This is the stance detection main loop. Periodically check value of die to decide whether to quit.
 int run_stance_detect()
 {
-    float a_mean_magnitude;
-    float g_mean_magnitude;
-    float v_mean_magnitude;
+    double a_mean_magnitude;
+    double g_mean_magnitude;
+    double v_mean_magnitude;
 
-    float act;
+    double act;
 
     // Read thresholds and constants from config file.
-    float climbing_threshold = arwain::get_config<float>(config_file, "climbing_threshold");
-    float crawling_threshold = arwain::get_config<float>(config_file, "crawling_threshold");
-    float running_threshold = arwain::get_config<float>(config_file, "running_threshold");
-    float walking_threshold = arwain::get_config<float>(config_file, "walking_threshold");
-    float active_threshold = arwain::get_config<float>(config_file, "active_threshold");
+    double climbing_threshold = arwain::get_config<double>(config_file, "climbing_threshold");
+    double crawling_threshold = arwain::get_config<double>(config_file, "crawling_threshold");
+    double running_threshold = arwain::get_config<double>(config_file, "running_threshold");
+    double walking_threshold = arwain::get_config<double>(config_file, "walking_threshold");
+    double active_threshold = arwain::get_config<double>(config_file, "active_threshold");
 
     int vertical_axis = 1;
     int speed_axis;
@@ -342,28 +342,28 @@ int run_stance_detect()
     {
         // Grab the imu_data to be used, i.e. most recent second of imu_data.
         imu_buffer_lock.lock();
-        std::deque<std::array<float, 6>> imu_data = imu_full_buffer;
+        std::deque<std::array<double, 6>> imu_data = imu_full_buffer;
         imu_buffer_lock.unlock();
 
         vel_buffer_lock.lock();
-        std::deque<std::array<float, 3>> vel_data = vel_full_buffer;
+        std::deque<std::array<double, 3>> vel_data = vel_full_buffer;
         vel_buffer_lock.unlock();
 
         // Separate accel and gyro buffers; bit more convenient this way.
-        std::vector<std::array<float, 3>> accel_data;
-        std::vector<std::array<float, 3>> gyro_data;
+        std::vector<std::array<double, 3>> accel_data;
+        std::vector<std::array<double, 3>> gyro_data;
         for (unsigned int i = 0; i < imu_data.size(); i++)
         {
-            accel_data.push_back(std::array<float, 3>{
+            accel_data.push_back(std::array<double, 3>{
                 imu_data[i][0], imu_data[i][1], imu_data[i][2]
             });
-            gyro_data.push_back(std::array<float, 3>{
+            gyro_data.push_back(std::array<double, 3>{
                 imu_data[i][3], imu_data[i][4], imu_data[i][5]
             });
         }
 
         // Determine which axis has the largest value of acceleration. If not the same as vertical axis, subject must be horizontal.
-        std::array<float, 3> accel_means = get_means(accel_data);
+        std::array<double, 3> accel_means = get_means(accel_data);
         int primary_axis = biggest_axis(accel_means);
         stance_lock.lock();
         if (primary_axis != vertical_axis)

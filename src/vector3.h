@@ -5,13 +5,13 @@
 
 typedef struct vector3
 {
-    float x;
-    float y;
-    float z;
-    float magnitude();
+    double x;
+    double y;
+    double z;
+    double magnitude();
 } vector3;
 
-inline float vector3::magnitude()
+inline double vector3::magnitude()
 {
     return sqrt(x*x+y*y+z*z);
 }

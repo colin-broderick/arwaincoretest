@@ -35,7 +35,7 @@ class BinLog
         BinLog(std::string filename, int filetype);
         
         // Operators
-        arwain::BinLog & operator<<(std::array<float, 3> vals);
+        arwain::BinLog & operator<<(std::array<double, 3> vals);
         arwain::BinLog & operator<<(unsigned long long val);
         arwain::BinLog & operator<<(int val);
         arwain::BinLog & operator<<(std::chrono::_V2::system_clock::time_point time);

@@ -14,9 +14,9 @@ std::chrono::_V2::system_clock::time_point now();
 
 typedef struct euler_orientation_t
 {
-    float roll;
-    float pitch;
-    float yaw;
+    double roll;
+    double pitch;
+    double yaw;
 } euler_orientation_t;
 
 // Date/time as a string in the form YYYY_MM_DD_HH_mm_ss.

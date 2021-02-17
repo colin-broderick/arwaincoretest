@@ -24,9 +24,9 @@ Example:
       bytes   | data
     ----------|---------------------------
       0-7     | timestamp as a long long
-      8-11    | acceleration x as a float
-      12-15   | acceleration y as a float
-      16-19   | acceleration z as a float
+      8-11    | acceleration x as a double
+      12-15   | acceleration y as a double
+      16-19   | acceleration z as a double
 
 Files that are flushed and closed correctly will end with an identifying sequence.
 The reader should be able to handle a file without the ending sequence, but will
@@ -45,10 +45,10 @@ not be expected to handle a file without the starting sequence.
 int example()
 {
     arwain::BinLog log1("data.bin", arwain::accelwrite);
-    std::array<float, 3> data1{4.1, 5, 6};
+    std::array<double, 3> data1{4.1, 5, 6};
     unsigned long long data2 = 5;
     auto time = std::chrono::system_clock::now();
-    // write float array
+    // write double array
     log1 << data1;
     //write long long
     log1 << data2;
@@ -80,15 +80,15 @@ arwain::BinLog::BinLog(std::string filename, int filetype)
     }
 }
 
-// Send an array of three floats, e.g. accel data, to the log file.
-arwain::BinLog & arwain::BinLog::operator<<(std::array<float, 3> vals)
+// Send an array of three doubles, e.g. accel data, to the log file.
+arwain::BinLog & arwain::BinLog::operator<<(std::array<double, 3> vals)
 {
-    float buf[3];
+    double buf[3];
     for (unsigned int i = 0; i < vals.size(); i++)
     {
         buf[i] = vals[i];
     }
-    handle.write((char*)buf, vals.size()*sizeof(float));
+    handle.write((char*)buf, vals.size()*sizeof(double));
     return *this;
 }
 

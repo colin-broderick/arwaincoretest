@@ -23,16 +23,16 @@
 // Variable declaration
 class Madgwick{
 private:
-    static float invSqrt(float x);
-    float beta;				// algorithm gain
-    float q0;
-    float q1;
-    float q2;
-    float q3;	// quaternion of sensor frame relative to auxiliary frame
-    float invSampleFreq;
-    float roll;
-    float pitch;
-    float yaw;
+    static double invSqrt(double x);
+    double beta;				// algorithm gain
+    double q0;
+    double q1;
+    double q2;
+    double q3;	// quaternion of sensor frame relative to auxiliary frame
+    double invSampleFreq;
+    double roll;
+    double pitch;
+    double yaw;
     char anglesComputed;
     void computeAngles();
 
@@ -40,53 +40,53 @@ private:
 // Function declarations
 public:
     Madgwick(void);
-    Madgwick(float sample_frequency);
+    Madgwick(double sample_frequency);
 
-    void update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz);
-    void updateIMU(float gx, float gy, float gz, float ax, float ay, float az);
-    void updateIMU(double timestamp, float gx, float gy, float gz, float ax, float ay, float az);
+    void update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
+    void updateIMU(double gx, double gy, double gz, double ax, double ay, double az);
+    void updateIMU(double timestamp, double gx, double gy, double gz, double ax, double ay, double az);
 
-    //float getPitch(){return atan2f(2.0f * q2 * q3 - 2.0f * q0 * q1, 2.0f * q0 * q0 + 2.0f * q3 * q3 - 1.0f);};
-    //float getRoll(){return -1.0f * asinf(2.0f * q1 * q3 + 2.0f * q0 * q2);};
-    //float getYaw(){return atan2f(2.0f * q1 * q2 - 2.0f * q0 * q3, 2.0f * q0 * q0 + 2.0f * q1 * q1 - 1.0f);};
-    float getW()
+    //double getPitch(){return atan2f(2.0f * q2 * q3 - 2.0f * q0 * q1, 2.0f * q0 * q0 + 2.0f * q3 * q3 - 1.0f);};
+    //double getRoll(){return -1.0f * asinf(2.0f * q1 * q3 + 2.0f * q0 * q2);};
+    //double getYaw(){return atan2f(2.0f * q1 * q2 - 2.0f * q0 * q3, 2.0f * q0 * q0 + 2.0f * q1 * q1 - 1.0f);};
+    double getW()
     {
         return q0;
     }
-    float getX()
+    double getX()
     {
         return q1;
     }
-    float getY()
+    double getY()
     {
         return q2;
     }
-    float getZ()
+    double getZ()
     {
         return q3;
     }
 
-    float getRoll() {
+    double getRoll() {
         if (!anglesComputed) computeAngles();
         return roll * 57.29578f;
     }
-    float getPitch() {
+    double getPitch() {
         if (!anglesComputed) computeAngles();
         return pitch * 57.29578f;
     }
-    float getYaw() {
+    double getYaw() {
         if (!anglesComputed) computeAngles();
         return yaw * 57.29578f + 180.0f;
     }
-    float getRollRadians() {
+    double getRollRadians() {
         if (!anglesComputed) computeAngles();
         return roll;
     }
-    float getPitchRadians() {
+    double getPitchRadians() {
         if (!anglesComputed) computeAngles();
         return pitch;
     }
-    float getYawRadians() {
+    double getYawRadians() {
         if (!anglesComputed) computeAngles();
         return yaw;
     }
