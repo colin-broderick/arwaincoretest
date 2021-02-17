@@ -95,9 +95,8 @@ std::mutex orientation_buffer_lock;
 extern std::mutex stance_lock;
 
 // Sensor biases.
-vector3 gyro_bias = {0, 0, 0};
-// vector3 gyro_bias = {0.012643, -0.00235, 0.002019};
-vector3 accel_bias = {0, 0, 0};
+vector3 gyro_bias;
+vector3 accel_bias;
 
 void std_output()
 {
@@ -155,7 +154,6 @@ void bmi270_reader()
 {
     // Initialize orientation filter.
     // Madgwick orientation_filter{(double)(1000.0/IMU_READING_INTERVAL)};
-
     eFaroe orientation_filter{
         quaternion{0,0,0,0},
         gyro_bias,
@@ -214,8 +212,6 @@ void bmi270_reader()
 
         // Read current sensor values.
         get_bmi270_data(&accel_data, &gyro_data);
-        accel_data = accel_data - accel_bias;
-        gyro_data = gyro_data - gyro_bias;
 
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         imu_buffer_lock.lock();
@@ -727,6 +723,12 @@ int main(int argc, char **argv)
     // Get IMU configuration from config file.
     USE_MAGNETOMETER = arwain::get_config<int>(config_file, "use_magnetometer_for_filtering");
     LOG_MAGNETOMETER = arwain::get_config<int>(config_file, "log_magnetometer");
+    gyro_bias.x = arwain::get_config<double>(config_file, "gyro_bias_x");
+    gyro_bias.y = arwain::get_config<double>(config_file, "gyro_bias_y");
+    gyro_bias.z = arwain::get_config<double>(config_file, "gyro_bias_z");
+    accel_bias.x = arwain::get_config<double>(config_file, "accel_bias_x");
+    accel_bias.y = arwain::get_config<double>(config_file, "accel_bias_y");
+    accel_bias.z = arwain::get_config<double>(config_file, "accel_bias_z");
 
     // Initialize the IMU.
     if (init_bmi270(USE_MAGNETOMETER || LOG_MAGNETOMETER, bmi270_calib_file) != 0)

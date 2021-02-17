@@ -26,7 +26,7 @@ namespace arwain {
 template <class T>
 T get_config(std::string filename, std::string option)
 {
-    T ret = -1;
+    T ret = -999;
     std::string line;
     std::ifstream file(filename);
     while (getline(file, line))
@@ -51,7 +51,7 @@ T get_config(std::string filename, std::string option)
     }
 
     // Warn if configuration option not found in file.
-    if (ret == -1)
+    if (ret == -999)
     {
         std::cout << option << " not found in config file - add it or expect undesirable behaviour" << "\n";
     }
