@@ -32,6 +32,17 @@ quaternion::quaternion(double real, double im_i, double im_j, double im_k)
     z = im_k;
 }
 
+/** \brief Construct a quaternion from a three-vector.
+ * \param vec A three-vector to convert to an orientation quaternion.
+ */
+quaternion::quaternion(vector3 vec)
+{
+    w = 0;
+    x = vec.x;
+    y = vec.y;
+    z = vec.z;
+}
+
 /** \brief Add two quaternions.
  * Quaternions are added element-wise as
  * \f$ w = w_1 + w_2 \f$,

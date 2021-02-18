@@ -21,42 +21,43 @@
 
 #include <math.h>
 
+#include "vector3.h"
 
 class quaternion
 {
     public:
-    
-    //  q = w + ix + jy + kz
-    double w, x, y, z;
+        //  q = w + ix + jy + kz
+        double w, x, y, z;
 
-    // constructor
-    quaternion(double real=0, double im_i=0, double im_j=0, double im_k=0);
-    
-    // useful operators
-    quaternion operator+(quaternion quat2);
-    quaternion operator-(quaternion quat2);
-    quaternion operator*(quaternion quat2);
-    quaternion operator*(double num);
-    quaternion operator/(double num);
-    quaternion operator+=(quaternion quat2);
-    quaternion operator-=(quaternion quat2);
-    quaternion operator*=(quaternion quat2);
-    quaternion operator*=(double num);
-    quaternion operator/=(double num);
-    int operator==(quaternion q2);
-
-    
-    double mag(); // magnitude
-    quaternion unit(); // returns unit quaternion
-    quaternion conj(); // returns the conjugate
-    quaternion inv(); // returns the inverse
-    quaternion unit_inv(); // inverse for unit quaternion
-    
-    // access to the class' private parts
-    double getRe(); // return real component
-    double getIm_i(); // return i component
-    double getIm_j(); // return j component
-    double getIm_k(); // return k component
+        // Constructors.
+        quaternion(double real=0, double im_i=0, double im_j=0, double im_k=0);
+        quaternion(vector3 vec);
+        
+        // Operators.
+        quaternion operator+(quaternion quat2);
+        quaternion operator-(quaternion quat2);
+        quaternion operator*(quaternion quat2);
+        quaternion operator*(double num);
+        quaternion operator/(double num);
+        quaternion operator+=(quaternion quat2);
+        quaternion operator-=(quaternion quat2);
+        quaternion operator*=(quaternion quat2);
+        quaternion operator*=(double num);
+        quaternion operator/=(double num);
+        int operator==(quaternion q2);
+        
+        // General methods.
+        double mag(); // magnitude
+        quaternion unit(); // returns unit quaternion
+        quaternion conj(); // returns the conjugate
+        quaternion inv(); // returns the inverse
+        quaternion unit_inv(); // inverse for unit quaternion
+        
+        // Getters.
+        double getRe(); // return real component
+        double getIm_i(); // return i component
+        double getIm_j(); // return j component
+        double getIm_k(); // return k component
 };
  
 #endif
