@@ -33,7 +33,7 @@ class eFaroe
 
         // Update methods.
         void updateIMU(
-            double timestamp, // time in milliseconds
+            double timestamp, // time in nanoseconds
             double gx,
             double gy,
             double gz,         // Angular velocities in rads/s
@@ -41,6 +41,19 @@ class eFaroe
             double ay,
             double az        // Accelerations in m/s2
         );
+        void updateIMU(
+            double timestamp,  // time in nanoseconds
+            double gx,
+            double gy,
+            double gz,        // Angular velocities in rad/s
+            double ax,
+            double ay,
+            double az,          // Accelerations in m/s2
+            double mx,
+            double my,
+            double mz         // Magnetic field in micro tesla
+        );
+
 
         // Orientation getters.
         double getW();
@@ -65,9 +78,11 @@ class eFaroe
         double gyro_error;
         double true_error;
 
-        // Magnetic field properties. Currently unused.
+        // Magnetic field properties.
         double uk_dip;
-        std::array<double, 2> emf;
+        double emf_x_test;
+        vector3 local_emf_test;
+        vector3 emf;
         
         // Filter parameters.
         double zeta;

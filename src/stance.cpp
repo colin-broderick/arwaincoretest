@@ -15,8 +15,8 @@ extern int shutdown;
 extern std::string folder_date_string;
 extern std::mutex imu_buffer_lock;
 extern std::mutex vel_buffer_lock;
-extern std::deque<std::array<double, 6>> imu_full_buffer;
-extern std::deque<std::array<double, 3>> vel_full_buffer;
+extern std::deque<std::array<double, 6>> imu_buffer;
+extern std::deque<std::array<double, 3>> vel_buffer;
 
 // Flags for logging behaviour, declared and defined in main.cpp.
 extern int log_to_file;
@@ -145,11 +145,11 @@ int run_fall_detect()
     {
         // Grab the imu_data to be used, i.e. most recent second of imu_data.
         imu_buffer_lock.lock();
-        std::deque<std::array<double, 6>> imu_data = imu_full_buffer;
+        std::deque<std::array<double, 6>> imu_data = imu_buffer;
         imu_buffer_lock.unlock();
 
         vel_buffer_lock.lock();
-        std::deque<std::array<double, 3>> vel_data = vel_full_buffer;
+        std::deque<std::array<double, 3>> vel_data = vel_buffer;
         vel_buffer_lock.unlock();
 
         // Separate accel and gyro buffers; bit more convenient this way.
@@ -342,11 +342,11 @@ int run_stance_detect()
     {
         // Grab the imu_data to be used, i.e. most recent second of imu_data.
         imu_buffer_lock.lock();
-        std::deque<std::array<double, 6>> imu_data = imu_full_buffer;
+        std::deque<std::array<double, 6>> imu_data = imu_buffer;
         imu_buffer_lock.unlock();
 
         vel_buffer_lock.lock();
-        std::deque<std::array<double, 3>> vel_data = vel_full_buffer;
+        std::deque<std::array<double, 3>> vel_data = vel_buffer;
         vel_buffer_lock.unlock();
 
         // Separate accel and gyro buffers; bit more convenient this way.

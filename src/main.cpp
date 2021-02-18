@@ -52,6 +52,7 @@ unsigned int ALERT_SYSTEM_INTERVAL = 1000;
 
 // Buffer sizes.
 unsigned int POSITION_BUFFER_LEN = 200;
+unsigned int MAG_BUFFER_LEN = 200;
 unsigned int VELOCITY_BUFFER_LEN = 200;
 unsigned int ORIENTATION_BUFFER_LEN = 200;
 unsigned int IMU_BUFFER_LEN = 200;
@@ -68,10 +69,12 @@ int log_to_file = 0;
 std::string folder_date_string;
 
 // IMU data buffers.
-std::deque<std::array<double, 6>> imu_full_buffer;
-std::deque<std::array<double, 6>> world_imu_buffer;
-std::deque<std::array<double, 3>> vel_full_buffer;
+std::deque<std::array<double, 6>> imu_buffer;
+std::deque<std::array<double, 6>> imu_world_buffer;
+std::deque<std::array<double, 3>> vel_buffer;
 std::deque<std::array<double, 3>> position_buffer;
+std::deque<std::array<double, 3>> mag_buffer;
+std::deque<std::array<double, 3>> mag_world_buffer;
 std::deque<euler_orientation_t> euler_orientation_buffer;
 std::deque<quaternion> quat_orientation_buffer;
 
@@ -87,7 +90,7 @@ int shutdown = 0;
 
 // Mutex locks.
 std::mutex imu_buffer_lock;
-std::mutex world_imu_buffer_lock;
+std::mutex mag_buffer_lock;
 std::mutex vel_buffer_lock;
 std::mutex status_flag_lock;
 std::mutex position_buffer_lock;
@@ -102,13 +105,18 @@ void std_output()
 {
     if (log_to_std)
     {
+        // Output string built here.
+        std::stringstream ss;
+        
+        // Local containers for stances statuses.
+        std::string fall;
+        std::string entd;
+        std::string ori;
+
         // Set up timing, including pause while IMU warms up.
         std::chrono::milliseconds interval(100);
         std::this_thread::sleep_for(interval*3);
         auto time = std::chrono::system_clock::now();
-
-        // Output string built here.
-        std::stringstream ss;
 
         while (!shutdown)
         {
@@ -117,11 +125,6 @@ void std_output()
             ss << "Position:        (" << position_buffer.back()[0] << ", " << position_buffer.back()[1] << ", " << position_buffer.back()[2] << ")" << "\n";
             position_buffer_lock.unlock();
 
-            // Add stance to the string stream.
-            stance_lock.lock();
-            
-            stance_lock.unlock();
-
             // Add Euler and quaternion orientations to the string stream.
             orientation_buffer_lock.lock();
             ss << "Orientation (E): (" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << "\n";;
@@ -129,9 +132,9 @@ void std_output()
             orientation_buffer_lock.unlock();
 
             // Add stance to the string stream.
-            std::string fall = is_falling() ? "ON" : "OFF";
-            std::string entd = is_entangled() ? "ON" : "OFF";
-            std::string ori = is_horizontal() ? "horizontal" : "vertical";
+            fall = is_falling() ? "ON" : "OFF";
+            entd = is_entangled() ? "ON" : "OFF";
+            ori = is_horizontal() ? "horizontal" : "vertical";
             ss << "Stance:          " << stance << ", " <<  ori << "\n";
             ss << "Fall flag:       " << fall << "\n";
             ss << "Entangled flag:  " << entd << "\n";
@@ -150,7 +153,7 @@ void std_output()
 }
 
 /// Reads the IMU at (1000/IMU_READING_INTERVAL) Hz, and runs orientation updates at the same frequency.
-void bmi270_reader()
+void imu_reader()
 {
     // Initialize orientation filter.
     // Madgwick orientation_filter{(double)(1000.0/IMU_READING_INTERVAL)};
@@ -162,18 +165,23 @@ void bmi270_reader()
     };
 
     int count = 0;
+    int get_mag = 0;
 
     // Local buffers for IMU data.
     vector3 accel_data;
     vector3 gyro_data;
+    vector3 mag_data;
+    vector3 prev_mag_data;
     vector3 world_accel_data;
     vector3 world_gyro_data;
+    vector3 world_mag_data;
     euler_orientation_t euler_data;
     quaternion quat_data;
 
     // File handles for logging.
     std::ofstream acce_file;
     std::ofstream gyro_file;
+    std::ofstream mag_file;
     std::ofstream euler_file;
     std::ofstream quat_file;
 
@@ -182,12 +190,14 @@ void bmi270_reader()
         // Open file handles for data logging.
         acce_file.open(folder_date_string + "/acce.txt");
         gyro_file.open(folder_date_string + "/gyro.txt");
+        mag_file.open(folder_date_string + "/mag.txt");
         euler_file.open(folder_date_string + "/euler_orientation.txt");
         quat_file.open(folder_date_string + "/quat_orientation.txt");
 
         // File headers
         acce_file << "# time x y z" << "\n";
         gyro_file << "# time x y z" << "\n";
+        mag_file << "# time x y z" << "\n";
         euler_file << "# time roll pitch yaw" << "\n";
         quat_file << "# time w x y z" << "\n";
     }
@@ -210,35 +220,67 @@ void bmi270_reader()
         //     }
         // }
 
+        // Whether or not to get magnetometer on this spin.
+        get_mag = ((count % 20 == 0) && (USE_MAGNETOMETER || LOG_MAGNETOMETER));
+
         // Read current sensor values.
         get_bmi270_data(&accel_data, &gyro_data);
-
+        if (get_mag)
+        {
+            // If we can reliably detect magnetic field disturbances we can improve our filter by running
+            // update with mag when it's good and update without mag when it's bad.
+            get_bmm150_data(&mag_data);
+            mag_data = prev_mag_data*0.9 + mag_data*0.1;
+            prev_mag_data = mag_data;
+            // std::cout << "################\n" << mag_data.magnitude() << "\n" << mag_data.x << "\n" << mag_data.y << "\n" << mag_data.z << "\n";
+        }
+        
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         imu_buffer_lock.lock();
-        imu_full_buffer.push_back(std::array<double, 6>{
+        imu_buffer.push_back(std::array<double, 6>{
             accel_data.x, accel_data.y, accel_data.z,
             gyro_data.x, gyro_data.y, gyro_data.z
         });
-        imu_full_buffer.pop_front();
+        imu_buffer.pop_front();
         imu_buffer_lock.unlock();
+
+        if (get_mag)
+        {
+            mag_buffer_lock.lock();
+            mag_buffer.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
+            mag_buffer.pop_front();
+            mag_buffer_lock.unlock();
+        }
 
         // Log IMU to file.
         if (log_to_file)
         {
             acce_file << time.time_since_epoch().count() << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << "\n";
             gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
+            if (get_mag)
+            {
+                mag_file << time.time_since_epoch().count() << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
+            }
         }
 
         // Perform an orientation filter step.
-        orientation_filter.updateIMU(
-            time.time_since_epoch().count(),
-            gyro_data.x,
-            gyro_data.y,
-            gyro_data.z,
-            accel_data.x,
-            accel_data.y,
-            accel_data.z
-        );
+        if (get_mag)
+        {
+            orientation_filter.updateIMU(
+                time.time_since_epoch().count(),
+                gyro_data.x, gyro_data.y, gyro_data.z,
+                accel_data.x, accel_data.y, accel_data.z,
+                mag_data.x, mag_data.y, mag_data.z
+            );
+        }
+        else
+        {
+            orientation_filter.updateIMU(
+                time.time_since_epoch().count(),
+                gyro_data.x, gyro_data.y, gyro_data.z,
+                accel_data.x, accel_data.y, accel_data.z
+            );
+        }
 
         // Extract Euler orientation from filter.
         euler_data.roll = orientation_filter.getRoll();
@@ -262,13 +304,24 @@ void bmi270_reader()
         // Add world-aligned IMU to its own buffer.
         world_accel_data = world_align(accel_data, quat_data);
         world_gyro_data = world_align(gyro_data, quat_data);
-        world_imu_buffer_lock.lock();
-        world_imu_buffer.push_back(std::array<double, 6>{
+        imu_buffer_lock.lock();
+        imu_world_buffer.push_back(std::array<double, 6>{
             world_accel_data.x, world_accel_data.y, world_accel_data.z,
             world_gyro_data.x, world_gyro_data.y, world_gyro_data.z
         });
-        world_imu_buffer.pop_front();
-        world_imu_buffer_lock.unlock();
+        imu_world_buffer.pop_front();
+        imu_buffer_lock.unlock();
+
+        if (get_mag)
+        {
+            world_mag_data = world_align(mag_data, quat_data);
+            mag_buffer_lock.lock();
+            mag_world_buffer.push_back(std::array<double, 3>{
+                world_mag_data.x, world_mag_data.y, world_mag_data.z
+            });
+            mag_world_buffer.pop_front();
+            mag_buffer_lock.unlock();
+        }
 
         // Log orientation information to file.
         if (log_to_file)
@@ -283,7 +336,6 @@ void bmi270_reader()
         std::this_thread::sleep_until(time);
     }
 
-    
     // Close all file handles.
     if (log_to_file)
     {
@@ -451,7 +503,7 @@ int predict_velocity()
     {
         // Grab latest IMU packet
         imu_buffer_lock.lock();
-        imu = imu_full_buffer;
+        imu = imu_buffer;
         imu_buffer_lock.unlock();
 
         // TODO: Make velocity prediction
@@ -472,8 +524,8 @@ int predict_velocity()
         // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
         vel = vel + vel_previous;
         vel_buffer_lock.lock();
-        vel_full_buffer.push_back(vel);
-        vel_full_buffer.pop_front();
+        vel_buffer.push_back(vel);
+        vel_buffer.pop_front();
         vel_buffer_lock.unlock();
 
         // TEST Store the velocity for use in the next loop (saves having to access the buffer for a single element).
@@ -703,12 +755,17 @@ int main(int argc, char **argv)
     // Preload buffers.
     for (unsigned int i = 0; i < IMU_BUFFER_LEN; i++)
     {
-        imu_full_buffer.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
-        world_imu_buffer.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
+        imu_buffer.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
+        imu_world_buffer.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
+    }
+    for (unsigned int i = 0; i < MAG_BUFFER_LEN; i++)
+    {
+        mag_buffer.push_back(std::array<double, 3>{0, 0, 0});
+        mag_world_buffer.push_back(std::array<double, 3>{0, 0, 0});
     }
     for (unsigned int i = 0; i < VELOCITY_BUFFER_LEN; i++)
     {
-        vel_full_buffer.push_back(std::array<double, 3>{0, 0, 0});
+        vel_buffer.push_back(std::array<double, 3>{0, 0, 0});
     }
     for (unsigned int i = 0; i < POSITION_BUFFER_LEN; i++)
     {
@@ -738,13 +795,13 @@ int main(int argc, char **argv)
     }
 
     // Start threads.
-    std::thread imu_full_thread(bmi270_reader);
+    std::thread imu_full_thread(imu_reader);
     std::thread velocity_prediction(predict_velocity);
     std::thread fall_detection(run_fall_detect);
     std::thread stance_detection(run_stance_detect);
     std::thread radio_thread(transmit_lora);
-    // std::thread alert_thread(alert_system);
     std::thread logging_thread(std_output);
+    // std::thread alert_thread(alert_system);
 
     // Wait for all threads to terminate.
     imu_full_thread.join();
@@ -752,8 +809,8 @@ int main(int argc, char **argv)
     fall_detection.join();
     stance_detection.join();
     radio_thread.join();
-    // alert_thread.join();
     logging_thread.join();
+    // alert_thread.join();
 
     return 1;
 }
