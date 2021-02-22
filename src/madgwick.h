@@ -28,7 +28,7 @@
 
 class Madgwick{
     private:
-        static double invSqrt(double x);
+        static float invSqrt(float x);
         double beta;	// algorithm gain
         double q0;
         double q1;
