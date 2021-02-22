@@ -25,6 +25,10 @@ clean_obj = $(wildcard src/*.o)
 CFLAGS = -std=c++17 -Wall -Wno-psabi
 LDFLAGS = -pthread -lstdc++fs -ldl -li2c
 
+# %.o: %.cpp
+.cpp.o:
+	$(CXX) -c $(CFLAGS) $(LDFLAGS) -o $@ $<
+
 ## Build main ARWAIN program.
 arwain: $(arwain_obj)
 	$(CXX) -o build/$@ $^ $(CFLAGS) $(LDFLAGS)
