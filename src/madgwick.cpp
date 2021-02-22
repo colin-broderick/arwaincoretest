@@ -296,7 +296,9 @@ float Madgwick::invSqrt(float x)
 	float halfx = 0.5f * x;
 	float y = x;
 	long i = *(long*)&y;
-	i = 0x5f3759df - (i>>1);
+	//0x5f375a86 is apparently better approximation
+	//0x5f3759df is the original
+	i = 0x5f375a86 - (i>>1);
 	y = *(float*)&i;
 	y = y * (1.5f - (halfx * y * y));
 	y = y * (1.5f - (halfx * y * y));

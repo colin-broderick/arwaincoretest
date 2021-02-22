@@ -62,4 +62,4 @@ latex/
 l_openvino_toolkit_runtime_raspbian_p_2020.1.023/
 .vscode/
 log.txt
-
+*.o

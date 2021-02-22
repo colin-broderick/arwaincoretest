@@ -22,7 +22,7 @@
 #include "madgwick.h"
 #include "efaroe.h"
 #include "math_util.h"
-#include "rknn_api.h"
+// #include "rknn_api.h"
 #include "input_parser.h"
 #include "bin_log.h"
 
@@ -156,7 +156,7 @@ void std_output()
 void imu_reader()
 {
     // Initialize orientation filter.
-    Madgwick orientation_filter{(double)(1000.0/IMU_READING_INTERVAL)};
+    Madgwick orientation_filter{1000.0/IMU_READING_INTERVAL};
     // eFaroe orientation_filter{
     //     quaternion{0,0,0,0},
     //     gyro_bias,
@@ -227,13 +227,13 @@ void imu_reader()
         imu_buffer_lock.unlock();
 
         // Buffer mag_data if collected. TODO Is there actually any reason to buffer this?
-        if (get_mag)
-        {
-            mag_buffer_lock.lock();
-            mag_buffer.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
-            mag_buffer.pop_front();
-            mag_buffer_lock.unlock();
-        }
+        // if (get_mag)
+        // {
+        //     mag_buffer_lock.lock();
+        //     mag_buffer.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
+        //     mag_buffer.pop_front();
+        //     mag_buffer_lock.unlock();
+        // }
 
         // Log IMU to file.
         if (log_to_file)
@@ -296,16 +296,16 @@ void imu_reader()
         imu_buffer_lock.unlock();
 
         // Add world-aligned magnetic field to buffer. TODO Why?
-        if (get_mag)
-        {
-            world_mag_data = world_align(mag_data, quat_data);
-            mag_buffer_lock.lock();
-            mag_world_buffer.push_back(std::array<double, 3>{
-                world_mag_data.x, world_mag_data.y, world_mag_data.z
-            });
-            mag_world_buffer.pop_front();
-            mag_buffer_lock.unlock();
-        }
+        // if (get_mag)
+        // {
+        //     world_mag_data = world_align(mag_data, quat_data);
+        //     mag_buffer_lock.lock();
+        //     mag_world_buffer.push_back(std::array<double, 3>{
+        //         world_mag_data.x, world_mag_data.y, world_mag_data.z
+        //     });
+        //     mag_world_buffer.pop_front();
+        //     mag_buffer_lock.unlock();
+        // }
 
         // Log orientation information to file.
         if (log_to_file)
@@ -441,10 +441,14 @@ std::array<double, 3> integrate(std::deque<std::array<double, 6>> data, double d
 }
 
 /// Sets up and runs velocity prediction using the NPU. Run as a thread.
-int predict_velocity()
+/** \brief Periodically makes velocity predictions based on data buffers, and adds that velocity and thereby position to the relevant buffers.
+ */
+void predict_velocity()
 {
     // TODO: Set up NPU and feed in model.
     // TODO: Merge the inference code into this function. Will need further abstraction.
+
+    // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
     std::chrono::milliseconds presleep(1000);
     std::this_thread::sleep_for(presleep*3);
 
@@ -452,7 +456,7 @@ int predict_velocity()
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
 
-    // TEST Get the filter weight parameter(s) from the config file.
+    // Get the filter weight parameter(s) from the config file.
     double npu_weight = arwain::get_config<double>(config_file, "npu_vel_weight_confidence");
 
     // Initialize buffers to contain working values.
@@ -545,8 +549,6 @@ int predict_velocity()
         velocity_file.close();
         position_file.close();
     }
-
-    return 1;
 }
 
 /// Captures keyboard interrupt to set shutdown flag.
