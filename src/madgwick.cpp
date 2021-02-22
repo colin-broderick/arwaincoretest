@@ -291,13 +291,13 @@ void Madgwick::update(double gx, double gy, double gz, double ax, double ay, dou
  * \param x Find square root of this number.
  * \return The square root of x.
  */
-double Madgwick::invSqrt(double x)
+float Madgwick::invSqrt(float x)
 {
-	double halfx = 0.5f * x;
-	double y = x;
+	float halfx = 0.5f * x;
+	float y = x;
 	long i = *(long*)&y;
 	i = 0x5f3759df - (i>>1);
-	y = *(double*)&i;
+	y = *(float*)&i;
 	y = y * (1.5f - (halfx * y * y));
 	y = y * (1.5f - (halfx * y * y));
 	return y;
