@@ -1,5 +1,4 @@
 #include "efaroe.h"
-#include "utils.h"
 
 extern std::string config_file;
 
