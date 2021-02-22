@@ -173,7 +173,7 @@ void imu_reader()
     vector3 mag_data;
     vector3 world_accel_data;
     vector3 world_gyro_data;
-    vector3 world_mag_data;
+    // vector3 world_mag_data;
     euler_orientation_t euler_data;
     quaternion quat_data;
 
