@@ -17,21 +17,27 @@
 //=============================================================================================
 //
 // This file modified by Greeve to bring comments in line with the rest of the project,
-// and to match APIs with another library, but functionality is not changed.
+// and to match APIs with another library, but core functionality is not changed.
+//
+// 16/02/2021    Colin Broderick    Modified to use doubles instead of floats.
 //
 //=============================================================================================
 
-
 #include "madgwick.h"
+// #include "utils.h"
 #include <math.h>
 
 #define sampleFreqDef   512.0f          // sample frequency in Hz
 #define betaDef         0.1f            // 2 * proportional gain
 
+// Constructors -----------------------------------------------------------------------------------
+
 /** \brief Constructor using default sample frequency.
  */
-Madgwick::Madgwick() {
+Madgwick::Madgwick()
+{
 	beta = betaDef;
+	// beta = arwain::get_config<double>(config_file, "madgwick_beta");
 	q0 = 1.0f;
 	q1 = 0.0f;
 	q2 = 0.0f;
@@ -46,6 +52,7 @@ Madgwick::Madgwick() {
 Madgwick::Madgwick(double sample_frequency)
 {
 	beta = betaDef;
+	// beta = arwain::get_config<double>(config_file, "madgwick_beta");
 	q0 = 1.0f;
 	q1 = 0.0f;
 	q2 = 0.0f;
@@ -53,6 +60,8 @@ Madgwick::Madgwick(double sample_frequency)
 	invSampleFreq = 1.0f / sample_frequency;
 	anglesComputed = 0;
 }
+
+// General methods --------------------------------------------------------------------------------
 
 /** \brief Update internal orientation state using IMU and magnetometer data.
  *  \param timestamp Timestamp of the supplied data in nanoseconds.
@@ -67,23 +76,20 @@ Madgwick::Madgwick(double sample_frequency)
  *  \param mz z-axis magnetfic field strength
  *  \return Nothing; updates internal state.
  */
-void Madgwick::update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz) {
+void Madgwick::update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz)
+{
+	// Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
+	if ((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f))
+	{
+		update(gx, gy, gz, ax, ay, az);
+		return;
+	}
+
 	double recipNorm;
 	double s0, s1, s2, s3;
 	double qDot1, qDot2, qDot3, qDot4;
 	double hx, hy;
 	double _2q0mx, _2q0my, _2q0mz, _2q1mx, _2bx, _2bz, _4bx, _4bz, _2q0, _2q1, _2q2, _2q3, _2q0q2, _2q2q3, q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
-
-	// Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
-	if((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f)) {
-		updateIMU(gx, gy, gz, ax, ay, az);
-		return;
-	}
-
-	// Convert gyroscope degrees/sec to radians/sec
-	gx *= 0.0174533f;
-	gy *= 0.0174533f;
-	gz *= 0.0174533f;
 
 	// Rate of change of quaternion from gyroscope
 	qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
@@ -92,8 +98,8 @@ void Madgwick::update(double gx, double gy, double gz, double ax, double ay, dou
 	qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
 
 	// Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-	if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
-
+	if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
+	{
 		// Normalise accelerometer measurement
 		recipNorm = invSqrt(ax * ax + ay * ay + az * az);
 		ax *= recipNorm;
@@ -179,9 +185,27 @@ void Madgwick::update(double gx, double gy, double gz, double ax, double ay, dou
  *  \param az x-axis accelerometer value in m/s2
  *  \return Nothing; updates internal state.
  */
-void Madgwick::updateIMU(double timestamp, double gx, double gy, double gz, double ax, double ay, double az)
+void Madgwick::update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az)
 {
-	updateIMU(gx, gy, gz, ax, ay, az);
+	update(gx, gy, gz, ax, ay, az);
+}
+
+/** \brief This is a dummy function to allow eFaroe and Madgwick filters to use the same API - timestamp is not used.
+ *  \param timestamp Timestamp of the supplied data in nanoseconds.
+ *  \param gx x-axis gyroscope value in rad/s
+ *  \param gy y-axis gyroscope value in rad/s
+ *  \param gz z-axis gyroscope value in rad/s
+ *  \param ax x-axis accelerometer value in m/s2
+ *  \param ay y-axis accelerometer value in m/s2
+ *  \param az x-axis accelerometer value in m/s2
+ *  \param mx x-axis magnetfic field strength
+ *  \param my y-axis magnetfic field strength
+ *  \param mz z-axis magnetfic field strength
+ *  \return Nothing; updates internal state.
+ */
+void Madgwick::update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz)
+{
+	update(gx, gy, gz, ax, ay, az, mx, my, mz);
 }
 
 /** \brief Update internal state using new IMU reading, without magnetometer data.
@@ -193,17 +217,12 @@ void Madgwick::updateIMU(double timestamp, double gx, double gy, double gz, doub
  *  \param az x-axis accelerometer value in m/s2
  *  \return Nothing; updates internal state.
  */
-void Madgwick::updateIMU(double gx, double gy, double gz, double ax, double ay, double az) {
+void Madgwick::update(double gx, double gy, double gz, double ax, double ay, double az)
+{
 	double recipNorm;
 	double s0, s1, s2, s3;
 	double qDot1, qDot2, qDot3, qDot4;
 	double _2q0, _2q1, _2q2, _2q3, _4q0, _4q1, _4q2 ,_8q1, _8q2, q0q0, q1q1, q2q2, q3q3;
-
-	// This factor isn't required because our sensor already operates in radians/sec.
-	// Convert gyroscope degrees/sec to radians/sec
-	// gx *= 0.0174533f;
-	// gy *= 0.0174533f;
-	// gz *= 0.0174533f;
 
 	// Rate of change of quaternion from gyroscope
 	qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
@@ -212,8 +231,8 @@ void Madgwick::updateIMU(double gx, double gy, double gz, double ax, double ay, 
 	qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
 
 	// Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-	if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
-
+	if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
+	{
 		// Normalise accelerometer measurement
 		recipNorm = invSqrt(ax * ax + ay * ay + az * az);
 		ax *= recipNorm;
@@ -272,7 +291,8 @@ void Madgwick::updateIMU(double gx, double gy, double gz, double ax, double ay, 
  * \param x Find square root of this number.
  * \return The square root of x.
  */
-double Madgwick::invSqrt(double x) {
+double Madgwick::invSqrt(double x)
+{
 	double halfx = 0.5f * x;
 	double y = x;
 	long i = *(long*)&y;
@@ -289,4 +309,80 @@ void Madgwick::computeAngles()
 	pitch = asinf(-2.0f * (q1*q3 - q0*q2));
 	yaw = atan2f(q1*q2 + q0*q3, 0.5f - q2*q2 - q3*q3);
 	anglesComputed = 1;
+}
+
+// Getters ----------------------------------------------------------------------------------------
+
+double Madgwick::getW()
+{
+	return q0;
+}
+
+double Madgwick::getX()
+{
+	return q1;
+}
+
+double Madgwick::getY()
+{
+	return q2;
+}
+
+double Madgwick::getZ()
+{
+	return q3;
+}
+
+double Madgwick::getRoll()
+{
+	if (!anglesComputed)
+	{
+		computeAngles();
+	}
+	return roll * 57.29578f;
+}
+
+double Madgwick::getPitch()
+{
+	if (!anglesComputed)
+	{
+		computeAngles();
+	}
+	return pitch * 57.29578f;
+}
+
+double Madgwick::getYaw()
+{
+	if (!anglesComputed)
+	{
+		computeAngles();
+	}
+	return yaw * 57.29578f + 180.0f;
+}
+
+double Madgwick::getRollRadians()
+{
+	if (!anglesComputed)
+	{
+		computeAngles();
+	}
+	return roll;
+}
+
+double Madgwick::getPitchRadians()
+{
+	if (!anglesComputed)
+	{
+		computeAngles();
+	}
+	return pitch;
+}
+
+double Madgwick::getYawRadians()
+{
+	if (!anglesComputed)
+	{
+		computeAngles();
+	}
+	return yaw;
 }
