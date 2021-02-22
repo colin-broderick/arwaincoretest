@@ -27,7 +27,7 @@
 #include "bin_log.h"
 
 // Whether to use magnetometer readings for orientation filter.
-int USE_MAGNETOMETER;
+int USE_MAGNETOMETER_FOR_FILTERING;
 int LOG_MAGNETOMETER;
 
 // Status codes.
@@ -156,13 +156,13 @@ void std_output()
 void imu_reader()
 {
     // Initialize orientation filter.
-    // Madgwick orientation_filter{(double)(1000.0/IMU_READING_INTERVAL)};
-    eFaroe orientation_filter{
-        quaternion{0,0,0,0},
-        gyro_bias,
-        100,
-        0
-    };
+    Madgwick orientation_filter{(double)(1000.0/IMU_READING_INTERVAL)};
+    // eFaroe orientation_filter{
+    //     quaternion{0,0,0,0},
+    //     gyro_bias,
+    //     100,
+    //     0
+    // };
 
     int count = 0;
     int get_mag = 0;
@@ -171,7 +171,6 @@ void imu_reader()
     vector3 accel_data;
     vector3 gyro_data;
     vector3 mag_data;
-    vector3 prev_mag_data;
     vector3 world_accel_data;
     vector3 world_gyro_data;
     vector3 world_mag_data;
@@ -208,31 +207,14 @@ void imu_reader()
 
     while (!shutdown)
     {
-        // Check for lag condition. It's not unusual to see this for a few moments while everything spins up,
-        // but it should not be seen again.
-        // This only reliably detects long term lag, not occasional blips. 
-        // if (count % 100 == 0)
-        // {
-        //     auto delay = now() - time;
-        //     if (delay > interval)
-        //     {
-        //         std::cout << "Sensor lag detected! " << delay.count() << " ns\n";
-        //     }
-        // }
-
         // Whether or not to get magnetometer on this spin.
-        get_mag = ((count % 20 == 0) && (USE_MAGNETOMETER || LOG_MAGNETOMETER));
+        get_mag = ((count % 20 == 0) && (USE_MAGNETOMETER_FOR_FILTERING || LOG_MAGNETOMETER));
 
         // Read current sensor values.
         get_bmi270_data(&accel_data, &gyro_data);
         if (get_mag)
         {
-            // If we can reliably detect magnetic field disturbances we can improve our filter by running
-            // update with mag when it's good and update without mag when it's bad.
             get_bmm150_data(&mag_data);
-            mag_data = prev_mag_data*0.9 + mag_data*0.1;
-            prev_mag_data = mag_data;
-            // std::cout << "################\n" << mag_data.magnitude() << "\n" << mag_data.x << "\n" << mag_data.y << "\n" << mag_data.z << "\n";
         }
         
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
@@ -244,6 +226,7 @@ void imu_reader()
         imu_buffer.pop_front();
         imu_buffer_lock.unlock();
 
+        // Buffer mag_data if collected. TODO Is there actually any reason to buffer this?
         if (get_mag)
         {
             mag_buffer_lock.lock();
@@ -257,16 +240,16 @@ void imu_reader()
         {
             acce_file << time.time_since_epoch().count() << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << "\n";
             gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
-            if (get_mag)
+            if (LOG_MAGNETOMETER)
             {
                 mag_file << time.time_since_epoch().count() << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
             }
         }
 
         // Perform an orientation filter step.
-        if (get_mag)
+        if (USE_MAGNETOMETER_FOR_FILTERING)
         {
-            orientation_filter.updateIMU(
+            orientation_filter.update(
                 time.time_since_epoch().count(),
                 gyro_data.x, gyro_data.y, gyro_data.z,
                 accel_data.x, accel_data.y, accel_data.z,
@@ -275,7 +258,7 @@ void imu_reader()
         }
         else
         {
-            orientation_filter.updateIMU(
+            orientation_filter.update(
                 time.time_since_epoch().count(),
                 gyro_data.x, gyro_data.y, gyro_data.z,
                 accel_data.x, accel_data.y, accel_data.z
@@ -312,6 +295,7 @@ void imu_reader()
         imu_world_buffer.pop_front();
         imu_buffer_lock.unlock();
 
+        // Add world-aligned magnetic field to buffer. TODO Why?
         if (get_mag)
         {
             world_mag_data = world_align(mag_data, quat_data);
@@ -343,6 +327,7 @@ void imu_reader()
         gyro_file.close();
         euler_file.close();
         quat_file.close();
+        mag_file.close();
     }
 }
 
@@ -778,7 +763,7 @@ int main(int argc, char **argv)
     }
 
     // Get IMU configuration from config file.
-    USE_MAGNETOMETER = arwain::get_config<int>(config_file, "use_magnetometer_for_filtering");
+    USE_MAGNETOMETER_FOR_FILTERING = arwain::get_config<int>(config_file, "use_magnetometer_for_filtering");
     LOG_MAGNETOMETER = arwain::get_config<int>(config_file, "log_magnetometer");
     gyro_bias.x = arwain::get_config<double>(config_file, "gyro_bias_x");
     gyro_bias.y = arwain::get_config<double>(config_file, "gyro_bias_y");
@@ -788,7 +773,7 @@ int main(int argc, char **argv)
     accel_bias.z = arwain::get_config<double>(config_file, "accel_bias_z");
 
     // Initialize the IMU.
-    if (init_bmi270(USE_MAGNETOMETER || LOG_MAGNETOMETER, bmi270_calib_file) != 0)
+    if (init_bmi270(USE_MAGNETOMETER_FOR_FILTERING || LOG_MAGNETOMETER, bmi270_calib_file) != 0)
     {
         std::cout << "IMU failed to start" << "\n";
         return -1;

@@ -1,5 +1,5 @@
 //=============================================================================================
-// MadgwickAHRS.h
+// MadgwickAHRS.c
 //=============================================================================================
 //
 // Implementation of Madgwick's IMU and AHRS algorithms.
@@ -12,84 +12,57 @@
 // Date			Author          Notes
 // 29/09/2011	SOH Madgwick    Initial release
 // 02/10/2011	SOH Madgwick	Optimised for reduced CPU load
+// 19/02/2012	SOH Madgwick	Magnetometer measurement is normalised
 //
 //=============================================================================================
+//
+// This file modified by Greeve to bring comments in line with the rest of the project,
+// and to match APIs with another library, but core functionality is not changed.
+//
+//=============================================================================================
+
 #ifndef MadgwickAHRS_h
 #define MadgwickAHRS_h
 
 #include <math.h>
 
-//--------------------------------------------------------------------------------------------
-// Variable declaration
 class Madgwick{
-private:
-    static double invSqrt(double x);
-    double beta;				// algorithm gain
-    double q0;
-    double q1;
-    double q2;
-    double q3;	// quaternion of sensor frame relative to auxiliary frame
-    double invSampleFreq;
-    double roll;
-    double pitch;
-    double yaw;
-    char anglesComputed;
-    void computeAngles();
+    private:
+        static double invSqrt(double x);
+        double beta;	// algorithm gain
+        double q0;
+        double q1;
+        double q2;
+        double q3;      // quaternion of sensor frame relative to auxiliary frame
+        double invSampleFreq;
+        double roll;
+        double pitch;
+        double yaw;
+        char anglesComputed;
+        void computeAngles();
 
-//-------------------------------------------------------------------------------------------
-// Function declarations
-public:
-    Madgwick(void);
-    Madgwick(double sample_frequency);
+    public:
+        // Constructors
+        Madgwick(void);
+        Madgwick(double sample_frequency);
 
-    void update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
-    void updateIMU(double gx, double gy, double gz, double ax, double ay, double az);
-    void updateIMU(double timestamp, double gx, double gy, double gz, double ax, double ay, double az);
+        // General methods
+        void update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
+        void update(double gx, double gy, double gz, double ax, double ay, double az);
+        void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
+        void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az);
 
-    //double getPitch(){return atan2f(2.0f * q2 * q3 - 2.0f * q0 * q1, 2.0f * q0 * q0 + 2.0f * q3 * q3 - 1.0f);};
-    //double getRoll(){return -1.0f * asinf(2.0f * q1 * q3 + 2.0f * q0 * q2);};
-    //double getYaw(){return atan2f(2.0f * q1 * q2 - 2.0f * q0 * q3, 2.0f * q0 * q0 + 2.0f * q1 * q1 - 1.0f);};
-    double getW()
-    {
-        return q0;
-    }
-    double getX()
-    {
-        return q1;
-    }
-    double getY()
-    {
-        return q2;
-    }
-    double getZ()
-    {
-        return q3;
-    }
-
-    double getRoll() {
-        if (!anglesComputed) computeAngles();
-        return roll * 57.29578f;
-    }
-    double getPitch() {
-        if (!anglesComputed) computeAngles();
-        return pitch * 57.29578f;
-    }
-    double getYaw() {
-        if (!anglesComputed) computeAngles();
-        return yaw * 57.29578f + 180.0f;
-    }
-    double getRollRadians() {
-        if (!anglesComputed) computeAngles();
-        return roll;
-    }
-    double getPitchRadians() {
-        if (!anglesComputed) computeAngles();
-        return pitch;
-    }
-    double getYawRadians() {
-        if (!anglesComputed) computeAngles();
-        return yaw;
-    }
+        // Getters
+        double getW();
+        double getX();
+        double getY();
+        double getZ();
+        double getRoll();
+        double getPitch();
+        double getYaw();
+        double getRollRadians();
+        double getPitchRadians();
+        double getYawRadians();
 };
 
 #endif

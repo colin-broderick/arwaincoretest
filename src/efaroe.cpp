@@ -1,4 +1,7 @@
 #include "efaroe.h"
+#include "utils.h"
+
+extern std::string config_file;
 
 /** \brief Constructor for eFaroe class.
  * eFaroe is an orientation filter which uses acceleration and angular velocity measurements from accelerometer and gyroscope to attempt to track current orientation.
@@ -9,30 +12,29 @@
  */
 eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, int use_mag)
 {
+    zeta = arwain::get_config<double>(config_file, "efaroe_zeta");
     gyro_bias = gyro_bias;
     gyro_error = 0.05;
     uk_dip = -67.0*3.14159265/180.0;
     emf = {cos(uk_dip), 0, sin(uk_dip)};
-    zeta = sqrt(3) * 1e-2;
     last_read = 0;
     use_mag = use_mag;
+    true_error = gyro_error;
     
     if (initial_quaternion == quaternion{0, 0, 0, 0})
     {
         q = {1, 0, 0, 0};
-        true_error = gyro_error;
         gyro_error = 100;
-        beta = sqrt(3) * 100;
         conv_count = 100;
     }
     else
     {
         q = initial_quaternion;
         gyro_error = gyro_error;
-        true_error = gyro_error;
-        beta = sqrt(3) * gyro_error;
         conv_count = -1;
     }
+
+    beta = sqrt(3) * gyro_error;
 }
 
 /** \brief Update the internal state of the orientation filter by supplying accelerometer and gyroscope values.
@@ -212,8 +214,6 @@ void eFaroe::updateIMU(double timestamp, double gx, double gy, double gz,  doubl
         emf_x_test = vector3{local_emf_test.x, local_emf_test.y, 0}.magnitude();
         emf = {emf_x_test, 0, local_emf_test.z};
     }
-
-
 }
 
 /** \brief Get the real component of the orientation quaternion.
