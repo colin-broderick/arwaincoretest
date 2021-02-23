@@ -23,9 +23,9 @@
 //
 //=============================================================================================
 
-#include "madgwick.h"
-// #include "utils.h"
 #include <math.h>
+
+#include "madgwick.h"
 
 #define sampleFreqDef   512.0f          // sample frequency in Hz
 #define betaDef         0.1f            // 2 * proportional gain
@@ -37,7 +37,6 @@
 Madgwick::Madgwick()
 {
 	beta = betaDef;
-	// beta = arwain::get_config<double>(config_file, "madgwick_beta");
 	q0 = 1.0f;
 	q1 = 0.0f;
 	q2 = 0.0f;
@@ -49,10 +48,9 @@ Madgwick::Madgwick()
 /** \brief Constructor using custom sample frequency.
  * \param sample_frequency The anticipated update frequency in Hz.
  */
-Madgwick::Madgwick(double sample_frequency)
+Madgwick::Madgwick(double sample_frequency, double beta)
 {
-	beta = betaDef;
-	// beta = arwain::get_config<double>(config_file, "madgwick_beta");
+	beta = beta;
 	q0 = 1.0f;
 	q1 = 0.0f;
 	q2 = 0.0f;

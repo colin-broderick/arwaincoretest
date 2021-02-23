@@ -1,6 +1,6 @@
 #include "efaroe.h"
 
-extern std::string config_file;
+extern configuration CONFIG;
 
 /** \brief Constructor for eFaroe class.
  * eFaroe is an orientation filter which uses acceleration and angular velocity measurements from accelerometer and gyroscope to attempt to track current orientation.
@@ -11,7 +11,7 @@ extern std::string config_file;
  */
 eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, int use_mag)
 {
-    zeta = arwain::get_config<double>(config_file, "efaroe_zeta");
+    zeta = CONFIG.efaroe_zeta;
     gyro_bias = gyro_bias;
     gyro_error = 0.05;
     uk_dip = -67.0*3.14159265/180.0;
@@ -46,7 +46,7 @@ eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_err
  *  \param az x-axis accelerometer value in m/s2
  *  \return Nothing; updates internal state.
  */
-void eFaroe::updateIMU(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az)
+void eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az)
 {
     if (conv_count > 0)
     {
@@ -125,7 +125,7 @@ void eFaroe::updateIMU(double timestamp, double gx, double gy, double gz,  doubl
  * \param az x-axis accelerometer value in m/s2
  * \return Nothing; updates internal state.
  */
-void eFaroe::updateIMU(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az, double mx, double my, double mz)
+void eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az, double mx, double my, double mz)
 {
     if (conv_count > 0)
     {

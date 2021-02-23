@@ -11,6 +11,7 @@
 #include "stance.h"
 #include "utils.h"
 
+extern configuration CONFIG;
 extern int shutdown;
 extern std::string folder_date_string;
 extern std::mutex imu_buffer_lock;
@@ -116,9 +117,9 @@ int run_fall_detect()
     double v_mean_magnitude;
 
     // Read thresholds and constants from config file.
-    double a_threshold = arwain::get_config<double>(config_file, "a_threshold");
-    double struggle_threshold = arwain::get_config<double>(config_file, "struggle_threshold");
-    double gravity = arwain::get_config<double>(config_file, "gravity");
+    double a_threshold = CONFIG.a_threshold;
+    double struggle_threshold = CONFIG.struggle_threshold;
+    double gravity = CONFIG.gravity;
 
     double a_twitch;
     double tmp_struggle;
@@ -318,11 +319,11 @@ int run_stance_detect()
     double act;
 
     // Read thresholds and constants from config file.
-    double climbing_threshold = arwain::get_config<double>(config_file, "climbing_threshold");
-    double crawling_threshold = arwain::get_config<double>(config_file, "crawling_threshold");
-    double running_threshold = arwain::get_config<double>(config_file, "running_threshold");
-    double walking_threshold = arwain::get_config<double>(config_file, "walking_threshold");
-    double active_threshold = arwain::get_config<double>(config_file, "active_threshold");
+    double climbing_threshold = CONFIG.climbing_threshold;
+    double crawling_threshold = CONFIG.crawling_threshold;
+    double running_threshold = CONFIG.running_threshold;
+    double walking_threshold = CONFIG.walking_threshold;
+    double active_threshold = CONFIG.active_threshold;
 
     int vertical_axis = 1;
     int speed_axis;

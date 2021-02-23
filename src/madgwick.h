@@ -44,7 +44,7 @@ class Madgwick{
     public:
         // Constructors
         Madgwick(void);
-        Madgwick(double sample_frequency);
+        Madgwick(double sample_frequency, double beta);
 
         // General methods
         void update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);

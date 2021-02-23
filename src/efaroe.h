@@ -32,7 +32,7 @@ class eFaroe
         );
 
         // Update methods.
-        void updateIMU(
+        void update(
             double timestamp, // time in nanoseconds
             double gx,
             double gy,
@@ -41,7 +41,7 @@ class eFaroe
             double ay,
             double az        // Accelerations in m/s2
         );
-        void updateIMU(
+        void update(
             double timestamp,  // time in nanoseconds
             double gx,
             double gy,
