@@ -114,3 +114,59 @@ void test_imu()
 
     }
 }
+
+configuration get_configuration(std::string filename)
+{
+    using std::string;
+    using std::stringstream;
+
+    // Open the configuration file name.
+    std::ifstream file(filename);
+
+    // A map to store key value pairs from the configuration file.
+    std::map<string, string> options;
+
+    // Read each line into the map, based on the format "key=value".
+    string line;
+    while (getline(file, line))
+    {
+        if (line[0] == '[' || line.empty())
+        {
+            continue;
+        }
+        auto delimeter = line.find("=");
+        auto name = line.substr(0, delimeter);
+        auto value = line.substr(delimeter + 1);
+        options[name] = value;
+    }
+
+    // TODO Detect attempted read of non-existing options.
+
+    // Read all options into a configuration object.
+    configuration cf;
+    stringstream(options["active_threshold"]) >> cf.active_threshold;
+    stringstream(options["walking_threshold"]) >> cf.walking_threshold;
+    stringstream(options["running_threshold"]) >> cf.running_threshold;
+    stringstream(options["crawling_threshold"]) >> cf.crawling_threshold;
+    stringstream(options["climbing_threshold"]) >> cf.climbing_threshold;
+    stringstream(options["gravity"]) >> cf.gravity;
+    stringstream(options["struggle_threshold"]) >> cf.struggle_threshold;
+    stringstream(options["a_threshold"]) >> cf.a_threshold;
+    stringstream(options["accel_bias_x"]) >> cf.accel_bias_x;
+    stringstream(options["accel_bias_y"]) >> cf.accel_bias_y;
+    stringstream(options["accel_bias_z"]) >> cf.accel_bias_z;
+    stringstream(options["gyro_bias_x"]) >> cf.gyro_bias_x;
+    stringstream(options["gyro_bias_y"]) >> cf.gyro_bias_y;
+    stringstream(options["gyro_bias_z"]) >> cf.gyro_bias_z;
+    stringstream(options["mag_bias_x"]) >> cf.mag_bias_x;
+    stringstream(options["mag_bias_y"]) >> cf.mag_bias_y;
+    stringstream(options["mag_bias_z"]) >> cf.mag_bias_z;
+    stringstream(options["mag_scale_x"]) >> cf.mag_scale_x;
+    stringstream(options["mag_scale_y"]) >> cf.mag_scale_y;
+    stringstream(options["mag_scale_z"]) >> cf.mag_scale_z;
+    stringstream(options["use_magnetometer"]) >> cf.use_magnetometer;
+    stringstream(options["log_magnetometer"]) >> cf.log_magnetometer;
+    stringstream(options["npu_vel_weight_confidence"]) >> cf.npu_vel_weight_confidence;
+    stringstream(options["madgwick_beta"]) >> cf.madgwick_beta;
+    return cf;
+}

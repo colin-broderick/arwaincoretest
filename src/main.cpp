@@ -26,10 +26,6 @@
 #include "input_parser.h"
 #include "bin_log.h"
 
-// Whether to use magnetometer readings for orientation filter.
-int USE_MAGNETOMETER_FOR_FILTERING;
-int LOG_MAGNETOMETER;
-
 // Status codes.
 unsigned int STATUS_FALLING = 1;
 unsigned int STATUS_ENTANGLED = 2;
@@ -56,6 +52,9 @@ unsigned int MAG_BUFFER_LEN = 200;
 unsigned int VELOCITY_BUFFER_LEN = 200;
 unsigned int ORIENTATION_BUFFER_LEN = 200;
 unsigned int IMU_BUFFER_LEN = 200;
+
+// Create a struct to hold configuration information.
+configuration CONFIG;
 
 // Default config file locations.
 std::string config_file = "./arwain.conf";
@@ -156,13 +155,13 @@ void std_output()
 void imu_reader()
 {
     // Initialize orientation filter.
-    Madgwick orientation_filter{1000.0/IMU_READING_INTERVAL};
-    // eFaroe orientation_filter{
-    //     quaternion{0,0,0,0},
-    //     gyro_bias,
-    //     100,
-    //     0
-    // };
+    // Madgwick orientation_filter{1000.0/IMU_READING_INTERVAL, CONFIG.madgwick_beta};
+    eFaroe orientation_filter{
+        quaternion{0,0,0,0},
+        gyro_bias,
+        100,
+        0
+    };
 
     int count = 0;
     int get_mag = 0;
@@ -208,7 +207,7 @@ void imu_reader()
     while (!shutdown)
     {
         // Whether or not to get magnetometer on this spin.
-        get_mag = ((count % 20 == 0) && (USE_MAGNETOMETER_FOR_FILTERING || LOG_MAGNETOMETER));
+        get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
 
         // Read current sensor values.
         get_bmi270_data(&accel_data, &gyro_data);
@@ -240,14 +239,14 @@ void imu_reader()
         {
             acce_file << time.time_since_epoch().count() << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << "\n";
             gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
-            if (LOG_MAGNETOMETER)
+            if (CONFIG.log_magnetometer)
             {
                 mag_file << time.time_since_epoch().count() << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
             }
         }
 
         // Perform an orientation filter step.
-        if (USE_MAGNETOMETER_FOR_FILTERING)
+        if (CONFIG.use_magnetometer)
         {
             orientation_filter.update(
                 time.time_since_epoch().count(),
@@ -456,9 +455,6 @@ void predict_velocity()
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
 
-    // Get the filter weight parameter(s) from the config file.
-    double npu_weight = arwain::get_config<double>(config_file, "npu_vel_weight_confidence");
-
     // Initialize buffers to contain working values.
     std::array<double, 3> vel;                    // The sum of npu_vel and imu_vel_delta.
     std::array<double, 3> npu_vel;                // To hold the neural network prediction of velocity.
@@ -508,7 +504,7 @@ void predict_velocity()
         imu_vel_delta = integrate(imu_latest, interval_seconds );
 
         // TEST Weighted combination of velocity deltas from NPU and IMU integration.
-        vel = npu_vel_delta*npu_weight + imu_vel_delta*(1-npu_weight);
+        vel = npu_vel_delta*CONFIG.npu_vel_weight_confidence + imu_vel_delta*(1-CONFIG.npu_vel_weight_confidence);
 
         // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
         vel = vel + vel_previous;
@@ -676,6 +672,7 @@ void thread_template()
 /// mainloop
 int main(int argc, char **argv)
 {
+
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
 
@@ -739,6 +736,21 @@ int main(int argc, char **argv)
         }
     }
 
+    // Attempt to read the config file and quit if failed.
+    try
+    {
+        CONFIG = get_configuration("./arwain.conf");
+        if (log_to_std)
+        {
+            std::cout << "Configuration file read\n";
+        }
+    }
+    catch (int n)
+    {
+        std::cout << "Problem reading configuration file\n";
+        return -2;
+    }
+
     // Preload buffers.
     for (unsigned int i = 0; i < IMU_BUFFER_LEN; i++)
     {
@@ -764,25 +776,18 @@ int main(int argc, char **argv)
         quat_orientation_buffer.push_back(quaternion{0, 0, 0, 0});
     }
 
-    // Get IMU configuration from config file.
-    USE_MAGNETOMETER_FOR_FILTERING = arwain::get_config<int>(config_file, "use_magnetometer_for_filtering");
-    LOG_MAGNETOMETER = arwain::get_config<int>(config_file, "log_magnetometer");
-    gyro_bias.x = arwain::get_config<double>(config_file, "gyro_bias_x");
-    gyro_bias.y = arwain::get_config<double>(config_file, "gyro_bias_y");
-    gyro_bias.z = arwain::get_config<double>(config_file, "gyro_bias_z");
-    accel_bias.x = arwain::get_config<double>(config_file, "accel_bias_x");
-    accel_bias.y = arwain::get_config<double>(config_file, "accel_bias_y");
-    accel_bias.z = arwain::get_config<double>(config_file, "accel_bias_z");
+    // Get IMU configuration from config.
+    gyro_bias = {CONFIG.gyro_bias_x, CONFIG.gyro_bias_y, CONFIG.gyro_bias_z};
 
     // Initialize the IMU.
-    if (init_bmi270(USE_MAGNETOMETER_FOR_FILTERING || LOG_MAGNETOMETER, bmi270_calib_file) != 0)
+    if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, bmi270_calib_file) != 0)
     {
         std::cout << "IMU failed to start" << "\n";
         return -1;
     }
 
     // Start threads.
-    std::thread imu_full_thread(imu_reader);
+    std::thread imu_thread(imu_reader);
     std::thread velocity_prediction(predict_velocity);
     std::thread fall_detection(run_fall_detect);
     std::thread stance_detection(run_stance_detect);
@@ -791,7 +796,7 @@ int main(int argc, char **argv)
     // std::thread alert_thread(alert_system);
 
     // Wait for all threads to terminate.
-    imu_full_thread.join();
+    imu_thread.join();
     velocity_prediction.join();
     fall_detection.join();
     stance_detection.join();

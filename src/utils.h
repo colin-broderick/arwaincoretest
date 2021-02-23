@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <chrono>
+#include <map>
 
 std::chrono::_V2::system_clock::time_point now();
 
@@ -22,44 +23,37 @@ typedef struct euler_orientation_t
 // Date/time as a string in the form YYYY_MM_DD_HH_mm_ss.
 std::string datetimestring();
 
-namespace arwain {
-template <class T>
-T get_config(std::string filename, std::string option)
-{
-    T ret = -999;
-    std::string line;
-    std::ifstream file(filename);
-    while (getline(file, line))
-    {
-        // Skip this loop iteration if line does not contain sought option.
-        if (line[0] == '[' || line[0] == '#' || line.empty())
-        {
-            continue;
-        }
-        auto delimiter = line.find("=");
-        auto name = line.substr(0, delimiter);
-        if (name != option)
-        {
-            continue;
-        }
-
-        // If option found get its value and break out of loop.
-        auto value = line.substr(delimiter + 1);
-        std::stringstream ss(value);
-        ss >> ret;
-        break;
-    }
-
-    // Warn if configuration option not found in file.
-    if (ret == -999)
-    {
-        std::cout << option << " not found in config file - add it or expect undesirable behaviour" << "\n";
-    }
-    file.close();
-    return ret;
-}
-} /* end namespace arwain */
-
 void test_imu();
+
+struct configuration {
+    double active_threshold;
+    double walking_threshold;
+    double running_threshold;
+    double crawling_threshold;
+    double climbing_threshold;
+    double gravity;
+    double struggle_threshold;
+    double a_threshold;
+    double accel_bias_x;
+    double accel_bias_y;
+    double accel_bias_z;
+    double gyro_bias_x;
+    double gyro_bias_y;
+    double gyro_bias_z;
+    double mag_bias_x;
+    double mag_bias_y;
+    double mag_bias_z;
+    double mag_scale_x;
+    double mag_scale_y;
+    double mag_scale_z;
+    int use_magnetometer;
+    int log_magnetometer;
+    double npu_vel_weight_confidence;
+    double madgwick_beta;
+    double efaroe_beta;
+    double efaroe_zeta;
+};
+
+configuration get_configuration(std::string filename);
 
 #endif
