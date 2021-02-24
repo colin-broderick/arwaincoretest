@@ -16,6 +16,7 @@
 #include <fstream>
 #include <experimental/filesystem>
 
+#include "arwain_torch.h"
 #include "quaternions.h"
 #include "stance.h"
 #include "imu_utils.h"
@@ -42,7 +43,7 @@ unsigned int WINDOW_SIZE = 200;
 
 // Time intervals, all in milliseconds.
 unsigned int IMU_READING_INTERVAL = 5;
-unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
+unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
 unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
 unsigned int ALERT_SYSTEM_INTERVAL = 1000;
 
@@ -439,13 +440,30 @@ std::array<double, 3> integrate(std::deque<std::array<double, 6>> data, double d
     return integrated_data;
 }
 
+void torch_array_from_deque(float data[1][6][200], std::deque<std::array<double, 6>> imu)
+{
+    for (int i = 0; i < 1; i++)
+    {
+        for (int j = 0; j < 6; j++)
+        {
+            for (int k = 0; k < 200; k++)
+            {
+                // Switch the order of gyro and acceleration, and put into array.
+                data[i][j][k] = (float)(imu[k][(j+3)%6]);
+            }
+        }
+    }
+}
+
 /// Sets up and runs velocity prediction using the NPU. Run as a thread.
 /** \brief Periodically makes velocity predictions based on data buffers, and adds that velocity and thereby position to the relevant buffers.
  */
 void predict_velocity()
 {
+    // TODO: Merge the inference code into this function. Will need further abstraction?
     // TODO: Set up NPU and feed in model.
-    // TODO: Merge the inference code into this function. Will need further abstraction.
+    // Torch model{"./xyzronin_v0-5_all2D_small.pt", {1, 6, 200, 1}};
+    Torch model{"./xyzronin_v0-6.pt", {1, 6, 200}};
 
     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
     std::chrono::milliseconds presleep(1000);
@@ -484,15 +502,21 @@ void predict_velocity()
         position_file << "# time x y z" << "\n";
     }
 
+    float data[1][6][200];
+    
     while (!shutdown)
     {
         // Grab latest IMU packet
         imu_buffer_lock.lock();
-        imu = imu_buffer;
+        imu = imu_world_buffer;
         imu_buffer_lock.unlock();
 
-        // TODO: Make velocity prediction
-        npu_vel = std::array<double, 3>{0, 0, 0};
+        // TEST Create data array that torch can understand.
+        torch_array_from_deque(data, imu);
+
+        // TEST Make velocity prediction
+        auto v = model.infer(data);
+        npu_vel = {v[0], v[1], v[2]};
         
         // TEST Find the change in velocity from the last period, as predicted by the npu.
         npu_vel_delta = npu_vel - vel_previous;
@@ -508,6 +532,7 @@ void predict_velocity()
 
         // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
         vel = vel + vel_previous;
+
         vel_buffer_lock.lock();
         vel_buffer.push_back(vel);
         vel_buffer.pop_front();
@@ -672,7 +697,6 @@ void thread_template()
 /// mainloop
 int main(int argc, char **argv)
 {
-
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
 
