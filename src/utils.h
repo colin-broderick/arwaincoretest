@@ -56,4 +56,31 @@ struct configuration {
 
 configuration get_configuration(std::string filename);
 
+template <class T>
+void config_replace(std::string filename, std::string option, T new_value)
+{
+    std::ifstream infile(filename);
+    std::stringstream outstring;
+
+    std::string line;
+    while (getline(infile, line))
+    {
+        auto delimiter = line.find("=");
+        auto name = line.substr(0, delimiter);
+        if (name == option)
+        {
+            outstring << name << "=" << new_value << "\n";
+        }
+        else
+        {
+            outstring << line << "\n";
+        }
+    }
+    infile.close();
+
+    std::ofstream outfile(filename);
+    outfile << outstring.str();
+    outfile.close();
+}
+
 #endif

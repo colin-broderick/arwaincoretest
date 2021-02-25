@@ -59,7 +59,6 @@ configuration CONFIG;
 
 // Default config file locations.
 std::string config_file = "./arwain.conf";
-std::string bmi270_calib_file = "./calib.txt";
 
 // Flags for whether to produce various log outputs.
 int log_to_std = 0;
@@ -101,6 +100,8 @@ extern std::mutex stance_lock;
 // Sensor biases.
 vector3 gyro_bias;
 vector3 accel_bias;
+vector3 mag_bias;
+vector3 mag_scale;
 
 void std_output()
 {
@@ -211,12 +212,16 @@ void imu_reader()
         // Whether or not to get magnetometer on this spin.
         get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
 
-        // Read current sensor values.
+        // Read current sensor values and apply bias correction.
         get_bmi270_data(&accel_data, &gyro_data);
         if (get_mag)
         {
             get_bmm150_data(&mag_data);
         }
+        accel_data = accel_data - accel_bias;
+        gyro_data = gyro_data - gyro_bias;
+        mag_data = mag_data - mag_bias;
+        mag_data = mag_data * mag_scale;
         
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         imu_buffer_lock.lock();
@@ -708,7 +713,7 @@ int main(int argc, char **argv)
     std::signal(SIGINT, sigint_handler);
 
     // Determine logging behaviour from command line arguments.
-    arwain::InputParser input(argc, argv);
+    arwain::InputParser input{argc, argv};
     if (input.contains("-h") || input.contains("-help"))
     {
         // Output help text.
@@ -752,30 +757,20 @@ int main(int argc, char **argv)
         // If alternate configuration file supplied, read it instead of default.
         config_file = input.getCmdOption("-conf");
     }
-    if (input.contains("-calib"))
-    {
-        // If alternate BMI270 magnetometer calibration file specified, use it instead of default.
-        bmi270_calib_file = input.getCmdOption("-calib");
-    }
+    // if (input.contains("-calib"))
+    // {
+    //     // If alternate BMI270 magnetometer calibration file specified, use it instead of default.
+    //     bmi270_calib_file = input.getCmdOption("-calib");
+    // }
     if (!input.contains("-lstd") && !input.contains("-lfile"))
     {
         std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
     }
 
-    // Create output directory if it doesn't already exist.
-    if (log_to_file)
-    {
-        folder_date_string = "./data_" + datetimestring();
-        if (!std::experimental::filesystem::is_directory(folder_date_string))
-        {
-            std::experimental::filesystem::create_directory(folder_date_string);
-        }
-    }
-
     // Attempt to read the config file and quit if failed.
     try
     {
-        CONFIG = get_configuration("./arwain.conf");
+        CONFIG = get_configuration(config_file);
         if (log_to_std)
         {
             std::cout << "Configuration file read\n";
@@ -785,6 +780,17 @@ int main(int argc, char **argv)
     {
         std::cout << "Problem reading configuration file\n";
         return -2;
+    }
+    
+    // Create output directory and write copy of current configuration.
+    if (log_to_file)
+    {
+        folder_date_string = "./data_" + datetimestring();
+        if (!std::experimental::filesystem::is_directory(folder_date_string))
+        {
+            std::experimental::filesystem::create_directory(folder_date_string);
+        }
+        std::experimental::filesystem::copy(config_file, folder_date_string + "/config.conf");
     }
 
     // Preload buffers.
@@ -814,9 +820,12 @@ int main(int argc, char **argv)
 
     // Get IMU configuration from config.
     gyro_bias = {CONFIG.gyro_bias_x, CONFIG.gyro_bias_y, CONFIG.gyro_bias_z};
+    accel_bias = {CONFIG.accel_bias_x, CONFIG.accel_bias_y, CONFIG.accel_bias_z};
+    mag_bias = {CONFIG.mag_bias_x, CONFIG.mag_bias_y, CONFIG.mag_bias_z};
+    mag_scale = {CONFIG.mag_scale_x, CONFIG.mag_scale_y, CONFIG.mag_scale_z};
 
     // Initialize the IMU.
-    if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, bmi270_calib_file) != 0)
+    if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
     {
         std::cout << "IMU failed to start" << "\n";
         return -1;

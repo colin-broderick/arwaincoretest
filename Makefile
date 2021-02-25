@@ -7,7 +7,7 @@ arwain_obj = $(arwain_cpp_src:.cpp=.o) $(arwain_c_src:.c=.o)
 
 ## Files for building calibration program.
 calib_c_src = src/bmi2.c src/bmi270.c src/bmm150.c
-calib_cpp_src = src/imu_utils.cpp src/calibrate_bmi270.cpp
+calib_cpp_src = src/imu_utils.cpp src/calibrate_bmi270.cpp src/utils.cpp src/input_parser.cpp
 calib_obj = $(calib_cpp_src:.cpp=.o) $(calib_c_src:.c=.o)
 
 ## Files to remove when cleaning.
