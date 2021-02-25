@@ -64,6 +64,7 @@ std::string bmi270_calib_file = "./calib.txt";
 // Flags for whether to produce various log outputs.
 int log_to_std = 0;
 int log_to_file = 0;
+int no_inf = 0;
 
 // Name for data folder
 std::string folder_date_string;
@@ -460,6 +461,12 @@ void torch_array_from_deque(float data[1][6][200], std::deque<std::array<double,
  */
 void predict_velocity()
 {
+    // Skip inference if command line says so.
+    if (no_inf)
+    {
+        return;
+    }
+
     // TODO: Merge the inference code into this function. Will need further abstraction?
     // TODO: Set up NPU and feed in model.
     // Torch model{"./xyzronin_v0-5_all2D_small.pt", {1, 6, 200, 1}};
@@ -712,6 +719,7 @@ int main(int argc, char **argv)
         std::cout << "  -conf        Specify alternate configuration file\n";
         std::cout << "  -calib       Specify the location of the magnetometer calibration file, default ./calib.txt\n";
         std::cout << "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n";
+        std::cout << "  -noinf       Do not do velocity inference\n";
         std::cout << "  -h           Show this help text\n";
         std::cout << "Example usage:\n";
         std::cout << "  ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile";
@@ -728,6 +736,10 @@ int main(int argc, char **argv)
     {
         // Enable stdout logging.
         log_to_std = 1;
+    }
+    if (input.contains("-noinf"))
+    {
+        no_inf = 1;
     }
     if (input.contains("-lfile"))
     {
