@@ -16,8 +16,25 @@ Angles and times are logged to file for analysis.
 
 import sys
 import time
-
+import math
 from vpython import *
+
+
+## Create canvas with size:
+scene = canvas(width=900, height=500)
+
+## Set camera at oblique angle for perspective.
+scene.camera.pos = vector(0, -50, 30)
+scene.camera.axis = vector(0, 50, -30)
+
+## Draw the floor
+fl = box(
+    pos=vector(0, 0, -10),
+    color=vector(0.5, 0.5, 0.5),
+    height=200,
+    width=1,
+    length=200,
+)
 
 ## Build box.
 bx = box(
@@ -27,7 +44,9 @@ bx = box(
     emissive=False,
     height=1,
     width=6,
-    length=3
+    length=3,
+    make_trail=True,
+    retain=500
 )
 
 ## Define rotation axes.
@@ -38,13 +57,14 @@ Z = vector(0, 0, 1)
 rad_angles = [0, 0, 0]
 first_angles = None
 
-start = time.time()
+## Initial offset angle.
+bx.rotate(angle=math.pi/2, axis=X)
 
 with open("log.txt", "w") as f:
     for line in sys.stdin:
         if "Orientation (E)" in line:
-            bx.rotate(angle=-rad_angles[2], axis=Y)
-            bx.rotate(angle=-rad_angles[1], axis=Z)
+            bx.rotate(angle=-rad_angles[2], axis=Z)
+            bx.rotate(angle=-rad_angles[1], axis=Y)
             bx.rotate(angle=-rad_angles[0], axis=X)
 
             ## Parse angles from the orientation string.
@@ -56,8 +76,9 @@ with open("log.txt", "w") as f:
 
             ## Rotate by the change in angle.
             bx.rotate(angle=rad_angles[0], axis=X)
-            bx.rotate(angle=rad_angles[1], axis=Z)
-            bx.rotate(angle=rad_angles[2], axis=Y)
+            bx.rotate(angle=rad_angles[1], axis=Y)
+            bx.rotate(angle=rad_angles[2], axis=Z)
 
-            print(deg_angles)
-            f.write(str(time.time()) + " " + str(deg_angles) + "\n")
+        if "Position:        " in line:
+            x, y, z = line[18:-2].split(",")
+            bx.pos = vector(float(x)*10, float(y)*10, float(z)*10)
