@@ -26,7 +26,7 @@ struct bmi2_sensor_data magn;
 
 vector3 mag_calib_offset, mag_calib_scale;
 
-float acc_scale, gyr_scale, mag_scale;
+static float acc_scale, gyr_scale, mag_scale;
 
 int i2c_init(int addr)
 {

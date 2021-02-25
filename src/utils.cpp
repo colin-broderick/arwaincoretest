@@ -134,9 +134,9 @@ configuration get_configuration(std::string filename)
         {
             continue;
         }
-        auto delimeter = line.find("=");
-        auto name = line.substr(0, delimeter);
-        auto value = line.substr(delimeter + 1);
+        auto delimiter = line.find("=");
+        auto name = line.substr(0, delimiter);
+        auto value = line.substr(delimiter + 1);
         options[name] = value;
     }
 
