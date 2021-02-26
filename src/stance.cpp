@@ -11,110 +11,23 @@
 #include "stance.h"
 #include "utils.h"
 
-extern configuration CONFIG;
-extern int shutdown;
-extern std::string folder_date_string;
-extern std::mutex imu_buffer_lock;
-extern std::mutex vel_buffer_lock;
-extern std::deque<std::array<double, 6>> imu_buffer;
-extern std::deque<std::array<double, 3>> vel_buffer;
+// Constructors -----------------------------------------------------------------------------------
 
-// Flags for logging behaviour, declared and defined in main.cpp.
-extern int log_to_file;
-extern int log_to_std;
-
-// Time intervals, all in milliseconds.
-unsigned int STANCE_DETECTION_INTERVAL = 1000;
-unsigned int FALL_DETECTION_INTERVAL = 100;
-
-// Status flags.
-int die = 0;
-int falling = 0;
-int entangled = 0;
-int horizontal = 0;
-int climbing = 0;
-std::string stance_;
-
-// Configuration file location.
-extern std::string config_file;
-
-std::mutex fall_lock;
-std::mutex stance_lock;
-
-std::thread fall_thread;
-std::thread stance_thread;
-
-int Stance::is_falling()
+/** \brief Constructor for the stance class.
+ * \param fall_threshold Acceleration magnitude below which a fall event is detected.
+ * \param crawling_threshold Speed below which, if horizontal, stance is detected as crawling.
+ * \param running_threshold Speed above which, if vertical, stance is detected as running.
+ * \param walking_threshold Speed above which, if vertical, stance is detected as walking.
+ * \param active_threshold Value of the internal activity metric above which an entanglement event is detected.
+ */
+Stance::Stance(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold)
 {
-    fall_lock.lock();
-    int ret = m_falling;
-    m_falling = 0;
-    fall_lock.unlock();
-    return ret;
-}
-
-// Check if entangled flag set.
-int Stance::is_entangled()
-{
-    fall_lock.lock();
-    int ret = m_entangled;
-    m_entangled = 0;
-    fall_lock.unlock();
-    return ret;
-}
-
-// Calculates the mean magnitude of a (x,3) sized deque for doubles.
-double Stance::buffer_mean_magnitude(std::deque<std::array<double, 3>> buffer)
-{
-    double mean = 0.0;
-    for (unsigned int i=0; i < buffer.size(); i++)
-    {
-        double square_sum = 0;
-        for (unsigned int j=0; j < 3; j++)
-        {
-            square_sum += buffer[i][j]*buffer[i][j];
-        }
-        mean += sqrt(square_sum);
-    }
-    mean /= buffer.size();
-    return mean;
-}
-
-// Calculates the mean magnitude of a (x,3) sized vector for doubles.
-double Stance::buffer_mean_magnitude(std::vector<std::array<double, 3>> buffer)
-{
-    double mean = 0.0;
-    for (unsigned int i=0; i < buffer.size(); i++)
-    {
-        double square_sum = 0;
-        for (unsigned int j=0; j < 3; j++)
-        {
-            square_sum += buffer[i][j]*buffer[i][j];
-        }
-        mean += sqrt(square_sum);
-    }
-    mean /= buffer.size();
-    return mean;
-}
-
-/// Calculates the mean of a vector of doubles.
-double Stance::vector_mean(std::vector<double> values)
-{
-    double mean = 0;
-    for (unsigned int i = 0; i < values.size(); i++)
-    {
-        mean += values[i];
-    }
-    return mean/values.size();
-}
-
-Stance::Stance(double a_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold)
-{
-    m_a_threshold = a_threshold;
+    m_fall_threshold = fall_threshold;
     m_crawling_threshold = crawling_threshold;
     m_running_threshold = running_threshold;
     m_walking_threshold = walking_threshold;
     m_active_threshold = active_threshold;
+    
     // Make m_struggle_window have length 10.
     for (unsigned int i = 0; i < 10; i++)
     {
@@ -122,7 +35,13 @@ Stance::Stance(double a_threshold, double crawling_threshold, double running_thr
     }
 }
 
-void Stance::run(std::deque<std::array<double, 6>> imu_data, std::deque<std::array<double, 3>> vel_data)
+// General methods --------------------------------------------------------------------------------
+
+/** \brief Run detection algorithms against provided sensor data.
+ * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
+ * \param vel_data Pointer to deq<arr<double>> containing velocity data.
+ */
+void Stance::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::array<double, 3>> *vel_data)
 {
     std::vector<std::array<double, 3>> accel_data;
     std::vector<std::array<double, 3>> gyro_data;
@@ -130,19 +49,19 @@ void Stance::run(std::deque<std::array<double, 6>> imu_data, std::deque<std::arr
     for (int i = 0; i < 20; i++)
     {
         accel_data.push_back(std::array<double, 3>{
-            imu_data[i][0], imu_data[i][1], imu_data[i][2]
+            (*imu_data)[i][0], (*imu_data)[i][1], (*imu_data)[i][2]
         });
         gyro_data.push_back(std::array<double, 3>{
-            imu_data[i][3], imu_data[i][4], imu_data[i][5]
+            (*imu_data)[i][3], (*imu_data)[i][4], (*imu_data)[i][5]
         });
     }
 
-    m_a_mean_magnitude = buffer_mean_magnitude(accel_data);
-    m_g_mean_magnitude = buffer_mean_magnitude(gyro_data);
+    m_a_mean_magnitude = buffer_mean_magnitude(&accel_data);
+    m_g_mean_magnitude = buffer_mean_magnitude(&gyro_data);
     m_v_mean_magnitude = buffer_mean_magnitude(vel_data);
 
     // Determine which axis has the largest value of acceleration. If not the same as vertical axis, subject must be horizontal.
-    std::array<double, 3> accel_means = get_means(accel_data);
+    std::array<double, 3> accel_means = get_means(&accel_data);
     int m_primary_axis = biggest_axis(accel_means);
     stance_lock.lock();
     if (m_primary_axis != m_vertical_axis)
@@ -170,7 +89,7 @@ void Stance::run(std::deque<std::array<double, 6>> imu_data, std::deque<std::arr
     }
     stance_lock.unlock();
 
-    if (m_a_mean_magnitude < m_a_threshold)
+    if (m_a_mean_magnitude < m_fall_threshold)
     {
         fall_lock.lock();
         m_falling = 1;
@@ -187,7 +106,7 @@ void Stance::run(std::deque<std::array<double, 6>> imu_data, std::deque<std::arr
         fall_lock.unlock();
     }
 
-    m_act = activity(m_a_mean_magnitude, m_g_mean_magnitude, m_v_mean_magnitude);
+    m_activity = activity(m_a_mean_magnitude, m_g_mean_magnitude, m_v_mean_magnitude);
 
     // Horizontal and slow => inactive
     // Horizontal and fast => crawling
@@ -211,11 +130,11 @@ void Stance::run(std::deque<std::array<double, 6>> imu_data, std::deque<std::arr
     {
         if (m_v_mean_magnitude < m_walking_threshold)
         {
-            if (m_act < m_active_threshold)
+            if (m_activity < m_active_threshold)
             {
                 m_stance = "inactive";
             }
-            else if (m_act >= m_active_threshold)
+            else if (m_activity >= m_active_threshold)
             {
                 m_stance = "searching";
             }
@@ -241,24 +160,13 @@ void Stance::run(std::deque<std::array<double, 6>> imu_data, std::deque<std::arr
 
 }
 
-// Gives a measure of intensity of activity based on values of a, g, v.
-double Stance::activity(double a, double g, double v)
-{
-    // TODO Need to discover a decent metric of `activity`.
-    // The metric should read high when accelerations are high,
-    // or gyroscope readings are high, or both acceleration and
-    // gyro are high. It should read low when acceleration and gyro
-    // are low.
-
-    // This metric isn't great since you can have very high acceleration with
-    // near-zero gyration, incorrectly resulting is a low activity reading.
-    // Perhaps max(acceleration, gyration, acceleration*gyration)
-    return a*g+v-v;
-}
-
-// Returns the index of the largest element in a 3-array of doubles. Think np.argmax().
+/** \brief Returns the index of the largest magnitude element in a 3-array of doubles. Think np.argmax().
+ * \param arr Vector of e.g. 3-velocity, 3-acceleration, etc.
+ * \return The index of the element with largest value.
+ */
 int Stance::biggest_axis(std::array<double, 3> arr)
 {
+    // TODO This should be using absolute value, since large negative values are 'bigger' than small positive values.
     int axis;
     if (arr[0] > arr[1] && arr[0] > arr[2])
     {
@@ -275,24 +183,94 @@ int Stance::biggest_axis(std::array<double, 3> arr)
     return axis;
 }
 
-// Check whether subject is horizontal or vertical.
-int Stance::is_horizontal()
-{  
-    stance_lock.lock();
-    int ret = m_horizontal;
-    stance_lock.unlock();
-    return ret;
+/** \brief Gives a measure of intensity of activity based on values of a, g, v.
+ * \param a Acceleration magnitude.
+ * \param g Angular velocity magnitude.
+ * \param v Velocity magnitude.
+ * \return Measure of intensity of activity.
+ */
+double Stance::activity(double a, double g, double v)
+{
+    // TODO Need to discover a decent metric of `activity`.
+    // The metric should read high when accelerations are high,
+    // or gyroscope readings are high, or both acceleration and
+    // gyro are high. It should read low when acceleration and gyro
+    // are low.
+
+    // This metric isn't great since you can have very high acceleration with
+    // near-zero gyration, incorrectly resulting is a low activity reading.
+    // Perhaps max(acceleration, gyration, acceleration*gyration)
+    return a*g+v-v;
 }
 
-std::array<double, 3> Stance::get_means(std::deque<std::array<double, 3>> source_vector)
+/** \brief Calculates the mean of a vector of doubles.
+ * \param values Vector of doubles.
+ * \return Mean value of input vector.
+ */
+double Stance::vector_mean(std::vector<double> values)
+{
+    double mean = 0;
+    for (unsigned int i = 0; i < values.size(); i++)
+    {
+        mean += values[i];
+    }
+    return mean/values.size();
+}
+
+/** \brief Calculates the mean magnitude of a (x,3) sized vector of arrays of doubles.
+ * Calculates the magnitude of each 3-array, then computes the mean of those magnitudes.
+ * \param buffer Pointer to data buffer.
+ * \return Mean magnitude as double.
+ */
+double Stance::buffer_mean_magnitude(std::vector<std::array<double, 3>> *buffer)
+{
+    double mean = 0.0;
+    for (unsigned int i=0; i < (*buffer).size(); i++)
+    {
+        double square_sum = 0;
+        for (unsigned int j=0; j < 3; j++)
+        {
+            square_sum += (*buffer)[i][j] * (*buffer)[i][j];
+        }
+        mean += sqrt(square_sum);
+    }
+    mean /= (*buffer).size();
+    return mean;
+}
+
+/** \brief Calculates the mean magnitude of a (x,3) sized deque of arrays of doubles.
+ * Calculates the magnitude of each 3-array, then computes the mean of those magnitudes.
+ * \param buffer Pointer to data buffer.
+ * \return Mean magnitude as double.
+ */
+double Stance::buffer_mean_magnitude(std::deque<std::array<double, 3>> *buffer)
+{
+    double mean = 0.0;
+    for (unsigned int i=0; i < (*buffer).size(); i++)
+    {
+        double square_sum = 0;
+        for (unsigned int j=0; j < 3; j++)
+        {
+            square_sum += (*buffer)[i][j] * (*buffer)[i][j];
+        }
+        mean += sqrt(square_sum);
+    }
+    mean /= (*buffer).size();
+    return mean;
+}
+
+/** \brief Return the column-wise means of a size (x, 3) vector.
+ * \param source_vector Pointer to source array.
+ */
+std::array<double, 3> Stance::get_means(std::vector<std::array<double, 3>> *source_vector)
 {
     std::array<double, 3> ret;
-    unsigned int length = source_vector.size();
+    unsigned int length = (*source_vector).size();
     for (unsigned int i = 0; i < length; i++)
     {
-        ret[0] += abs(source_vector[i][0]);
-        ret[1] += abs(source_vector[i][1]);
-        ret[2] += abs(source_vector[i][2]);
+        ret[0] += abs((*source_vector)[i][0]);
+        ret[1] += abs((*source_vector)[i][1]);
+        ret[2] += abs((*source_vector)[i][2]);
     }
     ret[0] /= length;
     ret[1] /= length;
@@ -301,18 +279,43 @@ std::array<double, 3> Stance::get_means(std::deque<std::array<double, 3>> source
     return ret;
 }
 
-std::array<double, 6> Stance::get_means(std::deque<std::array<double, 6>> source_vector)
+/** \brief Gets the column-wise means of a deq<array<double>>.
+ * \param source_vector Pointer to source array.
+ * \return A 3-array containing the means.
+ */
+std::array<double, 3> Stance::get_means(std::deque<std::array<double, 3>> *source_vector)
 {
-    std::array<double, 6> ret;
-    unsigned int length = source_vector.size();
+    std::array<double, 3> ret;
+    unsigned int length = (*source_vector).size();
     for (unsigned int i = 0; i < length; i++)
     {
-        ret[0] += abs(source_vector[i][0]);
-        ret[1] += abs(source_vector[i][1]);
-        ret[2] += abs(source_vector[i][2]);
-        ret[3] += abs(source_vector[i][3]);
-        ret[4] += abs(source_vector[i][4]);
-        ret[5] += abs(source_vector[i][5]);
+        ret[0] += abs((*source_vector)[i][0]);
+        ret[1] += abs((*source_vector)[i][1]);
+        ret[2] += abs((*source_vector)[i][2]);
+    }
+    ret[0] /= length;
+    ret[1] /= length;
+    ret[2] /= length;
+
+    return ret;
+}
+
+/** \brief Gets the column-wise means of a deq<array<double>>.
+ * \param source_vector Pointer to source array.
+ * \return A 6-array containing the means.
+ */
+std::array<double, 6> Stance::get_means(std::deque<std::array<double, 6>> *source_vector)
+{
+    std::array<double, 6> ret;
+    unsigned int length = (*source_vector).size();
+    for (unsigned int i = 0; i < length; i++)
+    {
+        ret[0] += abs((*source_vector)[i][0]);
+        ret[1] += abs((*source_vector)[i][1]);
+        ret[2] += abs((*source_vector)[i][2]);
+        ret[3] += abs((*source_vector)[i][3]);
+        ret[4] += abs((*source_vector)[i][4]);
+        ret[5] += abs((*source_vector)[i][5]);
     }
     ret[0] /= length;
     ret[1] /= length;
@@ -324,29 +327,50 @@ std::array<double, 6> Stance::get_means(std::deque<std::array<double, 6>> source
     return ret;
 }
 
-// Return the column-wise means of a size (x, 3) vector
-std::array<double, 3> Stance::get_means(std::vector<std::array<double, 3>> source_vector)
-{
-    std::array<double, 3> ret;
-    unsigned int length = source_vector.size();
-    for (unsigned int i = 0; i < length; i++)
-    {
-        ret[0] += abs(source_vector[i][0]);
-        ret[1] += abs(source_vector[i][1]);
-        ret[2] += abs(source_vector[i][2]);
-    }
-    ret[0] /= length;
-    ret[1] /= length;
-    ret[2] /= length;
+// Getters ----------------------------------------------------------------------------------------
 
-    return ret;
-}
-
-// Returns integer representing current stance.
+/** \brief Returns string representing current stance.
+ * \return Current stance.
+ */
 std::string Stance::getStance()
 {
     stance_lock.lock();
     std::string ret = m_stance;
     stance_lock.unlock();
+    return ret;
+}
+
+/** \brief Gets the horizontal flag.
+ * \return Integer bool.
+ */
+int Stance::is_horizontal()
+{  
+    stance_lock.lock();
+    int ret = m_horizontal;
+    stance_lock.unlock();
+    return ret;
+}
+
+/** \brief Check if entangled flag set.
+ * \return Integer bool.
+ */
+int Stance::is_entangled()
+{
+    fall_lock.lock();
+    int ret = m_entangled;
+    m_entangled = 0;
+    fall_lock.unlock();
+    return ret;
+}
+
+/** \brief Get current fall flag.
+ * \return Integer bool.
+ */
+int Stance::is_falling()
+{
+    fall_lock.lock();
+    int ret = m_falling;
+    m_falling = 0;
+    fall_lock.unlock();
     return ret;
 }

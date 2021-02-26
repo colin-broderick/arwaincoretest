@@ -79,11 +79,10 @@ std::deque<euler_orientation_t> euler_orientation_buffer;
 std::deque<quaternion> quat_orientation_buffer;
 
 // Stance flags.
-extern std::string stance_;
-extern int horizontal;
-extern int entangled;
-extern int falling;
-// extern std::string current_ori;
+std::string stance_;
+int horizontal;
+int entangled;
+int falling;
 int status_flags = 0;
 
 // Kill flag for all threads.
@@ -778,7 +777,7 @@ void alternate_stance_thread()
 
         // cout << "Got IMU and vel buffers\n";
 
-        stance.run(imu_data, vel_data);
+        stance.run(&imu_data, &vel_data);
         stance_ = stance.getStance();
         falling = stance.is_falling();
         entangled = stance.is_entangled();
