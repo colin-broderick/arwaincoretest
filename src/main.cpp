@@ -79,10 +79,11 @@ std::deque<euler_orientation_t> euler_orientation_buffer;
 std::deque<quaternion> quat_orientation_buffer;
 
 // Stance flags.
-extern std::string stance;
+extern std::string stance_;
 extern int horizontal;
 extern int entangled;
 extern int falling;
+// extern std::string current_ori;
 int status_flags = 0;
 
 // Kill flag for all threads.
@@ -103,6 +104,8 @@ vector3 accel_bias;
 vector3 mag_bias;
 vector3 mag_scale;
 
+/** \brief Periodically logs status messages to stdout.
+ */
 void std_output()
 {
     if (log_to_std)
@@ -111,9 +114,9 @@ void std_output()
         std::stringstream ss;
         
         // Local containers for stances statuses.
-        std::string fall;
-        std::string entd;
-        std::string ori;
+        // std::string fall;
+        // std::string entd;
+        // std::string ori;
 
         // Set up timing, including pause while IMU warms up.
         std::chrono::milliseconds interval(100);
@@ -134,12 +137,12 @@ void std_output()
             orientation_buffer_lock.unlock();
 
             // Add stance to the string stream.
-            fall = is_falling() ? "ON" : "OFF";
-            entd = is_entangled() ? "ON" : "OFF";
-            ori = is_horizontal() ? "horizontal" : "vertical";
-            ss << "Stance:          " << stance << ", " <<  ori << "\n";
-            ss << "Fall flag:       " << fall << "\n";
-            ss << "Entangled flag:  " << entd << "\n";
+            // fall = is_falling() ? "ON" : "OFF";
+            // entd = is_entangled() ? "ON" : "OFF";
+            // ori = is_horizontal() ? "horizontal" : "vertical";
+            ss << "Stance:          " << stance_ << ", " <<  horizontal << "\n";
+            ss << "Fall flag:       " << falling << "\n";
+            ss << "Entangled flag:  " << entangled << "\n";
 
             // Print the string.
             std::cout << ss.str() << std::endl;
@@ -154,7 +157,8 @@ void std_output()
     }
 }
 
-/// Reads the IMU at (1000/IMU_READING_INTERVAL) Hz, and runs orientation updates at the same frequency.
+/** \brief Reads IMU data, runs orientation filter(s), rotates IMU data, and buffers everything.
+ */
 void imu_reader()
 {
     // Initialize orientation filter.
@@ -337,7 +341,8 @@ void imu_reader()
     }
 }
 
-/// Periodically sends the most recent position and status information via LoRa.
+/** \brief Forms and transmits LoRa messages on a loop.
+ */
 int transmit_lora()
 {
     // TODO: Set up radio.
@@ -432,6 +437,12 @@ T operator+(const T& a1, const T& a2)
   return a;
 }
 
+/** \brief Integrates acceleration data over a small window to generate velocity delta.
+ * \param data The buffer to integrate over.
+ * \param dt The time delta between buffer values.
+ * \param offset The position in the buffer entries of the first acceleration value.
+ * \return An array of x, y, z velocities.
+ */
 std::array<double, 3> integrate(std::deque<std::array<double, 6>> data, double dt, unsigned int offset = 0)
 {
     std::array<double, 3> acc_mean = {-0.182194123, -0.59032666517, 9.86202363151991};
@@ -446,6 +457,10 @@ std::array<double, 3> integrate(std::deque<std::array<double, 6>> data, double d
     return integrated_data;
 }
 
+/** \brief Converts the IMU deque into a C-style array for passing to the inference library.
+ * \param[out] data C-style array of shape [1][6][200] in which to store result.
+ * \param[in] imu The latest world IMU buffer.
+ */
 void torch_array_from_deque(float data[1][6][200], std::deque<std::array<double, 6>> imu)
 {
     for (int i = 0; i < 1; i++)
@@ -461,7 +476,6 @@ void torch_array_from_deque(float data[1][6][200], std::deque<std::array<double,
     }
 }
 
-/// Sets up and runs velocity prediction using the NPU. Run as a thread.
 /** \brief Periodically makes velocity predictions based on data buffers, and adds that velocity and thereby position to the relevant buffers.
  */
 void predict_velocity()
@@ -584,7 +598,10 @@ void predict_velocity()
     }
 }
 
-/// Captures keyboard interrupt to set shutdown flag.
+/** \brief Capture the SIGINT signal for clean exit.
+ * Sets the global shutdown flag informing all threads to clean up and exit.
+ * \param signal The signal to capture.
+ */
 void sigint_handler(int signal)
 {
     if (signal == SIGINT)
@@ -596,54 +613,54 @@ void sigint_handler(int signal)
 
 /// TODO This might be unnecessary; since the stuff it's setting up only matters to the LoRa thread,
 /// it may as well be done there.
-void alert_system()
-{
-    // todo setup
+// void alert_system()
+// {
+//     // todo setup
 
-    // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(ALERT_SYSTEM_INTERVAL);
+//     // Set up timing.
+//     auto time = std::chrono::system_clock::now();
+//     std::chrono::milliseconds interval(ALERT_SYSTEM_INTERVAL);
 
-    while (!shutdown)
-    {
-        // Update status flags.
-        status_flag_lock.lock();
-        status_flags = 0;
-        if (is_falling())
-        {
-            status_flags |= STATUS_FALLING;
-        }
-        if (is_entangled())
-        {
-            status_flags |= STATUS_ENTANGLED;
-        }
-        if (stance == "inactive")
-        {
-            status_flags |= STATUS_INACTIVE;
-        }
-        else if (stance == "walking")
-        {
-            status_flags |= STATUS_WALKING;
-        }
-        else if (stance == "crawling")
-        {
-            status_flags |= STATUS_CRAWLING;
-        }
-        else if (stance == "searching")
-        {
-            status_flags |= STATUS_SEARCHING;
-        }
-        else if (stance == "unknown")
-        {
-            status_flags |= STATUS_UNKNOWN_STANCE;
-        }
-        status_flag_lock.unlock();
+//     while (!shutdown)
+//     {
+//         // Update status flags.
+//         status_flag_lock.lock();
+//         status_flags = 0;
+//         if (is_falling())
+//         {
+//             status_flags |= STATUS_FALLING;
+//         }
+//         if (is_entangled())
+//         {
+//             status_flags |= STATUS_ENTANGLED;
+//         }
+//         if (stance_ == "inactive")
+//         {
+//             status_flags |= STATUS_INACTIVE;
+//         }
+//         else if (stance_ == "walking")
+//         {
+//             status_flags |= STATUS_WALKING;
+//         }
+//         else if (stance_ == "crawling")
+//         {
+//             status_flags |= STATUS_CRAWLING;
+//         }
+//         else if (stance_ == "searching")
+//         {
+//             status_flags |= STATUS_SEARCHING;
+//         }
+//         else if (stance_ == "unknown")
+//         {
+//             status_flags |= STATUS_UNKNOWN_STANCE;
+//         }
+//         status_flag_lock.unlock();
         
-        // Wait until next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
-    }
-}
+//         // Wait until next tick.
+//         time = time + interval;
+//         std::this_thread::sleep_until(time);
+//     }
+// }
 
 /// This function is never called. It should be considered a template
 /// for implementing new threaded functionality. All existing threads
@@ -706,6 +723,86 @@ void thread_template()
     }
 }
 
+static unsigned int FALL_DETECTION_INTERVAL = 1000;
+
+void alternate_stance_thread()
+{
+    using std::cout;
+
+    Stance stance{
+        CONFIG.a_threshold,
+        CONFIG.crawling_threshold,
+        CONFIG.running_threshold,
+        CONFIG.walking_threshold,
+        CONFIG.active_threshold
+    };
+
+    // cout << "Created stance\n";
+
+    // Open file for logging
+    std::ofstream freefall_file;
+    if (log_to_file)
+    {
+        freefall_file.open(folder_date_string + "/freefall.txt");
+        freefall_file << "# time freefall entanglement" << "\n";
+    }
+
+    // File handle for logging.
+    std::ofstream stance_file;
+    if (log_to_file)
+    {
+        stance_file.open(folder_date_string + "/stance.txt");
+        stance_file << "# time stance" << "\n";
+    }
+
+    // cout << "Opened files\n";
+
+    auto time = now();
+    std::chrono::milliseconds interval{FALL_DETECTION_INTERVAL};
+
+    // cout << "About to enter loop\n";
+
+    while (!shutdown)
+    {
+        // cout << "Entered loop\n";
+        // TODO Replicate stance and fall detection.
+
+        // Get all relevant data.
+        imu_buffer_lock.lock();
+        std::deque<std::array<double, 6>> imu_data = imu_buffer;
+        imu_buffer_lock.unlock();
+
+        vel_buffer_lock.lock();
+        std::deque<std::array<double, 3>> vel_data = vel_buffer;
+        vel_buffer_lock.unlock();
+
+        // cout << "Got IMU and vel buffers\n";
+
+        stance.run(imu_data, vel_data);
+        stance_ = stance.getStance();
+        falling = stance.is_falling();
+        entangled = stance.is_entangled();
+        horizontal = stance.is_horizontal();
+
+        // cout << "Did stance.run()\n";
+
+        if (log_to_file)
+        {
+            freefall_file << time.time_since_epoch().count() << " " << stance.is_falling() << " " << stance.is_entangled() << "\n";
+            stance_file << time.time_since_epoch().count() << " " << stance.getStance() << "\n";
+        }
+
+        // cout << "Logged to file\n";
+
+        // Wait until the next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+
+        // cout << "Passed timer, about to return to top of loop\n";
+    }
+
+}
+
 /// mainloop
 int main(int argc, char **argv)
 {
@@ -722,14 +819,11 @@ int main(int argc, char **argv)
         std::cout << "  -lstd        Log friendly output to stdout\n";
         std::cout << "  -lfile       Record sensor data to file - files are stored in ./data_<datetime>\n";
         std::cout << "  -conf        Specify alternate configuration file\n";
-        std::cout << "  -calib       Specify the location of the magnetometer calibration file, default ./calib.txt\n";
         std::cout << "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n";
         std::cout << "  -noinf       Do not do velocity inference\n";
         std::cout << "  -h           Show this help text\n";
         std::cout << "Example usage:\n";
-        std::cout << "  ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile";
-        std::cout << "\n";
-
+        std::cout << "  ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile\n";
         return 1;
     }
     if (input.contains("-testimu"))
@@ -757,11 +851,6 @@ int main(int argc, char **argv)
         // If alternate configuration file supplied, read it instead of default.
         config_file = input.getCmdOption("-conf");
     }
-    // if (input.contains("-calib"))
-    // {
-    //     // If alternate BMI270 magnetometer calibration file specified, use it instead of default.
-    //     bmi270_calib_file = input.getCmdOption("-calib");
-    // }
     if (!input.contains("-lstd") && !input.contains("-lfile"))
     {
         std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
@@ -834,8 +923,9 @@ int main(int argc, char **argv)
     // Start threads.
     std::thread imu_thread(imu_reader);
     std::thread velocity_prediction(predict_velocity);
-    std::thread fall_detection(run_fall_detect);
-    std::thread stance_detection(run_stance_detect);
+    // std::thread fall_detection(run_fall_detect);
+    // std::thread stance_detection(run_stance_detect);
+    std::thread stance_thread(alternate_stance_thread);
     std::thread radio_thread(transmit_lora);
     std::thread logging_thread(std_output);
     // std::thread alert_thread(alert_system);
@@ -843,8 +933,9 @@ int main(int argc, char **argv)
     // Wait for all threads to terminate.
     imu_thread.join();
     velocity_prediction.join();
-    fall_detection.join();
-    stance_detection.join();
+    stance_thread.join();
+    // fall_detection.join();
+    // stance_detection.join();
     radio_thread.join();
     logging_thread.join();
     // alert_thread.join();

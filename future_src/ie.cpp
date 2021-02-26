@@ -8,34 +8,46 @@ using namespace InferenceEngine;
 
 
 template <typename T>
-std::ostream & operator << (std::ostream & stream, const std::vector<T> & v) {
+std::ostream & operator << (std::ostream & stream, const std::vector<T> & v)
+{
     stream << "[ ";
     for (auto && value : v)
         stream << value << " ";
     return stream << "]";
 }
 
-void printParameterValue(const Parameter & value) {
-    if (value.is<bool>()) {
+void printParameterValue(const Parameter & value)
+{
+    if (value.is<bool>())
+    {
         std::cout << std::boolalpha << value.as<bool>() << std::noboolalpha << std::endl;
-    } else if (value.is<int>()) {
+    } else if (value.is<int>())
+    {
         std::cout << value.as<int>() << std::endl;
-    } else if (value.is<unsigned int>()) {
+    } else if (value.is<unsigned int>())
+    {
         std::cout << value.as<unsigned int>() << std::endl;
-    } else if (value.is<float>()) {
+    } else if (value.is<float>())
+    {
         std::cout << value.as<float>() << std::endl;
-    } else if (value.is<std::string>()) {
+    } else if (value.is<std::string>())
+    {
         std::string stringValue = value.as<std::string>();
         std::cout << (stringValue.empty() ? "\"\"" : stringValue) << std::endl;
-    } else if (value.is<std::vector<std::string> >()) {
+    } else if (value.is<std::vector<std::string> >())
+    {
         std::cout << value.as<std::vector<std::string> >() << std::endl;
-    } else if (value.is<std::vector<int> >()) {
+    } else if (value.is<std::vector<int> >())
+    {
         std::cout << value.as<std::vector<int> >() << std::endl;
-    } else if (value.is<std::vector<float> >()) {
+    } else if (value.is<std::vector<float> >())
+    {
         std::cout << value.as<std::vector<float> >() << std::endl;
-    } else if (value.is<std::vector<unsigned int> >()) {
+    } else if (value.is<std::vector<unsigned int> >())
+    {
         std::cout << value.as<std::vector<unsigned int> >() << std::endl;
-    } else if (value.is<std::tuple<unsigned int, unsigned int, unsigned int> >()) {
+    } else if (value.is<std::tuple<unsigned int, unsigned int, unsigned int> >())
+    {
         auto values = value.as<std::tuple<unsigned int, unsigned int, unsigned int> >();
         std::cout << "{ ";
         std::cout << std::get<0>(values) << ", ";
@@ -43,7 +55,8 @@ void printParameterValue(const Parameter & value) {
         std::cout << std::get<2>(values);
         std::cout << " }";
         std::cout << std::endl;
-    } else if (value.is<std::tuple<unsigned int, unsigned int> >()) {
+    } else if (value.is<std::tuple<unsigned int, unsigned int> >())
+    {
         auto values = value.as<std::tuple<unsigned int, unsigned int> >();
         std::cout << "{ ";
         std::cout << std::get<0>(values) << ", ";

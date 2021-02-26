@@ -72,7 +72,7 @@ int init_bmi270(int mag_enabled, std::string calib_file)
 	// Initialise device
     i2c_init(bmi270.dev_id);
     int rslt = bmi270_init(&bmi270);
-    if(rslt == 0)
+    if (rslt == 0)
     {
 	    printf("IMU initialised\n");
     }
@@ -111,51 +111,52 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     bmi2_set_sensor_config(&gyroscopeConfig, 1, &bmi270);
     
     //Magnetometer setup
-    if (mag_enabled){	
-	// Enable magnetometer
-	bmi2_sensor_enable(&sensorList[2], 1, &bmi270);
-	
-	// Configure gyroscope
-	struct bmi2_sens_config magnetometerConfig;
-	magnetometerConfig.type = BMI2_AUX;
-	magnetometerConfig.cfg.aux.aux_en = BMI2_ENABLE;
-	magnetometerConfig.cfg.aux.manual_en = BMI2_TRUE;
-	magnetometerConfig.cfg.aux.i2c_device_addr = BMM150_DEFAULT_I2C_ADDRESS; // I2C address of BMM150
-	magnetometerConfig.cfg.aux.read_addr = 0x40;	// Address of the first read address
-	magnetometerConfig.cfg.aux.man_rd_burst = BMI2_AUX_READ_LEN_3;	// Total number of registers to be read for manual burst (0x40 to 0x71)
-	magnetometerConfig.cfg.aux.offset = 2;			// Offset for auto burst read
-	magnetometerConfig.cfg.aux.offset = 2;			// Offset for auto burst read
-	magnetometerConfig.cfg.aux.aux_rd_burst = BMI2_AUX_READ_LEN_3;	// Size of auto burst read
-	magnetometerConfig.cfg.aux.fcu_write_en = BMI2_ENABLE;
-	magnetometerConfig.cfg.aux.odr = 1;
-	bmi2_set_sensor_config(&magnetometerConfig, 1, &bmi270);
-	
-	bmm150.dev_id = BMM150_DEFAULT_I2C_ADDRESS;
-	bmm150.intf = BMM150_I2C_INTF;
-	bmm150.read = bmm150_reg_read;
-	bmm150.write = bmm150_reg_write;
-	bmm150.delay_ms = delay_ms;
-	
-	int rslt = bmm150_init(&bmm150);
-	if(rslt == 0)
-	{
-	    printf("Magnetometer initialised\n");
-	}
-	else
-	{
-	    printf("Magnetometer init failed. Error %d\n", rslt);
-	    return 1;
-	}
-	
-	bmm150.settings.pwr_mode = BMM150_NORMAL_MODE;
-	bmm150_set_op_mode(&bmm150);
-	bmm150.settings.preset_mode = BMM150_PRESETMODE_REGULAR;
-	bmm150_set_presetmode(&bmm150);
-	bmm150.settings.data_rate = BMM150_DATA_RATE_30HZ;
-	bmm150_set_sensor_settings(BMM150_DATA_RATE_SEL, &bmm150);
-	
-	read_calib_data(calib_file);
-	
+    if (mag_enabled)
+    {	
+        // Enable magnetometer
+        bmi2_sensor_enable(&sensorList[2], 1, &bmi270);
+        
+        // Configure gyroscope
+        struct bmi2_sens_config magnetometerConfig;
+        magnetometerConfig.type = BMI2_AUX;
+        magnetometerConfig.cfg.aux.aux_en = BMI2_ENABLE;
+        magnetometerConfig.cfg.aux.manual_en = BMI2_TRUE;
+        magnetometerConfig.cfg.aux.i2c_device_addr = BMM150_DEFAULT_I2C_ADDRESS; // I2C address of BMM150
+        magnetometerConfig.cfg.aux.read_addr = 0x40;	// Address of the first read address
+        magnetometerConfig.cfg.aux.man_rd_burst = BMI2_AUX_READ_LEN_3;	// Total number of registers to be read for manual burst (0x40 to 0x71)
+        magnetometerConfig.cfg.aux.offset = 2;			// Offset for auto burst read
+        magnetometerConfig.cfg.aux.offset = 2;			// Offset for auto burst read
+        magnetometerConfig.cfg.aux.aux_rd_burst = BMI2_AUX_READ_LEN_3;	// Size of auto burst read
+        magnetometerConfig.cfg.aux.fcu_write_en = BMI2_ENABLE;
+        magnetometerConfig.cfg.aux.odr = 1;
+        bmi2_set_sensor_config(&magnetometerConfig, 1, &bmi270);
+        
+        bmm150.dev_id = BMM150_DEFAULT_I2C_ADDRESS;
+        bmm150.intf = BMM150_I2C_INTF;
+        bmm150.read = bmm150_reg_read;
+        bmm150.write = bmm150_reg_write;
+        bmm150.delay_ms = delay_ms;
+        
+        int rslt = bmm150_init(&bmm150);
+        if (rslt == 0)
+        {
+            printf("Magnetometer initialised\n");
+        }
+        else
+        {
+            printf("Magnetometer init failed. Error %d\n", rslt);
+            return 1;
+        }
+        
+        bmm150.settings.pwr_mode = BMM150_NORMAL_MODE;
+        bmm150_set_op_mode(&bmm150);
+        bmm150.settings.preset_mode = BMM150_PRESETMODE_REGULAR;
+        bmm150_set_presetmode(&bmm150);
+        bmm150.settings.data_rate = BMM150_DATA_RATE_30HZ;
+        bmm150_set_sensor_settings(BMM150_DATA_RATE_SEL, &bmm150);
+        
+        read_calib_data(calib_file);
+        
     }
     
     return 0;
@@ -165,13 +166,13 @@ int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr)
 {
     int rslt;
     rslt = bmi2_get_sensor_data(&acce, 1, &bmi270);
-    if(rslt != 0)
+    if (rslt != 0)
     {
     	printf("Acc Error num %d\n", rslt);
     	return 1;
     }
     rslt = bmi2_get_sensor_data(&gyro, 1, &bmi270);
-    if(rslt != 0)
+    if (rslt != 0)
     {
     	printf("Gyr Error num %d\n", rslt);
     	return 1;
@@ -192,9 +193,10 @@ int get_bmm150_data(struct vector3 *mag)
 {
     int rslt;
     rslt = bmm150_read_mag_data(&bmm150);
-    if(rslt != 0){
-	printf("Mag Error num %d\n", rslt);
-	return 1;
+    if (rslt != 0)
+    {
+        printf("Mag Error num %d\n", rslt);
+        return 1;
     }
     mag->x = (bmm150.data.x - mag_calib_offset.x) * mag_calib_scale.x;
     mag->y = (bmm150.data.y - mag_calib_offset.y) * mag_calib_scale.y;
@@ -214,27 +216,31 @@ void read_calib_data(std::string path)
     mag_calib_scale.x = 1;
     mag_calib_scale.y = 1;
     mag_calib_scale.z = 1;
-    if (!source)  {
-	printf("No calibration file found, magnetometer will only use on-board calibration\n");
+
+    if (!source)
+    {
+	    printf("No calibration file found, magnetometer will only use on-board calibration\n");
     }
     else
     {
-	std::vector<float> calib_data;
-	std::string line;
-	std::getline(source, line); // Skip header
-	std::getline(source, line);
-	std::stringstream linestream(line);
-	std::string value;
-	while(getline(linestream,value,','))
-	{
-	    calib_data.push_back(std::stof(value));
-	}
-	mag_calib_offset.x = calib_data[0];
-	mag_calib_offset.y = calib_data[1];
-	mag_calib_offset.z = calib_data[2];
-	mag_calib_scale.x = calib_data[3];
-	mag_calib_scale.y = calib_data[4];
-	mag_calib_scale.z = calib_data[5];
+        std::vector<float> calib_data;
+        std::string line;
+        std::getline(source, line); // Skip header
+        std::getline(source, line);
+        std::stringstream linestream(line);
+        std::string value;
+
+        while(getline(linestream,value,','))
+        {
+            calib_data.push_back(std::stof(value));
+        }
+
+        mag_calib_offset.x = calib_data[0];
+        mag_calib_offset.y = calib_data[1];
+        mag_calib_offset.z = calib_data[2];
+        mag_calib_scale.x = calib_data[3];
+        mag_calib_scale.y = calib_data[4];
+        mag_calib_scale.z = calib_data[5];
     }
     source.close();
 }

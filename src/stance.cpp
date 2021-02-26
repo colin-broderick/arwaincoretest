@@ -33,7 +33,7 @@ int falling = 0;
 int entangled = 0;
 int horizontal = 0;
 int climbing = 0;
-std::string stance;
+std::string stance_;
 
 // Configuration file location.
 extern std::string config_file;
@@ -44,28 +44,27 @@ std::mutex stance_lock;
 std::thread fall_thread;
 std::thread stance_thread;
 
-// Check if falling flag set.
-int is_falling()
+int Stance::is_falling()
 {
     fall_lock.lock();
-    int ret = falling;
-    falling = 0;
+    int ret = m_falling;
+    m_falling = 0;
     fall_lock.unlock();
     return ret;
 }
 
 // Check if entangled flag set.
-int is_entangled()
+int Stance::is_entangled()
 {
     fall_lock.lock();
-    int ret = entangled;
-    entangled = 0;
+    int ret = m_entangled;
+    m_entangled = 0;
     fall_lock.unlock();
     return ret;
 }
 
 // Calculates the mean magnitude of a (x,3) sized deque for doubles.
-double buffer_mean_magnitude(std::deque<std::array<double, 3>> buffer)
+double Stance::buffer_mean_magnitude(std::deque<std::array<double, 3>> buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -82,7 +81,7 @@ double buffer_mean_magnitude(std::deque<std::array<double, 3>> buffer)
 }
 
 // Calculates the mean magnitude of a (x,3) sized vector for doubles.
-double buffer_mean_magnitude(std::vector<std::array<double, 3>> buffer)
+double Stance::buffer_mean_magnitude(std::vector<std::array<double, 3>> buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -99,7 +98,7 @@ double buffer_mean_magnitude(std::vector<std::array<double, 3>> buffer)
 }
 
 /// Calculates the mean of a vector of doubles.
-double vector_mean(std::vector<double> values)
+double Stance::vector_mean(std::vector<double> values)
 {
     double mean = 0;
     for (unsigned int i = 0; i < values.size(); i++)
@@ -109,107 +108,141 @@ double vector_mean(std::vector<double> values)
     return mean/values.size();
 }
 
-// This is the fall detection main loop. Periodically check 'die' to decide whether to quit.
-int run_fall_detect()
+Stance::Stance(double a_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold)
 {
-    double a_mean_magnitude;
-    double g_mean_magnitude;
-    double v_mean_magnitude;
-
-    // Read thresholds and constants from config file.
-    double a_threshold = CONFIG.a_threshold;
-    double struggle_threshold = CONFIG.struggle_threshold;
-    double gravity = CONFIG.gravity;
-
-    double a_twitch;
-    double tmp_struggle;
-
-    double sfactor = 1;
-
-    int count = 0;
-    double struggle = 0;
-    
-    // Open file for logging
-    std::ofstream freefall_file;
-    if (log_to_file)
+    m_a_threshold = a_threshold;
+    m_crawling_threshold = crawling_threshold;
+    m_running_threshold = running_threshold;
+    m_walking_threshold = walking_threshold;
+    m_active_threshold = active_threshold;
+    // Make m_struggle_window have length 10.
+    for (unsigned int i = 0; i < 10; i++)
     {
-        freefall_file.open(folder_date_string + "/freefall.txt");
-        freefall_file << "# time freefall entanglement" << "\n";
+        m_struggle_window.push_back(0);
+    }
+}
+
+void Stance::run(std::deque<std::array<double, 6>> imu_data, std::deque<std::array<double, 3>> vel_data)
+{
+    std::vector<std::array<double, 3>> accel_data;
+    std::vector<std::array<double, 3>> gyro_data;
+
+    for (int i = 0; i < 20; i++)
+    {
+        accel_data.push_back(std::array<double, 3>{
+            imu_data[i][0], imu_data[i][1], imu_data[i][2]
+        });
+        gyro_data.push_back(std::array<double, 3>{
+            imu_data[i][3], imu_data[i][4], imu_data[i][5]
+        });
     }
 
-    std::vector<double> struggle_window(10);
+    m_a_mean_magnitude = buffer_mean_magnitude(accel_data);
+    m_g_mean_magnitude = buffer_mean_magnitude(gyro_data);
+    m_v_mean_magnitude = buffer_mean_magnitude(vel_data);
 
-    auto time = now();
-    std::chrono::milliseconds interval(FALL_DETECTION_INTERVAL);
-
-    while (!shutdown)
+    // Determine which axis has the largest value of acceleration. If not the same as vertical axis, subject must be horizontal.
+    std::array<double, 3> accel_means = get_means(accel_data);
+    int m_primary_axis = biggest_axis(accel_means);
+    stance_lock.lock();
+    if (m_primary_axis != m_vertical_axis)
     {
-        // Grab the imu_data to be used, i.e. most recent second of imu_data.
-        imu_buffer_lock.lock();
-        std::deque<std::array<double, 6>> imu_data = imu_buffer;
-        imu_buffer_lock.unlock();
+        m_horizontal = 1;
+    }
+    else
+    {
+        m_horizontal = 0;
+    }
+    stance_lock.unlock();
 
-        vel_buffer_lock.lock();
-        std::deque<std::array<double, 3>> vel_data = vel_buffer;
-        vel_buffer_lock.unlock();
+    // If the axis with the highest average speed is the same as the vertical axis, subject must be climbing.
+    // If the speed on the vertical axis exceed the climbing threshold, the subject must be climibing.
+    auto speed_means = get_means(vel_data);
+    m_speed_axis = biggest_axis(speed_means);
+    stance_lock.lock();
+    if (m_speed_axis == m_primary_axis || speed_means[m_vertical_axis] > m_climbing_threshold)
+    {
+        m_climbing = 1;
+    }
+    else
+    {
+        m_climbing = 0;
+    }
+    stance_lock.unlock();
 
-        // Separate accel and gyro buffers; bit more convenient this way.
-        std::vector<std::array<double, 3>> accel_data;
-        std::vector<std::array<double, 3>> gyro_data;
-        for (int i = 0; i < 20; i++)
-        {
-            accel_data.push_back(std::array<double, 3>{
-                imu_data[i][0], imu_data[i][1], imu_data[i][2]
-            });
-            gyro_data.push_back(std::array<double, 3>{
-                imu_data[i][3], imu_data[i][4], imu_data[i][5]
-            });
-        }
-
-        a_mean_magnitude = buffer_mean_magnitude(accel_data);
-        g_mean_magnitude = buffer_mean_magnitude(gyro_data);
-        v_mean_magnitude = buffer_mean_magnitude(vel_data);
-
-        if (a_mean_magnitude < a_threshold)
-        {
-            fall_lock.lock();
-            falling = 1;
-            fall_lock.unlock();
-        }
-        a_twitch = abs(a_mean_magnitude - gravity);
-        tmp_struggle = (a_twitch + g_mean_magnitude) / (v_mean_magnitude + sfactor);
-        struggle_window[count] = tmp_struggle;
-        struggle = vector_mean(struggle_window);
-        if (struggle > struggle_threshold)
-        {
-            fall_lock.lock();
-            entangled = 1;
-            fall_lock.unlock();
-        }
-
-        // Log current time and status to file.
-        if (log_to_file)
-        {
-            freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << "\n";
-        }
-
-        count = (count + 1) % 10;
-
-        // Wait until the next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+    if (m_a_mean_magnitude < m_a_threshold)
+    {
+        fall_lock.lock();
+        m_falling = 1;
+        fall_lock.unlock();
+    }
+    m_a_twitch = abs(m_a_mean_magnitude - m_gravity);
+    m_tmp_struggle = (m_a_twitch + m_g_mean_magnitude) / (m_v_mean_magnitude + m_sfactor);
+    m_struggle_window[m_count] = m_tmp_struggle;
+    m_struggle = vector_mean(m_struggle_window);
+    if (m_struggle > m_struggle_threshold)
+    {
+        fall_lock.lock();
+        m_entangled = 1;
+        fall_lock.unlock();
     }
 
-    if (log_to_file)
-    {
-        freefall_file.close();
-    }
+    m_act = activity(m_a_mean_magnitude, m_g_mean_magnitude, m_v_mean_magnitude);
 
-    return 1;
+    // Horizontal and slow => inactive
+    // Horizontal and fast => crawling
+    // Vertical and slow with low activity => inactive
+    // Vertical and slow with high activity => searching
+    // Vertical and moderate speed => walking
+    // Vertical and high speed => running
+    stance_lock.lock();
+    if (m_horizontal)
+    {
+        if (m_v_mean_magnitude < m_crawling_threshold)
+        {
+            m_stance = "inactive";
+        }
+        else if (m_v_mean_magnitude >= m_crawling_threshold)
+        {
+            m_stance = "crawling";
+        }
+    }
+    else if (!m_horizontal)
+    {
+        if (m_v_mean_magnitude < m_walking_threshold)
+        {
+            if (m_act < m_active_threshold)
+            {
+                m_stance = "inactive";
+            }
+            else if (m_act >= m_active_threshold)
+            {
+                m_stance = "searching";
+            }
+        }
+        else if (m_v_mean_magnitude < m_running_threshold)
+        {
+            m_stance = "walking";
+        }
+        else if (m_v_mean_magnitude >= m_running_threshold)
+        {
+            m_stance = "running";
+        }
+    }
+    stance_lock.unlock();
+
+    // Log current time and status to file.
+    // if (log_to_file)
+    // {
+    //     freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << "\n";
+    // }
+
+    m_count = (m_count + 1) % 10;
+
 }
 
 // Gives a measure of intensity of activity based on values of a, g, v.
-double activity(double a, double g, double v)
+double Stance::activity(double a, double g, double v)
 {
     // TODO Need to discover a decent metric of `activity`.
     // The metric should read high when accelerations are high,
@@ -224,14 +257,14 @@ double activity(double a, double g, double v)
 }
 
 // Returns the index of the largest element in a 3-array of doubles. Think np.argmax().
-int biggest_axis(std::array<double, 3> arr)
+int Stance::biggest_axis(std::array<double, 3> arr)
 {
     int axis;
     if (arr[0] > arr[1] && arr[0] > arr[2])
     {
         axis = 0;
     }
-    else if(arr[1] > arr[0] && arr[1] > arr[2])
+    else if (arr[1] > arr[0] && arr[1] > arr[2])
     {
         axis = 1;
     }
@@ -243,15 +276,15 @@ int biggest_axis(std::array<double, 3> arr)
 }
 
 // Check whether subject is horizontal or vertical.
-int is_horizontal()
+int Stance::is_horizontal()
 {  
     stance_lock.lock();
-    int ret = horizontal;
+    int ret = m_horizontal;
     stance_lock.unlock();
     return ret;
 }
 
-std::array<double, 3> get_means(std::deque<std::array<double, 3>> source_vector)
+std::array<double, 3> Stance::get_means(std::deque<std::array<double, 3>> source_vector)
 {
     std::array<double, 3> ret;
     unsigned int length = source_vector.size();
@@ -268,7 +301,7 @@ std::array<double, 3> get_means(std::deque<std::array<double, 3>> source_vector)
     return ret;
 }
 
-std::array<double, 6> get_means(std::deque<std::array<double, 6>> source_vector)
+std::array<double, 6> Stance::get_means(std::deque<std::array<double, 6>> source_vector)
 {
     std::array<double, 6> ret;
     unsigned int length = source_vector.size();
@@ -292,7 +325,7 @@ std::array<double, 6> get_means(std::deque<std::array<double, 6>> source_vector)
 }
 
 // Return the column-wise means of a size (x, 3) vector
-std::array<double, 3> get_means(std::vector<std::array<double, 3>> source_vector)
+std::array<double, 3> Stance::get_means(std::vector<std::array<double, 3>> source_vector)
 {
     std::array<double, 3> ret;
     unsigned int length = source_vector.size();
@@ -309,178 +342,11 @@ std::array<double, 3> get_means(std::vector<std::array<double, 3>> source_vector
     return ret;
 }
 
-// This is the stance detection main loop. Periodically check value of die to decide whether to quit.
-int run_stance_detect()
-{
-    double a_mean_magnitude;
-    double g_mean_magnitude;
-    double v_mean_magnitude;
-
-    double act;
-
-    // Read thresholds and constants from config file.
-    double climbing_threshold = CONFIG.climbing_threshold;
-    double crawling_threshold = CONFIG.crawling_threshold;
-    double running_threshold = CONFIG.running_threshold;
-    double walking_threshold = CONFIG.walking_threshold;
-    double active_threshold = CONFIG.active_threshold;
-
-    int vertical_axis = 1;
-    int speed_axis;
-
-    // File handle for logging.
-    std::ofstream stance_file;
-    if (log_to_file)
-    {
-        stance_file.open(folder_date_string + "/stance.txt");
-        stance_file << "# time stance" << "\n";
-    }
-    
-    auto time = now();
-    std::chrono::milliseconds interval(STANCE_DETECTION_INTERVAL);
-
-    while (!shutdown)
-    {
-        // Grab the imu_data to be used, i.e. most recent second of imu_data.
-        imu_buffer_lock.lock();
-        std::deque<std::array<double, 6>> imu_data = imu_buffer;
-        imu_buffer_lock.unlock();
-
-        vel_buffer_lock.lock();
-        std::deque<std::array<double, 3>> vel_data = vel_buffer;
-        vel_buffer_lock.unlock();
-
-        // Separate accel and gyro buffers; bit more convenient this way.
-        std::vector<std::array<double, 3>> accel_data;
-        std::vector<std::array<double, 3>> gyro_data;
-        for (unsigned int i = 0; i < imu_data.size(); i++)
-        {
-            accel_data.push_back(std::array<double, 3>{
-                imu_data[i][0], imu_data[i][1], imu_data[i][2]
-            });
-            gyro_data.push_back(std::array<double, 3>{
-                imu_data[i][3], imu_data[i][4], imu_data[i][5]
-            });
-        }
-
-        // Determine which axis has the largest value of acceleration. If not the same as vertical axis, subject must be horizontal.
-        std::array<double, 3> accel_means = get_means(accel_data);
-        int primary_axis = biggest_axis(accel_means);
-        stance_lock.lock();
-        if (primary_axis != vertical_axis)
-        {
-            horizontal = 1;
-        }
-        else
-        {
-            horizontal = 0;
-        }
-        stance_lock.unlock();
-
-        // If the axis with the highest average speed is the same as the vertical axis, subject must be climbing.
-        // If the speed on the vertical axis exceed the climbing threshold, the subject must be climibing.
-        auto speed_means = get_means(vel_data);
-        speed_axis = biggest_axis(speed_means);
-        stance_lock.lock();
-        if (speed_axis == primary_axis || speed_means[vertical_axis] > climbing_threshold)
-        {
-            climbing = 1;
-        }
-        else
-        {
-            climbing = 0;
-        }
-        stance_lock.unlock();
-
-        a_mean_magnitude = buffer_mean_magnitude(accel_data);
-        g_mean_magnitude = buffer_mean_magnitude(gyro_data);
-        v_mean_magnitude = buffer_mean_magnitude(vel_data);
-        act = activity(a_mean_magnitude, g_mean_magnitude, v_mean_magnitude);
-
-        // Horizontal and slow => inactive
-        // Horizontal and fast => crawling
-        // Vertical and slow with low activity => inactive
-        // Vertical and slow with high activity => searching
-        // Vertical and moderate speed => walking
-        // Vertical and high speed => running
-        stance_lock.lock();
-        if (horizontal)
-        {
-            if (v_mean_magnitude < crawling_threshold)
-            {
-                stance = "inactive";
-            }
-            else if (v_mean_magnitude >= crawling_threshold)
-            {
-                stance = "crawling";
-            }
-        }
-        else if (!horizontal)
-        {
-            if (v_mean_magnitude < walking_threshold)
-            {
-                if (act < active_threshold)
-                {
-                    stance = "inactive";
-                }
-                else if (act >= active_threshold)
-                {
-                    stance = "searching";
-                }
-            }
-            else if (v_mean_magnitude < running_threshold)
-            {
-                stance = "walking";
-            }
-            else if (v_mean_magnitude >= running_threshold)
-            {
-                stance = "running";
-            }
-        }
-        stance_lock.unlock();
-
-        if (log_to_file)
-        {
-            stance_file << time.time_since_epoch().count() << " " << stance << "\n";
-        }
-
-        // Wait until the next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
-    }
-
-    return 1;
-}
-
 // Returns integer representing current stance.
-int get_stance()
+std::string Stance::getStance()
 {
-    int ret;
     stance_lock.lock();
-    if (stance == "inactive")
-    {
-        ret = 0;
-    }
-    else if (stance == "walking")
-    {
-        ret = 1;
-    }
-    else if (stance == "searching")
-    {
-        ret = 2;
-    }
-    else if (stance == "crawling")
-    {
-        ret = 3;
-    }
-    else if (stance == "running")
-    {
-        ret = 4;
-    }
-    else
-    {
-        ret = 5;
-    }
+    std::string ret = m_stance;
     stance_lock.unlock();
     return ret;
 }
