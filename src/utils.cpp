@@ -8,8 +8,6 @@
 #include "utils.h"
 #include "imu_utils.h"
 
-extern int shutdown;
-
 // Get current time.
 std::chrono::_V2::system_clock::time_point now()
 {
@@ -83,7 +81,7 @@ std::string datetimestring()
     return ss.str();
 }
 
-void test_imu()
+void test_imu(int &shutdown)
 {
     // Initialize the IMU.
     std::string path = "../calib.txt";
@@ -115,7 +113,7 @@ void test_imu()
     }
 }
 
-configuration get_configuration(std::string filename)
+Configuration get_configuration(std::string filename)
 {
     using std::string;
     using std::stringstream;
@@ -143,7 +141,7 @@ configuration get_configuration(std::string filename)
     // TODO Detect attempted read of non-existing options.
 
     // Read all options into a configuration object.
-    configuration cf;
+    Configuration cf;
     stringstream(options["active_threshold"]) >> cf.active_threshold;
     stringstream(options["walking_threshold"]) >> cf.walking_threshold;
     stringstream(options["running_threshold"]) >> cf.running_threshold;
@@ -151,19 +149,19 @@ configuration get_configuration(std::string filename)
     stringstream(options["climbing_threshold"]) >> cf.climbing_threshold;
     stringstream(options["gravity"]) >> cf.gravity;
     stringstream(options["struggle_threshold"]) >> cf.struggle_threshold;
-    stringstream(options["a_threshold"]) >> cf.a_threshold;
-    stringstream(options["accel_bias_x"]) >> cf.accel_bias_x;
-    stringstream(options["accel_bias_y"]) >> cf.accel_bias_y;
-    stringstream(options["accel_bias_z"]) >> cf.accel_bias_z;
-    stringstream(options["gyro_bias_x"]) >> cf.gyro_bias_x;
-    stringstream(options["gyro_bias_y"]) >> cf.gyro_bias_y;
-    stringstream(options["gyro_bias_z"]) >> cf.gyro_bias_z;
-    stringstream(options["mag_bias_x"]) >> cf.mag_bias_x;
-    stringstream(options["mag_bias_y"]) >> cf.mag_bias_y;
-    stringstream(options["mag_bias_z"]) >> cf.mag_bias_z;
-    stringstream(options["mag_scale_x"]) >> cf.mag_scale_x;
-    stringstream(options["mag_scale_y"]) >> cf.mag_scale_y;
-    stringstream(options["mag_scale_z"]) >> cf.mag_scale_z;
+    stringstream(options["fall_threshold"]) >> cf.fall_threshold;
+    stringstream(options["accel_bias_x"]) >> cf.accel_bias.x;
+    stringstream(options["accel_bias_y"]) >> cf.accel_bias.y;
+    stringstream(options["accel_bias_z"]) >> cf.accel_bias.z;
+    stringstream(options["gyro_bias_x"]) >> cf.gyro_bias.x;
+    stringstream(options["gyro_bias_y"]) >> cf.gyro_bias.y;
+    stringstream(options["gyro_bias_z"]) >> cf.gyro_bias.z;
+    stringstream(options["mag_bias_x"]) >> cf.mag_bias.x;
+    stringstream(options["mag_bias_y"]) >> cf.mag_bias.y;
+    stringstream(options["mag_bias_z"]) >> cf.mag_bias.z;
+    stringstream(options["mag_scale_x"]) >> cf.mag_scale.x;
+    stringstream(options["mag_scale_y"]) >> cf.mag_scale.y;
+    stringstream(options["mag_scale_z"]) >> cf.mag_scale.z;
     stringstream(options["use_magnetometer"]) >> cf.use_magnetometer;
     stringstream(options["log_magnetometer"]) >> cf.log_magnetometer;
     stringstream(options["npu_vel_weight_confidence"]) >> cf.npu_vel_weight_confidence;

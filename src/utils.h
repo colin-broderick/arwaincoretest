@@ -11,6 +11,9 @@
 #include <chrono>
 #include <map>
 
+#include "vector3.h"
+#include "stance.h"
+
 std::chrono::_V2::system_clock::time_point now();
 
 typedef struct euler_orientation_t
@@ -23,9 +26,16 @@ typedef struct euler_orientation_t
 // Date/time as a string in the form YYYY_MM_DD_HH_mm_ss.
 std::string datetimestring();
 
-void test_imu();
+void test_imu(int &shutdown);
 
-struct configuration {
+struct Status {
+    StanceDetector::STANCE current_stance;
+    StanceDetector::ATTITUDE attitude;
+    StanceDetector::ENTANGLED entangled;
+    StanceDetector::FALLING falling;
+};
+
+struct Configuration {
     double active_threshold;
     double walking_threshold;
     double running_threshold;
@@ -33,19 +43,11 @@ struct configuration {
     double climbing_threshold;
     double gravity;
     double struggle_threshold;
-    double a_threshold;
-    double accel_bias_x;
-    double accel_bias_y;
-    double accel_bias_z;
-    double gyro_bias_x;
-    double gyro_bias_y;
-    double gyro_bias_z;
-    double mag_bias_x;
-    double mag_bias_y;
-    double mag_bias_z;
-    double mag_scale_x;
-    double mag_scale_y;
-    double mag_scale_z;
+    double fall_threshold;
+    vector3 accel_bias;
+    vector3 gyro_bias;
+    vector3 mag_bias;
+    vector3 mag_scale;
     int use_magnetometer;
     int log_magnetometer;
     double npu_vel_weight_confidence;
@@ -54,7 +56,7 @@ struct configuration {
     double efaroe_zeta;
 };
 
-configuration get_configuration(std::string filename);
+Configuration get_configuration(std::string filename);
 
 template <class T>
 void config_replace(std::string filename, std::string option, T new_value)

@@ -27,25 +27,15 @@
 #include "input_parser.h"
 #include "bin_log.h"
 
-// Status codes.
-unsigned int STATUS_FALLING = 1;
-unsigned int STATUS_ENTANGLED = 2;
-unsigned int STATUS_INACTIVE = 1 << 2;
-unsigned int STATUS_WALKING = 2 << 2;
-unsigned int STATUS_SEARCHING = 3 << 2;
-unsigned int STATUS_CRAWLING = 4 << 2;
-unsigned int STATUS_RUNNING = 5 << 2;
-unsigned int STATUS_UNKNOWN_STANCE = 6 << 2;
-
 // Characteristics of the sliding window for data fed to the NPU.
-unsigned int STEP_SIZE = 50;
-unsigned int WINDOW_SIZE = 200;
+// unsigned int STEP_SIZE = 50;
+// unsigned int WINDOW_SIZE = 200;
 
 // Time intervals, all in milliseconds.
+// unsigned int ALERT_SYSTEM_INTERVAL = 1000;
 unsigned int IMU_READING_INTERVAL = 5;
 unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
 unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
-unsigned int ALERT_SYSTEM_INTERVAL = 1000;
 static unsigned int STANCE_DETECTION_INTERVAL = 1000;
 
 // Buffer sizes.
@@ -55,8 +45,9 @@ unsigned int VELOCITY_BUFFER_LEN = 200;
 unsigned int ORIENTATION_BUFFER_LEN = 200;
 unsigned int IMU_BUFFER_LEN = 200;
 
-// Create a struct to hold configuration information.
-configuration CONFIG;
+// File-globally accessible configuration and status.
+static Configuration CONFIG;
+static Status STATUS;
 
 // Default config file locations.
 std::string config_file = "./arwain.conf";
@@ -67,42 +58,31 @@ int log_to_file = 0;
 int no_inf = 0;
 
 // Name for data folder
-std::string folder_date_string;
+static std::string FOLDER_DATE_STRING;
 
 // IMU data buffers.
-std::deque<std::array<double, 6>> imu_buffer;
-std::deque<std::array<double, 6>> imu_world_buffer;
-std::deque<std::array<double, 3>> vel_buffer;
-std::deque<std::array<double, 3>> position_buffer;
-std::deque<std::array<double, 3>> mag_buffer;
-std::deque<std::array<double, 3>> mag_world_buffer;
-std::deque<euler_orientation_t> euler_orientation_buffer;
-std::deque<quaternion> quat_orientation_buffer;
+std::deque<std::array<double, 6>> IMU_BUFFER;
+std::deque<std::array<double, 6>> IMU_WORLD_BUFFER;
+std::deque<std::array<double, 3>> VELOCITY_BUFFER;
+std::deque<std::array<double, 3>> POSITION_BUFFER;
+std::deque<std::array<double, 3>> MAG_BUFFER;
+std::deque<std::array<double, 3>> MAG_WORLD_BUFFER;
+std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER;
+std::deque<quaternion> QUAT_ORIENTATION_BUFFER;
 
 // Stance flags.
-Stance::STANCE current_stance;
-int horizontal;
-int entangled;
-int falling;
 int status_flags = 0;
 
 // Kill flag for all threads.
-int shutdown = 0;
+static int SHUTDOWN = 0;
 
 // Mutex locks.
-std::mutex imu_buffer_lock;
-std::mutex mag_buffer_lock;
-std::mutex vel_buffer_lock;
-std::mutex status_flag_lock;
-std::mutex position_buffer_lock;
-std::mutex orientation_buffer_lock;
-extern std::mutex stance_lock;
-
-// Sensor biases.
-vector3 gyro_bias;
-vector3 accel_bias;
-vector3 mag_bias;
-vector3 mag_scale;
+std::mutex IMU_BUFFER_LOCK;
+std::mutex MAG_BUFFER_LOCK;
+std::mutex VELOCITY_BUFFER_LOCK;
+std::mutex STATUS_FLAG_LOCK;
+std::mutex POSITION_BUFFER_LOCK;
+std::mutex ORIENTATION_BUFFER_LOCK;
 
 /** \brief Periodically logs status messages to stdout.
  */
@@ -112,35 +92,30 @@ void std_output()
     {
         // Output string built here.
         std::stringstream ss;
-        
-        // Local containers for stances statuses.
-        // std::string fall;
-        // std::string entd;
-        // std::string ori;
 
         // Set up timing, including pause while IMU warms up.
         std::chrono::milliseconds interval(100);
         std::this_thread::sleep_for(interval*3);
         auto time = std::chrono::system_clock::now();
 
-        while (!shutdown)
+        while (!SHUTDOWN)
         {
             // Add position to the string stream.        
-            position_buffer_lock.lock();
-            ss << "Position:        (" << position_buffer.back()[0] << ", " << position_buffer.back()[1] << ", " << position_buffer.back()[2] << ")" << "\n";
-            position_buffer_lock.unlock();
+            POSITION_BUFFER_LOCK.lock();
+            ss << "Position:        (" << POSITION_BUFFER.back()[0] << ", " << POSITION_BUFFER.back()[1] << ", " << POSITION_BUFFER.back()[2] << ")" << "\n";
+            POSITION_BUFFER_LOCK.unlock();
 
             // Add Euler and quaternion orientations to the string stream.
-            orientation_buffer_lock.lock();
-            ss << "Orientation (E): (" << euler_orientation_buffer.back().roll << ", " << euler_orientation_buffer.back().pitch << ", " << euler_orientation_buffer.back().yaw << ")" << "\n";;
-            ss << "Orientation (Q): (" << quat_orientation_buffer.back().w << ", " << quat_orientation_buffer.back().x << ", " << quat_orientation_buffer.back().y << ", " << quat_orientation_buffer.back().z << ")" << "\n";
-            orientation_buffer_lock.unlock();
+            ORIENTATION_BUFFER_LOCK.lock();
+            ss << "Orientation (E): (" << EULER_ORIENTATION_BUFFER.back().roll << ", " << EULER_ORIENTATION_BUFFER.back().pitch << ", " << EULER_ORIENTATION_BUFFER.back().yaw << ")" << "\n";;
+            ss << "Orientation (Q): (" << QUAT_ORIENTATION_BUFFER.back().w << ", " << QUAT_ORIENTATION_BUFFER.back().x << ", " << QUAT_ORIENTATION_BUFFER.back().y << ", " << QUAT_ORIENTATION_BUFFER.back().z << ")" << "\n";
+            ORIENTATION_BUFFER_LOCK.unlock();
 
             // Add stance to the string stream.
-            ss << "Stance flag:     " << current_stance << "\n";
-            ss << "Horizontal:      " << horizontal << "\n";
-            ss << "Fall flag:       " << falling << "\n";
-            ss << "Entangled flag:  " << entangled << "\n";
+            ss << "Stance flag:     " << STATUS.current_stance << "\n";
+            ss << "Horizontal:      " << STATUS.attitude << "\n";
+            ss << "Fall flag:       " << STATUS.falling << "\n";
+            ss << "Entangled flag:  " << STATUS.entangled << "\n";
 
             // Print the string.
             std::cout << ss.str() << std::endl;
@@ -163,9 +138,10 @@ void imu_reader()
     // Madgwick orientation_filter{1000.0/IMU_READING_INTERVAL, CONFIG.madgwick_beta};
     eFaroe orientation_filter{
         quaternion{0,0,0,0},
-        gyro_bias,
+        CONFIG.gyro_bias,
         100,
-        0
+        0,
+        CONFIG.efaroe_zeta
     };
 
     int count = 0;
@@ -191,11 +167,11 @@ void imu_reader()
     if (log_to_file)
     {
         // Open file handles for data logging.
-        acce_file.open(folder_date_string + "/acce.txt");
-        gyro_file.open(folder_date_string + "/gyro.txt");
-        mag_file.open(folder_date_string + "/mag.txt");
-        euler_file.open(folder_date_string + "/euler_orientation.txt");
-        quat_file.open(folder_date_string + "/quat_orientation.txt");
+        acce_file.open(FOLDER_DATE_STRING + "/acce.txt");
+        gyro_file.open(FOLDER_DATE_STRING + "/gyro.txt");
+        mag_file.open(FOLDER_DATE_STRING + "/mag.txt");
+        euler_file.open(FOLDER_DATE_STRING + "/euler_orientation.txt");
+        quat_file.open(FOLDER_DATE_STRING + "/quat_orientation.txt");
 
         // File headers
         acce_file << "# time x y z" << "\n";
@@ -209,7 +185,7 @@ void imu_reader()
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval(5);
 
-    while (!shutdown)
+    while (!SHUTDOWN)
     {
         // Whether or not to get magnetometer on this spin.
         get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
@@ -220,27 +196,27 @@ void imu_reader()
         {
             get_bmm150_data(&mag_data);
         }
-        accel_data = accel_data - accel_bias;
-        gyro_data = gyro_data - gyro_bias;
-        mag_data = mag_data - mag_bias;
-        mag_data = mag_data * mag_scale;
+        accel_data = accel_data - CONFIG.accel_bias;
+        gyro_data = gyro_data - CONFIG.gyro_bias;
+        mag_data = mag_data - CONFIG.mag_bias;
+        mag_data = mag_data * CONFIG.mag_scale;
         
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
-        imu_buffer_lock.lock();
-        imu_buffer.push_back(std::array<double, 6>{
+        IMU_BUFFER_LOCK.lock();
+        IMU_BUFFER.push_back(std::array<double, 6>{
             accel_data.x, accel_data.y, accel_data.z,
             gyro_data.x, gyro_data.y, gyro_data.z
         });
-        imu_buffer.pop_front();
-        imu_buffer_lock.unlock();
+        IMU_BUFFER.pop_front();
+        IMU_BUFFER_LOCK.unlock();
 
         // Buffer mag_data if collected. TODO Is there actually any reason to buffer this?
         // if (get_mag)
         // {
-        //     mag_buffer_lock.lock();
-        //     mag_buffer.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
-        //     mag_buffer.pop_front();
-        //     mag_buffer_lock.unlock();
+        //     MAG_BUFFER_LOCK.lock();
+        //     MAG_BUFFER.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
+        //     MAG_BUFFER.pop_front();
+        //     MAG_BUFFER_LOCK.unlock();
         // }
 
         // Log IMU to file.
@@ -285,34 +261,34 @@ void imu_reader()
         quat_data.z = orientation_filter.getZ();
 
         // Add orientation information to buffers.
-        orientation_buffer_lock.lock();
-        euler_orientation_buffer.push_back(euler_data);
-        euler_orientation_buffer.pop_front();
-        quat_orientation_buffer.push_back(quat_data);
-        quat_orientation_buffer.pop_front();
-        orientation_buffer_lock.unlock();
+        ORIENTATION_BUFFER_LOCK.lock();
+        EULER_ORIENTATION_BUFFER.push_back(euler_data);
+        EULER_ORIENTATION_BUFFER.pop_front();
+        QUAT_ORIENTATION_BUFFER.push_back(quat_data);
+        QUAT_ORIENTATION_BUFFER.pop_front();
+        ORIENTATION_BUFFER_LOCK.unlock();
 
         // Add world-aligned IMU to its own buffer.
         world_accel_data = world_align(accel_data, quat_data);
         world_gyro_data = world_align(gyro_data, quat_data);
-        imu_buffer_lock.lock();
-        imu_world_buffer.push_back(std::array<double, 6>{
+        IMU_BUFFER_LOCK.lock();
+        IMU_WORLD_BUFFER.push_back(std::array<double, 6>{
             world_accel_data.x, world_accel_data.y, world_accel_data.z,
             world_gyro_data.x, world_gyro_data.y, world_gyro_data.z
         });
-        imu_world_buffer.pop_front();
-        imu_buffer_lock.unlock();
+        IMU_WORLD_BUFFER.pop_front();
+        IMU_BUFFER_LOCK.unlock();
 
         // Add world-aligned magnetic field to buffer. TODO Why?
         // if (get_mag)
         // {
         //     world_mag_data = world_align(mag_data, quat_data);
-        //     mag_buffer_lock.lock();
-        //     mag_world_buffer.push_back(std::array<double, 3>{
+        //     MAG_BUFFER_LOCK.lock();
+        //     MAG_WORLD_BUFFER.push_back(std::array<double, 3>{
         //         world_mag_data.x, world_mag_data.y, world_mag_data.z
         //     });
-        //     mag_world_buffer.pop_front();
-        //     mag_buffer_lock.unlock();
+        //     MAG_WORLD_BUFFER.pop_front();
+        //     MAG_BUFFER_LOCK.unlock();
         // }
 
         // Log orientation information to file.
@@ -357,25 +333,25 @@ int transmit_lora()
     // Open file handles for data logging.
     if (log_to_file)
     {
-        lora_file.open(folder_date_string + "/lora_log.txt");
+        lora_file.open(FOLDER_DATE_STRING + "/lora_log.txt");
         lora_file << "# time packet" << "\n";
     }
 
-    while (!shutdown)
+    while (!SHUTDOWN)
     {
         // TODO: Read all relevant data, respecting mutex locks.
         // Get positions as uint16
-        position_buffer_lock.lock();
-        position = position_buffer.back();
-        position_buffer_lock.unlock();
+        POSITION_BUFFER_LOCK.lock();
+        position = POSITION_BUFFER.back();
+        POSITION_BUFFER_LOCK.unlock();
         uint64_t x = (uint64_t)position[0];
         uint64_t y = (uint64_t)position[1];
         uint64_t z = (uint64_t)position[2];
 
         // Get current status flags.
-        status_flag_lock.lock();
+        STATUS_FLAG_LOCK.lock();
         status = (uint64_t)status_flags;
-        status_flag_lock.unlock();
+        STATUS_FLAG_LOCK.unlock();
 
         // Build packet for transmission.
         uint64_t packet = (x << 48) | (y << 32) | (z << 16) | (status);
@@ -441,7 +417,7 @@ T operator+(const T& a1, const T& a2)
  * \param offset The position in the buffer entries of the first acceleration value.
  * \return An array of x, y, z velocities.
  */
-std::array<double, 3> integrate(std::deque<std::array<double, 6>> data, double dt, unsigned int offset = 0)
+std::array<double, 3> integrate(std::deque<std::array<double, 6>> &data, double dt, unsigned int offset = 0)
 {
     std::array<double, 3> acc_mean = {-0.182194123, -0.59032666517, 9.86202363151991};
     std::array<double, 3> integrated_data = {0, 0, 0};
@@ -498,14 +474,14 @@ void predict_velocity()
     std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
 
     // Initialize buffers to contain working values.
-    std::array<double, 3> vel;                    // The sum of npu_vel and imu_vel_delta.
-    std::array<double, 3> npu_vel;                // To hold the neural network prediction of velocity.
-    std::array<double, 3> vel_previous;           // Contains the velocity calculation from the previous loop.
-    std::array<double, 3> npu_vel_delta;          // Stores the difference between the npu velocity prediction and vel_previous.
-    std::array<double, 3> imu_vel_delta;          // To integrate the velocity based on IMU readings.
-    std::array<double, 3> pos;
-    std::deque<std::array<double, 6>> imu;        // To contain the last second of IMU data.
-    std::deque<std::array<double, 6>> imu_latest; // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
+    std::array<double, 3> vel;                        // The sum of npu_vel and imu_vel_delta.
+    std::array<double, 3> npu_vel;                    // To hold the neural network prediction of velocity.
+    std::array<double, 3> vel_previous = {0, 0, 0};   // Contains the velocity calculation from the previous loop.
+    std::array<double, 3> npu_vel_delta;              // Stores the difference between the npu velocity prediction and vel_previous.
+    std::array<double, 3> imu_vel_delta;              // To integrate the velocity based on IMU readings.
+    std::array<double, 3> position;
+    std::deque<std::array<double, 6>> imu;            // To contain the last second of IMU data.
+    std::deque<std::array<double, 6>> imu_latest;     // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
 
     // File handles for logging.
     std::ofstream position_file;
@@ -520,20 +496,20 @@ void predict_velocity()
     // Open files for logging.
     if (log_to_file)
     {
-        velocity_file.open(folder_date_string + "/velocity.txt");
-        position_file.open(folder_date_string + "/position.txt");
+        velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
+        position_file.open(FOLDER_DATE_STRING + "/position.txt");
         velocity_file << "# time x y z" << "\n";
         position_file << "# time x y z" << "\n";
     }
 
     float data[1][6][200];
     
-    while (!shutdown)
+    while (!SHUTDOWN)
     {
         // Grab latest IMU packet
-        imu_buffer_lock.lock();
-        imu = imu_world_buffer;
-        imu_buffer_lock.unlock();
+        IMU_BUFFER_LOCK.lock();
+        imu = IMU_WORLD_BUFFER;
+        IMU_BUFFER_LOCK.unlock();
 
         // TEST Create data array that torch can understand.
         torch_array_from_deque(data, imu);
@@ -557,30 +533,30 @@ void predict_velocity()
         // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
         vel = vel + vel_previous;
 
-        vel_buffer_lock.lock();
-        vel_buffer.push_back(vel);
-        vel_buffer.pop_front();
-        vel_buffer_lock.unlock();
+        VELOCITY_BUFFER_LOCK.lock();
+        VELOCITY_BUFFER.push_back(vel);
+        VELOCITY_BUFFER.pop_front();
+        VELOCITY_BUFFER_LOCK.unlock();
 
         // TEST Store the velocity for use in the next loop (saves having to access the buffer for a single element).
         vel_previous = vel;
 
         // Iterate velocity onto position to get new position.
-        pos[0] = pos[0] + interval_seconds * vel[0];
-        pos[1] = pos[1] + interval_seconds * vel[1];
-        pos[2] = pos[2] + interval_seconds * vel[2];
+        position[0] = position[0] + interval_seconds * vel[0];
+        position[1] = position[1] + interval_seconds * vel[1];
+        position[2] = position[2] + interval_seconds * vel[2];
         
         // Update position buffer.
-        position_buffer_lock.lock();
-        position_buffer.push_back(pos);
-        position_buffer.pop_front();
-        position_buffer_lock.unlock();
+        POSITION_BUFFER_LOCK.lock();
+        POSITION_BUFFER.push_back(position);
+        POSITION_BUFFER.pop_front();
+        POSITION_BUFFER_LOCK.unlock();
 
         // Add position and velocity data to file.
         if (log_to_file)
         {
             velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << "\n";
-            position_file << time.time_since_epoch().count() << " " << pos[0] << " " << pos[1] << " " << pos[2] << "\n";
+            position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] << " " << position[2] << "\n";
         }
 
         // Wait until next tick.
@@ -597,7 +573,7 @@ void predict_velocity()
 }
 
 /** \brief Capture the SIGINT signal for clean exit.
- * Sets the global shutdown flag informing all threads to clean up and exit.
+ * Sets the global SHUTDOWN flag informing all threads to clean up and exit.
  * \param signal The signal to capture.
  */
 void sigint_handler(int signal)
@@ -605,7 +581,7 @@ void sigint_handler(int signal)
     if (signal == SIGINT)
     {
         std::cout << "\nReceived SIGINT - closing\n" << "\n";
-        shutdown = 1;
+        SHUTDOWN = 1;
     }
 }
 
@@ -619,16 +595,16 @@ void sigint_handler(int signal)
 //     auto time = std::chrono::system_clock::now();
 //     std::chrono::milliseconds interval(ALERT_SYSTEM_INTERVAL);
 
-//     while (!shutdown)
+//     while (!SHUTDOWN)
 //     {
 //         // Update status flags.
-//         status_flag_lock.lock();
+//         STATUS_FLAG_LOCK.lock();
 //         status_flags = 0;
-//         if (is_falling())
+//         if (getFallingStatus())
 //         {
 //             status_flags |= STATUS_FALLING;
 //         }
-//         if (is_entangled())
+//         if (getEntangledStatus())
 //         {
 //             status_flags |= STATUS_ENTANGLED;
 //         }
@@ -652,7 +628,7 @@ void sigint_handler(int signal)
 //         {
 //             status_flags |= STATUS_UNKNOWN_STANCE;
 //         }
-//         status_flag_lock.unlock();
+//         STATUS_FLAG_LOCK.unlock();
         
 //         // Wait until next tick.
 //         time = time + interval;
@@ -677,7 +653,7 @@ void thread_template()
     // IF LOGGING, OPEN FILE HANDLES.
     if (log_to_file)
     {
-        log_file.open(folder_date_string + "/log_file.txt");
+        log_file.open(FOLDER_DATE_STRING + "/log_file.txt");
         log_file << "# time value1" << "\n";
     }
 
@@ -686,12 +662,12 @@ void thread_template()
     std::chrono::milliseconds interval(1000);
 
     // START LOOP, RESPECTING SHUTDOWN FLAG.
-    while (!shutdown)
+    while (!SHUTDOWN)
     {
         // GLOBAL DATA INTO LOCAL BUFFERS BEFORE USE. RESPECT MUTEX LOCKS.
-        position_buffer_lock.lock();
+        POSITION_BUFFER_LOCK.lock();
         from_global = 1.5;
-        position_buffer_lock.unlock();
+        POSITION_BUFFER_LOCK.unlock();
 
         // UPDATE LOCAL VARS.
         var = 3.0 + from_global;
@@ -705,9 +681,9 @@ void thread_template()
         }
 
         // ADD NEW VALUES TO GLOBAL BUFFER, RESPECTING MUTEX LOCKS.
-        position_buffer_lock.lock();
-        position_buffer.push_back(std::array<double, 3>{var, 0, 0});
-        position_buffer_lock.unlock();
+        POSITION_BUFFER_LOCK.lock();
+        POSITION_BUFFER.push_back(std::array<double, 3>{var, 0, 0});
+        POSITION_BUFFER_LOCK.unlock();
 
         // WAIT UNTIL NEXT TIME INTERVAL.
         time = time + interval;
@@ -721,10 +697,10 @@ void thread_template()
     }
 }
 
-void alternate_stance_thread()
+void stance_detector()
 {
-    Stance stance{
-        CONFIG.a_threshold,
+    StanceDetector stance{
+        CONFIG.fall_threshold,
         CONFIG.crawling_threshold,
         CONFIG.running_threshold,
         CONFIG.walking_threshold,
@@ -736,7 +712,7 @@ void alternate_stance_thread()
     std::ofstream freefall_file;
     if (log_to_file)
     {
-        freefall_file.open(folder_date_string + "/freefall.txt");
+        freefall_file.open(FOLDER_DATE_STRING + "/freefall.txt");
         freefall_file << "# time freefall entanglement" << "\n";
     }
 
@@ -744,33 +720,33 @@ void alternate_stance_thread()
     std::ofstream stance_file;
     if (log_to_file)
     {
-        stance_file.open(folder_date_string + "/stance.txt");
+        stance_file.open(FOLDER_DATE_STRING + "/stance.txt");
         stance_file << "# time stance" << "\n";
     }
 
     auto time = now();
     std::chrono::milliseconds interval{STANCE_DETECTION_INTERVAL};
 
-    while (!shutdown)
+    while (!SHUTDOWN)
     {
         // Get all relevant data.
-        imu_buffer_lock.lock();
-        std::deque<std::array<double, 6>> imu_data = imu_buffer;
-        imu_buffer_lock.unlock();
+        IMU_BUFFER_LOCK.lock();
+        std::deque<std::array<double, 6>> imu_data = IMU_BUFFER;
+        IMU_BUFFER_LOCK.unlock();
 
-        vel_buffer_lock.lock();
-        std::deque<std::array<double, 3>> vel_data = vel_buffer;
-        vel_buffer_lock.unlock();
+        VELOCITY_BUFFER_LOCK.lock();
+        std::deque<std::array<double, 3>> vel_data = VELOCITY_BUFFER;
+        VELOCITY_BUFFER_LOCK.unlock();
 
         stance.run(&imu_data, &vel_data);
-        current_stance = stance.getStance();
-        falling = stance.is_falling();
-        entangled = stance.is_entangled();
-        horizontal = stance.is_horizontal();
+        STATUS.current_stance = stance.getStance();
+        STATUS.falling = stance.getFallingStatus();
+        STATUS.entangled = stance.getEntangledStatus();
+        STATUS.attitude = stance.getAttitude();
 
         if (log_to_file)
         {
-            freefall_file << time.time_since_epoch().count() << " " << stance.is_falling() << " " << stance.is_entangled() << "\n";
+            freefall_file << time.time_since_epoch().count() << " " << stance.getFallingStatus() << " " << stance.getEntangledStatus() << "\n";
             stance_file << time.time_since_epoch().count() << " " << stance.getStance() << "\n";
         }
 
@@ -792,6 +768,7 @@ int main(int argc, char **argv)
     {
         // Output help text.
         std::cout << "Run without arguments for no logging\n";
+        std::cout << "\n";
         std::cout << "Arguments:\n";
         std::cout << "  -lstd        Log friendly output to stdout\n";
         std::cout << "  -lfile       Record sensor data to file - files are stored in ./data_<datetime>\n";
@@ -799,13 +776,19 @@ int main(int argc, char **argv)
         std::cout << "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n";
         std::cout << "  -noinf       Do not do velocity inference\n";
         std::cout << "  -h           Show this help text\n";
+        std::cout << "\n";
         std::cout << "Example usage:\n";
         std::cout << "  ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile\n";
+        std::cout << "\n";
+        std::cout << "Error codes:\n";
+        std::cout << "   1           Successfully executed\n";
+        std::cout << "  -1           IMU failed to start\n";
+        std::cout << "  -2           Problem reading configuration file\n";
         return 1;
     }
     if (input.contains("-testimu"))
     {
-        test_imu();
+        test_imu(SHUTDOWN);
         return 1;
     }
     if (input.contains("-lstd"))
@@ -851,44 +834,38 @@ int main(int argc, char **argv)
     // Create output directory and write copy of current configuration.
     if (log_to_file)
     {
-        folder_date_string = "./data_" + datetimestring();
-        if (!std::experimental::filesystem::is_directory(folder_date_string))
+        FOLDER_DATE_STRING = "./data_" + datetimestring();
+        if (!std::experimental::filesystem::is_directory(FOLDER_DATE_STRING))
         {
-            std::experimental::filesystem::create_directory(folder_date_string);
+            std::experimental::filesystem::create_directory(FOLDER_DATE_STRING);
         }
-        std::experimental::filesystem::copy(config_file, folder_date_string + "/config.conf");
+        std::experimental::filesystem::copy(config_file, FOLDER_DATE_STRING + "/config.conf");
     }
 
     // Preload buffers.
     for (unsigned int i = 0; i < IMU_BUFFER_LEN; i++)
     {
-        imu_buffer.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
-        imu_world_buffer.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
+        IMU_BUFFER.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
+        IMU_WORLD_BUFFER.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
     }
     for (unsigned int i = 0; i < MAG_BUFFER_LEN; i++)
     {
-        mag_buffer.push_back(std::array<double, 3>{0, 0, 0});
-        mag_world_buffer.push_back(std::array<double, 3>{0, 0, 0});
+        MAG_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
+        MAG_WORLD_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
     }
     for (unsigned int i = 0; i < VELOCITY_BUFFER_LEN; i++)
     {
-        vel_buffer.push_back(std::array<double, 3>{0, 0, 0});
+        VELOCITY_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
     }
     for (unsigned int i = 0; i < POSITION_BUFFER_LEN; i++)
     {
-        position_buffer.push_back(std::array<double, 3>{0, 0, 0});
+        POSITION_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
     }
     for (unsigned int i = 0; i < ORIENTATION_BUFFER_LEN; i++)
     {
-        euler_orientation_buffer.push_back(euler_orientation_t{0, 0, 0});
-        quat_orientation_buffer.push_back(quaternion{0, 0, 0, 0});
+        EULER_ORIENTATION_BUFFER.push_back(euler_orientation_t{0, 0, 0});
+        QUAT_ORIENTATION_BUFFER.push_back(quaternion{0, 0, 0, 0});
     }
-
-    // Get IMU configuration from config.
-    gyro_bias = {CONFIG.gyro_bias_x, CONFIG.gyro_bias_y, CONFIG.gyro_bias_z};
-    accel_bias = {CONFIG.accel_bias_x, CONFIG.accel_bias_y, CONFIG.accel_bias_z};
-    mag_bias = {CONFIG.mag_bias_x, CONFIG.mag_bias_y, CONFIG.mag_bias_z};
-    mag_scale = {CONFIG.mag_scale_x, CONFIG.mag_scale_y, CONFIG.mag_scale_z};
 
     // Initialize the IMU.
     if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
@@ -900,7 +877,7 @@ int main(int argc, char **argv)
     // Start threads.
     std::thread imu_thread(imu_reader);
     std::thread velocity_prediction(predict_velocity);
-    std::thread stance_thread(alternate_stance_thread);
+    std::thread stance_thread(stance_detector);
     std::thread radio_thread(transmit_lora);
     std::thread logging_thread(std_output);
     // std::thread alert_thread(alert_system);

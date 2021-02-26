@@ -5,17 +5,35 @@
 #include <array>
 #include <chrono>
 #include <mutex>
+#include <deque>
 
-class Stance
+class StanceDetector
 {
     public:
         enum STANCE {
-            inactive,
-            crawling,
-            walking,
-            running,
-            searching,
-            climbing
+            Inactive,
+            Crawling,
+            Walking,
+            Running,
+            Searching,
+            Climbing
+        };
+        enum FALLING {
+            NotFalling,
+            Falling
+        };
+        enum ENTANGLED {
+            NotEntangled,
+            Entangled
+        };
+        enum AXIS {
+            XAxis,
+            YAxis,
+            ZAxis
+        };
+        enum ATTITUDE {
+            Vertical,
+            Horizontal
         };
 
     private:
@@ -30,11 +48,11 @@ class Stance
         double m_struggle = 0;
 
         // Status indicators.
-        int m_falling = 0;
-        int m_entangled = 0;
-        int m_horizontal = 0;
+        FALLING m_falling = NotFalling;
+        ENTANGLED m_entangled = NotEntangled;
+        ATTITUDE m_attitude = Vertical;
+        STANCE m_stance = Inactive;
         int m_climbing = 0;
-        STANCE m_stance = inactive;
 
         // Fall/entanglment thresholding parameters.
         double m_fall_threshold;
@@ -60,11 +78,11 @@ class Stance
     public:
 
         // Constructors.
-        Stance(double a_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
+        StanceDetector(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
 
         // General methods.
         void run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::array<double, 3>> *vel_data);
-        int biggest_axis(std::array<double, 3> arr);
+        AXIS biggest_axis(std::array<double, 3> arr);
         double activity(double a, double g, double v);
         double vector_mean(std::vector<double> values);
         double buffer_mean_magnitude(std::vector<std::array<double, 3>> *buffer);
@@ -75,9 +93,9 @@ class Stance
 
         // Getters.
         STANCE getStance();
-        int is_horizontal();
-        int is_entangled();
-        int is_falling();
+        ATTITUDE getAttitude();
+        ENTANGLED getEntangledStatus();
+        FALLING getFallingStatus();
 };
 
 #endif

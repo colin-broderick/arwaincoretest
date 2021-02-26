@@ -19,7 +19,7 @@
 // This file modified by Greeve to bring comments in line with the rest of the project,
 // and to match APIs with another library, but core functionality is not changed.
 //
-// 16/02/2021    Colin Broderick    Modified to use doubles instead of floats.
+// 16/02/2021    Colin Broderick    Modified to use doubles instead of floats where possible.
 //
 //=============================================================================================
 
@@ -294,8 +294,8 @@ float Madgwick::invSqrt(float x)
 	float halfx = 0.5f * x;
 	float y = x;
 	long i = *(long*)&y;
-	//0x5f375a86 is apparently better approximation
-	//0x5f3759df is the original
+	//0x5f3759df is the original.
+	//0x5f375a86 is apparently better approximation.
 	i = 0x5f375a86 - (i>>1);
 	y = *(float*)&i;
 	y = y * (1.5f - (halfx * y * y));
@@ -303,6 +303,8 @@ float Madgwick::invSqrt(float x)
 	return y;
 }
 
+/** \brief Updates the internally-stored Euler angles.
+ */
 void Madgwick::computeAngles()
 {
 	roll = atan2f(q0*q1 + q2*q3, 0.5f - q1*q1 - q2*q2);

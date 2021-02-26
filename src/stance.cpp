@@ -20,7 +20,7 @@
  * \param walking_threshold Speed above which, if vertical, stance is detected as walking.
  * \param active_threshold Value of the internal activity metric above which an entanglement event is detected.
  */
-Stance::Stance(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold)
+StanceDetector::StanceDetector(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold)
 {
     m_fall_threshold = fall_threshold;
     m_crawling_threshold = crawling_threshold;
@@ -42,7 +42,7 @@ Stance::Stance(double fall_threshold, double crawling_threshold, double running_
  * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
  * \param vel_data Pointer to deq<arr<double>> containing velocity data.
  */
-void Stance::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::array<double, 3>> *vel_data)
+void StanceDetector::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::array<double, 3>> *vel_data)
 {
     std::vector<std::array<double, 3>> accel_data;
     std::vector<std::array<double, 3>> gyro_data;
@@ -67,11 +67,11 @@ void Stance::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::ar
     stance_lock.lock();
     if (m_primary_axis != m_vertical_axis)
     {
-        m_horizontal = 1;
+        m_attitude = Horizontal;
     }
     else
     {
-        m_horizontal = 0;
+        m_attitude = Vertical;
     }
     stance_lock.unlock();
 
@@ -93,7 +93,7 @@ void Stance::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::ar
     if (m_a_mean_magnitude < m_fall_threshold)
     {
         fall_lock.lock();
-        m_falling = 1;
+        m_falling = Falling;
         fall_lock.unlock();
     }
     m_a_twitch = abs(m_a_mean_magnitude - m_gravity);
@@ -103,7 +103,7 @@ void Stance::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::ar
     if (m_struggle > m_struggle_threshold)
     {
         fall_lock.lock();
-        m_entangled = 1;
+        m_entangled = Entangled;
         fall_lock.unlock();
     }
 
@@ -116,37 +116,37 @@ void Stance::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::ar
     // Vertical and moderate speed => walking
     // Vertical and high speed => running
     stance_lock.lock();
-    if (m_horizontal)
+    if (m_attitude)
     {
         if (m_v_mean_magnitude < m_crawling_threshold)
         {
-            m_stance = inactive;
+            m_stance = Inactive;
         }
         else if (m_v_mean_magnitude >= m_crawling_threshold)
         {
-            m_stance = crawling;
+            m_stance = Crawling;
         }
     }
-    else if (!m_horizontal)
+    else if (!m_attitude)
     {
         if (m_v_mean_magnitude < m_walking_threshold)
         {
             if (m_activity < m_active_threshold)
             {
-                m_stance = inactive;
+                m_stance = Inactive;
             }
             else if (m_activity >= m_active_threshold)
             {
-                m_stance = searching;
+                m_stance = Searching;
             }
         }
         else if (m_v_mean_magnitude < m_running_threshold)
         {
-            m_stance = walking;
+            m_stance = Walking;
         }
         else if (m_v_mean_magnitude >= m_running_threshold)
         {
-            m_stance = running;
+            m_stance = Running;
         }
     }
     stance_lock.unlock();
@@ -165,21 +165,21 @@ void Stance::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::ar
  * \param arr Vector of e.g. 3-velocity, 3-acceleration, etc.
  * \return The index of the element with largest value.
  */
-int Stance::biggest_axis(std::array<double, 3> arr)
+StanceDetector::AXIS StanceDetector::biggest_axis(std::array<double, 3> arr)
 {
     // TODO This should be using absolute value, since large negative values are 'bigger' than small positive values.
-    int axis;
+    AXIS axis;
     if (arr[0] > arr[1] && arr[0] > arr[2])
     {
-        axis = 0;
+        axis = XAxis;
     }
     else if (arr[1] > arr[0] && arr[1] > arr[2])
     {
-        axis = 1;
+        axis = YAxis;
     }
     else
     {
-        axis = 2;
+        axis = ZAxis;
     }
     return axis;
 }
@@ -190,7 +190,7 @@ int Stance::biggest_axis(std::array<double, 3> arr)
  * \param v Velocity magnitude.
  * \return Measure of intensity of activity.
  */
-double Stance::activity(double a, double g, double v)
+double StanceDetector::activity(double a, double g, double v)
 {
     // TODO Need to discover a decent metric of `activity`.
     // The metric should read high when accelerations are high,
@@ -208,7 +208,7 @@ double Stance::activity(double a, double g, double v)
  * \param values Vector of doubles.
  * \return Mean value of input vector.
  */
-double Stance::vector_mean(std::vector<double> values)
+double StanceDetector::vector_mean(std::vector<double> values)
 {
     double mean = 0;
     for (unsigned int i = 0; i < values.size(); i++)
@@ -223,7 +223,7 @@ double Stance::vector_mean(std::vector<double> values)
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double Stance::buffer_mean_magnitude(std::vector<std::array<double, 3>> *buffer)
+double StanceDetector::buffer_mean_magnitude(std::vector<std::array<double, 3>> *buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < (*buffer).size(); i++)
@@ -244,7 +244,7 @@ double Stance::buffer_mean_magnitude(std::vector<std::array<double, 3>> *buffer)
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double Stance::buffer_mean_magnitude(std::deque<std::array<double, 3>> *buffer)
+double StanceDetector::buffer_mean_magnitude(std::deque<std::array<double, 3>> *buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < (*buffer).size(); i++)
@@ -263,7 +263,7 @@ double Stance::buffer_mean_magnitude(std::deque<std::array<double, 3>> *buffer)
 /** \brief Return the column-wise means of a size (x, 3) vector.
  * \param source_vector Pointer to source array.
  */
-std::array<double, 3> Stance::get_means(std::vector<std::array<double, 3>> *source_vector)
+std::array<double, 3> StanceDetector::get_means(std::vector<std::array<double, 3>> *source_vector)
 {
     std::array<double, 3> ret;
     unsigned int length = (*source_vector).size();
@@ -284,7 +284,7 @@ std::array<double, 3> Stance::get_means(std::vector<std::array<double, 3>> *sour
  * \param source_vector Pointer to source array.
  * \return A 3-array containing the means.
  */
-std::array<double, 3> Stance::get_means(std::deque<std::array<double, 3>> *source_vector)
+std::array<double, 3> StanceDetector::get_means(std::deque<std::array<double, 3>> *source_vector)
 {
     std::array<double, 3> ret;
     unsigned int length = (*source_vector).size();
@@ -305,7 +305,7 @@ std::array<double, 3> Stance::get_means(std::deque<std::array<double, 3>> *sourc
  * \param source_vector Pointer to source array.
  * \return A 6-array containing the means.
  */
-std::array<double, 6> Stance::get_means(std::deque<std::array<double, 6>> *source_vector)
+std::array<double, 6> StanceDetector::get_means(std::deque<std::array<double, 6>> *source_vector)
 {
     std::array<double, 6> ret;
     unsigned int length = (*source_vector).size();
@@ -333,7 +333,7 @@ std::array<double, 6> Stance::get_means(std::deque<std::array<double, 6>> *sourc
 /** \brief Returns string representing current stance.
  * \return Current stance.
  */
-Stance::STANCE Stance::getStance()
+StanceDetector::STANCE StanceDetector::getStance()
 {
     stance_lock.lock();
     STANCE ret = m_stance;
@@ -344,10 +344,10 @@ Stance::STANCE Stance::getStance()
 /** \brief Gets the horizontal flag.
  * \return Integer bool.
  */
-int Stance::is_horizontal()
+StanceDetector::ATTITUDE StanceDetector::getAttitude()
 {  
     stance_lock.lock();
-    int ret = m_horizontal;
+    ATTITUDE ret = m_attitude;
     stance_lock.unlock();
     return ret;
 }
@@ -355,11 +355,11 @@ int Stance::is_horizontal()
 /** \brief Check if entangled flag set.
  * \return Integer bool.
  */
-int Stance::is_entangled()
+StanceDetector::ENTANGLED StanceDetector::getEntangledStatus()
 {
     fall_lock.lock();
-    int ret = m_entangled;
-    m_entangled = 0;
+    ENTANGLED ret = m_entangled;
+    m_entangled = NotEntangled;
     fall_lock.unlock();
     return ret;
 }
@@ -367,11 +367,11 @@ int Stance::is_entangled()
 /** \brief Get current fall flag.
  * \return Integer bool.
  */
-int Stance::is_falling()
+StanceDetector::FALLING StanceDetector::getFallingStatus()
 {
     fall_lock.lock();
-    int ret = m_falling;
-    m_falling = 0;
+    FALLING ret = m_falling;
+    m_falling = NotFalling;
     fall_lock.unlock();
     return ret;
 }
