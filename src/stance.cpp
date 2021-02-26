@@ -20,13 +20,14 @@
  * \param walking_threshold Speed above which, if vertical, stance is detected as walking.
  * \param active_threshold Value of the internal activity metric above which an entanglement event is detected.
  */
-Stance::Stance(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold)
+Stance::Stance(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold)
 {
     m_fall_threshold = fall_threshold;
     m_crawling_threshold = crawling_threshold;
     m_running_threshold = running_threshold;
     m_walking_threshold = walking_threshold;
     m_active_threshold = active_threshold;
+    m_struggle_threshold = struggle_threshold;
     
     // Make m_struggle_window have length 10.
     for (unsigned int i = 0; i < 10; i++)
@@ -119,11 +120,11 @@ void Stance::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::ar
     {
         if (m_v_mean_magnitude < m_crawling_threshold)
         {
-            m_stance = "inactive";
+            m_stance = inactive;
         }
         else if (m_v_mean_magnitude >= m_crawling_threshold)
         {
-            m_stance = "crawling";
+            m_stance = crawling;
         }
     }
     else if (!m_horizontal)
@@ -132,20 +133,20 @@ void Stance::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::ar
         {
             if (m_activity < m_active_threshold)
             {
-                m_stance = "inactive";
+                m_stance = inactive;
             }
             else if (m_activity >= m_active_threshold)
             {
-                m_stance = "searching";
+                m_stance = searching;
             }
         }
         else if (m_v_mean_magnitude < m_running_threshold)
         {
-            m_stance = "walking";
+            m_stance = walking;
         }
         else if (m_v_mean_magnitude >= m_running_threshold)
         {
-            m_stance = "running";
+            m_stance = running;
         }
     }
     stance_lock.unlock();
@@ -214,7 +215,7 @@ double Stance::vector_mean(std::vector<double> values)
     {
         mean += values[i];
     }
-    return mean/values.size();
+    return mean/values.size(); 
 }
 
 /** \brief Calculates the mean magnitude of a (x,3) sized vector of arrays of doubles.
@@ -332,10 +333,10 @@ std::array<double, 6> Stance::get_means(std::deque<std::array<double, 6>> *sourc
 /** \brief Returns string representing current stance.
  * \return Current stance.
  */
-std::string Stance::getStance()
+Stance::STANCE Stance::getStance()
 {
     stance_lock.lock();
-    std::string ret = m_stance;
+    STANCE ret = m_stance;
     stance_lock.unlock();
     return ret;
 }

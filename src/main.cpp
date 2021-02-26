@@ -46,6 +46,7 @@ unsigned int IMU_READING_INTERVAL = 5;
 unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
 unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
 unsigned int ALERT_SYSTEM_INTERVAL = 1000;
+static unsigned int STANCE_DETECTION_INTERVAL = 1000;
 
 // Buffer sizes.
 unsigned int POSITION_BUFFER_LEN = 200;
@@ -79,7 +80,7 @@ std::deque<euler_orientation_t> euler_orientation_buffer;
 std::deque<quaternion> quat_orientation_buffer;
 
 // Stance flags.
-std::string stance_;
+Stance::STANCE current_stance;
 int horizontal;
 int entangled;
 int falling;
@@ -136,10 +137,8 @@ void std_output()
             orientation_buffer_lock.unlock();
 
             // Add stance to the string stream.
-            // fall = is_falling() ? "ON" : "OFF";
-            // entd = is_entangled() ? "ON" : "OFF";
-            // ori = is_horizontal() ? "horizontal" : "vertical";
-            ss << "Stance:          " << stance_ << ", " <<  horizontal << "\n";
+            ss << "Stance flag:     " << current_stance << "\n";
+            ss << "Horizontal:      " << horizontal << "\n";
             ss << "Fall flag:       " << falling << "\n";
             ss << "Entangled flag:  " << entangled << "\n";
 
@@ -633,23 +632,23 @@ void sigint_handler(int signal)
 //         {
 //             status_flags |= STATUS_ENTANGLED;
 //         }
-//         if (stance_ == "inactive")
+//         if (current_stance == "inactive")
 //         {
 //             status_flags |= STATUS_INACTIVE;
 //         }
-//         else if (stance_ == "walking")
+//         else if (current_stance == "walking")
 //         {
 //             status_flags |= STATUS_WALKING;
 //         }
-//         else if (stance_ == "crawling")
+//         else if (current_stance == "crawling")
 //         {
 //             status_flags |= STATUS_CRAWLING;
 //         }
-//         else if (stance_ == "searching")
+//         else if (current_stance == "searching")
 //         {
 //             status_flags |= STATUS_SEARCHING;
 //         }
-//         else if (stance_ == "unknown")
+//         else if (current_stance == "unknown")
 //         {
 //             status_flags |= STATUS_UNKNOWN_STANCE;
 //         }
@@ -722,21 +721,16 @@ void thread_template()
     }
 }
 
-static unsigned int FALL_DETECTION_INTERVAL = 1000;
-
 void alternate_stance_thread()
 {
-    using std::cout;
-
     Stance stance{
         CONFIG.a_threshold,
         CONFIG.crawling_threshold,
         CONFIG.running_threshold,
         CONFIG.walking_threshold,
-        CONFIG.active_threshold
+        CONFIG.active_threshold,
+        CONFIG.struggle_threshold
     };
-
-    // cout << "Created stance\n";
 
     // Open file for logging
     std::ofstream freefall_file;
@@ -754,18 +748,11 @@ void alternate_stance_thread()
         stance_file << "# time stance" << "\n";
     }
 
-    // cout << "Opened files\n";
-
     auto time = now();
-    std::chrono::milliseconds interval{FALL_DETECTION_INTERVAL};
-
-    // cout << "About to enter loop\n";
+    std::chrono::milliseconds interval{STANCE_DETECTION_INTERVAL};
 
     while (!shutdown)
     {
-        // cout << "Entered loop\n";
-        // TODO Replicate stance and fall detection.
-
         // Get all relevant data.
         imu_buffer_lock.lock();
         std::deque<std::array<double, 6>> imu_data = imu_buffer;
@@ -775,15 +762,11 @@ void alternate_stance_thread()
         std::deque<std::array<double, 3>> vel_data = vel_buffer;
         vel_buffer_lock.unlock();
 
-        // cout << "Got IMU and vel buffers\n";
-
         stance.run(&imu_data, &vel_data);
-        stance_ = stance.getStance();
+        current_stance = stance.getStance();
         falling = stance.is_falling();
         entangled = stance.is_entangled();
         horizontal = stance.is_horizontal();
-
-        // cout << "Did stance.run()\n";
 
         if (log_to_file)
         {
@@ -791,15 +774,10 @@ void alternate_stance_thread()
             stance_file << time.time_since_epoch().count() << " " << stance.getStance() << "\n";
         }
 
-        // cout << "Logged to file\n";
-
         // Wait until the next tick.
         time = time + interval;
         std::this_thread::sleep_until(time);
-
-        // cout << "Passed timer, about to return to top of loop\n";
     }
-
 }
 
 /// mainloop
@@ -922,8 +900,6 @@ int main(int argc, char **argv)
     // Start threads.
     std::thread imu_thread(imu_reader);
     std::thread velocity_prediction(predict_velocity);
-    // std::thread fall_detection(run_fall_detect);
-    // std::thread stance_detection(run_stance_detect);
     std::thread stance_thread(alternate_stance_thread);
     std::thread radio_thread(transmit_lora);
     std::thread logging_thread(std_output);
@@ -932,9 +908,7 @@ int main(int argc, char **argv)
     // Wait for all threads to terminate.
     imu_thread.join();
     velocity_prediction.join();
-    stance_thread.join();
-    // fall_detection.join();
-    // stance_detection.join();
+    stance_thread.join();    
     radio_thread.join();
     logging_thread.join();
     // alert_thread.join();
