@@ -1,7 +1,5 @@
 #include "efaroe.h"
 
-extern configuration CONFIG;
-
 /** \brief Constructor for eFaroe class.
  * eFaroe is an orientation filter which uses acceleration and angular velocity measurements from accelerometer and gyroscope to attempt to track current orientation.
  * \param initial_quaternion The known initial orientation as a quaternion. Use {1, 0, 0, 0} if unknown.
@@ -9,9 +7,9 @@ extern configuration CONFIG;
  * \param gyro_error TODO not sure what this is for.
  * \param use_mag Whether to use magnetometer data for the orientation filter. TODO Not yet implemented so should always be zero.
  */
-eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, int use_mag)
+eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, int use_mag, double zeta)
 {
-    zeta = CONFIG.efaroe_zeta;
+    zeta = zeta;
     gyro_bias = gyro_bias;
     gyro_error = 0.05;
     uk_dip = -67.0*3.14159265/180.0;
