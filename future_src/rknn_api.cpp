@@ -2,7 +2,8 @@
 #include <iostream>
 #include "rknn_api.h"
 
-static void printRKNNTensor(rknn_tensor_attr *attr) {
+static void printRKNNTensor(rknn_tensor_attr *attr)
+{
     printf("index=%d name=%s n_dims=%d dims=[%d %d %d %d] n_elems=%d size=%d fmt=%d type=%d qnt_type=%d fl=%d zp=%d scale=%f\n", 
             attr->index, attr->name, attr->n_dims, attr->dims[3], attr->dims[2], attr->dims[1], attr->dims[0], 
             attr->n_elems, attr->size, 0, attr->type, attr->qnt_type, attr->fl, attr->zp, attr->scale);
@@ -11,7 +12,8 @@ static void printRKNNTensor(rknn_tensor_attr *attr) {
 static unsigned char *load_model(const char *filename, int *model_size)
 {
     FILE *fp = fopen(filename, "rb");
-    if(fp == nullptr) {
+    if (fp == nullptr)
+    {
         printf("fopen %s fail!\n", filename);
         return NULL;
     }
@@ -19,13 +21,15 @@ static unsigned char *load_model(const char *filename, int *model_size)
     unsigned int model_len = ftell(fp);
     unsigned char *model = (unsigned char*)malloc(model_len);
     fseek(fp, 0, SEEK_SET);
-    if(model_len != fread(model, 1, model_len, fp)) {
+    if (model_len != fread(model, 1, model_len, fp))
+    {
         printf("fread %s fail!\n", filename);
         free(model);
         return NULL;
     }
     *model_size = model_len;
-    if(fp) {
+    if (fp)
+    {
         fclose(fp);
     }
     return model;
@@ -147,7 +151,8 @@ int rknn(char *argv[])
         }
 
         // TODO Post process?
-        for (unsigned int i = 0; i < output_attrs[0].n_elems; i++) {
+        for (unsigned int i = 0; i < output_attrs[0].n_elems; i++)
+        {
             float val = ((float*)(outputs[0].buf))[i];
             std::cout << i << ": " << val << "\n";
         }

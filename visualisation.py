@@ -60,25 +60,24 @@ if __name__ == "__main__":
     ## Initial offset angle.
     bx.rotate(angle=math.pi/2, axis=X)
 
-    with open("log.txt", "w") as f:
-        for line in sys.stdin:
-            if "Orientation (E)" in line:
-                bx.rotate(angle=-rad_angles[2], axis=Z)
-                bx.rotate(angle=-rad_angles[1], axis=Y)
-                bx.rotate(angle=-rad_angles[0], axis=X)
+    for line in sys.stdin:
+        if "Orientation (E)" in line:
+            bx.rotate(angle=-rad_angles[2], axis=Z)
+            bx.rotate(angle=-rad_angles[1], axis=Y)
+            bx.rotate(angle=-rad_angles[0], axis=X)
 
-                ## Parse angles from the orientation string.
-                deg_angles = [float(angle) for angle in line[18:-2].split(",")]
-                rad_angles = [angle*pi/180 for angle in deg_angles]
-                
-                if first_angles is None:
-                    first_angles = deg_angles[:]
+            ## Parse angles from the orientation string.
+            deg_angles = [float(angle) for angle in line[18:-2].split(",")]
+            rad_angles = [angle*pi/180 for angle in deg_angles]
+            
+            if first_angles is None:
+                first_angles = deg_angles[:]
 
-                ## Rotate by the change in angle.
-                bx.rotate(angle=rad_angles[0], axis=X)
-                bx.rotate(angle=rad_angles[1], axis=Y)
-                bx.rotate(angle=rad_angles[2], axis=Z)
+            ## Rotate by the change in angle.
+            bx.rotate(angle=rad_angles[0], axis=X)
+            bx.rotate(angle=rad_angles[1], axis=Y)
+            bx.rotate(angle=rad_angles[2], axis=Z)
 
-            if "Position:        " in line:
-                x, y, z = line[18:-2].split(",")
-                bx.pos = vector(float(x)*10, float(y)*10, float(z)*10)
+        if "Position:        " in line:
+            x, y, z = line[18:-2].split(",")
+            bx.pos = vector(float(x)*10, float(y)*10, float(z)*10)
