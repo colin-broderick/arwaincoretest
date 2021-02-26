@@ -8,6 +8,16 @@
 
 class Stance
 {
+    public:
+        enum STANCE {
+            inactive,
+            crawling,
+            walking,
+            running,
+            searching,
+            climbing
+        };
+
     private:
         double m_a_mean_magnitude;
         double m_g_mean_magnitude;
@@ -24,7 +34,7 @@ class Stance
         int m_entangled = 0;
         int m_horizontal = 0;
         int m_climbing = 0;
-        std::string m_stance = "inactive";
+        STANCE m_stance = inactive;
 
         // Fall/entanglment thresholding parameters.
         double m_fall_threshold;
@@ -32,7 +42,7 @@ class Stance
         double m_gravity;
         double m_a_twitch;
         double m_tmp_struggle;
-        double m_sfactor;
+        double m_sfactor = 1;
         double m_activity;
         std::vector<double> m_struggle_window;
 
@@ -48,8 +58,9 @@ class Stance
         std::mutex stance_lock;
 
     public:
+
         // Constructors.
-        Stance(double a_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold);
+        Stance(double a_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
 
         // General methods.
         void run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::array<double, 3>> *vel_data);
@@ -63,7 +74,7 @@ class Stance
         std::array<double, 6> get_means(std::deque<std::array<double, 6>> *source_vector);
 
         // Getters.
-        std::string getStance();
+        STANCE getStance();
         int is_horizontal();
         int is_entangled();
         int is_falling();
