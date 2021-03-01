@@ -738,7 +738,7 @@ void stance_detector()
         std::deque<std::array<double, 3>> vel_data = VELOCITY_BUFFER;
         VELOCITY_BUFFER_LOCK.unlock();
 
-        stance.run(&imu_data, &vel_data);
+        stance.run(imu_data, vel_data);
         STATUS.current_stance = stance.getStance();
         STATUS.falling = stance.getFallingStatus();
         STATUS.entangled = stance.getEntangledStatus();
