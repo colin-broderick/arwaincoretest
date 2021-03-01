@@ -177,5 +177,6 @@ Configuration get_configuration(const std::string &filename)
     stringstream(options["log_magnetometer"]) >> cf.log_magnetometer;
     stringstream(options["npu_vel_weight_confidence"]) >> cf.npu_vel_weight_confidence;
     stringstream(options["madgwick_beta"]) >> cf.madgwick_beta;
+    stringstream(options["use_indoor_positioning_system"]) >> cf.use_indoor_positioning_system;
     return cf;
 }
