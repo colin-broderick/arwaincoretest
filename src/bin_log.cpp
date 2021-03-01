@@ -1,5 +1,5 @@
 /*
-WIP
+WIP - HIGHLY EXPERIMENTAL NOT READY FOR USE
 
 Binary data logger for the ARWAIN project.
 

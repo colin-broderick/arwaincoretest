@@ -23,7 +23,6 @@ typedef struct euler_orientation_t
     double yaw;
 } euler_orientation_t;
 
-// Date/time as a string in the form YYYY_MM_DD_HH_mm_ss.
 std::string datetimestring();
 
 void test_imu(int &shutdown);
@@ -56,8 +55,13 @@ struct Configuration {
     double efaroe_zeta;
 };
 
-Configuration get_configuration(std::string filename);
+Configuration get_configuration(const std::string &filename);
 
+/** \brief Overwrite the content of a configuration file.
+ * \param filename The file in which to do the write operation.
+ * \param option The configuration option to overwrite.
+ * \param new_value The new value of the parameter to be put in the file.
+ */
 template <class T>
 void config_replace(std::string filename, std::string option, T new_value)
 {

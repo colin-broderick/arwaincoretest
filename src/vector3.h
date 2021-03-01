@@ -26,7 +26,7 @@ inline double vector3::magnitude()
  * \param v2 A second 3-vector to be added to the first.
  * \return A new 3-vector.
  */
-inline vector3 operator+(vector3 v1, vector3 v2)
+inline vector3 operator+(const vector3 &v1, const vector3 &v2)
 {
     return vector3{
         v1.x + v2.x,
@@ -40,7 +40,7 @@ inline vector3 operator+(vector3 v1, vector3 v2)
  * \param v2 A second 3-vector to be subtracted from the first.
  * \return A new 3-vector.
  */
-inline vector3 operator-(vector3 v1, vector3 v2)
+inline vector3 operator-(const vector3 &v1, const vector3 &v2)
 {
     return vector3{
         v1.x - v2.x,
@@ -55,7 +55,7 @@ inline vector3 operator-(vector3 v1, vector3 v2)
  * \return A new 3-vector.
  */
 template <class T>
-inline vector3 operator/(vector3 v, T scalar)
+inline vector3 operator/(const vector3 &v, const T &scalar)
 {
     return vector3{
         v.x/scalar,
@@ -69,7 +69,7 @@ inline vector3 operator/(vector3 v, T scalar)
  * \param v2 A second 3-vector.
  * \return A new 3-vector.
  */
-inline vector3 operator*(vector3 v1, vector3 v2)
+inline vector3 operator*(const vector3 &v1, const vector3 &v2)
 {
     return vector3{
         v1.x*v2.x,
@@ -84,7 +84,7 @@ inline vector3 operator*(vector3 v1, vector3 v2)
  * \return A new 3-vector.
  */
 template <class T>
-inline vector3 operator*(vector3 v, T scalar)
+inline vector3 operator*(const vector3 &v, const T &scalar)
 {
     return vector3{
         v.x*scalar,

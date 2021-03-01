@@ -12,6 +12,10 @@
 
 static std::string config_file = "./arwain.conf";
 
+/** \brief Run calibration procedure for the BMI270, putting output in config file.
+ * \param argc From 0 to 3 arguments specifying which sensor to calibrate.
+ * \param argv Any combination of -mag, -accel, -gyro, or nothing.
+ */
 int main(int argc, char **argv)
 {
     // Detect which sensors to calibrate.
@@ -148,10 +152,6 @@ int main(int argc, char **argv)
             if (*i > max_z)
                 max_z = *i;
         }
-        
-        // printf("X range is [%f, %f]\n", min_x, max_x);
-        // printf("Y range is [%f, %f]\n", min_y, max_y);
-        // printf("Z range is [%f, %f]\n", min_z, max_z);
 
         float offset_x = (max_x + min_x) / 2;
         float offset_y = (max_y + min_y) / 2;
@@ -174,26 +174,6 @@ int main(int argc, char **argv)
         config_replace(config_file, "mag_scale_x", scale_x);
         config_replace(config_file, "mag_scale_y", scale_y);
         config_replace(config_file, "mag_scale_z", scale_z);
-        
-        // std::ofstream myfile;
-        // myfile.open(path);
-        // myfile << "Offset_X, Offset_Y, Offset_Z, Scale_X, Scale_Y, Scale_Z\n";
-        // myfile << offset_x << "," << offset_y << "," << offset_z << ",";
-        // myfile << scale_x << "," << scale_y << "," << scale_z << "\n";
-        // myfile.close();
-
-        // float corrected_max_x = (max_x - offset_x) * scale_x;
-        // float corrected_min_x = (min_x - offset_x) * scale_x;
-        
-        // float corrected_max_y = (max_y - offset_y) * scale_y;
-        // float corrected_min_y = (min_y - offset_y) * scale_y;
-
-        // float corrected_max_z = (max_z - offset_z) * scale_z;
-        // float corrected_min_z = (min_z - offset_z) * scale_z;
-        
-        // printf("Corrected X range is [%f, %f]\n", corrected_min_x, corrected_max_x);
-        // printf("Corrected Y range is [%f, %f]\n", corrected_min_y, corrected_max_y);
-        // printf("Corrected Z range is [%f, %f]\n", corrected_min_z, corrected_max_z);
     }
     
     if (calibrate_accel)

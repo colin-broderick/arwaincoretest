@@ -35,7 +35,7 @@ quaternion::quaternion(double real, double im_i, double im_j, double im_k)
 /** \brief Construct a quaternion from a three-vector.
  * \param vec A three-vector to convert to an orientation quaternion.
  */
-quaternion::quaternion(vector3 vec)
+quaternion::quaternion(const vector3 &vec)
 {
     w = 0;
     x = vec.x;
