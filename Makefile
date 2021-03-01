@@ -2,7 +2,8 @@
 arwain_c_src = src/bmi2.c src/bmi270.c src/bmm150.c
 arwain_cpp_src = src/main.cpp src/quaternions.cpp src/stance.cpp \
 	src/imu_utils.cpp src/utils.cpp src/madgwick.cpp src/efaroe.cpp \
-	src/math_util.cpp src/bin_log.cpp src/input_parser.cpp
+	src/math_util.cpp src/bin_log.cpp src/input_parser.cpp \
+	src/indoor_positioning_wrapper.cpp
 arwain_obj = $(arwain_cpp_src:.cpp=.o) $(arwain_c_src:.c=.o)
 
 ## Files for building calibration program.
