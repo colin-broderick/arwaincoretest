@@ -1,3 +1,35 @@
+/*
+Code style conventions
+===============================================================================
+
+I have attempted to use the following conventions throughout this project.
+If anything doesn't follow convention, feel free to change it
+
+ENUM           Enumeration types are named in all caps.
+EnumElement    Enumerations are named in Pascal case.
+Class          Classes are named in Pascal Case and represent complex types.
+structType     Structs are reserved for simple data types, named in camel case.
+getMethod      Class and struct methods are named in camel case.
+GLOBAL_VAR     File- or project-global variables are named in upper snake case.
+local_var      Local variables are named in lower snake case.
+a_function     Functions are named in lower snake case.
+
+Data integrity
+===============================================================================
+
+These rules are established to ensure that time-sensitive operations can execute
+successfully and on time, and that data is never inadvertently changed. Deviation
+from these rules should be accompanied by a comment clearly indiciating why.
+
+- Anything accessed by more than one thread should be protected by a mutex.
+- Mutex locks should be established only for the duration of a read or write and
+  then released immediately. No processing should be done while data is locked.
+- Any non-primitive data types should be passed by const reference unless a copy
+  is explicitly required.
+
+*/
+
+
 #include <algorithm>
 #include <csignal>
 #include <iostream>
@@ -50,12 +82,12 @@ static Configuration CONFIG;
 static Status STATUS;
 
 // Default config file locations.
-std::string config_file = "./arwain.conf";
+std::string CONFIG_FILE = "./arwain.conf";
 
 // Flags for whether to produce various log outputs.
-int log_to_std = 0;
-int log_to_file = 0;
-int no_inf = 0;
+int LOG_TO_STD = 0;
+int LOG_TO_FILE = 0;
+int NO_INF = 0;
 
 // Name for data folder
 static std::string FOLDER_DATE_STRING;
@@ -71,7 +103,7 @@ std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER;
 std::deque<quaternion> QUAT_ORIENTATION_BUFFER;
 
 // Stance flags.
-int status_flags = 0;
+int STATUS_FLAGS = 0;
 
 // Kill flag for all threads.
 static int SHUTDOWN = 0;
@@ -85,10 +117,12 @@ std::mutex POSITION_BUFFER_LOCK;
 std::mutex ORIENTATION_BUFFER_LOCK;
 
 /** \brief Periodically logs status messages to stdout.
+ * Useful for debugging or testing, but probably not wanted at runtime.
+ * Output is of a form that can be easily piped to other processes.
  */
 void std_output()
 {
-    if (log_to_std)
+    if (LOG_TO_STD)
     {
         // Output string built here.
         std::stringstream ss;
@@ -131,6 +165,10 @@ void std_output()
 }
 
 /** \brief Reads IMU data, runs orientation filter(s), rotates IMU data, and buffers everything.
+ * This is the root of the entire tree. Quite a lot goes on here and a lot of buffers
+ * are fed. This is also the most time-sensitive thread. A single loop must not take
+ * longer than the reading interval of the IMU, so be careful when implementing
+ * any additional functionality here.
  */
 void imu_reader()
 {
@@ -164,7 +202,7 @@ void imu_reader()
     std::ofstream euler_file;
     std::ofstream quat_file;
 
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         // Open file handles for data logging.
         acce_file.open(FOLDER_DATE_STRING + "/acce.txt");
@@ -220,7 +258,7 @@ void imu_reader()
         // }
 
         // Log IMU to file.
-        if (log_to_file)
+        if (LOG_TO_FILE)
         {
             acce_file << time.time_since_epoch().count() << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << "\n";
             gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
@@ -292,7 +330,7 @@ void imu_reader()
         // }
 
         // Log orientation information to file.
-        if (log_to_file)
+        if (LOG_TO_FILE)
         {
             euler_file << time.time_since_epoch().count() << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << "\n";
             quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
@@ -305,7 +343,7 @@ void imu_reader()
     }
 
     // Close all file handles.
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         acce_file.close();
         gyro_file.close();
@@ -331,7 +369,7 @@ int transmit_lora()
     unsigned int status;
 
     // Open file handles for data logging.
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         lora_file.open(FOLDER_DATE_STRING + "/lora_log.txt");
         lora_file << "# time packet" << "\n";
@@ -350,7 +388,7 @@ int transmit_lora()
 
         // Get current status flags.
         STATUS_FLAG_LOCK.lock();
-        status = (uint64_t)status_flags;
+        status = (uint64_t)STATUS_FLAGS;
         STATUS_FLAG_LOCK.unlock();
 
         // Build packet for transmission.
@@ -362,7 +400,7 @@ int transmit_lora()
         // TODO: Maybe a read loop?
 
         // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
-        if (log_to_file)
+        if (LOG_TO_FILE)
         {
             lora_file << time.time_since_epoch().count() << " " << packet << "\n";
         }
@@ -373,13 +411,17 @@ int transmit_lora()
     }
 
     // Close log file handle.
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         lora_file.close();
     }
 
     return 1;
 }
+
+// TODO Everything from here until the finish line can be removed if we fully convert to vector3 --
+// These functions are addition etc. operators for std::array<double, .>, which is being phased out
+// in preference for vector3 objects.
 
 // Overload array operator*.
 template <class T, class U>
@@ -410,6 +452,8 @@ T operator+(const T& a1, const T& a2)
     a[i] = a1[i] + a2[i];
   return a;
 }
+
+// Finish line ------------------------------------------------------------------------------------
 
 /** \brief Integrates acceleration data over a small window to generate velocity delta.
  * \param data The buffer to integrate over.
@@ -455,7 +499,7 @@ void torch_array_from_deque(float data[1][6][200], std::deque<std::array<double,
 void predict_velocity()
 {
     // Skip inference if command line says so.
-    if (no_inf)
+    if (NO_INF)
     {
         return;
     }
@@ -494,7 +538,7 @@ void predict_velocity()
     int backtrack = (int)((1000/IMU_READING_INTERVAL)*interval_seconds);
 
     // Open files for logging.
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
         position_file.open(FOLDER_DATE_STRING + "/position.txt");
@@ -528,6 +572,7 @@ void predict_velocity()
         imu_vel_delta = integrate(imu_latest, interval_seconds );
 
         // TEST Weighted combination of velocity deltas from NPU and IMU integration.
+        // TODO This gives very wrong results when trusting the IMU at all. Investigate and repair (or bin it).
         vel = npu_vel_delta*CONFIG.npu_vel_weight_confidence + imu_vel_delta*(1-CONFIG.npu_vel_weight_confidence);
 
         // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
@@ -553,7 +598,7 @@ void predict_velocity()
         POSITION_BUFFER_LOCK.unlock();
 
         // Add position and velocity data to file.
-        if (log_to_file)
+        if (LOG_TO_FILE)
         {
             velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << "\n";
             position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] << " " << position[2] << "\n";
@@ -565,7 +610,7 @@ void predict_velocity()
     }
 
     // Close file handle(s).
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         velocity_file.close();
         position_file.close();
@@ -599,34 +644,34 @@ void sigint_handler(int signal)
 //     {
 //         // Update status flags.
 //         STATUS_FLAG_LOCK.lock();
-//         status_flags = 0;
+//         STATUS_FLAGS = 0;
 //         if (getFallingStatus())
 //         {
-//             status_flags |= STATUS_FALLING;
+//             STATUS_FLAGS |= STATUS_FALLING;
 //         }
 //         if (getEntangledStatus())
 //         {
-//             status_flags |= STATUS_ENTANGLED;
+//             STATUS_FLAGS |= STATUS_ENTANGLED;
 //         }
 //         if (current_stance == "inactive")
 //         {
-//             status_flags |= STATUS_INACTIVE;
+//             STATUS_FLAGS |= STATUS_INACTIVE;
 //         }
 //         else if (current_stance == "walking")
 //         {
-//             status_flags |= STATUS_WALKING;
+//             STATUS_FLAGS |= STATUS_WALKING;
 //         }
 //         else if (current_stance == "crawling")
 //         {
-//             status_flags |= STATUS_CRAWLING;
+//             STATUS_FLAGS |= STATUS_CRAWLING;
 //         }
 //         else if (current_stance == "searching")
 //         {
-//             status_flags |= STATUS_SEARCHING;
+//             STATUS_FLAGS |= STATUS_SEARCHING;
 //         }
 //         else if (current_stance == "unknown")
 //         {
-//             status_flags |= STATUS_UNKNOWN_STANCE;
+//             STATUS_FLAGS |= STATUS_UNKNOWN_STANCE;
 //         }
 //         STATUS_FLAG_LOCK.unlock();
         
@@ -651,7 +696,7 @@ void thread_template()
     std::ofstream log_file;
 
     // IF LOGGING, OPEN FILE HANDLES.
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         log_file.open(FOLDER_DATE_STRING + "/log_file.txt");
         log_file << "# time value1" << "\n";
@@ -673,7 +718,7 @@ void thread_template()
         var = 3.0 + from_global;
 
         // IF LOGGING, UPDATE LOG FILE.
-        if (log_to_file)
+        if (LOG_TO_FILE)
         {
             // If using arwain binary logging (under development) just do
             // log_file << time << data_array;
@@ -691,7 +736,7 @@ void thread_template()
     }
 
     // IF LOGGING, CLOSE FILE HANDLES.
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         log_file.close();
     }
@@ -710,7 +755,7 @@ void stance_detector()
 
     // Open file for logging
     std::ofstream freefall_file;
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         freefall_file.open(FOLDER_DATE_STRING + "/freefall.txt");
         freefall_file << "# time freefall entanglement" << "\n";
@@ -718,7 +763,7 @@ void stance_detector()
 
     // File handle for logging.
     std::ofstream stance_file;
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         stance_file.open(FOLDER_DATE_STRING + "/stance.txt");
         stance_file << "# time stance" << "\n";
@@ -744,7 +789,7 @@ void stance_detector()
         STATUS.entangled = stance.getEntangledStatus();
         STATUS.attitude = stance.getAttitude();
 
-        if (log_to_file)
+        if (LOG_TO_FILE)
         {
             freefall_file << time.time_since_epoch().count() << " " << stance.getFallingStatus() << " " << stance.getEntangledStatus() << "\n";
             stance_file << time.time_since_epoch().count() << " " << stance.getStance() << "\n";
@@ -794,22 +839,22 @@ int main(int argc, char **argv)
     if (input.contains("-lstd"))
     {
         // Enable stdout logging.
-        log_to_std = 1;
+        LOG_TO_STD = 1;
     }
     if (input.contains("-noinf"))
     {
-        no_inf = 1;
+        NO_INF = 1;
     }
     if (input.contains("-lfile"))
     {
         // Enable file logging.
         std::cout << "Logging to file" << "\n";
-        log_to_file = 1;
+        LOG_TO_FILE = 1;
     }
     if (input.contains("-conf"))
     {
         // If alternate configuration file supplied, read it instead of default.
-        config_file = input.getCmdOption("-conf");
+        CONFIG_FILE = input.getCmdOption("-conf");
     }
     if (!input.contains("-lstd") && !input.contains("-lfile"))
     {
@@ -819,8 +864,8 @@ int main(int argc, char **argv)
     // Attempt to read the config file and quit if failed.
     try
     {
-        CONFIG = get_configuration(config_file);
-        if (log_to_std)
+        CONFIG = get_configuration(CONFIG_FILE);
+        if (LOG_TO_STD)
         {
             std::cout << "Configuration file read\n";
         }
@@ -832,14 +877,14 @@ int main(int argc, char **argv)
     }
     
     // Create output directory and write copy of current configuration.
-    if (log_to_file)
+    if (LOG_TO_FILE)
     {
         FOLDER_DATE_STRING = "./data_" + datetimestring();
         if (!std::experimental::filesystem::is_directory(FOLDER_DATE_STRING))
         {
             std::experimental::filesystem::create_directory(FOLDER_DATE_STRING);
         }
-        std::experimental::filesystem::copy(config_file, FOLDER_DATE_STRING + "/config.conf");
+        std::experimental::filesystem::copy(CONFIG_FILE, FOLDER_DATE_STRING + "/config.conf");
     }
 
     // Preload buffers.

@@ -8,12 +8,17 @@
 #include "utils.h"
 #include "imu_utils.h"
 
-// Get current time.
+/** \brief Easily get current system time.
+ * \return The current system time_point.
+ */
 std::chrono::_V2::system_clock::time_point now()
 {
     return std::chrono::system_clock::now();
 }
 
+/** \brief Get the current system datetime as a string.
+ * \return Datetime as string.
+ */
 std::string datetimestring()
 {
     std::time_t now = std::time(0);
@@ -81,6 +86,8 @@ std::string datetimestring()
     return ss.str();
 }
 
+/** \brief Utility functional for checking that the IMU is operational.
+ */
 void test_imu(int &shutdown)
 {
     // Initialize the IMU.
@@ -113,7 +120,11 @@ void test_imu(int &shutdown)
     }
 }
 
-Configuration get_configuration(std::string filename)
+/** \brief Create a configuration object based on supplied filename.
+ * \param filename The location of the configuration file to read.
+ * \return A Configuration object containing parameters read from the file.
+ */
+Configuration get_configuration(const std::string &filename)
 {
     using std::string;
     using std::stringstream;

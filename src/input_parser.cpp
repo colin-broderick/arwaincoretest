@@ -2,6 +2,10 @@
 
 #include "input_parser.h"
 
+/** \brief Constructor.
+ * \param argc Number of command line arguments received.
+ * \param argv All command line arguments.
+ */
 arwain::InputParser::InputParser(int &argc, char **argv)
 {
     // Add all tokens in command line to tokens vector.
@@ -11,6 +15,10 @@ arwain::InputParser::InputParser(int &argc, char **argv)
     }
 }
 
+/** \brief Get value of a specified command line option.
+ * \param option The name of the sought parameter.
+ * \return The value of the sought parameter.
+ */
 const std::string& arwain::InputParser::getCmdOption(const std::string &option) const
 {
     // Identify the position of a requested option and return the next token if found.
@@ -24,6 +32,10 @@ const std::string& arwain::InputParser::getCmdOption(const std::string &option) 
     return empty_string;
 }
 
+/** \brief Check whether input commands containg specified string.
+ * \param option The parameter to check for.
+ * \return True if the parameter is found, false otherwise.
+ */
 bool arwain::InputParser::contains(const std::string &option) const
 {
     // Check for the presense of a sought option.

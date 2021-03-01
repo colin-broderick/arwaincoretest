@@ -75,13 +75,7 @@ class StanceDetector
         std::mutex fall_lock;
         std::mutex stance_lock;
 
-    public:
-
-        // Constructors.
-        StanceDetector(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
-
-        // General methods.
-        void run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data);
+        // Utility methods.
         AXIS biggest_axis(const std::array<double, 3> &arr);
         double activity(double a, double g, double v);
         double vector_mean(const std::vector<double> &values);
@@ -90,6 +84,13 @@ class StanceDetector
         std::array<double, 3> get_means(const std::vector<std::array<double, 3>> &source_vector);
         std::array<double, 3> get_means(const std::deque<std::array<double, 3>> &source_vector);
         std::array<double, 6> get_means(const std::deque<std::array<double, 6>> &source_vector);
+    
+    public:
+        // Constructors.
+        StanceDetector(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
+
+        // General methods.
+        void run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data);
 
         // Getters.
         STANCE getStance();
