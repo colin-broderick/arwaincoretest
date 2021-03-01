@@ -749,6 +749,11 @@ void thread_template()
 
 void indoor_positioning()
 {
+    if (!CONFIG.use_indoor_positioning_system)
+    {
+        return;
+    }
+    
     // TODO Create IPS object
     IndoorPositioningWrapper ips;
     std::array<double, 3> velocity;

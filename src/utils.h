@@ -53,6 +53,7 @@ struct Configuration {
     double madgwick_beta;
     double efaroe_beta;
     double efaroe_zeta;
+    int use_indoor_positioning_system;
 };
 
 Configuration get_configuration(const std::string &filename);
