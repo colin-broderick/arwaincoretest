@@ -19,8 +19,9 @@ https://www.sciencedirect.com/science/article/pii/S0888327019303012
 
 #include "math_util.h"
 #include "quaternions.h"
+#include "filter.h"
 
-class eFaroe
+class eFaroe : public Filter
 {
     public:
         // Constructors.
@@ -41,7 +42,7 @@ class eFaroe
             double ax,
             double ay,
             double az        // Accelerations in m/s2
-        );
+        )  ;
         void update(
             double timestamp,  // time in nanoseconds
             double gx,
@@ -53,17 +54,17 @@ class eFaroe
             double mx,
             double my,
             double mz         // Magnetic field in micro tesla
-        );
+        ) ;
 
 
         // Orientation getters.
-        double getW();
-        double getX();
-        double getY();
-        double getZ();
-        double getPitch();
-        double getRoll();
-        double getYaw();
+        double getW() ;
+        double getX() ;
+        double getY() ;
+        double getZ() ;
+        double getPitch() ;
+        double getRoll() ;
+        double getYaw() ;
         quaternion getQuat();
         std::array<double, 3> getEuler();
     
