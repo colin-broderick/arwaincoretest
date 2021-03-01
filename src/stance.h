@@ -81,15 +81,15 @@ class StanceDetector
         StanceDetector(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
 
         // General methods.
-        void run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::array<double, 3>> *vel_data);
-        AXIS biggest_axis(std::array<double, 3> arr);
+        void run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data);
+        AXIS biggest_axis(const std::array<double, 3> &arr);
         double activity(double a, double g, double v);
-        double vector_mean(std::vector<double> values);
-        double buffer_mean_magnitude(std::vector<std::array<double, 3>> *buffer);
-        double buffer_mean_magnitude(std::deque<std::array<double, 3>> *buffer);
-        std::array<double, 3> get_means(std::vector<std::array<double, 3>> *source_vector);
-        std::array<double, 3> get_means(std::deque<std::array<double, 3>> *source_vector);
-        std::array<double, 6> get_means(std::deque<std::array<double, 6>> *source_vector);
+        double vector_mean(const std::vector<double> &values);
+        double buffer_mean_magnitude(const std::vector<std::array<double, 3>> &buffer);
+        double buffer_mean_magnitude(const std::deque<std::array<double, 3>> &buffer);
+        std::array<double, 3> get_means(const std::vector<std::array<double, 3>> &source_vector);
+        std::array<double, 3> get_means(const std::deque<std::array<double, 3>> &source_vector);
+        std::array<double, 6> get_means(const std::deque<std::array<double, 6>> &source_vector);
 
         // Getters.
         STANCE getStance();

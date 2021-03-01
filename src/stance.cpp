@@ -42,7 +42,7 @@ StanceDetector::StanceDetector(double fall_threshold, double crawling_threshold,
  * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
  * \param vel_data Pointer to deq<arr<double>> containing velocity data.
  */
-void StanceDetector::run(std::deque<std::array<double, 6>> *imu_data, std::deque<std::array<double, 3>> *vel_data)
+void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data)
 {
     std::vector<std::array<double, 3>> accel_data;
     std::vector<std::array<double, 3>> gyro_data;
@@ -50,19 +50,19 @@ void StanceDetector::run(std::deque<std::array<double, 6>> *imu_data, std::deque
     for (int i = 0; i < 20; i++)
     {
         accel_data.push_back(std::array<double, 3>{
-            (*imu_data)[i][0], (*imu_data)[i][1], (*imu_data)[i][2]
+            imu_data[i][0], imu_data[i][1], imu_data[i][2]
         });
         gyro_data.push_back(std::array<double, 3>{
-            (*imu_data)[i][3], (*imu_data)[i][4], (*imu_data)[i][5]
+            imu_data[i][3], imu_data[i][4], imu_data[i][5]
         });
     }
 
-    m_a_mean_magnitude = buffer_mean_magnitude(&accel_data);
-    m_g_mean_magnitude = buffer_mean_magnitude(&gyro_data);
+    m_a_mean_magnitude = buffer_mean_magnitude(accel_data);
+    m_g_mean_magnitude = buffer_mean_magnitude(gyro_data);
     m_v_mean_magnitude = buffer_mean_magnitude(vel_data);
 
     // Determine which axis has the largest value of acceleration. If not the same as vertical axis, subject must be horizontal.
-    std::array<double, 3> accel_means = get_means(&accel_data);
+    std::array<double, 3> accel_means = get_means(accel_data);
     int m_primary_axis = biggest_axis(accel_means);
     stance_lock.lock();
     if (m_primary_axis != m_vertical_axis)
@@ -165,7 +165,7 @@ void StanceDetector::run(std::deque<std::array<double, 6>> *imu_data, std::deque
  * \param arr Vector of e.g. 3-velocity, 3-acceleration, etc.
  * \return The index of the element with largest value.
  */
-StanceDetector::AXIS StanceDetector::biggest_axis(std::array<double, 3> arr)
+StanceDetector::AXIS StanceDetector::biggest_axis(const std::array<double, 3> &arr)
 {
     // TODO This should be using absolute value, since large negative values are 'bigger' than small positive values.
     AXIS axis;
@@ -208,7 +208,7 @@ double StanceDetector::activity(double a, double g, double v)
  * \param values Vector of doubles.
  * \return Mean value of input vector.
  */
-double StanceDetector::vector_mean(std::vector<double> values)
+double StanceDetector::vector_mean(const std::vector<double> &values)
 {
     double mean = 0;
     for (unsigned int i = 0; i < values.size(); i++)
@@ -223,19 +223,19 @@ double StanceDetector::vector_mean(std::vector<double> values)
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double StanceDetector::buffer_mean_magnitude(std::vector<std::array<double, 3>> *buffer)
+double StanceDetector::buffer_mean_magnitude(const std::vector<std::array<double, 3>> &buffer)
 {
     double mean = 0.0;
-    for (unsigned int i=0; i < (*buffer).size(); i++)
+    for (unsigned int i=0; i < buffer.size(); i++)
     {
         double square_sum = 0;
         for (unsigned int j=0; j < 3; j++)
         {
-            square_sum += (*buffer)[i][j] * (*buffer)[i][j];
+            square_sum += buffer[i][j] * buffer[i][j];
         }
         mean += sqrt(square_sum);
     }
-    mean /= (*buffer).size();
+    mean /= buffer.size();
     return mean;
 }
 
@@ -244,34 +244,34 @@ double StanceDetector::buffer_mean_magnitude(std::vector<std::array<double, 3>> 
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double StanceDetector::buffer_mean_magnitude(std::deque<std::array<double, 3>> *buffer)
+double StanceDetector::buffer_mean_magnitude(const std::deque<std::array<double, 3>> &buffer)
 {
     double mean = 0.0;
-    for (unsigned int i=0; i < (*buffer).size(); i++)
+    for (unsigned int i=0; i < buffer.size(); i++)
     {
         double square_sum = 0;
         for (unsigned int j=0; j < 3; j++)
         {
-            square_sum += (*buffer)[i][j] * (*buffer)[i][j];
+            square_sum += buffer[i][j] * buffer[i][j];
         }
         mean += sqrt(square_sum);
     }
-    mean /= (*buffer).size();
+    mean /= buffer.size();
     return mean;
 }
 
 /** \brief Return the column-wise means of a size (x, 3) vector.
  * \param source_vector Pointer to source array.
  */
-std::array<double, 3> StanceDetector::get_means(std::vector<std::array<double, 3>> *source_vector)
+std::array<double, 3> StanceDetector::get_means(const std::vector<std::array<double, 3>> &source_vector)
 {
     std::array<double, 3> ret;
-    unsigned int length = (*source_vector).size();
+    unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
-        ret[0] += abs((*source_vector)[i][0]);
-        ret[1] += abs((*source_vector)[i][1]);
-        ret[2] += abs((*source_vector)[i][2]);
+        ret[0] += abs(source_vector[i][0]);
+        ret[1] += abs(source_vector[i][1]);
+        ret[2] += abs(source_vector[i][2]);
     }
     ret[0] /= length;
     ret[1] /= length;
@@ -284,15 +284,15 @@ std::array<double, 3> StanceDetector::get_means(std::vector<std::array<double, 3
  * \param source_vector Pointer to source array.
  * \return A 3-array containing the means.
  */
-std::array<double, 3> StanceDetector::get_means(std::deque<std::array<double, 3>> *source_vector)
+std::array<double, 3> StanceDetector::get_means(const std::deque<std::array<double, 3>> &source_vector)
 {
     std::array<double, 3> ret;
-    unsigned int length = (*source_vector).size();
+    unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
-        ret[0] += abs((*source_vector)[i][0]);
-        ret[1] += abs((*source_vector)[i][1]);
-        ret[2] += abs((*source_vector)[i][2]);
+        ret[0] += abs(source_vector[i][0]);
+        ret[1] += abs(source_vector[i][1]);
+        ret[2] += abs(source_vector[i][2]);
     }
     ret[0] /= length;
     ret[1] /= length;
@@ -305,18 +305,18 @@ std::array<double, 3> StanceDetector::get_means(std::deque<std::array<double, 3>
  * \param source_vector Pointer to source array.
  * \return A 6-array containing the means.
  */
-std::array<double, 6> StanceDetector::get_means(std::deque<std::array<double, 6>> *source_vector)
+std::array<double, 6> StanceDetector::get_means(const std::deque<std::array<double, 6>> &source_vector)
 {
     std::array<double, 6> ret;
-    unsigned int length = (*source_vector).size();
+    unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
-        ret[0] += abs((*source_vector)[i][0]);
-        ret[1] += abs((*source_vector)[i][1]);
-        ret[2] += abs((*source_vector)[i][2]);
-        ret[3] += abs((*source_vector)[i][3]);
-        ret[4] += abs((*source_vector)[i][4]);
-        ret[5] += abs((*source_vector)[i][5]);
+        ret[0] += abs(source_vector[i][0]);
+        ret[1] += abs(source_vector[i][1]);
+        ret[2] += abs(source_vector[i][2]);
+        ret[3] += abs(source_vector[i][3]);
+        ret[4] += abs(source_vector[i][4]);
+        ret[5] += abs(source_vector[i][5]);
     }
     ret[0] /= length;
     ret[1] /= length;
