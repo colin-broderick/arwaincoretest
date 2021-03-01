@@ -26,7 +26,10 @@
 
 #include <math.h>
 
-class Madgwick{
+#include "filter.h"
+
+class Madgwick : public Filter
+{
     private:
         static float invSqrt(float x);
         double beta;	// algorithm gain

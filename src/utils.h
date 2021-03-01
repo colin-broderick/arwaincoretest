@@ -54,6 +54,7 @@ struct Configuration {
     double efaroe_beta;
     double efaroe_zeta;
     int use_indoor_positioning_system;
+    std::string orientation_filter;
 };
 
 Configuration get_configuration(const std::string &filename);

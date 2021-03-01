@@ -59,6 +59,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "input_parser.h"
 #include "bin_log.h"
 #include "indoor_positioning_wrapper.h"
+#include "filter.h"
 
 // Characteristics of the sliding window for data fed to the NPU.
 // unsigned int STEP_SIZE = 50;
@@ -176,15 +177,16 @@ void std_output()
  */
 void imu_reader()
 {
-    // Initialize orientation filter.
-    // Madgwick orientation_filter{1000.0/IMU_READING_INTERVAL, CONFIG.madgwick_beta};
-    eFaroe orientation_filter{
-        quaternion{0,0,0,0},
-        CONFIG.gyro_bias,
-        100,
-        0,
-        CONFIG.efaroe_zeta
-    };
+    // Choose an orientation filter depending on configuration, with Madgwick as default.
+    Filter* filter;
+    if (CONFIG.orientation_filter == "efaroe")
+    {
+        filter = new eFaroe{quaternion{0,0,0,0}, CONFIG.gyro_bias, 100, 0, CONFIG.efaroe_zeta};
+    }
+    else
+    {
+        filter = new Madgwick{1000.0/IMU_READING_INTERVAL, CONFIG.madgwick_beta};
+    }
 
     int count = 0;
     int get_mag = 0;
@@ -275,7 +277,7 @@ void imu_reader()
         // Perform an orientation filter step.
         if (CONFIG.use_magnetometer)
         {
-            orientation_filter.update(
+            filter->update(
                 time.time_since_epoch().count(),
                 gyro_data.x, gyro_data.y, gyro_data.z,
                 accel_data.x, accel_data.y, accel_data.z,
@@ -284,7 +286,7 @@ void imu_reader()
         }
         else
         {
-            orientation_filter.update(
+            filter->update(
                 time.time_since_epoch().count(),
                 gyro_data.x, gyro_data.y, gyro_data.z,
                 accel_data.x, accel_data.y, accel_data.z
@@ -292,15 +294,15 @@ void imu_reader()
         }
 
         // Extract Euler orientation from filter.
-        euler_data.roll = orientation_filter.getRoll();
-        euler_data.pitch = orientation_filter.getPitch();
-        euler_data.yaw = orientation_filter.getYaw();
+        euler_data.roll = filter->getRoll();
+        euler_data.pitch = filter->getPitch();
+        euler_data.yaw = filter->getYaw();
 
         // Extract quaternion orientation from filter.
-        quat_data.w = orientation_filter.getW();
-        quat_data.x = orientation_filter.getX();
-        quat_data.y = orientation_filter.getY();
-        quat_data.z = orientation_filter.getZ();
+        quat_data.w = filter->getW();
+        quat_data.x = filter->getX();
+        quat_data.y = filter->getY();
+        quat_data.z = filter->getZ();
 
         // Add orientation information to buffers.
         ORIENTATION_BUFFER_LOCK.lock();
@@ -345,6 +347,9 @@ void imu_reader()
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
+
+    // TODO Double check this is what I need for clean up.
+    delete filter;
 
     // Close all file handles.
     if (LOG_TO_FILE)
@@ -753,7 +758,7 @@ void indoor_positioning()
     {
         return;
     }
-    
+
     // TODO Create IPS object
     IndoorPositioningWrapper ips;
     std::array<double, 3> velocity;
