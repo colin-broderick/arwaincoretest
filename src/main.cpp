@@ -58,6 +58,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 // #include "rknn_api.h"
 #include "input_parser.h"
 #include "bin_log.h"
+#include "indoor_positioning_wrapper.h"
 
 // Characteristics of the sliding window for data fed to the NPU.
 // unsigned int STEP_SIZE = 50;
@@ -65,17 +66,19 @@ from these rules should be accompanied by a comment clearly indiciating why.
 
 // Time intervals, all in milliseconds.
 // unsigned int ALERT_SYSTEM_INTERVAL = 1000;
-unsigned int IMU_READING_INTERVAL = 5;
-unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
-unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
+static unsigned int IMU_READING_INTERVAL = 5;
+static unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
+static unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
 static unsigned int STANCE_DETECTION_INTERVAL = 1000;
+static unsigned int INDOOR_POSITIONING_INTERVAL = 50;
 
 // Buffer sizes.
-unsigned int POSITION_BUFFER_LEN = 200;
-unsigned int MAG_BUFFER_LEN = 200;
-unsigned int VELOCITY_BUFFER_LEN = 200;
-unsigned int ORIENTATION_BUFFER_LEN = 200;
-unsigned int IMU_BUFFER_LEN = 200;
+static unsigned int POSITION_BUFFER_LEN = 200;
+static unsigned int MAG_BUFFER_LEN = 200;
+static unsigned int VELOCITY_BUFFER_LEN = 200;
+static unsigned int ORIENTATION_BUFFER_LEN = 200;
+static unsigned int IMU_BUFFER_LEN = 200;
+static unsigned int IPS_BUFFER_LEN = 50;
 
 // File-globally accessible configuration and status.
 static Configuration CONFIG;
@@ -92,13 +95,14 @@ int NO_INF = 0;
 // Name for data folder
 static std::string FOLDER_DATE_STRING;
 
-// IMU data buffers.
+// Data buffers.
 std::deque<std::array<double, 6>> IMU_BUFFER;
 std::deque<std::array<double, 6>> IMU_WORLD_BUFFER;
 std::deque<std::array<double, 3>> VELOCITY_BUFFER;
 std::deque<std::array<double, 3>> POSITION_BUFFER;
 std::deque<std::array<double, 3>> MAG_BUFFER;
 std::deque<std::array<double, 3>> MAG_WORLD_BUFFER;
+std::deque<std::array<double, 3>> IPS_BUFFER;
 std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER;
 std::deque<quaternion> QUAT_ORIENTATION_BUFFER;
 
@@ -725,9 +729,10 @@ void thread_template()
             log_file << time.time_since_epoch().count() << var << "\n";
         }
 
-        // ADD NEW VALUES TO GLOBAL BUFFER, RESPECTING MUTEX LOCKS.
+        // ADD NEW VALUES TO GLOBAL BUFFER and remove oldest, RESPECTING MUTEX LOCKS.
         POSITION_BUFFER_LOCK.lock();
         POSITION_BUFFER.push_back(std::array<double, 3>{var, 0, 0});
+        POSITION_BUFFER.pop_front();
         POSITION_BUFFER_LOCK.unlock();
 
         // WAIT UNTIL NEXT TIME INTERVAL.
@@ -739,6 +744,65 @@ void thread_template()
     if (LOG_TO_FILE)
     {
         log_file.close();
+    }
+}
+
+void indoor_positioning()
+{
+    // TODO Create IPS object
+    IndoorPositioningWrapper ips;
+    std::array<double, 3> velocity;
+    std::array<double, 3> position;
+
+    std::ofstream ips_position_file;
+
+    if (LOG_TO_FILE)
+    {
+        ips_position_file.open(FOLDER_DATE_STRING + "/ips_position.txt");
+        ips_position_file << "# time x y z" << "\n";
+    }
+
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(INDOOR_POSITIONING_INTERVAL);
+
+    while (!SHUTDOWN)
+    {
+        // Get most recent velocity data.
+        VELOCITY_BUFFER_LOCK.lock();
+        velocity = VELOCITY_BUFFER.back();
+        VELOCITY_BUFFER_LOCK.unlock();
+
+        // Run update and get new position.
+        ips.update(
+            time.time_since_epoch().count(),
+            velocity[0],
+            velocity[1],
+            velocity[2]
+        );
+        position = ips.getPosition();
+
+        // Put IPS position in buffer.
+        POSITION_BUFFER_LOCK.lock();
+        IPS_BUFFER.push_back(position);
+        IPS_BUFFER.pop_front();
+        POSITION_BUFFER_LOCK.unlock();
+
+        // Log result to file.
+        if (LOG_TO_FILE)
+        {
+            ips_position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] <<  " " << position[2] << "\n";
+        }
+
+        // Wait until next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
+
+    // Close file handle(s);
+    if (LOG_TO_FILE)
+    {
+        ips_position_file.close();
     }
 }
 
@@ -911,6 +975,10 @@ int main(int argc, char **argv)
         EULER_ORIENTATION_BUFFER.push_back(euler_orientation_t{0, 0, 0});
         QUAT_ORIENTATION_BUFFER.push_back(quaternion{0, 0, 0, 0});
     }
+    for (unsigned int i = 0; i < IPS_BUFFER_LEN; i++)
+    {
+        IPS_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
+    }
 
     // Initialize the IMU.
     if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
@@ -925,6 +993,7 @@ int main(int argc, char **argv)
     std::thread stance_thread(stance_detector);
     std::thread radio_thread(transmit_lora);
     std::thread logging_thread(std_output);
+    std::thread indoor_positioning_thread(indoor_positioning);
     // std::thread alert_thread(alert_system);
 
     // Wait for all threads to terminate.
@@ -933,6 +1002,7 @@ int main(int argc, char **argv)
     stance_thread.join();    
     radio_thread.join();
     logging_thread.join();
+    indoor_positioning_thread.join();
     // alert_thread.join();
 
     return 1;
