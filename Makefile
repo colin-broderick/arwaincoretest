@@ -15,8 +15,8 @@ calib_obj = $(calib_cpp_src:.cpp=.o) $(calib_c_src:.c=.o)
 clean_obj = $(wildcard src/*.o)
 
 ## Compiler and linker flags.
-CFLAGS = -Wall -O3
-CPPFLAGS = -Wall -Wno-psabi -O3
+CFLAGS = -Wall -Wshadow -O3
+CPPFLAGS = -Wall -Wshadow -Wno-psabi -O3 -g3
 LDFLAGS = -pthread -lstdc++fs -ldl -li2c -larwain_torch
 
 ## Rule for compiling C++ files.

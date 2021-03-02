@@ -36,7 +36,7 @@
  */
 Madgwick::Madgwick()
 {
-	beta = betaDef;
+	m_beta = betaDef;
 	q0 = 1.0f;
 	q1 = 0.0f;
 	q2 = 0.0f;
@@ -50,7 +50,7 @@ Madgwick::Madgwick()
  */
 Madgwick::Madgwick(double sample_frequency, double beta)
 {
-	beta = beta;
+	m_beta = beta;
 	q0 = 1.0f;
 	q1 = 0.0f;
 	q2 = 0.0f;
@@ -152,10 +152,10 @@ void Madgwick::update(double gx, double gy, double gz, double ax, double ay, dou
 		s3 *= recipNorm;
 
 		// Apply feedback step
-		qDot1 -= beta * s0;
-		qDot2 -= beta * s1;
-		qDot3 -= beta * s2;
-		qDot4 -= beta * s3;
+		qDot1 -= m_beta * s0;
+		qDot2 -= m_beta * s1;
+		qDot3 -= m_beta * s2;
+		qDot4 -= m_beta * s3;
 	}
 
 	// Integrate rate of change of quaternion to yield quaternion
@@ -264,10 +264,10 @@ void Madgwick::update(double gx, double gy, double gz, double ax, double ay, dou
 		s3 *= recipNorm;
 
 		// Apply feedback step
-		qDot1 -= beta * s0;
-		qDot2 -= beta * s1;
-		qDot3 -= beta * s2;
-		qDot4 -= beta * s3;
+		qDot1 -= m_beta * s0;
+		qDot2 -= m_beta * s1;
+		qDot3 -= m_beta * s2;
+		qDot4 -= m_beta * s3;
 	}
 
 	// Integrate rate of change of quaternion to yield quaternion

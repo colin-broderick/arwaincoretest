@@ -9,29 +9,29 @@
  */
 eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, int use_mag, double zeta)
 {
-    zeta = zeta;
-    gyro_bias = gyro_bias;
+    m_zeta = zeta;
+    m_gyro_bias = gyro_bias;
     gyro_error = 0.05;
     uk_dip = -67.0*3.14159265/180.0;
     emf = {cos(uk_dip), 0, sin(uk_dip)};
     last_read = 0;
     use_mag = use_mag;
-    true_error = gyro_error;
+    m_true_error = gyro_error;
     
     if (initial_quaternion == quaternion{0, 0, 0, 0})
     {
-        q = {1, 0, 0, 0};
-        gyro_error = 100;
+        m_quaternion = {1, 0, 0, 0};
+        m_gyro_error = 100;
         conv_count = 100;
     }
     else
     {
-        q = initial_quaternion;
-        gyro_error = gyro_error;
+        m_quaternion = initial_quaternion;
+        m_gyro_error = gyro_error;
         conv_count = -1;
     }
 
-    beta = sqrt(3) * gyro_error;
+    m_beta = sqrt(3) * m_gyro_error;
 }
 
 /** \brief Update the internal state of the orientation filter by supplying accelerometer and gyroscope values.
@@ -46,14 +46,17 @@ eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_err
  */
 void eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az)
 {
+    // Alias m_quaternion for readability.
+    quaternion& q = m_quaternion;
+    
     if (conv_count > 0)
     {
         conv_count--;
         if (conv_count == 0)
         {
             std::cout << "efaroe converged" << "\n";
-            gyro_error = true_error;
-            beta = sqrt(3) * gyro_error;
+            m_gyro_error = m_true_error;
+            m_beta = sqrt(3) * m_gyro_error;
         }
     }
 
@@ -94,7 +97,7 @@ void eFaroe::update(double timestamp, double gx, double gy, double gz,  double a
     gradient = gradient/gradient.magnitude();
 
     // Calculate new gyro_bias?
-    vector3 g_b = gyro_bias + gradient * dt * zeta;
+    vector3 g_b = m_gyro_bias + gradient * dt * m_zeta;
 
     // Subtract gyro bias.
     vector3 gyro = gyr - g_b;
@@ -103,7 +106,7 @@ void eFaroe::update(double timestamp, double gx, double gy, double gz,  double a
     // gyro_bias = gyro_bias + gyro*0.0001;
 
     // TODO What is this?
-    vector3 a_v = (gyro - gradient*beta)*dt;
+    vector3 a_v = (gyro - gradient*m_beta)*dt;
     quaternion qav{a_v};
 
     // Calculate delta orientation quaternion.
@@ -125,14 +128,17 @@ void eFaroe::update(double timestamp, double gx, double gy, double gz,  double a
  */
 void eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az, double mx, double my, double mz)
 {
+    // Alias m_quaternion for readability.
+    quaternion& q = m_quaternion;
+
     if (conv_count > 0)
     {
         conv_count--;
         if (conv_count == 0)
         {
             std::cout << "efaroe converged" << "\n";
-            gyro_error = true_error;
-            beta = sqrt(3) * gyro_error;
+            m_gyro_error = m_true_error;
+            m_beta = sqrt(3) * m_gyro_error;
         }
     }
 
@@ -184,7 +190,7 @@ void eFaroe::update(double timestamp, double gx, double gy, double gz,  double a
     gradient = gradient/gradient.magnitude();
 
     // Calculate new gyro_bias?
-    vector3 g_b = gyro_bias + gradient * dt * zeta;
+    vector3 g_b = m_gyro_bias + gradient * dt * m_zeta;
 
     // Subtract gyro bias.
     vector3 gyro = gyr - g_b;
@@ -193,7 +199,7 @@ void eFaroe::update(double timestamp, double gx, double gy, double gz,  double a
     // gyro_bias = gyro_bias + gyro*0.0001;
 
     // TODO What is this?
-    vector3 a_v = (gyro - gradient*beta)*dt;
+    vector3 a_v = (gyro - gradient*m_beta)*dt;
     quaternion qav{a_v};
 
     // Calculate delta orientation quaternion.
@@ -218,7 +224,7 @@ void eFaroe::update(double timestamp, double gx, double gy, double gz,  double a
  */
 double eFaroe::getW()
 {
-    return q.w;
+    return m_quaternion.w;
 }
 
 /** \brief Get the i/x component of the orientation quaternion.
@@ -226,7 +232,7 @@ double eFaroe::getW()
  */
 double eFaroe::getX()
 {
-    return q.x;
+    return m_quaternion.x;
 }
 
 /** \brief Get the j/y component of the orientation quaternion.
@@ -234,7 +240,7 @@ double eFaroe::getX()
  */
 double eFaroe::getY()
 {
-    return q.y;
+    return m_quaternion.y;
 }
 
 /** \brief Get the k/z component of the orientation quaternion.
@@ -242,7 +248,7 @@ double eFaroe::getY()
  */
 double eFaroe::getZ()
 {
-    return q.z;
+    return m_quaternion.z;
 }
 
 /** \brief Get the pitch Euler angle.
@@ -286,7 +292,7 @@ double eFaroe::getRoll()
  */
 quaternion eFaroe::getQuat()
 {
-    return q;
+    return m_quaternion;
 }
 
 /** \brief Update internally stored Euler angles in degrees.
@@ -295,6 +301,7 @@ quaternion eFaroe::getQuat()
  */
 void eFaroe::computeAngles()
 {
+    quaternion& q = m_quaternion;
     roll = atan2f(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y);
     pitch = asinf(-2.0f * (q.x*q.z - q.w*q.y));
     yaw = atan2f(q.x*q.y + q.w*q.z, 0.5f - q.y*q.y - q.z*q.z);

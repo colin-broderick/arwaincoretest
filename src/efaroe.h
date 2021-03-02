@@ -72,12 +72,12 @@ class eFaroe : public Filter
         const double radians_per_degree = 0.01745329251994329576923690768489;
 
         // Current orientation quaternion.
-        quaternion q;
+        quaternion m_quaternion;
 
         // Gyroscope properties.
-        vector3 gyro_bias;
-        double gyro_error;
-        double true_error;
+        vector3 m_gyro_bias;
+        double m_gyro_error;
+        double m_true_error;
 
         // Magnetic field properties.
         double uk_dip;
@@ -86,8 +86,8 @@ class eFaroe : public Filter
         vector3 emf;
         
         // Filter parameters.
-        double zeta;
-        double beta;
+        double m_zeta;
+        double m_beta;
         unsigned int conv_count;
 
         // Flag recording whether Euler angles are up-to-date.
