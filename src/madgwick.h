@@ -32,7 +32,7 @@ class Madgwick : public Filter
 {
     private:
         static float invSqrt(float x);
-        double beta;	// algorithm gain
+        double m_beta;	// algorithm gain
         double q0;
         double q1;
         double q2;

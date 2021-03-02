@@ -71,14 +71,14 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     	
 	// Initialise device
     i2c_init(bmi270.dev_id);
-    int rslt = bmi270_init(&bmi270);
-    if (rslt == 0)
+    int bmi_rslt = bmi270_init(&bmi270);
+    if (bmi_rslt == 0)
     {
 	    printf("IMU initialised\n");
     }
     else
     {
-        printf("IMU init failed. Error %d\n", rslt);
+        printf("IMU init failed. Error %d\n", bmi_rslt);
         return 1;
     }
 
@@ -137,14 +137,14 @@ int init_bmi270(int mag_enabled, std::string calib_file)
         bmm150.write = bmm150_reg_write;
         bmm150.delay_ms = delay_ms;
         
-        int rslt = bmm150_init(&bmm150);
-        if (rslt == 0)
+        int bmm_rslt = bmm150_init(&bmm150);
+        if (bmm_rslt == 0)
         {
             printf("Magnetometer initialised\n");
         }
         else
         {
-            printf("Magnetometer init failed. Error %d\n", rslt);
+            printf("Magnetometer init failed. Error %d\n", bmm_rslt);
             return 1;
         }
         

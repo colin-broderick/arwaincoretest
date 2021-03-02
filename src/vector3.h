@@ -33,7 +33,7 @@ inline vector3 operator+(const vector3 &v1, const vector3 &v2)
         v1.y + v2.y,
         v1.z + v2.z
     };
-};
+}
 
 /** \brief The element-wise difference of two 3-vectors.
  * \param v1 A 3-vector.
@@ -47,7 +47,7 @@ inline vector3 operator-(const vector3 &v1, const vector3 &v2)
         v1.y - v2.y,
         v1.z - v2.z
     };
-};
+}
 
 /** \brief Divide the elements of a 3-vector by a scalar value.
  * \param v A 3-vector.
@@ -62,7 +62,7 @@ inline vector3 operator/(const vector3 &v, const T &scalar)
         v.y/scalar,
         v.z/scalar
     };
-};
+}
 
 /** \brief Element-wise product of two 3-vectors.
  * \param v1 A 3-vector.
@@ -91,6 +91,6 @@ inline vector3 operator*(const vector3 &v, const T &scalar)
         v.y*scalar,
         v.z*scalar
     };
-};
+}
 
 #endif
