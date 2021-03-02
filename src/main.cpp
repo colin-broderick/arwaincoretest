@@ -240,10 +240,10 @@ void imu_reader()
         {
             get_bmm150_data(&mag_data);
         }
-        accel_data = accel_data - CONFIG.accel_bias;
+        // accel_data = accel_data - CONFIG.accel_bias;
         gyro_data = gyro_data - CONFIG.gyro_bias;
-        mag_data = mag_data - CONFIG.mag_bias;
-        mag_data = mag_data * CONFIG.mag_scale;
+        // mag_data = mag_data - CONFIG.mag_bias;
+        // mag_data = mag_data * CONFIG.mag_scale;
         
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         IMU_BUFFER_LOCK.lock();
