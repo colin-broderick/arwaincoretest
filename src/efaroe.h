@@ -56,7 +56,6 @@ class eFaroe : public Filter
             double mz         // Magnetic field in micro tesla
         ) ;
 
-
         // Orientation getters.
         double getW() ;
         double getX() ;
