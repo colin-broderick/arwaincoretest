@@ -41,7 +41,11 @@ class StanceDetector
         double m_g_mean_magnitude;
         double m_v_mean_magnitude;
 
+        std::array<double, 3> m_accel_means;
+        std::array<double, 3> m_speed_means;
+
         int m_vertical_axis = 1;
+        int m_primary_axis;
         int m_speed_axis;
 
         int m_count = 0;
@@ -72,8 +76,8 @@ class StanceDetector
         double m_active_threshold;
 
         // Parameter access safety.
-        std::mutex fall_lock;
-        std::mutex stance_lock;
+        std::mutex m_fall_lock;
+        std::mutex m_stance_lock;
 
         // Utility methods.
         AXIS biggest_axis(const std::array<double, 3> &arr);
