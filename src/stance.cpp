@@ -44,9 +44,9 @@ StanceDetector::StanceDetector(double fall_threshold, double crawling_threshold,
  */
 void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data)
 {
+    // Crunch the numbers ...
     std::vector<std::array<double, 3>> accel_data;
     std::vector<std::array<double, 3>> gyro_data;
-
     for (int i = 0; i < 20; i++)
     {
         accel_data.push_back(std::array<double, 3>{
@@ -56,15 +56,21 @@ void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, cons
             imu_data[i][3], imu_data[i][4], imu_data[i][5]
         });
     }
-
     m_a_mean_magnitude = buffer_mean_magnitude(accel_data);
     m_g_mean_magnitude = buffer_mean_magnitude(gyro_data);
     m_v_mean_magnitude = buffer_mean_magnitude(vel_data);
-
-    // Determine which axis has the largest value of acceleration. If not the same as vertical axis, subject must be horizontal.
-    std::array<double, 3> accel_means = get_means(accel_data);
-    int m_primary_axis = biggest_axis(accel_means);
-    stance_lock.lock();
+    m_accel_means = get_means(accel_data);
+    m_speed_means = get_means(vel_data);
+    m_primary_axis = biggest_axis(m_accel_means);
+    m_speed_axis = biggest_axis(m_speed_means);
+    m_a_twitch = abs(m_a_mean_magnitude - m_gravity);
+    m_struggle = vector_mean(m_struggle_window);
+    m_activity = activity(m_a_mean_magnitude, m_g_mean_magnitude, m_v_mean_magnitude);
+    m_tmp_struggle = (m_a_twitch + m_g_mean_magnitude) / (m_v_mean_magnitude + m_sfactor);
+    m_struggle_window[m_count] = m_tmp_struggle;
+    
+    // Detect which axis is most closely aligned with gravity. If not the same as vertical axis, subject must be horizontal.
+    m_stance_lock.lock();
     if (m_primary_axis != m_vertical_axis)
     {
         m_attitude = Horizontal;
@@ -73,14 +79,13 @@ void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, cons
     {
         m_attitude = Vertical;
     }
-    stance_lock.unlock();
+    m_stance_lock.unlock();
 
+    // TODO The assumptions about climbing are obviously wrong. Get rid of this or fix it.
     // If the axis with the highest average speed is the same as the vertical axis, subject must be climbing.
     // If the speed on the vertical axis exceed the climbing threshold, the subject must be climibing.
-    auto speed_means = get_means(vel_data);
-    m_speed_axis = biggest_axis(speed_means);
-    stance_lock.lock();
-    if (m_speed_axis == m_primary_axis || speed_means[m_vertical_axis] > m_climbing_threshold)
+    m_stance_lock.lock();
+    if (m_speed_axis == m_primary_axis || m_speed_means[m_vertical_axis] > m_climbing_threshold)
     {
         m_climbing = 1;
     }
@@ -88,34 +93,32 @@ void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, cons
     {
         m_climbing = 0;
     }
-    stance_lock.unlock();
+    m_stance_lock.unlock();
 
+    // Detect falling.
     if (m_a_mean_magnitude < m_fall_threshold)
     {
-        fall_lock.lock();
+        m_fall_lock.lock();
         m_falling = Falling;
-        fall_lock.unlock();
+        m_fall_lock.unlock();
     }
-    m_a_twitch = abs(m_a_mean_magnitude - m_gravity);
-    m_tmp_struggle = (m_a_twitch + m_g_mean_magnitude) / (m_v_mean_magnitude + m_sfactor);
-    m_struggle_window[m_count] = m_tmp_struggle;
-    m_struggle = vector_mean(m_struggle_window);
+
+    // Detect entanglement, implied by high IMU activity but low velocity.
     if (m_struggle > m_struggle_threshold)
     {
-        fall_lock.lock();
+        m_fall_lock.lock();
         m_entangled = Entangled;
-        fall_lock.unlock();
+        m_fall_lock.unlock();
     }
 
-    m_activity = activity(m_a_mean_magnitude, m_g_mean_magnitude, m_v_mean_magnitude);
-
+    // Detect stance.
     // Horizontal and slow => inactive
     // Horizontal and fast => crawling
     // Vertical and slow with low activity => inactive
     // Vertical and slow with high activity => searching
     // Vertical and moderate speed => walking
     // Vertical and high speed => running
-    stance_lock.lock();
+    m_stance_lock.lock();
     if (m_attitude)
     {
         if (m_v_mean_magnitude < m_crawling_threshold)
@@ -149,16 +152,9 @@ void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, cons
             m_stance = Running;
         }
     }
-    stance_lock.unlock();
-
-    // Log current time and status to file.
-    // if (log_to_file)
-    // {
-    //     freefall_file << time.time_since_epoch().count() << " " << falling << " " << entangled << "\n";
-    // }
+    m_stance_lock.unlock();
 
     m_count = (m_count + 1) % 10;
-
 }
 
 /** \brief Returns the index of the largest magnitude element in a 3-array of doubles. Think np.argmax().
@@ -167,13 +163,14 @@ void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, cons
  */
 StanceDetector::AXIS StanceDetector::biggest_axis(const std::array<double, 3> &arr)
 {
-    // TODO This should be using absolute value, since large negative values are 'bigger' than small positive values.
+    // This should be using absolute value, since large negative values are 'bigger' than small positive values.
     AXIS axis;
-    if (arr[0] > arr[1] && arr[0] > arr[2])
+    double x = abs(arr[0]), y = abs(arr[1]), z = abs(arr[2]);
+    if (x > y && x > z)
     {
         axis = XAxis;
     }
-    else if (arr[1] > arr[0] && arr[1] > arr[2])
+    else if (x < y && y > z)
     {
         axis = YAxis;
     }
@@ -335,9 +332,9 @@ std::array<double, 6> StanceDetector::get_means(const std::deque<std::array<doub
  */
 StanceDetector::STANCE StanceDetector::getStance()
 {
-    stance_lock.lock();
+    m_stance_lock.lock();
     STANCE ret = m_stance;
-    stance_lock.unlock();
+    m_stance_lock.unlock();
     return ret;
 }
 
@@ -346,9 +343,9 @@ StanceDetector::STANCE StanceDetector::getStance()
  */
 StanceDetector::ATTITUDE StanceDetector::getAttitude()
 {  
-    stance_lock.lock();
+    m_stance_lock.lock();
     ATTITUDE ret = m_attitude;
-    stance_lock.unlock();
+    m_stance_lock.unlock();
     return ret;
 }
 
@@ -357,10 +354,10 @@ StanceDetector::ATTITUDE StanceDetector::getAttitude()
  */
 StanceDetector::ENTANGLED StanceDetector::getEntangledStatus()
 {
-    fall_lock.lock();
+    m_fall_lock.lock();
     ENTANGLED ret = m_entangled;
     m_entangled = NotEntangled;
-    fall_lock.unlock();
+    m_fall_lock.unlock();
     return ret;
 }
 
@@ -369,9 +366,9 @@ StanceDetector::ENTANGLED StanceDetector::getEntangledStatus()
  */
 StanceDetector::FALLING StanceDetector::getFallingStatus()
 {
-    fall_lock.lock();
+    m_fall_lock.lock();
     FALLING ret = m_falling;
     m_falling = NotFalling;
-    fall_lock.unlock();
+    m_fall_lock.unlock();
     return ret;
 }

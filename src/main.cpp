@@ -47,6 +47,8 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <mutex>
 #include <fstream>
 #include <experimental/filesystem>
+#include <zmq.h>
+#include <string.h>
 
 #include "arwain_torch.h"
 #include "quaternions.h"
@@ -61,12 +63,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "indoor_positioning_wrapper.h"
 #include "filter.h"
 
-// Characteristics of the sliding window for data fed to the NPU.
-// unsigned int STEP_SIZE = 50;
-// unsigned int WINDOW_SIZE = 200;
-
 // Time intervals, all in milliseconds.
-// unsigned int ALERT_SYSTEM_INTERVAL = 1000;
 static unsigned int IMU_READING_INTERVAL = 5;
 static unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
 static unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
@@ -503,6 +500,79 @@ void torch_array_from_deque(float data[1][6][200], std::deque<std::array<double,
     }
 }
 
+/** \brief This has only been developed to the proof of concept stage and is not suitable for deployment.
+ */
+void predict_velocity_dispatch()
+{
+    // *********************************************************************//
+    // NOTE This has only been developed to the proof of concept stage.     //
+    // It will not work fully without additional work.                      //
+    // *********************************************************************//
+
+    // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
+    std::chrono::milliseconds presleep(1000);
+    std::this_thread::sleep_for(presleep*3);
+
+    // Set up socket
+    void *context = zmq_ctx_new();
+    void *responder = zmq_socket(context, ZMQ_REP);
+    int rc = zmq_bind(responder, "tcp://*:5555");
+
+    // Buffer to contain local copy of IMU data.
+    std::deque<std::array<double, 6>> imu;
+
+    // Request and response string buffers.
+    std::stringstream request;
+    char answer_buffer[50];
+
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
+
+    double x, y;
+
+    while (!SHUTDOWN)
+    {
+        // Grab latest IMU packet
+        IMU_BUFFER_LOCK.lock();
+        imu = IMU_WORLD_BUFFER;
+        IMU_BUFFER_LOCK.unlock();
+
+        // Load the IMU data into a string for serial transmission.
+        for (unsigned int i = 0; i < imu.size(); i++)
+        {
+            for (unsigned int j = 0; j < 6; j++)
+            {
+                request << (float)imu[i][j] << ",";
+            }
+        }
+
+        // Send the data and await response.
+        std::string fromStream = request.str();
+        const char *str = fromStream.c_str();
+        zmq_send(responder, str, strlen(str), 0);
+        zmq_recv(responder, answer_buffer, 50, 0);
+        request.str("");
+
+        // TODO Process the answer buffer.
+        std::string answer{answer_buffer};
+        if (answer == "accept")
+        {
+            continue;
+        }
+        int delimiter = answer.find(",");
+        std::stringstream(answer.substr(0, delimiter)) >> x;
+        std::stringstream(answer.substr(delimiter + 1)) >> y;
+
+        std::cout << x << " " << y << "\n";
+
+        // Wait until next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
+}
+
+
 /** \brief Periodically makes velocity predictions based on data buffers, and adds that velocity and thereby position to the relevant buffers.
  */
 void predict_velocity()
@@ -568,7 +638,7 @@ void predict_velocity()
         torch_array_from_deque(data, imu);
 
         // TEST Make velocity prediction
-        auto v = model.infer(data);
+        std::vector<double> v = model.infer(data);
         npu_vel = {v[0], v[1], v[2]};
         
         // TEST Find the change in velocity from the last period, as predicted by the npu.
@@ -638,57 +708,6 @@ void sigint_handler(int signal)
         SHUTDOWN = 1;
     }
 }
-
-/// TODO This might be unnecessary; since the stuff it's setting up only matters to the LoRa thread,
-/// it may as well be done there.
-// void alert_system()
-// {
-//     // todo setup
-
-//     // Set up timing.
-//     auto time = std::chrono::system_clock::now();
-//     std::chrono::milliseconds interval(ALERT_SYSTEM_INTERVAL);
-
-//     while (!SHUTDOWN)
-//     {
-//         // Update status flags.
-//         STATUS_FLAG_LOCK.lock();
-//         STATUS_FLAGS = 0;
-//         if (getFallingStatus())
-//         {
-//             STATUS_FLAGS |= STATUS_FALLING;
-//         }
-//         if (getEntangledStatus())
-//         {
-//             STATUS_FLAGS |= STATUS_ENTANGLED;
-//         }
-//         if (current_stance == "inactive")
-//         {
-//             STATUS_FLAGS |= STATUS_INACTIVE;
-//         }
-//         else if (current_stance == "walking")
-//         {
-//             STATUS_FLAGS |= STATUS_WALKING;
-//         }
-//         else if (current_stance == "crawling")
-//         {
-//             STATUS_FLAGS |= STATUS_CRAWLING;
-//         }
-//         else if (current_stance == "searching")
-//         {
-//             STATUS_FLAGS |= STATUS_SEARCHING;
-//         }
-//         else if (current_stance == "unknown")
-//         {
-//             STATUS_FLAGS |= STATUS_UNKNOWN_STANCE;
-//         }
-//         STATUS_FLAG_LOCK.unlock();
-        
-//         // Wait until next tick.
-//         time = time + interval;
-//         std::this_thread::sleep_until(time);
-//     }
-// }
 
 /// This function is never called. It should be considered a template
 /// for implementing new threaded functionality. All existing threads
@@ -998,22 +1017,20 @@ int main(int argc, char **argv)
     }
 
     // Start threads.
-    std::thread imu_thread(imu_reader);
-    std::thread velocity_prediction(predict_velocity);
-    std::thread stance_thread(stance_detector);
-    std::thread radio_thread(transmit_lora);
-    std::thread logging_thread(std_output);
+    std::thread imu_reader_thread(imu_reader);
+    std::thread predict_velocity_thread(predict_velocity_dispatch);
+    std::thread stance_detector_thread(stance_detector);
+    std::thread transmit_lora_thread(transmit_lora);
+    std::thread std_output_thread(std_output);
     std::thread indoor_positioning_thread(indoor_positioning);
-    // std::thread alert_thread(alert_system);
 
     // Wait for all threads to terminate.
-    imu_thread.join();
-    velocity_prediction.join();
-    stance_thread.join();    
-    radio_thread.join();
-    logging_thread.join();
+    imu_reader_thread.join();
+    predict_velocity_thread.join();
+    stance_detector_thread.join();    
+    transmit_lora_thread.join();
+    std_output_thread.join();
     indoor_positioning_thread.join();
-    // alert_thread.join();
 
     return 1;
 }

@@ -144,8 +144,8 @@ Configuration get_configuration(const std::string &filename)
             continue;
         }
         auto delimiter = line.find("=");
-        auto name = line.substr(0, delimiter);
-        auto value = line.substr(delimiter + 1);
+        std::string name = line.substr(0, delimiter);
+        std::string value = line.substr(delimiter + 1);
         options[name] = value;
     }
 

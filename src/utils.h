@@ -74,7 +74,7 @@ void config_replace(std::string filename, std::string option, T new_value)
     while (getline(infile, line))
     {
         auto delimiter = line.find("=");
-        auto name = line.substr(0, delimiter);
+        std::string name = line.substr(0, delimiter);
         if (name == option)
         {
             outstring << name << "=" << new_value << "\n";

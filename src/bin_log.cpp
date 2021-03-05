@@ -47,7 +47,7 @@ int example()
     arwain::BinLog log1("data.bin", arwain::accelwrite);
     std::array<double, 3> data1{4.1, 5, 6};
     unsigned long long data2 = 5;
-    auto time = std::chrono::system_clock::now();
+    std::chrono::_V2::system_clock::time_point time = std::chrono::system_clock::now();
     // write double array
     log1 << data1;
     //write long long
@@ -65,73 +65,76 @@ int example()
  * \param filename Location of file to record into. Will be appended without checks if it already exists.
  * \param filetype The revelant filetype from the arwain::filetypes enum.
  */
-arwain::BinLog::BinLog(std::string filename, int filetype)
+arwain::BinLog::BinLog(const std::string &filename, int filetype)
 {
     if (filetype == arwain::accelwrite || filetype == arwain::gyrowrite || filetype == arwain::magwrite)
     {
-        filemode = arwain::write;
-        location = filename;
-        handle.open(location, std::ofstream::out|std::ofstream::app|std::ofstream::binary);
+        m_filemode = arwain::write;
+        m_location = filename;
+        m_handle.open(m_location, std::ofstream::out|std::ofstream::app|std::ofstream::binary);
     }
     else
     {
-        filemode = arwain::read;
-        seek = 0;
+        m_filemode = arwain::read;
+        m_seek = 0;
     }
 }
 
-// Send an array of three doubles, e.g. accel data, to the log file.
-arwain::BinLog & arwain::BinLog::operator<<(std::array<double, 3> vals)
+/** \brief Send array of three doubles to file
+ * \param vals The 3-array of doubles to write.
+ */
+arwain::BinLog& arwain::BinLog::operator<<(const std::array<double, 3> &vals)
 {
-    double buf[3];
-    for (unsigned int i = 0; i < vals.size(); i++)
-    {
-        buf[i] = vals[i];
-    }
-    handle.write((char*)buf, vals.size()*sizeof(double));
+    m_handle.write((char*)(vals.data()), vals.size()*sizeof(double));
     return *this;
 }
 
-// Send a long long (i.e. timestamp) to the file.
-arwain::BinLog & arwain::BinLog::operator<<(unsigned long long val)
+/** \brief Send a long long (i.e. timestamp) to the file.
+ * \param val The value to write to file.
+ */
+arwain::BinLog& arwain::BinLog::operator<<(const unsigned long long &val)
 {
-    // TODO This feels hacky.
-    unsigned long long buf[1] = {val};
-    handle.write((char*)buf, sizeof(unsigned long long));
+    m_handle.write((char*)val, sizeof(unsigned long long));
     return *this;
 }
 
-// Send an int to the file.
-arwain::BinLog & arwain::BinLog::operator<<(int val)
+/** \brief Send an int to the file.
+ * \param val The value to write to file.
+ */
+arwain::BinLog& arwain::BinLog::operator<<(const int &val)
 {
-    // TODO This feels hacky.
-    int buf[1] = {val};
-    handle.write((char*)buf, sizeof(int));
+    m_handle.write((char*)val, sizeof(int));
     return *this;
 }
 
-arwain::BinLog & arwain::BinLog::operator<<(std::chrono::_V2::system_clock::time_point time)
+/** \brief Write time_point to file.
+ * \param time The time point to write to file.
+ */
+arwain::BinLog& arwain::BinLog::operator<<(const std::chrono::_V2::system_clock::time_point &time)
 {
-    std::chrono::milliseconds::rep buf[1] = {time.time_since_epoch().count()};
-    handle.write((char*)buf, sizeof(std::chrono::milliseconds::rep));
+    std::chrono::nanoseconds::rep t = time.time_since_epoch().count();
+    m_handle.write((char*)t, sizeof(std::chrono::nanoseconds::rep));
     return *this;
 }
 
-// Flush and close the file handle. No further writing will be possible.
+/** \brief Flush and close the file handle. No further writing will be possible.
+ */
 int arwain::BinLog::close()
 {
-    filemode = arwain::read;
-    handle.flush();
-    handle.close();
+    m_filemode = arwain::read;
+    m_handle.flush();
+    m_handle.close();
     return 1;
 }
 
-// Check the current size of the log file.
+/** \brief Check the current size of the log file.
+ * To be perfectly honest I can't remember why this was needed.
+ */
 long long arwain::BinLog::getFileSize()
 {
     long long ret;
     struct stat stat_buf;
-    int rc = stat(location.c_str(), &stat_buf);
+    int rc = stat(m_location.c_str(), &stat_buf);
     if (rc == 0)
     {
         ret = stat_buf.st_size;
