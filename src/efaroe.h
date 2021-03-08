@@ -31,7 +31,7 @@ namespace arwain
                 quaternion initial_quaternion,
                 vector3 gyro_bias,
                 double gyro_error,
-                int use_mag,
+                double beta,
                 double zeta
             );
 
