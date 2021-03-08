@@ -18,6 +18,16 @@
  
 #include "quaternions.h"
 
+/** \brief Default quaternion constructor. Fills components with zeroes.
+ */
+quaternion::quaternion()
+{
+    w = 0;
+    x = 0;
+    y = 0;
+    z = 0;
+}
+
 /** \brief Quaternion constructor. We always use the (w, x, y, z) convention, never (x, y, z, w).
  * \param real The real (w) component of the quaternion.
  * \param im_i The i imaginary component of the quaternion.

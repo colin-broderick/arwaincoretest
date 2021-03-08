@@ -15,8 +15,8 @@ calib_obj = $(calib_cpp_src:.cpp=.o) $(calib_c_src:.c=.o)
 clean_obj = $(wildcard src/*.o)
 
 ## Compiler and linker flags.
-CFLAGS = -Wall -Wshadow -Og
-CPPFLAGS = -Wall -Wshadow -Wno-psabi -Og -lzmq
+CFLAGS = -Wall -Wshadow -Og -g
+CPPFLAGS = -Wall -Wshadow -Wno-psabi -Og -lzmq -g
 LDFLAGS = -pthread -lstdc++fs -ldl -li2c -larwain_torch
 
 ## Rule for compiling C++ files.
@@ -31,7 +31,7 @@ all: arwain calib
 
 ## Build main ARWAIN program.
 arwain: $(arwain_obj)
-	$(CXX) -o build/$@ $^ $(INCL) $(LIBS) $(CPPFLAGS) $(LDFLAGS) -Og
+	$(CXX) -o build/$@ $^ $(INCL) $(LIBS) $(CPPFLAGS) $(LDFLAGS) -Og -g
 
 ## Build calibration tool.
 calib: $(calib_obj)

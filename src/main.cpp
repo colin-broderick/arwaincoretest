@@ -94,15 +94,15 @@ int NO_INF = 0;
 static std::string FOLDER_DATE_STRING;
 
 // Data buffers.
-std::deque<std::array<double, 6>> IMU_BUFFER;
-std::deque<std::array<double, 6>> IMU_WORLD_BUFFER;
-std::deque<std::array<double, 3>> VELOCITY_BUFFER;
-std::deque<std::array<double, 3>> POSITION_BUFFER;
-std::deque<std::array<double, 3>> MAG_BUFFER;
-std::deque<std::array<double, 3>> MAG_WORLD_BUFFER;
-std::deque<std::array<double, 3>> IPS_BUFFER;
-std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER;
-std::deque<quaternion> QUAT_ORIENTATION_BUFFER;
+std::deque<std::array<double, 6>> IMU_BUFFER{IMU_BUFFER_LEN};
+std::deque<std::array<double, 6>> IMU_WORLD_BUFFER{IMU_BUFFER_LEN};
+std::deque<std::array<double, 3>> VELOCITY_BUFFER{VELOCITY_BUFFER_LEN};
+std::deque<std::array<double, 3>> POSITION_BUFFER{POSITION_BUFFER_LEN};
+std::deque<std::array<double, 3>> MAG_BUFFER{MAG_BUFFER_LEN};
+std::deque<std::array<double, 3>> MAG_WORLD_BUFFER{MAG_BUFFER_LEN};
+std::deque<std::array<double, 3>> IPS_BUFFER{IPS_BUFFER_LEN};
+std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{ORIENTATION_BUFFER_LEN};
+std::deque<quaternion> QUAT_ORIENTATION_BUFFER{ORIENTATION_BUFFER_LEN};
 
 // Stance flags.
 int STATUS_FLAGS = 0;
@@ -244,19 +244,19 @@ void imu_reader()
         
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         IMU_BUFFER_LOCK.lock();
-        IMU_BUFFER.push_back(std::array<double, 6>{
+        IMU_BUFFER.pop_front();
+        IMU_BUFFER.emplace_back(std::array<double, 6>{
             accel_data.x, accel_data.y, accel_data.z,
             gyro_data.x, gyro_data.y, gyro_data.z
         });
-        IMU_BUFFER.pop_front();
         IMU_BUFFER_LOCK.unlock();
 
         // Buffer mag_data if collected. TODO Is there actually any reason to buffer this?
         // if (get_mag)
         // {
         //     MAG_BUFFER_LOCK.lock();
-        //     MAG_BUFFER.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
         //     MAG_BUFFER.pop_front();
+        //     MAG_BUFFER.emplace_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
         //     MAG_BUFFER_LOCK.unlock();
         // }
 
@@ -303,21 +303,21 @@ void imu_reader()
 
         // Add orientation information to buffers.
         ORIENTATION_BUFFER_LOCK.lock();
-        EULER_ORIENTATION_BUFFER.push_back(euler_data);
         EULER_ORIENTATION_BUFFER.pop_front();
-        QUAT_ORIENTATION_BUFFER.push_back(quat_data);
+        EULER_ORIENTATION_BUFFER.emplace_back(euler_data);
         QUAT_ORIENTATION_BUFFER.pop_front();
+        QUAT_ORIENTATION_BUFFER.emplace_back(quat_data);
         ORIENTATION_BUFFER_LOCK.unlock();
 
         // Add world-aligned IMU to its own buffer.
         world_accel_data = world_align(accel_data, quat_data);
         world_gyro_data = world_align(gyro_data, quat_data);
         IMU_BUFFER_LOCK.lock();
-        IMU_WORLD_BUFFER.push_back(std::array<double, 6>{
+        IMU_WORLD_BUFFER.pop_front();
+        IMU_WORLD_BUFFER.emplace_back(std::array<double, 6>{
             world_accel_data.x, world_accel_data.y, world_accel_data.z,
             world_gyro_data.x, world_gyro_data.y, world_gyro_data.z
         });
-        IMU_WORLD_BUFFER.pop_front();
         IMU_BUFFER_LOCK.unlock();
 
         // Add world-aligned magnetic field to buffer. TODO Why?
@@ -325,10 +325,10 @@ void imu_reader()
         // {
         //     world_mag_data = world_align(mag_data, quat_data);
         //     MAG_BUFFER_LOCK.lock();
-        //     MAG_WORLD_BUFFER.push_back(std::array<double, 3>{
+        //     MAG_WORLD_BUFFER.pop_front();
+        //     MAG_WORLD_BUFFER.emplace_back(std::array<double, 3>{
         //         world_mag_data.x, world_mag_data.y, world_mag_data.z
         //     });
-        //     MAG_WORLD_BUFFER.pop_front();
         //     MAG_BUFFER_LOCK.unlock();
         // }
 
@@ -469,6 +469,7 @@ T operator+(const T& a1, const T& a2)
  */
 std::array<double, 3> integrate(std::deque<std::array<double, 6>> &data, double dt, unsigned int offset = 0)
 {
+    // TODO What the hell was I thinking here? This definitely won't work.
     std::array<double, 3> acc_mean = {-0.182194123, -0.59032666517, 9.86202363151991};
     std::array<double, 3> integrated_data = {0, 0, 0};
     for (unsigned int i = 0; i < data.size(); i++)
@@ -516,7 +517,7 @@ void predict_velocity_dispatch()
     // Set up socket
     void *context = zmq_ctx_new();
     void *responder = zmq_socket(context, ZMQ_REP);
-    int rc = zmq_bind(responder, "tcp://*:5555");
+    zmq_bind(responder, "tcp://*:5555");
 
     // Buffer to contain local copy of IMU data.
     std::deque<std::array<double, 6>> imu;
@@ -571,7 +572,6 @@ void predict_velocity_dispatch()
         std::this_thread::sleep_until(time);
     }
 }
-
 
 /** \brief Periodically makes velocity predictions based on data buffers, and adds that velocity and thereby position to the relevant buffers.
  */
@@ -658,8 +658,8 @@ void predict_velocity()
         vel = vel + vel_previous;
 
         VELOCITY_BUFFER_LOCK.lock();
-        VELOCITY_BUFFER.push_back(vel);
         VELOCITY_BUFFER.pop_front();
+        VELOCITY_BUFFER.emplace_back(vel);
         VELOCITY_BUFFER_LOCK.unlock();
 
         // TEST Store the velocity for use in the next loop (saves having to access the buffer for a single element).
@@ -672,8 +672,8 @@ void predict_velocity()
         
         // Update position buffer.
         POSITION_BUFFER_LOCK.lock();
-        POSITION_BUFFER.push_back(position);
         POSITION_BUFFER.pop_front();
+        POSITION_BUFFER.emplace_back(position);
         POSITION_BUFFER_LOCK.unlock();
 
         // Add position and velocity data to file.
@@ -755,8 +755,8 @@ void thread_template()
 
         // ADD NEW VALUES TO GLOBAL BUFFER and remove oldest, RESPECTING MUTEX LOCKS.
         POSITION_BUFFER_LOCK.lock();
-        POSITION_BUFFER.push_back(std::array<double, 3>{var, 0, 0});
         POSITION_BUFFER.pop_front();
+        POSITION_BUFFER.emplace_back(std::array<double, 3>{var, 0, 0});
         POSITION_BUFFER_LOCK.unlock();
 
         // WAIT UNTIL NEXT TIME INTERVAL.
@@ -813,8 +813,8 @@ void indoor_positioning()
 
         // Put IPS position in buffer.
         POSITION_BUFFER_LOCK.lock();
-        IPS_BUFFER.push_back(position);
         IPS_BUFFER.pop_front();
+        IPS_BUFFER.emplace_back(position);
         POSITION_BUFFER_LOCK.unlock();
 
         // Log result to file.
@@ -838,7 +838,7 @@ void indoor_positioning()
 void stance_detector()
 {
     StanceDetector stance{
-        CONFIG.fall_threshold,
+        CONFIG.freefall_sensitivity,
         CONFIG.crawling_threshold,
         CONFIG.running_threshold,
         CONFIG.walking_threshold,
@@ -980,35 +980,6 @@ int main(int argc, char **argv)
         std::experimental::filesystem::copy(CONFIG_FILE, FOLDER_DATE_STRING + "/config.conf");
     }
 
-    // Preload buffers.
-    for (unsigned int i = 0; i < IMU_BUFFER_LEN; i++)
-    {
-        IMU_BUFFER.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
-        IMU_WORLD_BUFFER.push_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
-    }
-    for (unsigned int i = 0; i < MAG_BUFFER_LEN; i++)
-    {
-        MAG_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
-        MAG_WORLD_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
-    }
-    for (unsigned int i = 0; i < VELOCITY_BUFFER_LEN; i++)
-    {
-        VELOCITY_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
-    }
-    for (unsigned int i = 0; i < POSITION_BUFFER_LEN; i++)
-    {
-        POSITION_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
-    }
-    for (unsigned int i = 0; i < ORIENTATION_BUFFER_LEN; i++)
-    {
-        EULER_ORIENTATION_BUFFER.push_back(euler_orientation_t{0, 0, 0});
-        QUAT_ORIENTATION_BUFFER.push_back(quaternion{0, 0, 0, 0});
-    }
-    for (unsigned int i = 0; i < IPS_BUFFER_LEN; i++)
-    {
-        IPS_BUFFER.push_back(std::array<double, 3>{0, 0, 0});
-    }
-
     // Initialize the IMU.
     if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
     {
@@ -1018,7 +989,7 @@ int main(int argc, char **argv)
 
     // Start threads.
     std::thread imu_reader_thread(imu_reader);
-    std::thread predict_velocity_thread(predict_velocity_dispatch);
+    std::thread predict_velocity_thread(predict_velocity);
     std::thread stance_detector_thread(stance_detector);
     std::thread transmit_lora_thread(transmit_lora);
     std::thread std_output_thread(std_output);

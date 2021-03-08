@@ -160,7 +160,7 @@ Configuration get_configuration(const std::string &filename)
     stringstream(options["climbing_threshold"]) >> cf.climbing_threshold;
     stringstream(options["gravity"]) >> cf.gravity;
     stringstream(options["struggle_threshold"]) >> cf.struggle_threshold;
-    stringstream(options["fall_threshold"]) >> cf.fall_threshold;
+    stringstream(options["freefall_sensitivity"]) >> cf.freefall_sensitivity;
     stringstream(options["accel_bias_x"]) >> cf.accel_bias.x;
     stringstream(options["accel_bias_y"]) >> cf.accel_bias.y;
     stringstream(options["accel_bias_z"]) >> cf.accel_bias.z;
