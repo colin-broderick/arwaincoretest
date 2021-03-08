@@ -177,7 +177,7 @@ void imu_reader()
     arwain::Filter* filter;
     if (CONFIG.orientation_filter == "efaroe")
     {
-        filter = new arwain::eFaroe{quaternion{0,0,0,0}, CONFIG.gyro_bias, 100, 0, CONFIG.efaroe_zeta};
+        filter = new arwain::eFaroe{quaternion{0,0,0,0}, CONFIG.gyro_bias, 100, CONFIG.efaroe_beta, CONFIG.efaroe_zeta};
     }
     else
     {
@@ -244,10 +244,12 @@ void imu_reader()
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         IMU_BUFFER_LOCK.lock();
         IMU_BUFFER.pop_front();
-        IMU_BUFFER.push_back(std::array<double, 6>{
-            accel_data.x, accel_data.y, accel_data.z,
-            gyro_data.x, gyro_data.y, gyro_data.z
-        });
+        std::array<double, 6> newData{accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z};
+        if (IMU_BUFFER.back() == newData)
+        {
+            std::cout << "IMU reading duplication at " << time.time_since_epoch().count() << "\n";
+        }
+        IMU_BUFFER.push_back(newData);
         IMU_BUFFER_LOCK.unlock();
 
         // Buffer mag_data if collected. TODO Is there actually any reason to buffer this?
@@ -344,7 +346,6 @@ void imu_reader()
         std::this_thread::sleep_until(time);
     }
 
-    // TODO Double check this is what I need for clean up.
     delete filter;
 
     // Close all file handles.
@@ -579,6 +580,7 @@ void predict_velocity()
     {
         // TODO: Merge the inference code into this function. Will need further abstraction?
         // TODO: Set up NPU and feed in model.
+        // TODO: Make it possible to specify the model file path, and fail gracefully if not found.
         // Torch model{"./xyzronin_v0-5_all2D_small.pt", {1, 6, 200, 1}};
         Torch model{"./xyzronin_v0-6.pt", {1, 6, 200}};
 

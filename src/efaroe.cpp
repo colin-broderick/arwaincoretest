@@ -5,9 +5,9 @@
  * \param initial_quaternion The known initial orientation as a quaternion. Use {1, 0, 0, 0} if unknown.
  * \param gyro_bias The known constant bias in the gyroscope. Use zeroes if unknown.
  * \param gyro_error TODO not sure what this is for.
- * \param use_mag Whether to use magnetometer data for the orientation filter. TODO Not yet implemented so should always be zero.
+ * TODO Make use of beta and zeta being passed in.
  */
-arwain::eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, int use_mag, double zeta)
+arwain::eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, double beta, double zeta)
 {
     m_zeta = zeta;
     m_gyro_bias = gyro_bias;
@@ -15,7 +15,6 @@ arwain::eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double 
     uk_dip = -67.0*3.14159265/180.0;
     emf = {cos(uk_dip), 0, sin(uk_dip)};
     last_read = 0;
-    use_mag = use_mag;
     m_true_error = gyro_error;
     
     if (initial_quaternion == quaternion{0, 0, 0, 0})

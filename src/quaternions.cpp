@@ -92,7 +92,6 @@ quaternion quaternion::operator-(quaternion quat2)
 }
 
 /** \brief Quaternions follow a special multiplication rule.
- * TODO Fill in the full description of quaternion multiplication.
  * \param quat2 Another quaternion by which to multiply.
  * \return A new quaternion.
  */
@@ -285,7 +284,6 @@ quaternion quaternion::conj()
 }
  
 /** \brief Invert a quaterion.
- * TODO No idea how quaternion inversion works.
  * \return A new quaternion.
  */
 quaternion quaternion::inv()
@@ -296,7 +294,6 @@ quaternion quaternion::inv()
 }
 
 /** \brief Conjugate a quaternion.
- * TODO: What makes this different to the conjugation method?
  * \return A new quaternion.
  */
 quaternion quaternion::unit_inv()
