@@ -1,3 +1,4 @@
+#include <csignal>
 #include <sstream>
 #include <thread>
 #include <ctime>
@@ -8,18 +9,10 @@
 #include "utils.h"
 #include "imu_utils.h"
 
-/** \brief Easily get current system time.
- * \return The current system time_point.
- */
-std::chrono::_V2::system_clock::time_point now()
-{
-    return std::chrono::system_clock::now();
-}
-
 /** \brief Get the current system datetime as a string.
  * \return Datetime as string.
  */
-std::string datetimestring()
+std::string arwain::datetimestring()
 {
     std::time_t now = std::time(0);
     std::tm *ltm = localtime(&now);
@@ -88,7 +81,7 @@ std::string datetimestring()
 
 /** \brief Utility functional for checking that the IMU is operational.
  */
-void test_imu(int &shutdown)
+void arwain::test_imu(int &shutdown)
 {
     // Initialize the IMU.
     std::string path = "../calib.txt";
@@ -124,7 +117,7 @@ void test_imu(int &shutdown)
  * \param filename The location of the configuration file to read.
  * \return A Configuration object containing parameters read from the file.
  */
-Configuration get_configuration(const std::string &filename)
+arwain::Configuration arwain::get_configuration(const std::string &filename)
 {
     using std::string;
     using std::stringstream;
@@ -152,7 +145,7 @@ Configuration get_configuration(const std::string &filename)
     // TODO Detect attempted read of non-existing options.
 
     // Read all options into a configuration object.
-    Configuration cf;
+    arwain::Configuration cf;
     stringstream(options["active_threshold"]) >> cf.active_threshold;
     stringstream(options["walking_threshold"]) >> cf.walking_threshold;
     stringstream(options["running_threshold"]) >> cf.running_threshold;

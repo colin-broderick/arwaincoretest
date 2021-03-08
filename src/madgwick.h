@@ -28,44 +28,47 @@
 
 #include "filter.h"
 
-class Madgwick : public Filter
+namespace arwain
 {
-    private:
-        static float invSqrt(float x);
-        double m_beta;	// algorithm gain
-        double q0;
-        double q1;
-        double q2;
-        double q3;      // quaternion of sensor frame relative to auxiliary frame
-        double invSampleFreq;
-        double roll;
-        double pitch;
-        double yaw;
-        char anglesComputed;
-        void computeAngles();
+    class Madgwick : public Filter
+    {
+        private:
+            static float invSqrt(float x);
+            double m_beta;	// algorithm gain
+            double q0;
+            double q1;
+            double q2;
+            double q3;      // quaternion of sensor frame relative to auxiliary frame
+            double invSampleFreq;
+            double roll;
+            double pitch;
+            double yaw;
+            char anglesComputed;
+            void computeAngles();
 
-    public:
-        // Constructors
-        Madgwick(void);
-        Madgwick(double sample_frequency, double beta);
+        public:
+            // Constructors
+            Madgwick(void);
+            Madgwick(double sample_frequency, double beta);
 
-        // General methods
-        void update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
-        void update(double gx, double gy, double gz, double ax, double ay, double az);
-        void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
-        void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az);
+            // General methods
+            void update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
+            void update(double gx, double gy, double gz, double ax, double ay, double az);
+            void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
+            void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az);
 
-        // Getters
-        double getW();
-        double getX();
-        double getY();
-        double getZ();
-        double getRoll();
-        double getPitch();
-        double getYaw();
-        double getRollRadians();
-        double getPitchRadians();
-        double getYawRadians();
-};
+            // Getters
+            double getW();
+            double getX();
+            double getY();
+            double getZ();
+            double getRoll();
+            double getPitch();
+            double getYaw();
+            double getRollRadians();
+            double getPitchRadians();
+            double getYawRadians();
+    };
+}
 
 #endif

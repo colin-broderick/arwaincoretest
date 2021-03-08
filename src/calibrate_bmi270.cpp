@@ -98,9 +98,9 @@ int main(int argc, char **argv)
         double gx_bias = gx/gyro_reading_count;
         double gy_bias = gy/gyro_reading_count;
         double gz_bias = gz/gyro_reading_count;
-        config_replace(config_file, "gyro_bias_x", gx_bias);
-        config_replace(config_file, "gyro_bias_y", gy_bias);
-        config_replace(config_file, "gyro_bias_z", gz_bias);
+        arwain::config_replace(config_file, "gyro_bias_x", gx_bias);
+        arwain::config_replace(config_file, "gyro_bias_y", gy_bias);
+        arwain::config_replace(config_file, "gyro_bias_z", gz_bias);
     }
     
     // Calibrate magneometer.
@@ -168,12 +168,12 @@ int main(int argc, char **argv)
         float scale_z = avg_delta / avg_delta_z;
 
         // Write all the new values to config file.
-        config_replace(config_file, "mag_bias_x", offset_x);
-        config_replace(config_file, "mag_bias_y", offset_y);
-        config_replace(config_file, "mag_bias_z", offset_z);
-        config_replace(config_file, "mag_scale_x", scale_x);
-        config_replace(config_file, "mag_scale_y", scale_y);
-        config_replace(config_file, "mag_scale_z", scale_z);
+        arwain::config_replace(config_file, "mag_bias_x", offset_x);
+        arwain::config_replace(config_file, "mag_bias_y", offset_y);
+        arwain::config_replace(config_file, "mag_bias_z", offset_z);
+        arwain::config_replace(config_file, "mag_scale_x", scale_x);
+        arwain::config_replace(config_file, "mag_scale_y", scale_y);
+        arwain::config_replace(config_file, "mag_scale_z", scale_z);
     }
     
     if (calibrate_accel)

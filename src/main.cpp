@@ -29,7 +29,6 @@ from these rules should be accompanied by a comment clearly indiciating why.
 
 */
 
-
 #include <algorithm>
 #include <csignal>
 #include <iostream>
@@ -57,11 +56,11 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "madgwick.h"
 #include "efaroe.h"
 #include "math_util.h"
-// #include "rknn_api.h"
 #include "input_parser.h"
 #include "bin_log.h"
 #include "indoor_positioning_wrapper.h"
 #include "filter.h"
+// #include "rknn_api.h"
 
 // Time intervals, all in milliseconds.
 static unsigned int IMU_READING_INTERVAL = 5;
@@ -78,17 +77,17 @@ static unsigned int ORIENTATION_BUFFER_LEN = 200;
 static unsigned int IMU_BUFFER_LEN = 200;
 static unsigned int IPS_BUFFER_LEN = 50;
 
-// File-globally accessible configuration and status.
-static Configuration CONFIG;
-static Status STATUS;
+// Globally accessible configuration and status.
+static arwain::Configuration CONFIG;
+static arwain::Status STATUS;
 
 // Default config file locations.
 std::string CONFIG_FILE = "./arwain.conf";
 
 // Flags for whether to produce various log outputs.
-int LOG_TO_STD = 0;
+int LOG_TO_STDOUT = 0;
 int LOG_TO_FILE = 0;
-int NO_INF = 0;
+int NO_INFERENCE = 0;
 
 // Name for data folder
 static std::string FOLDER_DATE_STRING;
@@ -108,7 +107,7 @@ std::deque<quaternion> QUAT_ORIENTATION_BUFFER{ORIENTATION_BUFFER_LEN};
 int STATUS_FLAGS = 0;
 
 // Kill flag for all threads.
-static int SHUTDOWN = 0;
+int SHUTDOWN = 0;
 
 // Mutex locks.
 std::mutex IMU_BUFFER_LOCK;
@@ -124,7 +123,7 @@ std::mutex ORIENTATION_BUFFER_LOCK;
  */
 void std_output()
 {
-    if (LOG_TO_STD)
+    if (LOG_TO_STDOUT)
     {
         // Output string built here.
         std::stringstream ss;
@@ -175,14 +174,14 @@ void std_output()
 void imu_reader()
 {
     // Choose an orientation filter depending on configuration, with Madgwick as default.
-    Filter* filter;
+    arwain::Filter* filter;
     if (CONFIG.orientation_filter == "efaroe")
     {
-        filter = new eFaroe{quaternion{0,0,0,0}, CONFIG.gyro_bias, 100, 0, CONFIG.efaroe_zeta};
+        filter = new arwain::eFaroe{quaternion{0,0,0,0}, CONFIG.gyro_bias, 100, 0, CONFIG.efaroe_zeta};
     }
     else
     {
-        filter = new Madgwick{1000.0/IMU_READING_INTERVAL, CONFIG.madgwick_beta};
+        filter = new arwain::Madgwick{1000.0/IMU_READING_INTERVAL, CONFIG.madgwick_beta};
     }
 
     int count = 0;
@@ -245,7 +244,7 @@ void imu_reader()
         // Add new reading to end of buffer, and remove oldest reading from start of buffer.
         IMU_BUFFER_LOCK.lock();
         IMU_BUFFER.pop_front();
-        IMU_BUFFER.emplace_back(std::array<double, 6>{
+        IMU_BUFFER.push_back(std::array<double, 6>{
             accel_data.x, accel_data.y, accel_data.z,
             gyro_data.x, gyro_data.y, gyro_data.z
         });
@@ -256,7 +255,7 @@ void imu_reader()
         // {
         //     MAG_BUFFER_LOCK.lock();
         //     MAG_BUFFER.pop_front();
-        //     MAG_BUFFER.emplace_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
+        //     MAG_BUFFER.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
         //     MAG_BUFFER_LOCK.unlock();
         // }
 
@@ -304,9 +303,9 @@ void imu_reader()
         // Add orientation information to buffers.
         ORIENTATION_BUFFER_LOCK.lock();
         EULER_ORIENTATION_BUFFER.pop_front();
-        EULER_ORIENTATION_BUFFER.emplace_back(euler_data);
+        EULER_ORIENTATION_BUFFER.push_back(euler_data);
         QUAT_ORIENTATION_BUFFER.pop_front();
-        QUAT_ORIENTATION_BUFFER.emplace_back(quat_data);
+        QUAT_ORIENTATION_BUFFER.push_back(quat_data);
         ORIENTATION_BUFFER_LOCK.unlock();
 
         // Add world-aligned IMU to its own buffer.
@@ -314,7 +313,7 @@ void imu_reader()
         world_gyro_data = world_align(gyro_data, quat_data);
         IMU_BUFFER_LOCK.lock();
         IMU_WORLD_BUFFER.pop_front();
-        IMU_WORLD_BUFFER.emplace_back(std::array<double, 6>{
+        IMU_WORLD_BUFFER.push_back(std::array<double, 6>{
             world_accel_data.x, world_accel_data.y, world_accel_data.z,
             world_gyro_data.x, world_gyro_data.y, world_gyro_data.z
         });
@@ -326,7 +325,7 @@ void imu_reader()
         //     world_mag_data = world_align(mag_data, quat_data);
         //     MAG_BUFFER_LOCK.lock();
         //     MAG_WORLD_BUFFER.pop_front();
-        //     MAG_WORLD_BUFFER.emplace_back(std::array<double, 3>{
+        //     MAG_WORLD_BUFFER.push_back(std::array<double, 3>{
         //         world_mag_data.x, world_mag_data.y, world_mag_data.z
         //     });
         //     MAG_BUFFER_LOCK.unlock();
@@ -361,7 +360,7 @@ void imu_reader()
 
 /** \brief Forms and transmits LoRa messages on a loop.
  */
-int transmit_lora()
+void transmit_lora()
 {
     // TODO: Set up radio.
 
@@ -421,8 +420,6 @@ int transmit_lora()
     {
         lora_file.close();
     }
-
-    return 1;
 }
 
 // TODO Everything from here until the finish line can be removed if we fully convert to vector3 --
@@ -578,121 +575,119 @@ void predict_velocity_dispatch()
 void predict_velocity()
 {
     // Skip inference if command line says so.
-    if (NO_INF)
+    if (!NO_INFERENCE)
     {
-        return;
-    }
+        // TODO: Merge the inference code into this function. Will need further abstraction?
+        // TODO: Set up NPU and feed in model.
+        // Torch model{"./xyzronin_v0-5_all2D_small.pt", {1, 6, 200, 1}};
+        Torch model{"./xyzronin_v0-6.pt", {1, 6, 200}};
 
-    // TODO: Merge the inference code into this function. Will need further abstraction?
-    // TODO: Set up NPU and feed in model.
-    // Torch model{"./xyzronin_v0-5_all2D_small.pt", {1, 6, 200, 1}};
-    Torch model{"./xyzronin_v0-6.pt", {1, 6, 200}};
+        // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
+        std::chrono::milliseconds presleep(1000);
+        std::this_thread::sleep_for(presleep*3);
 
-    // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
-    std::chrono::milliseconds presleep(1000);
-    std::this_thread::sleep_for(presleep*3);
+        // Set up timing.
+        auto time = std::chrono::system_clock::now();
+        std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
 
-    // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
+        // Initialize buffers to contain working values.
+        std::array<double, 3> vel;                        // The sum of npu_vel and imu_vel_delta.
+        std::array<double, 3> npu_vel;                    // To hold the neural network prediction of velocity.
+        std::array<double, 3> vel_previous = {0, 0, 0};   // Contains the velocity calculation from the previous loop.
+        std::array<double, 3> npu_vel_delta;              // Stores the difference between the npu velocity prediction and vel_previous.
+        std::array<double, 3> imu_vel_delta;              // To integrate the velocity based on IMU readings.
+        std::array<double, 3> position;
+        std::deque<std::array<double, 6>> imu;            // To contain the last second of IMU data.
+        std::deque<std::array<double, 6>> imu_latest;     // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
 
-    // Initialize buffers to contain working values.
-    std::array<double, 3> vel;                        // The sum of npu_vel and imu_vel_delta.
-    std::array<double, 3> npu_vel;                    // To hold the neural network prediction of velocity.
-    std::array<double, 3> vel_previous = {0, 0, 0};   // Contains the velocity calculation from the previous loop.
-    std::array<double, 3> npu_vel_delta;              // Stores the difference between the npu velocity prediction and vel_previous.
-    std::array<double, 3> imu_vel_delta;              // To integrate the velocity based on IMU readings.
-    std::array<double, 3> position;
-    std::deque<std::array<double, 6>> imu;            // To contain the last second of IMU data.
-    std::deque<std::array<double, 6>> imu_latest;     // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
+        // File handles for logging.
+        std::ofstream position_file;
+        std::ofstream velocity_file;
 
-    // File handles for logging.
-    std::ofstream position_file;
-    std::ofstream velocity_file;
+        // Time in seconds between inferences.
+        double interval_seconds = ((double)(VELOCITY_PREDICTION_INTERVAL))/1000.0;
 
-    // Time in seconds between inferences.
-    double interval_seconds = ((double)(VELOCITY_PREDICTION_INTERVAL))/1000.0;
+        // TEST How far back to look in the IMU buffer for integration.
+        int backtrack = (int)((1000/IMU_READING_INTERVAL)*interval_seconds);
 
-    // TEST How far back to look in the IMU buffer for integration.
-    int backtrack = (int)((1000/IMU_READING_INTERVAL)*interval_seconds);
-
-    // Open files for logging.
-    if (LOG_TO_FILE)
-    {
-        velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
-        position_file.open(FOLDER_DATE_STRING + "/position.txt");
-        velocity_file << "# time x y z" << "\n";
-        position_file << "# time x y z" << "\n";
-    }
-
-    float data[1][6][200];
-    
-    while (!SHUTDOWN)
-    {
-        // Grab latest IMU packet
-        IMU_BUFFER_LOCK.lock();
-        imu = IMU_WORLD_BUFFER;
-        IMU_BUFFER_LOCK.unlock();
-
-        // TEST Create data array that torch can understand.
-        torch_array_from_deque(data, imu);
-
-        // TEST Make velocity prediction
-        std::vector<double> v = model.infer(data);
-        npu_vel = {v[0], v[1], v[2]};
-        
-        // TEST Find the change in velocity from the last period, as predicted by the npu.
-        npu_vel_delta = npu_vel - vel_previous;
-
-        // TEST Get last interval worth of IMU data.
-        imu_latest = {imu.end() - backtrack, imu.end()};
-
-        // TEST Single integrate the small IMU slice to get delta-v over the period.
-        imu_vel_delta = integrate(imu_latest, interval_seconds );
-
-        // TEST Weighted combination of velocity deltas from NPU and IMU integration.
-        // TODO This gives very wrong results when trusting the IMU at all. Investigate and repair (or bin it).
-        vel = npu_vel_delta*CONFIG.npu_vel_weight_confidence + imu_vel_delta*(1-CONFIG.npu_vel_weight_confidence);
-
-        // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
-        vel = vel + vel_previous;
-
-        VELOCITY_BUFFER_LOCK.lock();
-        VELOCITY_BUFFER.pop_front();
-        VELOCITY_BUFFER.emplace_back(vel);
-        VELOCITY_BUFFER_LOCK.unlock();
-
-        // TEST Store the velocity for use in the next loop (saves having to access the buffer for a single element).
-        vel_previous = vel;
-
-        // Iterate velocity onto position to get new position.
-        position[0] = position[0] + interval_seconds * vel[0];
-        position[1] = position[1] + interval_seconds * vel[1];
-        position[2] = position[2] + interval_seconds * vel[2];
-        
-        // Update position buffer.
-        POSITION_BUFFER_LOCK.lock();
-        POSITION_BUFFER.pop_front();
-        POSITION_BUFFER.emplace_back(position);
-        POSITION_BUFFER_LOCK.unlock();
-
-        // Add position and velocity data to file.
+        // Open files for logging.
         if (LOG_TO_FILE)
         {
-            velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << "\n";
-            position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] << " " << position[2] << "\n";
+            velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
+            position_file.open(FOLDER_DATE_STRING + "/position.txt");
+            velocity_file << "# time x y z" << "\n";
+            position_file << "# time x y z" << "\n";
         }
 
-        // Wait until next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
-    }
+        float data[1][6][200];
+        
+        while (!SHUTDOWN)
+        {
+            // Grab latest IMU packet
+            IMU_BUFFER_LOCK.lock();
+            imu = IMU_WORLD_BUFFER;
+            IMU_BUFFER_LOCK.unlock();
 
-    // Close file handle(s).
-    if (LOG_TO_FILE)
-    {
-        velocity_file.close();
-        position_file.close();
+            // TEST Create data array that torch can understand.
+            torch_array_from_deque(data, imu);
+
+            // TEST Make velocity prediction
+            std::vector<double> v = model.infer(data);
+            npu_vel = {v[0], v[1], v[2]};
+            
+            // TEST Find the change in velocity from the last period, as predicted by the npu.
+            npu_vel_delta = npu_vel - vel_previous;
+
+            // TEST Get last interval worth of IMU data.
+            imu_latest = {imu.end() - backtrack, imu.end()};
+
+            // TEST Single integrate the small IMU slice to get delta-v over the period.
+            imu_vel_delta = integrate(imu_latest, interval_seconds );
+
+            // TEST Weighted combination of velocity deltas from NPU and IMU integration.
+            // TODO This gives very wrong results when trusting the IMU at all. Investigate and repair (or bin it).
+            vel = npu_vel_delta*CONFIG.npu_vel_weight_confidence + imu_vel_delta*(1-CONFIG.npu_vel_weight_confidence);
+
+            // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
+            vel = vel + vel_previous;
+
+            VELOCITY_BUFFER_LOCK.lock();
+            VELOCITY_BUFFER.pop_front();
+            VELOCITY_BUFFER.push_back(vel);
+            VELOCITY_BUFFER_LOCK.unlock();
+
+            // TEST Store the velocity for use in the next loop (saves having to access the buffer for a single element).
+            vel_previous = vel;
+
+            // Iterate velocity onto position to get new position.
+            position[0] = position[0] + interval_seconds * vel[0];
+            position[1] = position[1] + interval_seconds * vel[1];
+            position[2] = position[2] + interval_seconds * vel[2];
+            
+            // Update position buffer.
+            POSITION_BUFFER_LOCK.lock();
+            POSITION_BUFFER.pop_front();
+            POSITION_BUFFER.push_back(position);
+            POSITION_BUFFER_LOCK.unlock();
+
+            // Add position and velocity data to file.
+            if (LOG_TO_FILE)
+            {
+                velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << "\n";
+                position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] << " " << position[2] << "\n";
+            }
+
+            // Wait until next tick.
+            time = time + interval;
+            std::this_thread::sleep_until(time);
+        }
+
+        // Close file handle(s).
+        if (LOG_TO_FILE)
+        {
+            velocity_file.close();
+            position_file.close();
+        }
     }
 }
 
@@ -709,135 +704,78 @@ void sigint_handler(int signal)
     }
 }
 
-/// This function is never called. It should be considered a template
-/// for implementing new threaded functionality. All existing threads
-/// follow approximately this design pattern.
-void thread_template()
-{
-    // DECLARE ANY LOCAL VARIABLES OUTSIDE THE WHILE LOOP.
-    double var;
-    double from_global;
-
-    // IF LOGGING, CREATE FILE HANDLE
-    // If using arwain binary logging (under development) just do
-    // arwain::BinLog log_file("file_name.txt", arwain::accelwrite)
-    std::ofstream log_file;
-
-    // IF LOGGING, OPEN FILE HANDLES.
-    if (LOG_TO_FILE)
-    {
-        log_file.open(FOLDER_DATE_STRING + "/log_file.txt");
-        log_file << "# time value1" << "\n";
-    }
-
-    // CONFIGURE TIMING INTERVAL.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(1000);
-
-    // START LOOP, RESPECTING SHUTDOWN FLAG.
-    while (!SHUTDOWN)
-    {
-        // GLOBAL DATA INTO LOCAL BUFFERS BEFORE USE. RESPECT MUTEX LOCKS.
-        POSITION_BUFFER_LOCK.lock();
-        from_global = 1.5;
-        POSITION_BUFFER_LOCK.unlock();
-
-        // UPDATE LOCAL VARS.
-        var = 3.0 + from_global;
-
-        // IF LOGGING, UPDATE LOG FILE.
-        if (LOG_TO_FILE)
-        {
-            // If using arwain binary logging (under development) just do
-            // log_file << time << data_array;
-            log_file << time.time_since_epoch().count() << var << "\n";
-        }
-
-        // ADD NEW VALUES TO GLOBAL BUFFER and remove oldest, RESPECTING MUTEX LOCKS.
-        POSITION_BUFFER_LOCK.lock();
-        POSITION_BUFFER.pop_front();
-        POSITION_BUFFER.emplace_back(std::array<double, 3>{var, 0, 0});
-        POSITION_BUFFER_LOCK.unlock();
-
-        // WAIT UNTIL NEXT TIME INTERVAL.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
-    }
-
-    // IF LOGGING, CLOSE FILE HANDLES.
-    if (LOG_TO_FILE)
-    {
-        log_file.close();
-    }
-}
-
+/** \brief Indoor positioning system for recognising and snapping to stairs, floors, etc.
+ * Runs as thread.
+ */
 void indoor_positioning()
 {
-    if (!CONFIG.use_indoor_positioning_system)
+    if (CONFIG.use_indoor_positioning_system)
     {
-        return;
-    }
+        // TODO Create IPS object
+        arwain::IndoorPositioningWrapper ips;
+        std::array<double, 3> velocity;
+        std::array<double, 3> position;
 
-    // TODO Create IPS object
-    IndoorPositioningWrapper ips;
-    std::array<double, 3> velocity;
-    std::array<double, 3> position;
+        std::ofstream ips_position_file;
 
-    std::ofstream ips_position_file;
-
-    if (LOG_TO_FILE)
-    {
-        ips_position_file.open(FOLDER_DATE_STRING + "/ips_position.txt");
-        ips_position_file << "# time x y z" << "\n";
-    }
-
-    // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(INDOOR_POSITIONING_INTERVAL);
-
-    while (!SHUTDOWN)
-    {
-        // Get most recent velocity data.
-        VELOCITY_BUFFER_LOCK.lock();
-        velocity = VELOCITY_BUFFER.back();
-        VELOCITY_BUFFER_LOCK.unlock();
-
-        // Run update and get new position.
-        ips.update(
-            time.time_since_epoch().count(),
-            velocity[0],
-            velocity[1],
-            velocity[2]
-        );
-        position = ips.getPosition();
-
-        // Put IPS position in buffer.
-        POSITION_BUFFER_LOCK.lock();
-        IPS_BUFFER.pop_front();
-        IPS_BUFFER.emplace_back(position);
-        POSITION_BUFFER_LOCK.unlock();
-
-        // Log result to file.
         if (LOG_TO_FILE)
         {
-            ips_position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] <<  " " << position[2] << "\n";
+            ips_position_file.open(FOLDER_DATE_STRING + "/ips_position.txt");
+            ips_position_file << "# time x y z" << "\n";
         }
 
-        // Wait until next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
-    }
+        // Set up timing.
+        auto time = std::chrono::system_clock::now();
+        std::chrono::milliseconds interval(INDOOR_POSITIONING_INTERVAL);
 
-    // Close file handle(s);
-    if (LOG_TO_FILE)
-    {
-        ips_position_file.close();
+        while (!SHUTDOWN)
+        {
+            // Get most recent velocity data.
+            VELOCITY_BUFFER_LOCK.lock();
+            velocity = VELOCITY_BUFFER.back();
+            VELOCITY_BUFFER_LOCK.unlock();
+
+            // Run update and get new position.
+            ips.update(
+                time.time_since_epoch().count(),
+                velocity[0],
+                velocity[1],
+                velocity[2]
+            );
+            position = ips.getPosition();
+
+            // Put IPS position in buffer.
+            POSITION_BUFFER_LOCK.lock();
+            IPS_BUFFER.pop_front();
+            IPS_BUFFER.push_back(position);
+            POSITION_BUFFER_LOCK.unlock();
+
+            // Log result to file.
+            if (LOG_TO_FILE)
+            {
+                ips_position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] <<  " " << position[2] << "\n";
+            }
+
+            // Wait until next tick.
+            time = time + interval;
+            std::this_thread::sleep_until(time);
+        }
+
+        // Close file handle(s);
+        if (LOG_TO_FILE)
+        {
+            ips_position_file.close();
+        }
     }
 }
 
+/** \brief Stance detection thread, periodically assesses mode of motion based in IMU and velocity data.
+ * Runs as a thread.
+ */
 void stance_detector()
 {
-    StanceDetector stance{
+    // Stance detector object.
+    arwain::StanceDetector stance{
         CONFIG.freefall_sensitivity,
         CONFIG.crawling_threshold,
         CONFIG.running_threshold,
@@ -846,7 +784,11 @@ void stance_detector()
         CONFIG.struggle_threshold
     };
 
-    // Open file for logging
+    // Local buffers.
+    std::deque<std::array<double, 6>> imu_data;
+    std::deque<std::array<double, 3>> vel_data;
+
+    // Open file for freefall/entanglement logging
     std::ofstream freefall_file;
     if (LOG_TO_FILE)
     {
@@ -854,7 +796,7 @@ void stance_detector()
         freefall_file << "# time freefall entanglement" << "\n";
     }
 
-    // File handle for logging.
+    // File handle for stance logging.
     std::ofstream stance_file;
     if (LOG_TO_FILE)
     {
@@ -862,26 +804,29 @@ void stance_detector()
         stance_file << "# time stance" << "\n";
     }
 
-    auto time = now();
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{STANCE_DETECTION_INTERVAL};
 
     while (!SHUTDOWN)
     {
         // Get all relevant data.
         IMU_BUFFER_LOCK.lock();
-        std::deque<std::array<double, 6>> imu_data = IMU_BUFFER;
+        imu_data = IMU_BUFFER;
         IMU_BUFFER_LOCK.unlock();
 
         VELOCITY_BUFFER_LOCK.lock();
-        std::deque<std::array<double, 3>> vel_data = VELOCITY_BUFFER;
+        vel_data = VELOCITY_BUFFER;
         VELOCITY_BUFFER_LOCK.unlock();
 
+        // Update stance detector and get output.
         stance.run(imu_data, vel_data);
         STATUS.current_stance = stance.getStance();
         STATUS.falling = stance.getFallingStatus();
         STATUS.entangled = stance.getEntangledStatus();
         STATUS.attitude = stance.getAttitude();
 
+        // Log to file.
         if (LOG_TO_FILE)
         {
             freefall_file << time.time_since_epoch().count() << " " << stance.getFallingStatus() << " " << stance.getEntangledStatus() << "\n";
@@ -894,7 +839,10 @@ void stance_detector()
     }
 }
 
-/// mainloop
+/** \brief Main loop.
+ * \param argc Nmber of arguments.
+ * \param argv List of arguments.
+ */
 int main(int argc, char **argv)
 {
     // Prepare keyboard interrupt signal handler to enable graceful exit.
@@ -926,17 +874,17 @@ int main(int argc, char **argv)
     }
     if (input.contains("-testimu"))
     {
-        test_imu(SHUTDOWN);
+        arwain::test_imu(SHUTDOWN);
         return 1;
     }
     if (input.contains("-lstd"))
     {
         // Enable stdout logging.
-        LOG_TO_STD = 1;
+        LOG_TO_STDOUT = 1;
     }
     if (input.contains("-noinf"))
     {
-        NO_INF = 1;
+        NO_INFERENCE = 1;
     }
     if (input.contains("-lfile"))
     {
@@ -957,8 +905,8 @@ int main(int argc, char **argv)
     // Attempt to read the config file and quit if failed.
     try
     {
-        CONFIG = get_configuration(CONFIG_FILE);
-        if (LOG_TO_STD)
+        CONFIG = arwain::get_configuration(CONFIG_FILE);
+        if (LOG_TO_STDOUT)
         {
             std::cout << "Configuration file read\n";
         }
@@ -972,7 +920,7 @@ int main(int argc, char **argv)
     // Create output directory and write copy of current configuration.
     if (LOG_TO_FILE)
     {
-        FOLDER_DATE_STRING = "./data_" + datetimestring();
+        FOLDER_DATE_STRING = "./data_" + arwain::datetimestring();
         if (!std::experimental::filesystem::is_directory(FOLDER_DATE_STRING))
         {
             std::experimental::filesystem::create_directory(FOLDER_DATE_STRING);

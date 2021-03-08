@@ -20,7 +20,7 @@
  * \param walking_threshold Speed above which, if vertical, stance is detected as walking.
  * \param active_threshold Value of the internal activity metric above which an entanglement event is detected.
  */
-StanceDetector::StanceDetector(double freefall_sensitivity, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold)
+arwain::StanceDetector::StanceDetector(double freefall_sensitivity, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold)
 {
     m_freefall_sensitivity = freefall_sensitivity;
     m_crawling_threshold = crawling_threshold;
@@ -42,7 +42,7 @@ StanceDetector::StanceDetector(double freefall_sensitivity, double crawling_thre
  * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
  * \param vel_data Pointer to deq<arr<double>> containing velocity data.
  */
-void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data)
+void arwain::StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data)
 {
     // Crunch the numbers ...
     std::vector<std::array<double, 3>> accel_data;
@@ -161,7 +161,7 @@ void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, cons
  * \param arr Vector of e.g. 3-velocity, 3-acceleration, etc.
  * \return The index of the element with largest value.
  */
-StanceDetector::AXIS StanceDetector::biggest_axis(const std::array<double, 3> &arr)
+arwain::StanceDetector::AXIS arwain::StanceDetector::biggest_axis(const std::array<double, 3> &arr)
 {
     // This should be using absolute value, since large negative values are 'bigger' than small positive values.
     AXIS axis;
@@ -187,7 +187,7 @@ StanceDetector::AXIS StanceDetector::biggest_axis(const std::array<double, 3> &a
  * \param v Velocity magnitude.
  * \return Measure of intensity of activity.
  */
-double StanceDetector::activity(double a, double g, double v)
+double arwain::StanceDetector::activity(double a, double g, double v)
 {
     // TODO Need to discover a decent metric of `activity`.
     // The metric should read high when accelerations are high,
@@ -205,7 +205,7 @@ double StanceDetector::activity(double a, double g, double v)
  * \param values Vector of doubles.
  * \return Mean value of input vector.
  */
-double StanceDetector::vector_mean(const std::vector<double> &values)
+double arwain::StanceDetector::vector_mean(const std::vector<double> &values)
 {
     double mean = 0;
     for (unsigned int i = 0; i < values.size(); i++)
@@ -220,7 +220,7 @@ double StanceDetector::vector_mean(const std::vector<double> &values)
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double StanceDetector::buffer_mean_magnitude(const std::vector<std::array<double, 3>> &buffer)
+double arwain::StanceDetector::buffer_mean_magnitude(const std::vector<std::array<double, 3>> &buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -241,7 +241,7 @@ double StanceDetector::buffer_mean_magnitude(const std::vector<std::array<double
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double StanceDetector::buffer_mean_magnitude(const std::deque<std::array<double, 3>> &buffer)
+double arwain::StanceDetector::buffer_mean_magnitude(const std::deque<std::array<double, 3>> &buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -260,7 +260,7 @@ double StanceDetector::buffer_mean_magnitude(const std::deque<std::array<double,
 /** \brief Return the column-wise means of a size (x, 3) vector.
  * \param source_vector Pointer to source array.
  */
-std::array<double, 3> StanceDetector::get_means(const std::vector<std::array<double, 3>> &source_vector)
+std::array<double, 3> arwain::StanceDetector::get_means(const std::vector<std::array<double, 3>> &source_vector)
 {
     std::array<double, 3> ret;
     unsigned int length = source_vector.size();
@@ -281,7 +281,7 @@ std::array<double, 3> StanceDetector::get_means(const std::vector<std::array<dou
  * \param source_vector Pointer to source array.
  * \return A 3-array containing the means.
  */
-std::array<double, 3> StanceDetector::get_means(const std::deque<std::array<double, 3>> &source_vector)
+std::array<double, 3> arwain::StanceDetector::get_means(const std::deque<std::array<double, 3>> &source_vector)
 {
     std::array<double, 3> ret;
     unsigned int length = source_vector.size();
@@ -302,7 +302,7 @@ std::array<double, 3> StanceDetector::get_means(const std::deque<std::array<doub
  * \param source_vector Pointer to source array.
  * \return A 6-array containing the means.
  */
-std::array<double, 6> StanceDetector::get_means(const std::deque<std::array<double, 6>> &source_vector)
+std::array<double, 6> arwain::StanceDetector::get_means(const std::deque<std::array<double, 6>> &source_vector)
 {
     std::array<double, 6> ret;
     unsigned int length = source_vector.size();
@@ -330,7 +330,7 @@ std::array<double, 6> StanceDetector::get_means(const std::deque<std::array<doub
 /** \brief Returns string representing current stance.
  * \return Current stance.
  */
-StanceDetector::STANCE StanceDetector::getStance()
+arwain::StanceDetector::STANCE arwain::StanceDetector::getStance()
 {
     m_stance_lock.lock();
     STANCE ret = m_stance;
@@ -341,7 +341,7 @@ StanceDetector::STANCE StanceDetector::getStance()
 /** \brief Gets the horizontal flag.
  * \return Integer bool.
  */
-StanceDetector::ATTITUDE StanceDetector::getAttitude()
+arwain::StanceDetector::ATTITUDE arwain::StanceDetector::getAttitude()
 {  
     m_stance_lock.lock();
     ATTITUDE ret = m_attitude;
@@ -352,7 +352,7 @@ StanceDetector::ATTITUDE StanceDetector::getAttitude()
 /** \brief Check if entangled flag set.
  * \return Integer bool.
  */
-StanceDetector::ENTANGLED StanceDetector::getEntangledStatus()
+arwain::StanceDetector::ENTANGLED arwain::StanceDetector::getEntangledStatus()
 {
     m_fall_lock.lock();
     ENTANGLED ret = m_entangled;
@@ -364,7 +364,7 @@ StanceDetector::ENTANGLED StanceDetector::getEntangledStatus()
 /** \brief Get current fall flag.
  * \return Integer bool.
  */
-StanceDetector::FALLING StanceDetector::getFallingStatus()
+arwain::StanceDetector::FALLING arwain::StanceDetector::getFallingStatus()
 {
     m_fall_lock.lock();
     FALLING ret = m_falling;
