@@ -7,7 +7,7 @@
  * \param gyro_error TODO not sure what this is for.
  * \param use_mag Whether to use magnetometer data for the orientation filter. TODO Not yet implemented so should always be zero.
  */
-eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, int use_mag, double zeta)
+arwain::eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, int use_mag, double zeta)
 {
     m_zeta = zeta;
     m_gyro_bias = gyro_bias;
@@ -44,7 +44,7 @@ eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_err
  *  \param az x-axis accelerometer value in m/s2
  *  \return Nothing; updates internal state.
  */
-void eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az)
+void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az)
 {
     // Alias m_quaternion for readability.
     quaternion& q = m_quaternion;
@@ -126,7 +126,7 @@ void eFaroe::update(double timestamp, double gx, double gy, double gz,  double a
  * \param az x-axis accelerometer value in m/s2
  * \return Nothing; updates internal state.
  */
-void eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az, double mx, double my, double mz)
+void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az, double mx, double my, double mz)
 {
     // Alias m_quaternion for readability.
     quaternion& q = m_quaternion;
@@ -222,7 +222,7 @@ void eFaroe::update(double timestamp, double gx, double gy, double gz,  double a
 /** \brief Get the real component of the orientation quaternion.
  * \return Real quaternion component.
  */
-double eFaroe::getW()
+double arwain::eFaroe::getW()
 {
     return m_quaternion.w;
 }
@@ -230,7 +230,7 @@ double eFaroe::getW()
 /** \brief Get the i/x component of the orientation quaternion.
  * \return i/x component of the orientation quaternion.
  */
-double eFaroe::getX()
+double arwain::eFaroe::getX()
 {
     return m_quaternion.x;
 }
@@ -238,7 +238,7 @@ double eFaroe::getX()
 /** \brief Get the j/y component of the orientation quaternion.
  * \return j/y component of the orientation quaternion.
  */
-double eFaroe::getY()
+double arwain::eFaroe::getY()
 {
     return m_quaternion.y;
 }
@@ -246,7 +246,7 @@ double eFaroe::getY()
 /** \brief Get the k/z component of the orientation quaternion.
  * \return k/z component of the orientation quaternion.
  */
-double eFaroe::getZ()
+double arwain::eFaroe::getZ()
 {
     return m_quaternion.z;
 }
@@ -254,7 +254,7 @@ double eFaroe::getZ()
 /** \brief Get the pitch Euler angle.
  * \return Pitch Euler angle.
  */
-double eFaroe::getPitch()
+double arwain::eFaroe::getPitch()
 {
     if (!computed_angles)
     {
@@ -266,7 +266,7 @@ double eFaroe::getPitch()
 /** \brief Get the yaw Euler angle.
  * \return Yaw Euler angle.
  */
-double eFaroe::getYaw()
+double arwain::eFaroe::getYaw()
 {
     if (!computed_angles)
     {
@@ -278,7 +278,7 @@ double eFaroe::getYaw()
 /** \brief Get the roll Euler angle.
  * \return Roll Euler angle.
  */
-double eFaroe::getRoll()
+double arwain::eFaroe::getRoll()
 {
     if (!computed_angles)
     {
@@ -290,7 +290,7 @@ double eFaroe::getRoll()
 /** \brief Get the full orientation quaternion.
  * \return Full orientation quaternion.
  */
-quaternion eFaroe::getQuat()
+quaternion arwain::eFaroe::getQuat()
 {
     return m_quaternion;
 }
@@ -299,7 +299,7 @@ quaternion eFaroe::getQuat()
  * For performance reasons these angles are only updated when they are requested.
  * \return Nothing; updates internal state.
  */
-void eFaroe::computeAngles()
+void arwain::eFaroe::computeAngles()
 {
     quaternion& q = m_quaternion;
     roll = atan2f(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y);
@@ -311,7 +311,7 @@ void eFaroe::computeAngles()
  * If the internally stored angles are not up to date, they will be updated before returning..
  * \return Euler angles in degrees, in the order roll, pitch, yaw.
  */
-std::array<double, 3> eFaroe::getEuler()
+std::array<double, 3> arwain::eFaroe::getEuler()
 {
     if (!computed_angles)
     {

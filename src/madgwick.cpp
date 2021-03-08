@@ -34,7 +34,7 @@
 
 /** \brief Constructor using default sample frequency.
  */
-Madgwick::Madgwick()
+arwain::Madgwick::Madgwick()
 {
 	m_beta = betaDef;
 	q0 = 1.0f;
@@ -48,7 +48,7 @@ Madgwick::Madgwick()
 /** \brief Constructor using custom sample frequency.
  * \param sample_frequency The anticipated update frequency in Hz.
  */
-Madgwick::Madgwick(double sample_frequency, double beta)
+arwain::Madgwick::Madgwick(double sample_frequency, double beta)
 {
 	m_beta = beta;
 	q0 = 1.0f;
@@ -74,7 +74,7 @@ Madgwick::Madgwick(double sample_frequency, double beta)
  *  \param mz z-axis magnetfic field strength
  *  \return Nothing; updates internal state.
  */
-void Madgwick::update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz)
+void arwain::Madgwick::update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz)
 {
 	// Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
 	if ((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f))
@@ -183,7 +183,7 @@ void Madgwick::update(double gx, double gy, double gz, double ax, double ay, dou
  *  \param az x-axis accelerometer value in m/s2
  *  \return Nothing; updates internal state.
  */
-void Madgwick::update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az)
+void arwain::Madgwick::update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az)
 {
 	update(gx, gy, gz, ax, ay, az);
 }
@@ -201,7 +201,7 @@ void Madgwick::update(double timestamp, double gx, double gy, double gz, double 
  *  \param mz z-axis magnetfic field strength
  *  \return Nothing; updates internal state.
  */
-void Madgwick::update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz)
+void arwain::Madgwick::update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz)
 {
 	update(gx, gy, gz, ax, ay, az, mx, my, mz);
 }
@@ -215,7 +215,7 @@ void Madgwick::update(double timestamp, double gx, double gy, double gz, double 
  *  \param az x-axis accelerometer value in m/s2
  *  \return Nothing; updates internal state.
  */
-void Madgwick::update(double gx, double gy, double gz, double ax, double ay, double az)
+void arwain::Madgwick::update(double gx, double gy, double gz, double ax, double ay, double az)
 {
 	double recipNorm;
 	double s0, s1, s2, s3;
@@ -289,7 +289,7 @@ void Madgwick::update(double gx, double gy, double gz, double ax, double ay, dou
  * \param x Find square root of this number.
  * \return The square root of x.
  */
-float Madgwick::invSqrt(float x)
+float arwain::Madgwick::invSqrt(float x)
 {
 	float halfx = 0.5f * x;
 	float y = x;
@@ -305,7 +305,7 @@ float Madgwick::invSqrt(float x)
 
 /** \brief Updates the internally-stored Euler angles.
  */
-void Madgwick::computeAngles()
+void arwain::Madgwick::computeAngles()
 {
 	roll = atan2f(q0*q1 + q2*q3, 0.5f - q1*q1 - q2*q2);
 	pitch = asinf(-2.0f * (q1*q3 - q0*q2));
@@ -315,27 +315,27 @@ void Madgwick::computeAngles()
 
 // Getters ----------------------------------------------------------------------------------------
 
-double Madgwick::getW()
+double arwain::Madgwick::getW()
 {
 	return q0;
 }
 
-double Madgwick::getX()
+double arwain::Madgwick::getX()
 {
 	return q1;
 }
 
-double Madgwick::getY()
+double arwain::Madgwick::getY()
 {
 	return q2;
 }
 
-double Madgwick::getZ()
+double arwain::Madgwick::getZ()
 {
 	return q3;
 }
 
-double Madgwick::getRoll()
+double arwain::Madgwick::getRoll()
 {
 	if (!anglesComputed)
 	{
@@ -344,7 +344,7 @@ double Madgwick::getRoll()
 	return roll * 57.29578f;
 }
 
-double Madgwick::getPitch()
+double arwain::Madgwick::getPitch()
 {
 	if (!anglesComputed)
 	{
@@ -353,7 +353,7 @@ double Madgwick::getPitch()
 	return pitch * 57.29578f;
 }
 
-double Madgwick::getYaw()
+double arwain::Madgwick::getYaw()
 {
 	if (!anglesComputed)
 	{
@@ -362,7 +362,7 @@ double Madgwick::getYaw()
 	return yaw * 57.29578f + 180.0f;
 }
 
-double Madgwick::getRollRadians()
+double arwain::Madgwick::getRollRadians()
 {
 	if (!anglesComputed)
 	{
@@ -371,7 +371,7 @@ double Madgwick::getRollRadians()
 	return roll;
 }
 
-double Madgwick::getPitchRadians()
+double arwain::Madgwick::getPitchRadians()
 {
 	if (!anglesComputed)
 	{
@@ -380,7 +380,7 @@ double Madgwick::getPitchRadians()
 	return pitch;
 }
 
-double Madgwick::getYawRadians()
+double arwain::Madgwick::getYawRadians()
 {
 	if (!anglesComputed)
 	{
