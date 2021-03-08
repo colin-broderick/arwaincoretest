@@ -59,7 +59,7 @@ class StanceDetector
         int m_climbing = 0;
 
         // Fall/entanglment thresholding parameters.
-        double m_fall_threshold;
+        double m_freefall_sensitivity;
         double m_struggle_threshold;
         double m_gravity;
         double m_a_twitch;
@@ -91,7 +91,7 @@ class StanceDetector
     
     public:
         // Constructors.
-        StanceDetector(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
+        StanceDetector(double freefall_sensitivity, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
 
         // General methods.
         void run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data);

@@ -30,7 +30,8 @@ class quaternion
         double w, x, y, z;
 
         // Constructors.
-        quaternion(double real=0, double im_i=0, double im_j=0, double im_k=0);
+        quaternion();
+        quaternion(double real, double im_i, double im_j, double im_k);
         quaternion(const vector3 &vec);
         
         // Operators.

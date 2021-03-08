@@ -14,15 +14,15 @@
 // Constructors -----------------------------------------------------------------------------------
 
 /** \brief Constructor for the stance class.
- * \param fall_threshold Acceleration magnitude below which a fall event is detected.
+ * \param freefall_sensitivity Acceleration magnitude below which a fall event is detected.
  * \param crawling_threshold Speed below which, if horizontal, stance is detected as crawling.
  * \param running_threshold Speed above which, if vertical, stance is detected as running.
  * \param walking_threshold Speed above which, if vertical, stance is detected as walking.
  * \param active_threshold Value of the internal activity metric above which an entanglement event is detected.
  */
-StanceDetector::StanceDetector(double fall_threshold, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold)
+StanceDetector::StanceDetector(double freefall_sensitivity, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold)
 {
-    m_fall_threshold = fall_threshold;
+    m_freefall_sensitivity = freefall_sensitivity;
     m_crawling_threshold = crawling_threshold;
     m_running_threshold = running_threshold;
     m_walking_threshold = walking_threshold;
@@ -96,7 +96,7 @@ void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, cons
     m_stance_lock.unlock();
 
     // Detect falling.
-    if (m_a_mean_magnitude < m_fall_threshold)
+    if (m_a_mean_magnitude < m_freefall_sensitivity)
     {
         m_fall_lock.lock();
         m_falling = Falling;
@@ -119,7 +119,7 @@ void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, cons
     // Vertical and moderate speed => walking
     // Vertical and high speed => running
     m_stance_lock.lock();
-    if (m_attitude)
+    if (m_attitude == Horizontal)
     {
         if (m_v_mean_magnitude < m_crawling_threshold)
         {
@@ -130,7 +130,7 @@ void StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, cons
             m_stance = Crawling;
         }
     }
-    else if (!m_attitude)
+    else if (m_attitude == Vertical)
     {
         if (m_v_mean_magnitude < m_walking_threshold)
         {

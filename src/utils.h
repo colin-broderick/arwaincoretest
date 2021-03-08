@@ -34,6 +34,28 @@ struct Status {
     StanceDetector::FALLING falling;
 };
 
+/** \brief Configuration struct for whole programme.
+ * \param active_threshold Heuristic parameter used to distinguish types of motion at similar speeds. NOT YET WELL DEFINED.
+ * \param walking_threshold Velocity while vertical above which a subject is inferred to be walking.
+ * \param running_threshold  Velocity while vertical above which a subject is inferred to be running.
+ * \param crawling_threshold Velocity while horizontal above which a subject is inferred to be crawling.
+ * \param climbing_threshold Vertical velocity above which the activity is inferred to be climbing.
+ * \param gravity Magnitude of local gravity, e.g. 9.81.
+ * \param struggle_threshold Heuristic parameter used to determine when a subject may be in distress. NOT YET WELL DEFINED.
+ * \param freefall_sensitivity The acceleration magnitude below which a freefall event will be triggered.
+ * \param accel_bias Biases in accelerometer measurements, subtracted from readings before processing.
+ * \param gyro_bias Biases in gyroscope measurements, subtracted from readings before processing.
+ * \param mag_bias Biases in magnetometer measurements, subtracted from readings before processing.
+ * \param mag_scale Magnetometer scale factor, multipled by readings before processing.
+ * \param use_magnetometer Whether to use the magnetometer for orientation filtering.
+ * \param log_magnetometer Whether to take and log magnetometer readings.
+ * \param npu_vel_weight_confidence Relative confidence in NPU vs. IMU integration for velocity predictions, 1 being 100% NPU, 0 being 100% integration.
+ * \param madgwick_beta Madgwick filter gain parameter.
+ * \param efaroe_beta EFAROE filter gain parameter.
+ * \param efaroe_zeta EFAROE filter gain parameter.
+ * \param use_indoor_positioning_system Whether to use IPS for stair and floor snapping.
+ * \param orientation_filter Which orientation filter to use out of options [efaroe, madgwick].
+ */
 struct Configuration {
     double active_threshold;
     double walking_threshold;
@@ -42,7 +64,7 @@ struct Configuration {
     double climbing_threshold;
     double gravity;
     double struggle_threshold;
-    double fall_threshold;
+    double freefall_sensitivity;
     vector3 accel_bias;
     vector3 gyro_bias;
     vector3 mag_bias;
