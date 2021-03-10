@@ -55,7 +55,7 @@ mbed-os
 BUILD
 mbed-os.lib
 data_*
-build
+build/*
 .vscode/
 html/
 latex/
@@ -67,3 +67,10 @@ asdf.png
 plt.py
 xyz*
 arwain copy.conf
+CMakeFiles
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+lib/liblorapi.a
+lib/libarwain_torch.so
+
