@@ -432,9 +432,9 @@ void transmit_lora()
         position[0] = 1.264;
         position[1] = 0.168;
         position[2] = -1.675;
-        FLOAT16 x16{position[0]};
-        FLOAT16 y16{position[1]};
-        FLOAT16 z16{position[2]};
+        FLOAT16 x16 = (FLOAT16)position[0];
+        FLOAT16 y16 = (FLOAT16)position[1];
+        FLOAT16 z16 = (FLOAT16)position[2];
 
         // TODO Build packet for transmission.
         char message[8];
@@ -455,12 +455,13 @@ void transmit_lora()
         lora.transmitPacket(&packet);
 
         // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
+        // TODO: Currently logging binary nonsense. Fix.
         if (LOG_TO_FILE)
         {
             lora_file << time.time_since_epoch().count() << " " << message << "\n";
         }
         
-        std::cout << "LoRa transmitted: " << message << std::endl;
+        // std::cout << "LoRa transmitted: " << message << std::endl;
 
         // Wait until next tick
         time = time + interval;
