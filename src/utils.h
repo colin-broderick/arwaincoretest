@@ -15,6 +15,7 @@
 
 #include "vector3.h"
 #include "stance.h"
+#include "lora.h"
 
 namespace arwain
 {
@@ -39,6 +40,14 @@ namespace arwain
      * \param efaroe_zeta EFAROE filter gain parameter.
      * \param use_indoor_positioning_system Whether to use IPS for stair and floor snapping.
      * \param orientation_filter Which orientation filter to use out of options [efaroe, madgwick].
+     * \param lora_rf_frequency Frequency in MHz of the LoRa radio.
+     * \param lora_packet_frequency Times per second to transmit LoRa packet.
+     * \param lora_tx_power LoRa transmission power.
+     * \param lora_spread_factor LoRa spread factor.
+     * \param lora_bandwidth LoRa bandwidth.
+     * \param lora_coding_rate LoRa coding rate.
+     * \param lora_sync_word LoRa sync word.
+     * \param lora_header_mode LoRa header mode, implicit or explicit.
      */
     struct Configuration {
         double active_threshold;
@@ -61,6 +70,15 @@ namespace arwain
         double efaroe_zeta;
         int use_indoor_positioning_system;
         std::string orientation_filter;
+        LoRa::freq_t lora_rf_frequency;
+        int lora_packet_frequency;
+        int lora_tx_power;
+        LoRa::sf_t lora_spread_factor;
+        LoRa::bw_t lora_bandwidth;
+        LoRa::cr_t lora_coding_rate;
+        int lora_sync_word;
+        LoRa::hm_t lora_header_mode;
+        int lora_enable_crc;
     };
 
     /** \brief Overwrite the content of a configuration file.
@@ -117,5 +135,7 @@ typedef struct euler_orientation_t
 } euler_orientation_t;
 
 void set_thread_priority(std::thread &thread, int priority);
+
+void serialize_uint64(uint64_t value, char *buffer);
 
 #endif

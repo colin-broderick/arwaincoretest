@@ -172,6 +172,55 @@ arwain::Configuration arwain::get_configuration(const std::string &filename)
     stringstream(options["madgwick_beta"]) >> cf.madgwick_beta;
     stringstream(options["use_indoor_positioning_system"]) >> cf.use_indoor_positioning_system;
     stringstream(options["orientation_filter"]) >> cf.orientation_filter;
+    
+    // Apply LoRa settings
+    stringstream(options["lora_tx_power"]) >> cf.lora_tx_power;
+    stringstream(options["lora_packet_frequency"]) >> cf.lora_packet_frequency;
+
+    // TODO Support other frequencies?
+    if (options["lora_rf_frequency"] == "433")
+    {
+        cf.lora_rf_frequency = LoRa::FREQ_433;
+    }
+    else if (options["lora_rf_frequency"] == "868")
+    {
+        cf.lora_rf_frequency = LoRa::FREQ_868;
+    }
+    else if (options["lora_rf_frequency"] == "915")
+    {
+        cf.lora_rf_frequency = LoRa::FREQ_915;
+    }
+
+    // TODO Add the other spread factors.
+    if (options["lora_spread_factor"] == "12")
+    {
+        cf.lora_spread_factor = LoRa::SF_12;
+    }
+
+    // TODO Add the other bandwidths.
+    if (options["lora_bandwidth"] == "125")
+    {
+        cf.lora_bandwidth = LoRa::BW_125k;
+    }
+
+    // TODO Add the other coding rates.
+    if (options["lora_coding_rate"] == "48")
+    {
+        cf.lora_coding_rate = LoRa::CR_48;
+    }
+
+    if (options["lora_header_mode"] == "explicit")
+    {
+        cf.lora_header_mode = LoRa::HM_EXPLICIT;
+    }
+    else
+    {
+        cf.lora_header_mode = LoRa::HM_IMPLICIT;
+    }
+
+    stringstream(options["lora_sync_word"]) >> cf.lora_sync_word;
+    stringstream(options["lora_enable_crc"]) >> cf.lora_enable_crc;
+
     return cf;
 }
 

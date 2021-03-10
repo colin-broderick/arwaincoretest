@@ -60,12 +60,16 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "bin_log.h"
 #include "indoor_positioning_wrapper.h"
 #include "filter.h"
+
+#include "lora.h"
+#include "packet.h"
+#include "half.h"
 // #include "rknn_api.h"
 
 // Time intervals, all in milliseconds.
 static unsigned int IMU_READING_INTERVAL = 5;
 static unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
-static unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
+static unsigned int LORA_TRANSMISSION_INTERVAL = 500;
 static unsigned int STANCE_DETECTION_INTERVAL = 1000;
 static unsigned int INDOOR_POSITIONING_INTERVAL = 50;
 
@@ -88,6 +92,7 @@ std::string CONFIG_FILE = "./arwain.conf";
 int LOG_TO_STDOUT = 0;
 int LOG_TO_FILE = 0;
 int NO_INFERENCE = 0;
+int NO_IMU = 0;
 
 // Name for data folder
 static std::string FOLDER_DATE_STRING;
@@ -173,6 +178,12 @@ void std_output()
  */
 void imu_reader()
 {
+    // Quit immediately if IMU not enabled.
+    if (NO_IMU)
+    {
+        return;
+    }
+
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Filter* filter;
     if (CONFIG.orientation_filter == "efaroe")
@@ -363,17 +374,46 @@ void imu_reader()
  */
 void transmit_lora()
 {
-    // TODO: Set up radio.
-    
+    // TEST: Set up radio.
+    int SPI_CHANNEL = 1;
+    int CS_PIN = 26;
+    int DIO0_PIN = 15;
+    int RESET_PIN = 22;
+    LoRa lora(SPI_CHANNEL, CS_PIN, DIO0_PIN, RESET_PIN);
+    if (lora.begin())
+    {
+        std::cout << "LoRa started successfully\n";
+        lora.setFrequency(CONFIG.lora_rf_frequency);
+        lora.setTXPower(CONFIG.lora_tx_power);
+        lora.setSpreadFactor(CONFIG.lora_spread_factor);
+        lora.setBandwidth(CONFIG.lora_bandwidth);
+        lora.setCodingRate(CONFIG.lora_coding_rate);
+        lora.setSyncWord(0x12);
+        lora.setHeaderMode(CONFIG.lora_header_mode);
+        if (CONFIG.lora_enable_crc)
+        {
+            lora.enableCRC();
+        }
+    }
 
+    // TEST Check the radio is set up correctly.
+    // std::cout << lora.getTXPower() << "\n";
+    // printf("%d\n", lora.getTXPower());
+    // std::cout << lora.getFrequency() << "\n";
+    // std::cout << lora.getSpreadFactor() << "\n";
+    // std::cout << lora.getBandwidth() << "\n";
+    // std::cout << lora.getCodingRate() + 4 << "\n";
+    // // std::cout << lora.getSyncWord() << "\n";
+    // printf("%d\n", lora.getSyncWord());
+    // std::cout << lora.getHeaderMode() << std::endl;
+
+    std::ofstream lora_file;
+    std::array<double, 3> position;
+    // unsigned int status;
+    
     // Set up timing.
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval(LORA_TRANSMISSION_INTERVAL);
-
-    std::ofstream lora_file;
-
-    std::array<double, 3> position;
-    unsigned int status;
 
     // Open file handles for data logging.
     if (LOG_TO_FILE)
@@ -385,33 +425,43 @@ void transmit_lora()
     while (!SHUTDOWN)
     {
         // TODO: Read all relevant data, respecting mutex locks.
-        // Get positions as uint16
+        // Get positions as float16.
         POSITION_BUFFER_LOCK.lock();
         position = POSITION_BUFFER.back();
         POSITION_BUFFER_LOCK.unlock();
-        uint64_t x = (uint64_t)position[0];
-        uint64_t y = (uint64_t)position[1];
-        uint64_t z = (uint64_t)position[2];
+        position[0] = 1.264;
+        position[1] = 0.168;
+        position[2] = -1.675;
+        FLOAT16 x16{position[0]};
+        FLOAT16 y16{position[1]};
+        FLOAT16 z16{position[2]};
 
-        // Get current status flags.
-        STATUS_FLAG_LOCK.lock();
-        status = (uint64_t)STATUS_FLAGS;
-        STATUS_FLAG_LOCK.unlock();
+        // TODO Build packet for transmission.
+        char message[8];
 
-        // Build packet for transmission.
-        uint64_t packet = (x << 48) | (y << 32) | (z << 16) | (status);
-    
-        // TODO: Send transmission.
-        // std::cout << packet << "\n";
+        // Copy the float16 values into the buffer.
+        memcpy(message, &(x16.m_uiFormat), sizeof(x16.m_uiFormat));
+        memcpy(message + 2, &(y16.m_uiFormat), sizeof(x16.m_uiFormat));
+        memcpy(message + 4, &(z16.m_uiFormat), sizeof(x16.m_uiFormat));
 
-        // TODO: Maybe a read loop?
+        // This block tested recovery of the float.
+        // FLOAT16 f;
+        // memcpy(&(f.m_uiFormat), message, 2);
+        // float g = FLOAT16::ToFloat32(f);
+        // std::cout << g << std::endl;
+
+        // Send transmission.
+        LoRaPacket packet{(unsigned char *)message, strlen(message)};
+        lora.transmitPacket(&packet);
 
         // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
         if (LOG_TO_FILE)
         {
-            lora_file << time.time_since_epoch().count() << " " << packet << "\n";
+            lora_file << time.time_since_epoch().count() << " " << message << "\n";
         }
         
+        std::cout << "LoRa transmitted: " << message << std::endl;
+
         // Wait until next tick
         time = time + interval;
         std::this_thread::sleep_until(time);
@@ -866,6 +916,7 @@ int main(int argc, char **argv)
         std::cout << "  -conf        Specify alternate configuration file\n";
         std::cout << "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n";
         std::cout << "  -noinf       Do not do velocity inference\n";
+        std::cout << "  -noimu       Do not turn on the IMU - for testing\n";
         std::cout << "  -h           Show this help text\n";
         std::cout << "\n";
         std::cout << "Example usage:\n";
@@ -890,6 +941,10 @@ int main(int argc, char **argv)
     if (input.contains("-noinf"))
     {
         NO_INFERENCE = 1;
+    }
+    if (input.contains("-noimu"))
+    {
+        NO_IMU = 1;
     }
     if (input.contains("-lfile"))
     {
@@ -934,10 +989,13 @@ int main(int argc, char **argv)
     }
 
     // Initialize the IMU.
-    if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
+    if (!NO_IMU)
     {
-        std::cout << "IMU failed to start" << "\n";
-        return -1;
+        if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
+        {
+            std::cout << "IMU failed to start" << "\n";
+            return -1;
+        }
     }
 
     // Start threads.
