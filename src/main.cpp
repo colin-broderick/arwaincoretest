@@ -444,7 +444,7 @@ void transmit_lora()
         memcpy(message + 2, &(y16.m_uiFormat), sizeof(x16.m_uiFormat));
         memcpy(message + 4, &(z16.m_uiFormat), sizeof(x16.m_uiFormat));
 
-        // This block tested recovery of the float.
+        // This block tests recovery of the float.
         // FLOAT16 f;
         // memcpy(&(f.m_uiFormat), message, 2);
         // float g = FLOAT16::ToFloat32(f);

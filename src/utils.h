@@ -136,6 +136,4 @@ typedef struct euler_orientation_t
 
 void set_thread_priority(std::thread &thread, int priority);
 
-void serialize_uint64(uint64_t value, char *buffer);
-
 #endif
