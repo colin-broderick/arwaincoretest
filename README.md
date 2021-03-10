@@ -8,13 +8,19 @@ It is almost feature-complete but no features have been formally tested. Missing
 
 1. NPU inference, though NCS2 and RKNN inference is partially written. Inference can also be done by Python NCS2 with data communicated between this software and the Python script via socket.
 
-2. LoRa communication.
+2. LoRa communication. Tranmission is implemented using an SX127x but not fully developed and not fully tested.
 
 ## Build
+
+### Requirements
+torch - consult pytorch.org to get the correct install command.
+
+### Building
 To build for the Raspberry Pi or similar ARM architectures:
 ```
-mkdir build
-make
+mkdir build lib
+cmake .
+make -j4
 ```
 
 ## Run
@@ -26,10 +32,10 @@ For other options run
 ```
 ./build/arwain -h
 ```
-Code currently assumes running from the repository's root directory, so you'll need to specify `-conf` if you run from elsewhere.
+Code currently assumes running from the repository's root directory, so you'll need to specify `-conf` if you run from elsewhere. While testing I'd recommend running with `-noinf` for now since it will use a lot of CPU time.
 
 ## Visualisation
-A simply Python visualisation script is included, to aid in testing and development of orientation filters. VPython is required. This will track orientation, and also position if inference is running.
+A simply Python visualisation script is included, to aid in testing and development of orientation filters. VPython is required. This will track orientation, and also position if inference is running. It fails half the time but I'm 99.9% sure it's a vpython bug, and nothing to do with arwain.
 ```
 pip3 install vpython
 ```
