@@ -174,3 +174,13 @@ arwain::Configuration arwain::get_configuration(const std::string &filename)
     stringstream(options["orientation_filter"]) >> cf.orientation_filter;
     return cf;
 }
+
+void set_thread_priority(std::thread &thread, int priority)
+{
+    sched_param sched_params;
+    sched_params.sched_priority = priority;
+    if (pthread_setschedparam(thread.native_handle(), SCHED_RR, &sched_params))
+    {
+        std::cerr << "Failed to set thread scheduling\n";
+    }
+}

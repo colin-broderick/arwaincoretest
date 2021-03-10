@@ -364,6 +364,7 @@ void imu_reader()
 void transmit_lora()
 {
     // TODO: Set up radio.
+    
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
@@ -839,6 +840,8 @@ void stance_detector()
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
+
+    // TODO Close files
 }
 
 /** \brief Main loop.
@@ -944,6 +947,8 @@ int main(int argc, char **argv)
     std::thread transmit_lora_thread(transmit_lora);
     std::thread std_output_thread(std_output);
     std::thread indoor_positioning_thread(indoor_positioning);
+
+    set_thread_priority(imu_reader_thread, 1);
 
     // Wait for all threads to terminate.
     imu_reader_thread.join();
