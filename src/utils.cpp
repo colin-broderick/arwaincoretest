@@ -177,46 +177,79 @@ arwain::Configuration arwain::get_configuration(const std::string &filename)
     stringstream(options["lora_tx_power"]) >> cf.lora_tx_power;
     stringstream(options["lora_packet_frequency"]) >> cf.lora_packet_frequency;
 
-    // TODO Support other frequencies?
-    if (options["lora_rf_frequency"] == "433")
-    {
+    // Apply LoRa radio frequency setting with default 868 MHz.
+    std::string rf = options["lora_rf_frequency"];
+    if (rf == "433")
         cf.lora_rf_frequency = LoRa::FREQ_433;
-    }
-    else if (options["lora_rf_frequency"] == "868")
-    {
+    else if (rf == "868")
         cf.lora_rf_frequency = LoRa::FREQ_868;
-    }
-    else if (options["lora_rf_frequency"] == "915")
-    {
+    else if (rf == "915")
         cf.lora_rf_frequency = LoRa::FREQ_915;
-    }
-
-    // TODO Add the other spread factors.
-    if (options["lora_spread_factor"] == "12")
-    {
-        cf.lora_spread_factor = LoRa::SF_12;
-    }
-
-    // TODO Add the other bandwidths.
-    if (options["lora_bandwidth"] == "125")
-    {
-        cf.lora_bandwidth = LoRa::BW_125k;
-    }
-
-    // TODO Add the other coding rates.
-    if (options["lora_coding_rate"] == "48")
-    {
-        cf.lora_coding_rate = LoRa::CR_48;
-    }
-
-    if (options["lora_header_mode"] == "explicit")
-    {
-        cf.lora_header_mode = LoRa::HM_EXPLICIT;
-    }
     else
-    {
+        cf.lora_rf_frequency = LoRa::FREQ_868;
+
+    // Apply LoRa spread factor setting with default 12.
+    std::string spreadfactor = options["lora_spread_factor"];
+    if (spreadfactor == "6")
+        cf.lora_spread_factor = LoRa::SF_6;
+    else if (spreadfactor == "7")
+        cf.lora_spread_factor = LoRa::SF_6;
+    else if (spreadfactor == "8")
+        cf.lora_spread_factor = LoRa::SF_7;
+    else if (spreadfactor == "9")
+        cf.lora_spread_factor = LoRa::SF_8;
+    else if (spreadfactor == "10")
+        cf.lora_spread_factor = LoRa::SF_9;
+    else if (spreadfactor == "11")
+        cf.lora_spread_factor = LoRa::SF_10;
+    else if (spreadfactor == "12")
+        cf.lora_spread_factor = LoRa::SF_11;
+    else
+        cf.lora_spread_factor = LoRa::SF_12;    
+
+    // Apply LoRa bandwidth setting with default 125k.
+    std::string bandwidth = options["lora_bandwidth"];
+    if (bandwidth == "7.8")
+        cf.lora_bandwidth = LoRa::BW_7k8;
+    else if (bandwidth == "10.4")
+        cf.lora_bandwidth = LoRa::BW_10k4;
+    else if (bandwidth == "15.6")
+        cf.lora_bandwidth = LoRa::BW_15k6;
+    else if (bandwidth == "20.8")
+        cf.lora_bandwidth = LoRa::BW_20k8;
+    else if (bandwidth == "31.25")
+        cf.lora_bandwidth = LoRa::BW_31k25;
+    else if (bandwidth == "41.7")
+        cf.lora_bandwidth = LoRa::BW_41k7;
+    else if (bandwidth == "62.5")
+        cf.lora_bandwidth = LoRa::BW_62k5;
+    else if (bandwidth == "125")
+        cf.lora_bandwidth = LoRa::BW_125k;
+    else if (bandwidth == "250")
+        cf.lora_bandwidth = LoRa::BW_250k;
+    else if (bandwidth == "500")
+        cf.lora_bandwidth = LoRa::BW_500k;
+    else
+        cf.lora_bandwidth = LoRa::BW_125k;
+
+    // Apply LoRa coding rate with default 48.
+    std::string codingrate = options["lora_coding_rate"];
+    if (codingrate == "45")
+        cf.lora_coding_rate = LoRa::CR_45;
+    else if (codingrate == "46")
+        cf.lora_coding_rate = LoRa::CR_46;
+    else if (codingrate == "47")
+        cf.lora_coding_rate = LoRa::CR_47;
+    else if (codingrate == "48")
+        cf.lora_coding_rate = LoRa::CR_48;
+    else
+        cf.lora_coding_rate = LoRa::CR_48;
+
+    // Apply LoRa header mode with implicit as default.
+    if (options["lora_header_mode"] == "explicit")
+        cf.lora_header_mode = LoRa::HM_EXPLICIT;
+    else
         cf.lora_header_mode = LoRa::HM_IMPLICIT;
-    }
 
     stringstream(options["lora_sync_word"]) >> cf.lora_sync_word;
     stringstream(options["lora_enable_crc"]) >> cf.lora_enable_crc;
