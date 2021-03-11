@@ -80,6 +80,7 @@ static unsigned int VELOCITY_BUFFER_LEN = 200;
 static unsigned int ORIENTATION_BUFFER_LEN = 200;
 static unsigned int IMU_BUFFER_LEN = 200;
 static unsigned int IPS_BUFFER_LEN = 50;
+static unsigned int LORA_MESSAGE_LENGTH = 8;
 
 // Globally accessible configuration and status.
 static arwain::Configuration CONFIG;
@@ -374,26 +375,31 @@ void imu_reader()
  */
 void transmit_lora()
 {
-    // TEST: Set up radio.
+    // Turn on the LoRa radio and quit if it fails.
     int SPI_CHANNEL = 1;
     int CS_PIN = 26;
     int DIO0_PIN = 15;
     int RESET_PIN = 22;
     LoRa lora(SPI_CHANNEL, CS_PIN, DIO0_PIN, RESET_PIN);
-    if (lora.begin())
+    if (!lora.begin())
     {
-        std::cout << "LoRa started successfully\n";
-        lora.setFrequency(CONFIG.lora_rf_frequency);
-        lora.setTXPower(CONFIG.lora_tx_power);
-        lora.setSpreadFactor(CONFIG.lora_spread_factor);
-        lora.setBandwidth(CONFIG.lora_bandwidth);
-        lora.setCodingRate(CONFIG.lora_coding_rate);
-        lora.setSyncWord(0x12);
-        lora.setHeaderMode(CONFIG.lora_header_mode);
-        if (CONFIG.lora_enable_crc)
-        {
-            lora.enableCRC();
-        }
+        std::cout << "LoRa radio failed to start" << std::endl;
+        SHUTDOWN = 1;
+        return;
+    }
+
+    // Configura LoRa radio.
+    std::cout << "LoRa radio started successfully" << std::endl;
+    lora.setFrequency(CONFIG.lora_rf_frequency);
+    lora.setTXPower(CONFIG.lora_tx_power);
+    lora.setSpreadFactor(CONFIG.lora_spread_factor);
+    lora.setBandwidth(CONFIG.lora_bandwidth);
+    lora.setCodingRate(CONFIG.lora_coding_rate);
+    lora.setSyncWord(0x12);
+    lora.setHeaderMode(CONFIG.lora_header_mode);
+    if (CONFIG.lora_enable_crc)
+    {
+        lora.enableCRC();
     }
 
     // TEST Check the radio is set up correctly.
@@ -407,10 +413,12 @@ void transmit_lora()
     // printf("%d\n", lora.getSyncWord());
     // std::cout << lora.getHeaderMode() << std::endl;
 
+    // Local buffers.
     std::ofstream lora_file;
     std::array<double, 3> position;
-    // unsigned int status;
-    
+    uint16_t alerts;
+    FLOAT16 x16, y16, z16;
+
     // Set up timing.
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval(LORA_TRANSMISSION_INTERVAL);
@@ -424,7 +432,6 @@ void transmit_lora()
 
     while (!SHUTDOWN)
     {
-        // TODO: Read all relevant data, respecting mutex locks.
         // Get positions as float16.
         POSITION_BUFFER_LOCK.lock();
         position = POSITION_BUFFER.back();
@@ -432,17 +439,28 @@ void transmit_lora()
         position[0] = 1.264;
         position[1] = 0.168;
         position[2] = -1.675;
-        FLOAT16 x16 = (FLOAT16)position[0];
-        FLOAT16 y16 = (FLOAT16)position[1];
-        FLOAT16 z16 = (FLOAT16)position[2];
+        x16 = (FLOAT16)position[0];
+        y16 = (FLOAT16)position[1];
+        z16 = (FLOAT16)position[2];
 
+        // Create alerts flags.
+        alerts = 0;
+        alerts |= STATUS.falling;
+        alerts |= (STATUS.entangled << 1) ;
+        alerts |= (STATUS.current_stance << 2);
+
+        // Reset critical status flags now they have been read.
+        STATUS.falling = arwain::StanceDetector::NotFalling;
+        STATUS.entangled = arwain::StanceDetector::NotEntangled;
+        
         // TODO Build packet for transmission.
-        char message[8];
+        char message[LORA_MESSAGE_LENGTH];
 
-        // Copy the float16 values into the buffer.
+        // Copy the float16 position values and the alert flags into the buffer.
         memcpy(message, &(x16.m_uiFormat), sizeof(x16.m_uiFormat));
         memcpy(message + 2, &(y16.m_uiFormat), sizeof(x16.m_uiFormat));
         memcpy(message + 4, &(z16.m_uiFormat), sizeof(x16.m_uiFormat));
+        memcpy(message + 6, &alerts, sizeof(alerts));
 
         // This block tests recovery of the float.
         // FLOAT16 f;
@@ -451,7 +469,7 @@ void transmit_lora()
         // std::cout << g << std::endl;
 
         // Send transmission.
-        LoRaPacket packet{(unsigned char *)message, strlen(message)};
+        LoRaPacket packet{(unsigned char *)message, LORA_MESSAGE_LENGTH};
         lora.transmitPacket(&packet);
 
         // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
@@ -461,8 +479,6 @@ void transmit_lora()
             lora_file << time.time_since_epoch().count() << " " << message << "\n";
         }
         
-        // std::cout << "LoRa transmitted: " << message << std::endl;
-
         // Wait until next tick
         time = time + interval;
         std::this_thread::sleep_until(time);
@@ -873,11 +889,11 @@ void stance_detector()
         vel_data = VELOCITY_BUFFER;
         VELOCITY_BUFFER_LOCK.unlock();
 
-        // Update stance detector and get output.
+        // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
         stance.run(imu_data, vel_data);
         STATUS.current_stance = stance.getStance();
-        STATUS.falling = stance.getFallingStatus();
-        STATUS.entangled = stance.getEntangledStatus();
+        STATUS.falling = STATUS.falling | stance.getFallingStatus();
+        STATUS.entangled = STATUS.entangled | stance.getEntangledStatus();
         STATUS.attitude = stance.getAttitude();
 
         // Log to file.
@@ -892,7 +908,12 @@ void stance_detector()
         std::this_thread::sleep_until(time);
     }
 
-    // TODO Close files
+    // Close files
+    if (LOG_TO_FILE)
+    {
+        freefall_file.close();
+        stance_file.close();
+    }
 }
 
 /** \brief Main loop.
