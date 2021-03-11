@@ -65,7 +65,6 @@ log.txt
 *.o
 asdf.png
 plt.py
-xyz*
 arwain copy.conf
 CMakeFiles
 CMakeCache.txt
