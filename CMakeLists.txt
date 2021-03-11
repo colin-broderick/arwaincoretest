@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13.4)
 
 project(arwain)
 
+set(Torch_DIR ~/.local/lib/python3.7/site-packages/torch/share/cmake/Torch)
+
 include_directories(arwain_torch lora_driver)
 link_directories(lib)
 
