@@ -69,7 +69,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 // Time intervals, all in milliseconds.
 static unsigned int IMU_READING_INTERVAL = 5;
 static unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
-static unsigned int LORA_TRANSMISSION_INTERVAL = 500;
+static unsigned int LORA_TRANSMISSION_INTERVAL = 10;
 static unsigned int STANCE_DETECTION_INTERVAL = 1000;
 static unsigned int INDOOR_POSITIONING_INTERVAL = 50;
 
@@ -391,7 +391,7 @@ void transmit_lora()
     // Configura LoRa radio.
     std::cout << "LoRa radio started successfully" << std::endl;
     lora.setFrequency(CONFIG.lora_rf_frequency);
-    lora.setTXPower(CONFIG.lora_tx_power);
+    lora.setTXPower(23);
     lora.setSpreadFactor(CONFIG.lora_spread_factor);
     lora.setBandwidth(CONFIG.lora_bandwidth);
     lora.setCodingRate(CONFIG.lora_coding_rate);
