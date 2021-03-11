@@ -16,11 +16,11 @@ int main()
     }
     lora.setFrequency(LoRa::FREQ_868)
         ->setTXPower(17)
-        ->setSpreadFactor(LoRa::SF_7)
-        ->setBandwidth(LoRa::BW_500k)
-        ->setCodingRate(LoRa::CR_45)
+        ->setSpreadFactor(LoRa::SF_12)
+        ->setBandwidth(LoRa::BW_125k)
+        ->setCodingRate(LoRa::CR_48)
         ->setSyncWord(0x12)
-        ->setHeaderMode(LoRa::HM_IMPLICIT)
+        ->setHeaderMode(LoRa::HM_EXPLICIT)
         ->enableCRC();
     while (true)
     {
@@ -30,6 +30,6 @@ int main()
         printf("  RSSI    : %d dBm\n", p.getPacketRSSI());
         printf("  SNR     : %.1f dB\n", p.getSNR());
         printf("  Freq err: %d Hz\n", p.getFreqErr());
-        printf("  Payload : \n%s\n", p.getPayload());
+        printf("  Payload : \n%c\n", (unsigned char)p.getPayload()[5]);
     }
 }
