@@ -14,10 +14,10 @@ namespace arwain
         public:
             enum STANCE {
                 Inactive,
-                Crawling,
                 Walking,
-                Running,
                 Searching,
+                Crawling,
+                Running,
                 Climbing
             };
             enum FALLING {
@@ -105,5 +105,8 @@ namespace arwain
             FALLING getFallingStatus();
     };
 }
+
+arwain::StanceDetector::FALLING operator|(const arwain::StanceDetector::FALLING &stance1, const arwain::StanceDetector::FALLING &stance2);
+arwain::StanceDetector::ENTANGLED operator|(const arwain::StanceDetector::ENTANGLED &stance1, const arwain::StanceDetector::ENTANGLED &stance2);
 
 #endif

@@ -372,3 +372,35 @@ arwain::StanceDetector::FALLING arwain::StanceDetector::getFallingStatus()
     m_fall_lock.unlock();
     return ret;
 }
+
+/** \brief If either value indicates Falling status, return Falling status.
+ * \param stance1 One of the stances to compare.
+ * \param stance2 The other stance to compare.
+ */
+arwain::StanceDetector::FALLING operator|(const arwain::StanceDetector::FALLING &stance1, const arwain::StanceDetector::FALLING &stance2)
+{
+    if (stance1 == arwain::StanceDetector::Falling || stance2 == arwain::StanceDetector::Falling)
+    {
+        return arwain::StanceDetector::Falling;
+    }
+    else
+    {
+        return arwain::StanceDetector::NotFalling;
+    }
+}
+
+/** \brief If either value indicates Entangled status, return Entangled status.
+ * \param stance1 One of the stances to compare.
+ * \param stance2 The other stance to compare.
+ */
+arwain::StanceDetector::ENTANGLED operator|(const arwain::StanceDetector::ENTANGLED &stance1, const arwain::StanceDetector::ENTANGLED &stance2)
+{
+    if (stance1 == arwain::StanceDetector::Entangled || stance2 == arwain::StanceDetector::Entangled)
+    {
+        return arwain::StanceDetector::Entangled;
+    }
+    else
+    {
+        return arwain::StanceDetector::NotEntangled;
+    }
+}
