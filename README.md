@@ -16,7 +16,7 @@ It is almost feature-complete but no features have been formally tested. Missing
 1. Need pytorch installed. At time of writing the following wheel will work, but you may have to source your own.
 ```
 wget https://wintics-opensource.s3.eu-west-3.amazonaws.com/torch-1.3.0a0%2Bdeadc27-cp37-cp37m-linux_armv7l.whl
-pip3 install torch-1.3.0a0%2Bdeadc27-cp37-cp37m-linux_armv7l.whl
+pip3 install torch-1.3.0a0+deadc27-cp37-cp37m-linux_armv7l.whl
 ```
 
 2. Some apt packages:
@@ -30,7 +30,6 @@ sudo apt install i2c-tools libzmq3-dev libi2c-dev cmake
 ```
 git clone https://bitbucket.org/arwain/arwain_inference_core
 ```
-At time of writing you'll need to `git checkout lora` but that will change soon.
 
 
 ### Building
