@@ -66,6 +66,8 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "half.h"
 // #include "rknn_api.h"
 
+#define THREAD_AFFINITY_EXPERIMENT 0
+
 // Time intervals, all in milliseconds.
 static unsigned int IMU_READING_INTERVAL = 5;
 static unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
@@ -387,19 +389,22 @@ void transmit_lora()
         SHUTDOWN = 1;
         return;
     }
+    else
+    {
+        std::cout << "LoRa radio started successfully" << std::endl;
+    }
 
     // Configura LoRa radio.
-    std::cout << "LoRa radio started successfully" << std::endl;
     lora.setFrequency(CONFIG.lora_rf_frequency);
-    lora.setTXPower(23);
+    lora.setTXPower(CONFIG.lora_tx_power);
     lora.setSpreadFactor(CONFIG.lora_spread_factor);
     lora.setBandwidth(CONFIG.lora_bandwidth);
     lora.setCodingRate(CONFIG.lora_coding_rate);
-    lora.setSyncWord(0x12);
     lora.setHeaderMode(CONFIG.lora_header_mode);
+    // lora.setSyncWord(0x12);
     if (CONFIG.lora_enable_crc)
     {
-        lora.enableCRC();
+        // lora.enableCRC();
     }
 
     // TEST Check the radio is set up correctly.
@@ -417,7 +422,7 @@ void transmit_lora()
     std::ofstream lora_file;
     std::array<double, 3> position;
     uint16_t alerts;
-    FLOAT16 x16, y16, z16;
+    // FLOAT16 x16, y16, z16;
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
@@ -430,19 +435,23 @@ void transmit_lora()
         lora_file << "# time packet" << "\n";
     }
 
+    int xa = 0;
+
+    uint64_t testval = 12345678910;
     while (!SHUTDOWN)
     {
         // Get positions as float16.
         POSITION_BUFFER_LOCK.lock();
         position = POSITION_BUFFER.back();
         POSITION_BUFFER_LOCK.unlock();
-        position[0] = 1.264;
-        position[1] = 0.168;
-        position[2] = -1.675;
-        x16 = (FLOAT16)position[0];
-        y16 = (FLOAT16)position[1];
-        z16 = (FLOAT16)position[2];
-
+        // std::cout << xa << "\n";
+        position[0] = xa;
+        position[1] = 3.5;
+        position[2] = 1.5;
+        FLOAT16 x16{position[0]};
+        FLOAT16 y16{position[1]};
+        FLOAT16 z16{position[2]};
+        xa++;
         // Create alerts flags.
         alerts = 0;
         alerts |= STATUS.falling;
@@ -456,11 +465,14 @@ void transmit_lora()
         // TODO Build packet for transmission.
         char message[LORA_MESSAGE_LENGTH];
 
+
+        memcpy(message, &testval, sizeof(uint64_t));
+        testval += 1;
         // Copy the float16 position values and the alert flags into the buffer.
-        memcpy(message, &(x16.m_uiFormat), sizeof(x16.m_uiFormat));
-        memcpy(message + 2, &(y16.m_uiFormat), sizeof(x16.m_uiFormat));
-        memcpy(message + 4, &(z16.m_uiFormat), sizeof(x16.m_uiFormat));
-        memcpy(message + 6, &alerts, sizeof(alerts));
+        // memcpy(message, &(x16.m_uiFormat), sizeof(x16.m_uiFormat));
+        // memcpy(message + 2, &(y16.m_uiFormat), sizeof(x16.m_uiFormat));
+        // memcpy(message + 4, &(z16.m_uiFormat), sizeof(x16.m_uiFormat));
+        // memcpy(message + 6, &alerts, sizeof(alerts));
 
         // This block tests recovery of the float.
         // FLOAT16 f;
@@ -650,7 +662,7 @@ void predict_velocity()
         // TODO: Set up NPU and feed in model.
         // TODO: Make it possible to specify the model file path, and fail gracefully if not found.
         // Torch model{"./xyzronin_v0-5_all2D_small.pt", {1, 6, 200, 1}};
-        Torch model{"./xyzronin_v0-6.pt", {1, 6, 200}};
+        arwain::Torch model{"./xyzronin_v0-6.pt", {1, 6, 200}};
 
         // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
         std::chrono::milliseconds presleep(1000);
@@ -688,8 +700,6 @@ void predict_velocity()
             velocity_file << "# time x y z" << "\n";
             position_file << "# time x y z" << "\n";
         }
-
-        float data[1][6][200];
         
         while (!SHUTDOWN)
         {
@@ -698,11 +708,8 @@ void predict_velocity()
             imu = IMU_WORLD_BUFFER;
             IMU_BUFFER_LOCK.unlock();
 
-            // TEST Create data array that torch can understand.
-            torch_array_from_deque(data, imu);
-
             // TEST Make velocity prediction
-            std::vector<double> v = model.infer(data);
+            std::vector<double> v = model.infer(imu);
             npu_vel = {v[0], v[1], v[2]};
             
             // TEST Find the change in velocity from the last period, as predicted by the npu.
@@ -1028,7 +1035,32 @@ int main(int argc, char **argv)
     std::thread std_output_thread(std_output);
     std::thread indoor_positioning_thread(indoor_positioning);
 
-    set_thread_priority(imu_reader_thread, 1);
+    #if THREAD_AFFINITY_EXPERIMENT == 1
+    // Set the IMU thread to run on CPU0 only.
+    int rc;
+    cpu_set_t imu_cpu_set;
+    CPU_ZERO(&imu_cpu_set);
+    CPU_SET(0, &imu_cpu_set);
+    rc = pthread_setaffinity_np(imu_reader_thread.native_handle(), sizeof(cpu_set_t), &imu_cpu_set);
+    if (rc != 0)
+    {
+        std::cout << "Failed to set thread affinity for IMU\n";
+    }
+
+    // Set the inference thread to run on CPUs except that used by the IMU.
+    cpu_set_t inference_cpu_set;
+    CPU_ZERO(&inference_cpu_set);
+    std::cout << "CPUs: " << std::thread::hardware_concurrency() << "\n";
+    for (unsigned int i = 1; i < std::thread::hardware_concurrency(); i++)
+    {
+        CPU_SET(i, &inference_cpu_set);
+    }
+    rc = pthread_setaffinity_np(predict_velocity_thread.native_handle(), sizeof(cpu_set_t), &inference_cpu_set);
+    if (rc != 0)
+    {
+        std::cout << "Failed to set thread affinity for inference\n";
+    }
+    #endif
 
     // Wait for all threads to terminate.
     imu_reader_thread.join();

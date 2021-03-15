@@ -8,19 +8,40 @@
 
 #include "arwain_torch.h"
 
-Torch::Torch(std::string model_file_name)
+/** \brief Constructor
+ * \param model_file_name The file name of the torchscript model to be loaded.
+ */
+arwain::Torch::Torch(std::string model_file_name)
 {
     filename = model_file_name;
     input_size = {1, 6, 200};
 }
 
-Torch::Torch(std::string model_file_name, std::vector<int> shape)
+/** \brief Constructor with option to specify model input shape.
+ * \param model_file_name The file name of the torchscipt model to be loaded.
+ * \param shape The shape of the model input tensor.
+ */
+arwain::Torch::Torch(std::string model_file_name, std::vector<int> shape)
 {
     filename = model_file_name;
     input_size = {shape[0], shape[1], shape[2]};
 }
-    
-std::vector<double> Torch::infer(float data[1][6][200])
+
+/** \brief Do inference on a data deque, makes calling code cleaner.
+ * \param data The data deque on which to do inference
+ * \return A vector of doubles in the order x, y, z.
+ */
+std::vector<double> arwain::Torch::infer(const std::deque<std::array<double, 6>> &imu)
+{
+    this->torch_array_from_deque(data, imu);
+    return this->infer(data);
+}
+
+/** \brief Do inference on a data array.
+ * \param data The data array on which to do inference
+ * \return A vector of doubles in the order x, y, z.
+ */
+std::vector<double> arwain::Torch::infer(float data[1][6][200])
 {
     // Create model object. Only done once.
     static torch::jit::script::Module model = torch::jit::load(filename);
@@ -41,31 +62,21 @@ std::vector<double> Torch::infer(float data[1][6][200])
     return std::vector<double>{x, y, z};
 }
 
-// int main(int argc, const char* argv[]) {
-//     // Create model.
-//     Torch model{"./xyzronin_v0-5_all2D_small.pt", {1, 6, 200, 1}};
-    
-//     // Create data.
-//     float data[1][6][200][1];
-//     for (int i = 0; i < 1; i++)
-//     {
-//       for (int j = 0; j < 6; j++)
-//       {
-//         for (int k = 0; k < 200; k++)
-//         {
-//           for (int l = 0; l < 1; l++)
-//           {
-//             data[i][j][k][l] = 1.0;
-//           }
-//         }
-//       }
-//     }
-
-//     for (int i = 0; i < 20; i++)
-//     {
-//         // Get the result.
-//         std::vector<double> result = model.infer(data);
-//         // Print the result.
-//         std::cout << result[0] << " " << result[1] << " " << result[2] << "\n";
-//     }
-// }
+/** \brief Converts the IMU deque into a C-style array for passing to the inference library.
+ * \param[out] data C-style array of shape [1][6][200] in which to store result.
+ * \param[in] imu The latest world IMU buffer.
+ */
+void arwain::Torch::torch_array_from_deque(float data[1][6][200], std::deque<std::array<double, 6>> imu)
+{
+    for (int i = 0; i < 1; i++)
+    {
+        for (int j = 0; j < 6; j++)
+        {
+            for (int k = 0; k < 200; k++)
+            {
+                // Switch the order of gyro and acceleration, and put into array.
+                data[i][j][k] = (float)(imu[k][(j+3)%6]);
+            }
+        }
+    }
+}

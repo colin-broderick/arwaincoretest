@@ -19,9 +19,15 @@ int main()
         ->setSpreadFactor(LoRa::SF_12)
         ->setBandwidth(LoRa::BW_125k)
         ->setCodingRate(LoRa::CR_48)
-        ->setSyncWord(0x12)
         ->setHeaderMode(LoRa::HM_EXPLICIT)
         ->enableCRC();
+        // ->setSyncWord(0x12)
+
+    std::cout<<(lora.getFrequency())<<"\n";
+    std::cout<<(lora.getSpreadFactor())<<"\n";
+    std::cout<<(lora.getBandwidth())<<"\n";
+    std::cout<<lora.getCodingRate()<<"\n";
+
     while (true)
     {
         LoRaPacket p = lora.receivePacket();

@@ -193,17 +193,17 @@ arwain::Configuration arwain::get_configuration(const std::string &filename)
     if (spreadfactor == "6")
         cf.lora_spread_factor = LoRa::SF_6;
     else if (spreadfactor == "7")
-        cf.lora_spread_factor = LoRa::SF_6;
-    else if (spreadfactor == "8")
         cf.lora_spread_factor = LoRa::SF_7;
-    else if (spreadfactor == "9")
+    else if (spreadfactor == "8")
         cf.lora_spread_factor = LoRa::SF_8;
-    else if (spreadfactor == "10")
+    else if (spreadfactor == "9")
         cf.lora_spread_factor = LoRa::SF_9;
-    else if (spreadfactor == "11")
+    else if (spreadfactor == "10")
         cf.lora_spread_factor = LoRa::SF_10;
-    else if (spreadfactor == "12")
+    else if (spreadfactor == "11")
         cf.lora_spread_factor = LoRa::SF_11;
+    else if (spreadfactor == "12")
+        cf.lora_spread_factor = LoRa::SF_12;
     else
         cf.lora_spread_factor = LoRa::SF_12;    
 
@@ -255,14 +255,4 @@ arwain::Configuration arwain::get_configuration(const std::string &filename)
     stringstream(options["lora_enable_crc"]) >> cf.lora_enable_crc;
 
     return cf;
-}
-
-void set_thread_priority(std::thread &thread, int priority)
-{
-    sched_param sched_params;
-    sched_params.sched_priority = priority;
-    if (pthread_setschedparam(thread.native_handle(), SCHED_RR, &sched_params))
-    {
-        std::cerr << "Failed to set thread scheduling\n";
-    }
 }

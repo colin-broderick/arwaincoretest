@@ -134,6 +134,4 @@ typedef struct euler_orientation_t
     double yaw;
 } euler_orientation_t;
 
-void set_thread_priority(std::thread &thread, int priority);
-
 #endif
