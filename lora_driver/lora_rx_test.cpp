@@ -20,8 +20,8 @@ int main()
         ->setBandwidth(LoRa::BW_125k)
         ->setCodingRate(LoRa::CR_48)
         ->setHeaderMode(LoRa::HM_EXPLICIT)
-        ->enableCRC();
-        // ->setSyncWord(0x12)
+        ->disableCRC()
+        ->setSyncWord(0x12);
 
     std::cout<<(lora.getFrequency())<<"\n";
     std::cout<<(lora.getSpreadFactor())<<"\n";

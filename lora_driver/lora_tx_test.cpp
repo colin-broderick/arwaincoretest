@@ -20,7 +20,7 @@ int main()
         ->setBandwidth(LoRa::BW_125k)
         ->setCodingRate(LoRa::CR_48)
         ->setHeaderMode(LoRa::HM_EXPLICIT)
-        ->enableCRC();
+        ->disableCRC();
         // ->setSyncWord(0x12)
     
     std::cout<< lora.getFrequency() << "\n";
@@ -29,8 +29,8 @@ int main()
     std::cout<< lora.getCodingRate() << "\n";
 
     
-    static char message[12] = "00000eHelop";
-    message[0] = 'f';
+    static char message[12] = "00000000000";
+    // message[0] = 'f';
     LoRaPacket p((unsigned char*)message, strlen(message));
     size_t bytes = lora.transmitPacket(&p);
     std::cout << "Packet sent" << std::endl;
