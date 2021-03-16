@@ -32,12 +32,12 @@ LoRa *LoRa::setSpreadFactor(LoRa::sf_t sf)
 	if (sf == SF_6)
 	{
 		setHeaderMode(HM_IMPLICIT);
-		writeRegister(REG_DETECT_OPTIMIZE, 0xC5);
+		writeRegister(REG_DETECT_OPTIMIZE, 0x05);
 		writeRegister(REG_DETECT_THRESH, 0x0C);
 	}
 	else
 	{
-		writeRegister(REG_DETECT_OPTIMIZE, 0xC3);
+		writeRegister(REG_DETECT_OPTIMIZE, 0x03);
 		writeRegister(REG_DETECT_THRESH, 0x0A);
 	}
 	writeRegister(REG_MODEM_CONFIG2, (readRegister(REG_MODEM_CONFIG2) & 0x0F) | (sf << 4));
@@ -346,7 +346,19 @@ size_t LoRa::transmitPacket(LoRaPacket *packet)
 		payload += bytes;
 		size -= bytes;
 	}
+
+	// This test confirmed that the message is correctly placed into the FIFO buffer on the chip.
+	writeRegister(REG_FIFO_ADDR_PTR, 0x80);
+	unsigned char b[257] = {0};
+	for (int i = 0; i < 256; i++)
+	{
+		b[i] = readRegister(REG_FIFO);
+	}
+	printf("FIFO before tx:  %d %d %d %d %d %d %d %d \n", b[0],b[0],b[0],b[0],b[0],b[0],b[0],b[0]);
+	printf("END\n");
 	setOpMode(OPMODE_TX);
+
+	// Spin until transmission complete.
 	while ((readRegister(REG_IRQ_FLAGS) & IRQ_TXDONE_MASK) == 0)
 	{
 		usleep(1000);
