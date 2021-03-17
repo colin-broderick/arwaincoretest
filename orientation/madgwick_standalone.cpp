@@ -22,6 +22,9 @@ int main(int argc, char **argv)
     double v;           // Stores value pulled from a line.
     int commaCount;     // Counts the number of commas on a line.
     int delimiter;      // Stores the position of the first comma on a line.
+    double x_bias = 0;
+    double y_bias = 0;
+    double z_bias = 0;
 
     // Check that a filename has been passed and process optional parameters.
     if (!input_parser.contains("-file"))
@@ -40,14 +43,27 @@ int main(int argc, char **argv)
     {
         std::stringstream(input_parser.getCmdOption("-freq")) >> frequency;
     }
+    if (input_parser.contains("-xbias"))
+    {
+        std::stringstream(input_parser.getCmdOption("-xbias")) >> x_bias;
+    }
+    if (input_parser.contains("-ybias"))
+    {
+        std::stringstream(input_parser.getCmdOption("-ybias")) >> y_bias;
+    }
+    if (input_parser.contains("-zbias"))
+    {
+        std::stringstream(input_parser.getCmdOption("-zbias")) >> z_bias;
+    }
 
     // Create orientation filter.
+    std::cout << "Creating Madgwick filter with frequency " << frequency << " and gain " << beta << "\n";
     arwain::Madgwick filter{frequency, beta};
 
     // Open input and output file handles.
-    std::string filename = input_parser.getCmdOption("-f");
+    std::string filename = input_parser.getCmdOption("-file");
     std::ifstream inputfile{filename};
-    std::ofstream outputfile{"/home/pi/arwain_inference_core/testout.txt"};
+    std::ofstream outputfile{filename+".processed.csv"};
     outputfile << "# Roll, Pitch, Yaw\n";
 
     // Vector to store each line of data as doubles.
@@ -60,6 +76,9 @@ int main(int argc, char **argv)
     }
 
     std::cout << "Processing " << filename << "\n";
+    std::cout << "x_bias: " << x_bias << "\n";
+    std::cout << "y_bias: " << y_bias << "\n";
+    std::cout << "z_bias: " << z_bias << "\n";
 
     // Loop over lines in file, adding values to a buffer, updating filter, and writing result to output file.
     while (getline(inputfile, line))
@@ -88,7 +107,7 @@ int main(int argc, char **argv)
         count++;
         
         // Update the orientation filter and write the result to the output file.
-        filter.update(data_line[0]/180*PI, data_line[1]/180*PI, data_line[2]/180*PI, data_line[3], data_line[4], data_line[5]);
+        filter.update((data_line[0]-x_bias)/180*PI, (data_line[1]-y_bias)/180*PI, (data_line[2]-z_bias)/180*PI, data_line[3], data_line[4], data_line[5]);
         outputfile << filter.getRoll() << "," << filter.getPitch() << "," << filter.getYaw() << "\n";
     }
 
