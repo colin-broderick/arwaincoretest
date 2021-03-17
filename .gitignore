@@ -72,3 +72,4 @@ Makefile
 cmake_install.cmake
 lib
 libLoRaPi
+test*
