@@ -271,6 +271,10 @@ void arwain::Madgwick::update(double gx, double gy, double gz, double ax, double
 	}
 
 	// Integrate rate of change of quaternion to yield quaternion
+	if (std::isnan(q0 + qDot1 * invSampleFreq))
+	{
+		return;
+	}
 	q0 += qDot1 * invSampleFreq;
 	q1 += qDot2 * invSampleFreq;
 	q2 += qDot3 * invSampleFreq;

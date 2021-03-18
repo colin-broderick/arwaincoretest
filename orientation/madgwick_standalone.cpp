@@ -9,8 +9,10 @@
 
 #define PI 3.14159265359
 
-float frequency = 120;
-float beta = 0.1;
+double frequency = 120;
+double beta = 0.1;
+
+int accelindex, gyroindex;
 
 int main(int argc, char **argv)
 {
@@ -27,7 +29,7 @@ int main(int argc, char **argv)
     double z_bias = 0;
 
     // Check that a filename has been passed and process optional parameters.
-    if (!input_parser.contains("-file"))
+    if (!input_parser.contains("-file") || !input_parser.contains("-accelindex") || !input_parser.contains("-gyroindex"))
     {
         std::cout << "Usage:\n";
         std::cout << "  ./arwain_file_inference -file <filename> [-beta <beta=0.1>] [-freq <frequency=120>]\n";
@@ -35,6 +37,8 @@ int main(int argc, char **argv)
         std::cout << "  gyro_x, gyro_y, gyro_z, accel_x, accel_y, accel_z, mag_x, mag_y, mag_z\n";
         return 0;
     }
+    std::stringstream(input_parser.getCmdOption("-accelindex")) >> accelindex;
+    std::stringstream(input_parser.getCmdOption("-gyroindex")) >> gyroindex;
     if (input_parser.contains("-beta"))
     {
         std::stringstream(input_parser.getCmdOption("-beta")) >> beta;
@@ -64,21 +68,18 @@ int main(int argc, char **argv)
     std::string filename = input_parser.getCmdOption("-file");
     std::ifstream inputfile{filename};
     std::ofstream outputfile{filename+".processed.csv"};
-    outputfile << "# Roll, Pitch, Yaw\n";
+    outputfile << "# W, X, Y, Z\n";
 
     // Vector to store each line of data as doubles.
     std::vector<double> data_line;
 
     // Skip the first ten lines to clear any junk.
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 1; i++)
     {
         std::getline(inputfile, line);
     }
 
     std::cout << "Processing " << filename << "\n";
-    std::cout << "x_bias: " << x_bias << "\n";
-    std::cout << "y_bias: " << y_bias << "\n";
-    std::cout << "z_bias: " << z_bias << "\n";
 
     // Loop over lines in file, adding values to a buffer, updating filter, and writing result to output file.
     while (getline(inputfile, line))
@@ -107,11 +108,18 @@ int main(int argc, char **argv)
         count++;
         
         // Update the orientation filter and write the result to the output file.
-        filter.update((data_line[0]-x_bias)/180*PI, (data_line[1]-y_bias)/180*PI, (data_line[2]-z_bias)/180*PI, data_line[3], data_line[4], data_line[5]);
-        outputfile << filter.getRoll() << "," << filter.getPitch() << "," << filter.getYaw() << "\n";
+        filter.update(
+            (data_line[gyroindex]-x_bias)/180.0*PI,
+            (data_line[gyroindex+1]-y_bias)/180.0*PI,
+            (data_line[gyroindex+2]-z_bias)/180.0*PI,     // Units of angular velocity must be rad/second
+            data_line[accelindex],
+            data_line[accelindex+1],
+            data_line[accelindex+2]                       // Units of acceleration don't matter since only the norm is used
+        );
+        outputfile << filter.getW() << "," << filter.getX() << "," << filter.getY() << "," << filter.getZ() << "\n";
     }
 
     std::cout << "Read " << count << " total lines\n";
 
-    return 1;
+    return 0;
 }
