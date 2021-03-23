@@ -69,46 +69,45 @@ void arwain::StanceDetector::run(const std::deque<std::array<double, 6>> &imu_da
     m_tmp_struggle = (m_a_twitch + m_g_mean_magnitude) / (m_v_mean_magnitude + m_sfactor);
     m_struggle_window[m_count] = m_tmp_struggle;
     
-    // Detect which axis is most closely aligned with gravity. If not the same as vertical axis, subject must be horizontal.
-    m_stance_lock.lock();
-    if (m_primary_axis != m_vertical_axis)
-    {
-        m_attitude = Horizontal;
+    { // Detect which axis is most closely aligned with gravity. If not the same as vertical axis, subject must be horizontal.
+        std::lock_guard<std::mutex> lock{m_stance_lock};
+        if (m_primary_axis != m_vertical_axis)
+        {
+            m_attitude = Horizontal;
+        }
+        else
+        {
+            m_attitude = Vertical;
+        }
     }
-    else
-    {
-        m_attitude = Vertical;
-    }
-    m_stance_lock.unlock();
 
     // TODO The assumptions about climbing are obviously wrong. Get rid of this or fix it.
     // If the axis with the highest average speed is the same as the vertical axis, subject must be climbing.
     // If the speed on the vertical axis exceed the climbing threshold, the subject must be climibing.
-    m_stance_lock.lock();
-    if (m_speed_axis == m_primary_axis || m_speed_means[m_vertical_axis] > m_climbing_threshold)
     {
-        m_climbing = 1;
+        std::lock_guard<std::mutex> lock{m_stance_lock};
+        if (m_speed_axis == m_primary_axis || m_speed_means[m_vertical_axis] > m_climbing_threshold)
+        {
+            m_climbing = 1;
+        }
+        else
+        {
+            m_climbing = 0;
+        }
     }
-    else
-    {
-        m_climbing = 0;
-    }
-    m_stance_lock.unlock();
 
     // Detect falling.
     if (m_a_mean_magnitude < m_freefall_sensitivity)
     {
-        m_fall_lock.lock();
+        std::lock_guard<std::mutex> lock{m_fall_lock};
         m_falling = Falling;
-        m_fall_lock.unlock();
     }
 
     // Detect entanglement, implied by high IMU activity but low velocity.
     if (m_struggle > m_struggle_threshold)
     {
-        m_fall_lock.lock();
+        std::lock_guard<std::mutex> lock{m_fall_lock};
         m_entangled = Entangled;
-        m_fall_lock.unlock();
     }
 
     // Detect stance.
@@ -118,41 +117,42 @@ void arwain::StanceDetector::run(const std::deque<std::array<double, 6>> &imu_da
     // Vertical and slow with high activity => searching
     // Vertical and moderate speed => walking
     // Vertical and high speed => running
-    m_stance_lock.lock();
-    if (m_attitude == Horizontal)
     {
-        if (m_v_mean_magnitude < m_crawling_threshold)
+        std::lock_guard<std::mutex> lock{m_stance_lock};
+        if (m_attitude == Horizontal)
         {
-            m_stance = Inactive;
-        }
-        else if (m_v_mean_magnitude >= m_crawling_threshold)
-        {
-            m_stance = Crawling;
-        }
-    }
-    else if (m_attitude == Vertical)
-    {
-        if (m_v_mean_magnitude < m_walking_threshold)
-        {
-            if (m_activity < m_active_threshold)
+            if (m_v_mean_magnitude < m_crawling_threshold)
             {
                 m_stance = Inactive;
             }
-            else if (m_activity >= m_active_threshold)
+            else if (m_v_mean_magnitude >= m_crawling_threshold)
             {
-                m_stance = Searching;
+                m_stance = Crawling;
             }
         }
-        else if (m_v_mean_magnitude < m_running_threshold)
+        else if (m_attitude == Vertical)
         {
-            m_stance = Walking;
-        }
-        else if (m_v_mean_magnitude >= m_running_threshold)
-        {
-            m_stance = Running;
+            if (m_v_mean_magnitude < m_walking_threshold)
+            {
+                if (m_activity < m_active_threshold)
+                {
+                    m_stance = Inactive;
+                }
+                else if (m_activity >= m_active_threshold)
+                {
+                    m_stance = Searching;
+                }
+            }
+            else if (m_v_mean_magnitude < m_running_threshold)
+            {
+                m_stance = Walking;
+            }
+            else if (m_v_mean_magnitude >= m_running_threshold)
+            {
+                m_stance = Running;
+            }
         }
     }
-    m_stance_lock.unlock();
 
     m_count = (m_count + 1) % 10;
 }
@@ -332,9 +332,8 @@ std::array<double, 6> arwain::StanceDetector::get_means(const std::deque<std::ar
  */
 arwain::StanceDetector::STANCE arwain::StanceDetector::getStance()
 {
-    m_stance_lock.lock();
+    std::lock_guard<std::mutex> lock{m_stance_lock};
     STANCE ret = m_stance;
-    m_stance_lock.unlock();
     return ret;
 }
 
@@ -343,9 +342,8 @@ arwain::StanceDetector::STANCE arwain::StanceDetector::getStance()
  */
 arwain::StanceDetector::ATTITUDE arwain::StanceDetector::getAttitude()
 {  
-    m_stance_lock.lock();
+    std::lock_guard<std::mutex> lock{m_stance_lock};
     ATTITUDE ret = m_attitude;
-    m_stance_lock.unlock();
     return ret;
 }
 
@@ -354,10 +352,9 @@ arwain::StanceDetector::ATTITUDE arwain::StanceDetector::getAttitude()
  */
 arwain::StanceDetector::ENTANGLED arwain::StanceDetector::getEntangledStatus()
 {
-    m_fall_lock.lock();
+    std::lock_guard<std::mutex> lock{m_fall_lock};
     ENTANGLED ret = m_entangled;
     m_entangled = NotEntangled;
-    m_fall_lock.unlock();
     return ret;
 }
 
@@ -366,10 +363,9 @@ arwain::StanceDetector::ENTANGLED arwain::StanceDetector::getEntangledStatus()
  */
 arwain::StanceDetector::FALLING arwain::StanceDetector::getFallingStatus()
 {
-    m_fall_lock.lock();
+    std::lock_guard<std::mutex> lock{m_fall_lock};
     FALLING ret = m_falling;
     m_falling = NotFalling;
-    m_fall_lock.unlock();
     return ret;
 }
 
