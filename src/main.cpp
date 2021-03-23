@@ -55,7 +55,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <string.h>
 #include <iomanip>
 
-#include "arwain_torch.h"
+//#include "arwain_torch.h"
 #include "quaternions.h"
 #include "stance.h"
 #include "imu_utils.h"
@@ -432,6 +432,7 @@ void imu_reader()
 #if USE_SOCKET_INFERENCE
 void transmit_lora()
 {
+    char response_buffer[50];
     // Wait until there's something worth transmitting.
     std::this_thread::sleep_for(std::chrono::milliseconds{3000});
 
@@ -497,7 +498,7 @@ void transmit_lora()
         std::string fromStream = ss.str();
         const char* str = fromStream.c_str();
         zmq_send(responder, str, strlen(str), 0);
-        zmq_recv(responder, NULL, 50, 0);  // Don't need the response.
+        zmq_recv(responder, response_buffer, 50, 0);  // Don't need the response.
         ss.str("");
 
         if (LOG_TO_FILE)
