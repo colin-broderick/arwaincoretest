@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 
 ## Sort out torch include and lib locations.
-set(Torch_DIR ~/.local/lib/python3.6/site-packages/torch/share/cmake/Torch)
+set(Torch_DIR ~/.local/lib/python3.7/site-packages/torch/share/cmake/Torch)
 find_package(Torch REQUIRED)
 
 ## Set include and library source directories

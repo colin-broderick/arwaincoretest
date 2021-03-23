@@ -1,0 +1,7 @@
+adafruit-circuitpython-ssd1306
+adafruit-circuitpython-framebuf
+adafruit-circuitpython-rfm69
+adafruit-circuitpython-rfm9x
+tornado<5.0
+RPi.GPIO
+vpython
