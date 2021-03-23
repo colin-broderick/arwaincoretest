@@ -66,10 +66,13 @@ class Tx:
         """
         Enable transmitter mode.
         """
-        #PeriodicCallback(self.send, 1000).start()
+        #cb = PeriodicCallback(self.send, 1000)
+        #cb.start()
+        #print(cb.is_running())
         pass
 
     def send(self):
+        print("hello")
         """
         Transmit the most recently-receceived position update.
         """
