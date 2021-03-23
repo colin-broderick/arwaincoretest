@@ -29,6 +29,11 @@ from these rules should be accompanied by a comment clearly indiciating why.
 
 */
 
+#define THREAD_AFFINITY_EXPERIMENT 0
+#define USE_SOCKET_INFERENCE 1
+#define USE_SOCKET_RADIO 1
+#define GYRO_BIAS_EXPERIMENT 0
+
 #include <algorithm>
 #include <csignal>
 #include <iostream>
@@ -48,6 +53,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <experimental/filesystem>
 #include <zmq.h>
 #include <string.h>
+#include <iomanip>
 
 #include "arwain_torch.h"
 #include "quaternions.h"
@@ -65,8 +71,6 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "packet.h"
 #include "half.h"
 // #include "rknn_api.h"
-
-#define THREAD_AFFINITY_EXPERIMENT 0
 
 // Time intervals, all in milliseconds.
 static unsigned int IMU_READING_INTERVAL = 5;
@@ -87,6 +91,9 @@ static unsigned int LORA_MESSAGE_LENGTH = 8;
 // Globally accessible configuration and status.
 static arwain::Configuration CONFIG;
 static arwain::Status STATUS;
+
+std::string inference_tcp_socket = "tcp://*:5555";
+std::string radio_tcp_socket = "tcp://*:5556";
 
 // Default config file locations.
 std::string CONFIG_FILE = "./arwain.conf";
@@ -124,6 +131,55 @@ std::mutex VELOCITY_BUFFER_LOCK;
 std::mutex STATUS_FLAG_LOCK;
 std::mutex POSITION_BUFFER_LOCK;
 std::mutex ORIENTATION_BUFFER_LOCK;
+
+#if GYRO_BIAS_EXPERIMENT
+void gyro_bias_estimation()
+{
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{1057};
+
+    std::deque<std::array<double, 6>> imu;
+    std::array<double, 3> gyro_delta_sum;
+    std::array<double, 3> gyro_sum;
+    std::array<double, 3> bias_estimates = {
+        CONFIG.gyro_bias.x,
+        CONFIG.gyro_bias.y,
+        CONFIG.gyro_bias.z
+    };
+
+    while (!SHUTDOWN)
+    {
+        { // Get IMU data
+            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+            imu = IMU_BUFFER;
+        }
+
+        gyro_sum = {0, 0, 0};
+        for (int i = 0; i < imu.size(); i++)
+        {
+            gyro_sum[0] += imu[i][3];
+            gyro_sum[1] += imu[i][4];
+            gyro_sum[2] += imu[i][5];
+        }
+        gyro_delta_sum = {0, 0, 0};
+        for (int i = 1; i < imu.size(); i++)
+        {
+            gyro_delta_sum[0] += (imu[i][3] - imu[i-1][3]);
+            gyro_delta_sum[1] += (imu[i][4] - imu[i-1][4]);
+            gyro_delta_sum[2] += (imu[i][5] - imu[i-1][5]);
+        }
+
+        bias_estimates[0] = bias_estimates[0]*0.95 + 0.05*(gyro_sum[0] - gyro_delta_sum[0])/(float)imu.size();
+        bias_estimates[1] = bias_estimates[1]*0.95 + 0.05*(gyro_sum[1] - gyro_delta_sum[1])/(float)imu.size();
+        bias_estimates[2] = bias_estimates[2]*0.95 + 0.05*(gyro_sum[2] - gyro_delta_sum[2])/(float)imu.size();
+
+        std::cout << bias_estimates[0] << "," << bias_estimates[1] << "," << bias_estimates[2] << std::endl;
+
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
+}
+#endif
 
 /** \brief Periodically logs status messages to stdout.
  * Useful for debugging or testing, but probably not wanted at runtime.
@@ -373,6 +429,93 @@ void imu_reader()
     }
 }
 
+#if USE_SOCKET_INFERENCE
+void transmit_lora()
+{
+    // Wait until there's something worth transmitting.
+    std::this_thread::sleep_for(std::chrono::milliseconds{3000});
+
+    // Set up log file.
+    std::ofstream lora_file;
+    if (LOG_TO_FILE)
+    {
+        lora_file.open(FOLDER_DATE_STRING + "/lora_log.txt");
+        lora_file << "# time packet" << "\n";
+    }
+
+    // Set up socket.
+    void *context = zmq_ctx_new();
+    void *responder = zmq_socket(context, ZMQ_REP);
+    zmq_bind(responder, radio_tcp_socket.c_str());
+
+    // Local buffers.
+    std::array<double, 3> position{0, 0, 0};
+    std::stringstream ss;
+
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{LORA_TRANSMISSION_INTERVAL};
+
+    while (!SHUTDOWN)
+    {
+        // Grab all relevant data from buffers.
+        POSITION_BUFFER_LOCK.lock();
+        position = POSITION_BUFFER.back();
+        POSITION_BUFFER_LOCK.unlock();
+
+        ss << position[0] << "," << position[1] << "," << position[2] << ",";
+        ss << (STATUS.falling == arwain::StanceDetector::Falling) ? "f" : "0";
+        ss << ",";
+        ss << (STATUS.entangled == arwain::StanceDetector::Entangled) ? "e" : "0";
+        ss << ",";
+
+        STATUS.falling = arwain::StanceDetector::NotFalling;
+        STATUS.entangled = arwain::StanceDetector::NotEntangled;
+
+        switch (STATUS.current_stance)
+        {
+            case arwain::StanceDetector::Inactive:
+                ss << "inactive";
+                break;
+            case arwain::StanceDetector::Walking:
+                ss << "walking";
+                break;
+            case arwain::StanceDetector::Searching:
+                ss << "searching";
+                break;
+            case arwain::StanceDetector::Crawling:
+                ss << "crawling";
+                break;
+            case arwain::StanceDetector::Running:
+                ss << "running";
+                break;
+            default:
+                ss << "unknown";
+                break;
+        }
+
+        // TODO Send by socket and reset stringstream.
+        std::string fromStream = ss.str();
+        const char* str = fromStream.c_str();
+        zmq_send(responder, str, strlen(str), 0);
+        ss.str("");
+
+        if (LOG_TO_FILE)
+        {
+            lora_file << time.time_since_epoch().count() << " " << ss.str() << "\n";
+        }
+
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
+
+    if (LOG_TO_FILE)
+    {
+        lora_file.close();
+    }
+}
+
+#else
+
 /** \brief Forms and transmits LoRa messages on a loop.
  */
 void transmit_lora()
@@ -502,6 +645,7 @@ void transmit_lora()
         lora_file.close();
     }
 }
+#endif
 
 // TODO Everything from here until the finish line can be removed if we fully convert to vector3 --
 // These functions are addition etc. operators for std::array<double, .>, which is being phased out
@@ -560,33 +704,15 @@ std::array<double, 3> integrate(std::deque<std::array<double, 6>> &data, double 
     return integrated_data;
 }
 
-/** \brief Converts the IMU deque into a C-style array for passing to the inference library.
- * \param[out] data C-style array of shape [1][6][200] in which to store result.
- * \param[in] imu The latest world IMU buffer.
- */
-void torch_array_from_deque(float data[1][6][200], std::deque<std::array<double, 6>> imu)
-{
-    for (int i = 0; i < 1; i++)
-    {
-        for (int j = 0; j < 6; j++)
-        {
-            for (int k = 0; k < 200; k++)
-            {
-                // Switch the order of gyro and acceleration, and put into array.
-                data[i][j][k] = (float)(imu[k][(j+3)%6]);
-            }
-        }
-    }
-}
-
+#if USE_SOCKET_INFERENCE
 /** \brief This has only been developed to the proof of concept stage and is not suitable for deployment.
  */
-void predict_velocity_dispatch()
+void predict_velocity()
 {
-    // *********************************************************************//
-    // NOTE This has only been developed to the proof of concept stage.     //
-    // It will not work fully without additional work.                      //
-    // *********************************************************************//
+    // *****************************************************************//
+    // NOTE This has only been developed to the proof of concept stage. //
+    // It will not work fully without additional work.                  //
+    // *****************************************************************//
 
     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
     std::chrono::milliseconds presleep(1000);
@@ -595,20 +721,38 @@ void predict_velocity_dispatch()
     // Set up socket
     void *context = zmq_ctx_new();
     void *responder = zmq_socket(context, ZMQ_REP);
-    zmq_bind(responder, "tcp://*:5555");
+    zmq_bind(responder, inference_tcp_socket.c_str());
 
     // Buffer to contain local copy of IMU data.
     std::deque<std::array<double, 6>> imu;
 
-    // Request and response string buffers.
+    // TODO Run Python inference script as service or something?
+    // TODO Make sure Python script can resume inference if the main program stops and starts.
+
+    std::array<double, 3> position{0, 0, 0};
+    std::array<double, 3> velocity{0, 0, 0};
+
+    double interval_seconds = ((double)VELOCITY_PREDICTION_INTERVAL)/1000.0;
+
+    // Request and response buffers.
     std::stringstream request;
-    char answer_buffer[50];
+    char response_buffer[50];
+
+    // Open files for logging.
+    // File handles for logging.
+    std::ofstream position_file;
+    std::ofstream velocity_file;
+    if (LOG_TO_FILE)
+    {
+        velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
+        position_file.open(FOLDER_DATE_STRING + "/position.txt");
+        velocity_file << "# time x y z" << "\n";
+        position_file << "# time x y z" << "\n";
+    }
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
-
-    double x, y;
+    std::chrono::milliseconds interval{VELOCITY_PREDICTION_INTERVAL};
 
     while (!SHUTDOWN)
     {
@@ -622,7 +766,7 @@ void predict_velocity_dispatch()
         {
             for (unsigned int j = 0; j < 6; j++)
             {
-                request << (float)imu[i][j] << ",";
+                request << std::setprecision(15) << (float)imu[i][(j+3)%6] << ",";
             }
         }
 
@@ -630,26 +774,62 @@ void predict_velocity_dispatch()
         std::string fromStream = request.str();
         const char *str = fromStream.c_str();
         zmq_send(responder, str, strlen(str), 0);
-        zmq_recv(responder, answer_buffer, 50, 0);
+        zmq_recv(responder, response_buffer, 50, 0);
         request.str("");
 
-        // TODO Process the answer buffer.
-        std::string answer{answer_buffer};
+        // Process the answer buffer into local velocity buffers.
+        // Assume a comma-separated list of three floats.
+        std::string answer{response_buffer};
         if (answer == "accept")
         {
             continue;
         }
         int delimiter = answer.find(",");
-        std::stringstream(answer.substr(0, delimiter)) >> x;
-        std::stringstream(answer.substr(delimiter + 1)) >> y;
+        std::stringstream(answer.substr(0, delimiter)) >> velocity[0];
+        answer = answer.substr(delimiter+1);
+        delimiter = answer.find(",");
+        std::stringstream(answer.substr(0, delimiter)) >> velocity[1];
+        std::stringstream(answer.substr(delimiter+1)) >> velocity[2];
 
-        std::cout << x << " " << y << "\n";
+        // Store velocity in global buffer.
+        VELOCITY_BUFFER_LOCK.lock();
+        VELOCITY_BUFFER.pop_front();
+        VELOCITY_BUFFER.push_back(velocity);
+        VELOCITY_BUFFER_LOCK.unlock();
+
+        // Compute new position.
+        position[0] = position[0] + interval_seconds * velocity[0];
+        position[0] = position[0] + interval_seconds * velocity[1];
+        position[0] = position[0] + interval_seconds * velocity[2];
+
+        // Add new position to global buffer.
+        POSITION_BUFFER_LOCK.lock();
+        POSITION_BUFFER.pop_front();
+        POSITION_BUFFER.push_back(position);
+        POSITION_BUFFER_LOCK.unlock();
+
+        // Log results to file.
+        if (LOG_TO_FILE)
+        {
+            velocity_file << time.time_since_epoch().count() << " " << velocity[0] << " " << velocity[1] << " " << velocity[2] << "\n";
+            position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] << " " << position[2] << "\n";
+        }
 
         // Wait until next tick.
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
+
+    if (LOG_TO_FILE)
+    {
+        velocity_file.close();
+        position_file.close();
+    }
+
+    // TODO Something to shut the socket down cleanly, so the other side can recover.
 }
+
+#else
 
 /** \brief Periodically makes velocity predictions based on data buffers, and adds that velocity and thereby position to the relevant buffers.
  */
@@ -711,7 +891,7 @@ void predict_velocity()
             // TEST Make velocity prediction
             std::vector<double> v = model.infer(imu);
             npu_vel = {v[0], v[1], v[2]};
-            
+            // std::cout << v[0] << "," << v[1] << "," << v[2] << std::endl;
             // TEST Find the change in velocity from the last period, as predicted by the npu.
             npu_vel_delta = npu_vel - vel_previous;
 
@@ -767,6 +947,7 @@ void predict_velocity()
         }
     }
 }
+#endif
 
 /** \brief Capture the SIGINT signal for clean exit.
  * Sets the global SHUTDOWN flag informing all threads to clean up and exit.
@@ -932,6 +1113,10 @@ int main(int argc, char **argv)
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
 
+    // Start the python scripts used by inference and radio.
+    // system("python3 ./python_utils/lora_transmitter.py");
+    // system("python3 ./python_utils/ncs2_interface.py");
+
     // Determine logging behaviour from command line arguments.
     arwain::InputParser input{argc, argv};
     if (input.contains("-h") || input.contains("-help"))
@@ -1034,6 +1219,9 @@ int main(int argc, char **argv)
     std::thread transmit_lora_thread(transmit_lora);
     std::thread std_output_thread(std_output);
     std::thread indoor_positioning_thread(indoor_positioning);
+    #if GYRO_BIAS_EXPERIMENT
+    std::thread gyro_bias_estimator(gyro_bias_estimation);
+    #endif
 
     #if THREAD_AFFINITY_EXPERIMENT == 1
     // Set the IMU thread to run on CPU0 only.
@@ -1069,6 +1257,9 @@ int main(int argc, char **argv)
     transmit_lora_thread.join();
     std_output_thread.join();
     indoor_positioning_thread.join();
+    #if GYRO_BIAS_EXPERIMENT
+    gyro_bias_estimator.join();
+    #endif
 
     return 1;
 }

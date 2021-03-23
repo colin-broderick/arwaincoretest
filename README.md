@@ -18,13 +18,17 @@ It is almost feature-complete but no features have been formally tested. Missing
 wget https://wintics-opensource.s3.eu-west-3.amazonaws.com/torch-1.3.0a0%2Bdeadc27-cp37-cp37m-linux_armv7l.whl
 pip3 install torch-1.3.0a0+deadc27-cp37-cp37m-linux_armv7l.whl
 ```
+Other python requirements can be installed by
+```
+pip3 install -r ./python_utils/requirements.txt
+```
 
 2. Some apt packages:
 ```
 sudo apt install i2c-tools libzmq3-dev libi2c-dev cmake
 ```
 
-3. Enable I2C and SPI via `raspi-config`.
+3. Enable I2C and SPI via `raspi-config`. You may need to restart to enable complete enablement of SPI.
 
 4. Clone repository
 ```

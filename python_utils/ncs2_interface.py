@@ -1,7 +1,12 @@
-import sys
+#!/usr/bin/python3
+
 import zmq
 import torch
 from openvino.inference_engine import IECore, IENetwork
+
+
+MODEL_FILE_XML = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.xml"
+MODEL_FILE_BIN = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.bin"
 
 
 class Predictor:
@@ -38,11 +43,12 @@ class Predictor:
             sample = self.predict(data)
             print("Inference test passed")
         except Exception as e:
-            print("Inference test failed:", e)
+            print("Inference test failed - is the NSC2 accessible?")
+            raise e
 
 
 def main():
-    predictor = Predictor(sys.argv[1]+".xml", sys.argv[1]+".bin")
+    predictor = Predictor(MODEL_FILE_XML, MODEL_FILE_BIN)
     context = zmq.Context()
     print("Waiting for data connection")
     socket = context.socket(zmq.REQ)
@@ -53,8 +59,10 @@ def main():
         message = socket.recv()
         nums  = [float(i) for i in message.decode("ascii").split(",")[:-1]]
         n += 1
+        print("Got data and doing prediction", len(nums))
         prediction = predictor.predict(nums)
-        response = f"{prediction[0]},{prediction[1]}".encode("ascii")
+        print(prediction)
+        response = f"{prediction[0]},{prediction[1]},{prediction[2]}".encode("ascii")
         socket.send(response)
 
 
