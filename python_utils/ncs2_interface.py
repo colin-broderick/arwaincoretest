@@ -5,8 +5,8 @@ import torch
 from openvino.inference_engine import IECore, IENetwork
 
 
-MODEL_FILE_XML = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.xml"
-MODEL_FILE_BIN = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.bin"
+MODEL_FILE_XML = "/home/pi/ips_experimental/model/XYZ_RoNIN_v0.6.xml"
+MODEL_FILE_BIN = "/home/pi/ips_experimental/model/XYZ_RoNIN_v0.6.bin"
 
 
 class Predictor:
@@ -45,6 +45,10 @@ class Predictor:
         except Exception as e:
             print("Inference test failed - is the NSC2 accessible?")
             raise e
+        
+    def close(self):
+        del self.exec_net
+        del self.net
 
 
 def main():
@@ -67,6 +71,7 @@ def main():
         print(prediction)
         response = f"{prediction[0]},{prediction[1]},{prediction[2]}".encode("ascii")
         socket.send(response)
+    predictor.close()
 
 
 if __name__ == "__main__":

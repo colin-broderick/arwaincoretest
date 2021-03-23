@@ -75,8 +75,8 @@ from these rules should be accompanied by a comment clearly indiciating why.
 
 // Time intervals, all in milliseconds.
 unsigned int IMU_READING_INTERVAL = 5;
-unsigned int VELOCITY_PREDICTION_INTERVAL = 500;
-unsigned int LORA_TRANSMISSION_INTERVAL = 10;
+unsigned int VELOCITY_PREDICTION_INTERVAL = 100;
+unsigned int LORA_TRANSMISSION_INTERVAL = 500;
 unsigned int STANCE_DETECTION_INTERVAL = 1000;
 unsigned int INDOOR_POSITIONING_INTERVAL = 50;
 
@@ -844,7 +844,7 @@ void stance_detector()
 
 void py_transmitter()
 {
-    system("python3 ./python_utils/lora_transmitter.py");
+    system("python3 ./python_utils/lora_transmitter.py &");
 }
 
 void py_inference()
