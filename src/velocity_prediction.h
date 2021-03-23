@@ -17,7 +17,7 @@
 #include "utils.h"
 
 #if USE_SOCKET_INFERENCE == 0
-#include "arwain_torch.h"
+//#include "arwain_torch.h"
 #endif
 
 extern arwain::Configuration CONFIG;

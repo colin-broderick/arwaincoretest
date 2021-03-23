@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 
 ## Sort out torch include and lib locations.
-set(Torch_DIR ~/.local/lib/python3.7/site-packages/torch/share/cmake/Torch)
-find_package(Torch REQUIRED)
+#set(Torch_DIR ~/.local/lib/python3.7/site-packages/torch/share/cmake/Torch)
+#find_package(Torch REQUIRED)
 
 ## Set include and library source directories
 include_directories(arwain_torch lora_driver orientation src)
@@ -23,7 +23,7 @@ set(CALIBRATE_CPP_FILES src/calibrate_bmi270.cpp src/utils.cpp src/input_parser.
 
 ## Static libraries to build
 add_library(${PROJECT_NAME}_lorapi STATIC lora_driver/lora.cpp lora_driver/packet.cpp)
-add_library(${PROJECT_NAME}_torch STATIC arwain_torch/arwain_torch.cpp)
+#add_library(${PROJECT_NAME}_torch STATIC arwain_torch/arwain_torch.cpp)
 add_library(${PROJECT_NAME}_madgwick STATIC orientation/madgwick.cpp)
 add_library(${PROJECT_NAME}_efaroe STATIC orientation/efaroe.cpp)
 
@@ -41,13 +41,13 @@ set_source_files_properties(${BMI_C_FILES} PROPERTIES LANGUAGE CXX)
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -Wno-psabi -Wall -Wshadow)
 target_compile_options(${PROJECT_NAME}_calibration PRIVATE -Wno-psabi -Wall -Wshadow)
-target_compile_options(${PROJECT_NAME}_torch PRIVATE -Wno-psabi)
+#target_compile_options(${PROJECT_NAME}_torch PRIVATE -Wno-psabi)
 target_compile_options(madgwick_standalone PRIVATE -Wno-psabi)
 target_compile_options(efaroe_standalone PRIVATE -Wno-psabi)
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME}_torch ${TORCH_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_torch ${PROJECT_NAME}_madgwick ${PROJECT_NAME}_efaroe ${PROJECT_NAME}_lorapi -pthread -ldl -lstdc++fs -li2c -lzmq -lwiringPi)
+#target_link_libraries(${PROJECT_NAME}_torch ${TORCH_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_madgwick ${PROJECT_NAME}_efaroe ${PROJECT_NAME}_lorapi -pthread -ldl -lstdc++fs -li2c -lzmq -lwiringPi)
 target_link_libraries(${PROJECT_NAME}_calibration -li2c)
 target_link_libraries(lora_rx_test arwain_lorapi -lwiringPi)
 target_link_libraries(lora_tx_test arwain_lorapi -lwiringPi)

@@ -3,12 +3,13 @@
 import time
 import board
 import adafruit_rfm9x
-import nsq
+import zmq
 import sys
 import busio
 import numpy as np
 from tornado.ioloop import PeriodicCallback
 from digitalio import DigitalInOut
+import time
 
 
 class Tx:
@@ -21,8 +22,9 @@ class Tx:
         self.z = 0
         self.falling = 0
         self.entangled = 0
+        self.stance = "inactive"
 
-    def store_alert(self, x, y, z, falling, entangled):
+    def store_alert(self, x, y, z, falling, entangled, stance):
         self.x = x
         self.y = y
         self.z = z
@@ -57,14 +59,15 @@ class Tx:
         x1 = np.float16(self.x).tobytes()
         y1 = np.float16(self.y).tobytes()
         z1 = np.float16(self.z).tobytes()
-        flag = np.float16(self._alert_flag).tobytes()
+        flag = np.float16(self.alert_flag).tobytes()
         return x1 + y1 + z1 + flag
 
     def tx(self):
         """
         Enable transmitter mode.
         """
-        PeriodicCallback(self.send, 1000).start()
+        #PeriodicCallback(self.send, 1000).start()
+        pass
 
     def send(self):
         """
@@ -87,9 +90,10 @@ class Tx:
         frequency = 868.0
         rfm9x = adafruit_rfm9x.RFM9x(spi, cs, reset, frequency)
         rfm9x.tx_power = 23
-        rfm9x.spreading_factor = 12
-        rfm9x.signal_bandwidth = 125000
-        rfm9x.coding_rate = 8
+        #rfm9x.spreading_factor = 12
+        #rfm9x.signal_bandwidth = 125000
+        #rfm9x.coding_rate = 8
+        rfm9x.enable_crc = True
         return rfm9x
 
 
@@ -99,11 +103,10 @@ def main():
     lora.tx()
 
     ## Create socket
-    context = zmq.context()
+    context = zmq.Context()
     print("Waiting for data connection")
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5556")
-    n = 0
     socket.send("accept".encode("ascii"))
     
     response = "messagesent".encode("ascii")
@@ -124,6 +127,7 @@ def main():
         entangled = 1 if message[4] == "e" else 0
         stance = message[5]
         lora.store_alert(x, y, z, falling, entangled, stance)
+        lora.send()
         
         ## Send acknowledgement
         socket.send(response)
