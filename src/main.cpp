@@ -75,7 +75,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 
 // Time intervals, all in milliseconds.
 unsigned int IMU_READING_INTERVAL = 5;
-unsigned int VELOCITY_PREDICTION_INTERVAL = 100;
+unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
 unsigned int LORA_TRANSMISSION_INTERVAL = 500;
 unsigned int STANCE_DETECTION_INTERVAL = 1000;
 unsigned int INDOOR_POSITIONING_INTERVAL = 50;
@@ -104,6 +104,7 @@ int LOG_TO_STDOUT = 0;
 int LOG_TO_FILE = 0;
 int NO_INFERENCE = 0;
 int NO_IMU = 0;
+int NO_LORA = 0;
 
 // Name for data folder
 std::string FOLDER_DATE_STRING;
@@ -432,6 +433,11 @@ void imu_reader()
 #if USE_SOCKET_INFERENCE
 void transmit_lora()
 {
+    if (NO_LORA)
+    {
+        return;
+    }
+
     char response_buffer[50];
     // Wait until there's something worth transmitting.
     std::this_thread::sleep_for(std::chrono::milliseconds{3000});
@@ -524,6 +530,11 @@ void transmit_lora()
  */
 void transmit_lora()
 {
+    if (NO_LORA)
+    {
+        return;
+    }
+
     // Turn on the LoRa radio and quit if it fails.
     int SPI_CHANNEL = 1;
     int CS_PIN = 26;
@@ -844,6 +855,10 @@ void stance_detector()
 
 void py_transmitter()
 {
+    if (NO_LORA)
+    {
+        return;
+    }
     system("python3 ./python_utils/lora_transmitter.py > /dev/null &");
 }
 
@@ -861,10 +876,6 @@ int main(int argc, char **argv)
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
 
-    // Start external python scripts.
-    std::thread py_transmitter_thread{py_transmitter};
-    std::thread py_inference_thread{py_inference};
-
     // Determine logging behaviour from command line arguments.
     arwain::InputParser input{argc, argv};
     if (input.contains("-h") || input.contains("-help"))
@@ -878,6 +889,7 @@ int main(int argc, char **argv)
         std::cout << "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n";
         std::cout << "  -noinf       Do not do velocity inference\n";
         std::cout << "  -noimu       Do not turn on the IMU - for testing\n";
+        std::cout << "  -nolora      Do not attempt to enable LoRa chip or send transmissions\n";
         std::cout << "  -h           Show this help text\n";
         std::cout << "\n";
         std::cout << "Example usage:\n";
@@ -901,6 +913,10 @@ int main(int argc, char **argv)
     if (input.contains("-noinf"))
     {
         NO_INFERENCE = 1;
+    }
+    if (input.contains("-nolora"))
+    {
+        NO_LORA = 1;
     }
     if (input.contains("-noimu"))
     {
@@ -963,6 +979,10 @@ int main(int argc, char **argv)
     std::thread transmit_lora_thread(transmit_lora);
     std::thread std_output_thread(std_output);
     std::thread indoor_positioning_thread(indoor_positioning);
+    
+    // Start external python scripts.
+    std::thread py_transmitter_thread{py_transmitter};
+    std::thread py_inference_thread{py_inference};
     
     #if GYRO_BIAS_EXPERIMENT
     std::thread gyro_bias_estimator(gyro_bias_estimation);
