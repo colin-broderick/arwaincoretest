@@ -199,16 +199,16 @@ void std_output()
 
         while (!SHUTDOWN)
         {
-            // Add position to the string stream.        
-            POSITION_BUFFER_LOCK.lock();
-            ss << "Position:        (" << POSITION_BUFFER.back()[0] << ", " << POSITION_BUFFER.back()[1] << ", " << POSITION_BUFFER.back()[2] << ")" << "\n";
-            POSITION_BUFFER_LOCK.unlock();
+            { // Add position to the string stream.        
+                std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
+                ss << "Position:        (" << POSITION_BUFFER.back()[0] << ", " << POSITION_BUFFER.back()[1] << ", " << POSITION_BUFFER.back()[2] << ")" << "\n";
+            }
 
-            // Add Euler and quaternion orientations to the string stream.
-            ORIENTATION_BUFFER_LOCK.lock();
-            ss << "Orientation (E): (" << EULER_ORIENTATION_BUFFER.back().roll << ", " << EULER_ORIENTATION_BUFFER.back().pitch << ", " << EULER_ORIENTATION_BUFFER.back().yaw << ")" << "\n";;
-            ss << "Orientation (Q): (" << QUAT_ORIENTATION_BUFFER.back().w << ", " << QUAT_ORIENTATION_BUFFER.back().x << ", " << QUAT_ORIENTATION_BUFFER.back().y << ", " << QUAT_ORIENTATION_BUFFER.back().z << ")" << "\n";
-            ORIENTATION_BUFFER_LOCK.unlock();
+            { // Add Euler and quaternion orientations to the string stream.
+                std::lock_guard<std::mutex> lock{ORIENTATION_BUFFER_LOCK};
+                ss << "Orientation (E): (" << EULER_ORIENTATION_BUFFER.back().roll << ", " << EULER_ORIENTATION_BUFFER.back().pitch << ", " << EULER_ORIENTATION_BUFFER.back().yaw << ")" << "\n";;
+                ss << "Orientation (Q): (" << QUAT_ORIENTATION_BUFFER.back().w << ", " << QUAT_ORIENTATION_BUFFER.back().x << ", " << QUAT_ORIENTATION_BUFFER.back().y << ", " << QUAT_ORIENTATION_BUFFER.back().z << ")" << "\n";
+            }
 
             // Add stance to the string stream.
             ss << "Stance flag:     " << STATUS.current_stance << "\n";
@@ -311,24 +311,23 @@ void imu_reader()
         accel_data = accel_data - CONFIG.accel_bias;
         gyro_data = gyro_data - CONFIG.gyro_bias;
         
-        // Add new reading to end of buffer, and remove oldest reading from start of buffer.
-        IMU_BUFFER_LOCK.lock();
-        IMU_BUFFER.pop_front();
-        std::array<double, 6> newData{accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z};
-        if (IMU_BUFFER.back() == newData)
-        {
-            std::cout << "IMU reading duplication at " << time.time_since_epoch().count() << "\n";
+        { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
+            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+            IMU_BUFFER.pop_front();
+            std::array<double, 6> newData{accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z};
+            if (IMU_BUFFER.back() == newData)
+            {
+                std::cout << "IMU reading duplication at " << time.time_since_epoch().count() << "\n";
+            }
+            IMU_BUFFER.push_back(newData);
         }
-        IMU_BUFFER.push_back(newData);
-        IMU_BUFFER_LOCK.unlock();
 
         // Buffer mag_data if collected. TODO Is there actually any reason to buffer this?
         // if (get_mag)
         // {
-        //     MAG_BUFFER_LOCK.lock();
+        //     std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
         //     MAG_BUFFER.pop_front();
         //     MAG_BUFFER.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
-        //     MAG_BUFFER_LOCK.unlock();
         // }
 
         // Log IMU to file.
@@ -372,35 +371,35 @@ void imu_reader()
         quat_data.y = filter->getY();
         quat_data.z = filter->getZ();
 
-        // Add orientation information to buffers.
-        ORIENTATION_BUFFER_LOCK.lock();
-        EULER_ORIENTATION_BUFFER.pop_front();
-        EULER_ORIENTATION_BUFFER.push_back(euler_data);
-        QUAT_ORIENTATION_BUFFER.pop_front();
-        QUAT_ORIENTATION_BUFFER.push_back(quat_data);
-        ORIENTATION_BUFFER_LOCK.unlock();
+        { // Add orientation information to buffers.
+            std::lock_guard<std::mutex> lock{ORIENTATION_BUFFER_LOCK};
+            EULER_ORIENTATION_BUFFER.pop_front();
+            EULER_ORIENTATION_BUFFER.push_back(euler_data);
+            QUAT_ORIENTATION_BUFFER.pop_front();
+            QUAT_ORIENTATION_BUFFER.push_back(quat_data);
+        }
 
         // Add world-aligned IMU to its own buffer.
         world_accel_data = world_align(accel_data, quat_data);
         world_gyro_data = world_align(gyro_data, quat_data);
-        IMU_BUFFER_LOCK.lock();
-        IMU_WORLD_BUFFER.pop_front();
-        IMU_WORLD_BUFFER.push_back(std::array<double, 6>{
-            world_accel_data.x, world_accel_data.y, world_accel_data.z,
-            world_gyro_data.x, world_gyro_data.y, world_gyro_data.z
-        });
-        IMU_BUFFER_LOCK.unlock();
+        {
+            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+            IMU_WORLD_BUFFER.pop_front();
+            IMU_WORLD_BUFFER.push_back(std::array<double, 6>{
+                world_accel_data.x, world_accel_data.y, world_accel_data.z,
+                world_gyro_data.x, world_gyro_data.y, world_gyro_data.z
+            });
+        }
 
         // Add world-aligned magnetic field to buffer. TODO Why?
         // if (get_mag)
         // {
         //     world_mag_data = world_align(mag_data, quat_data);
-        //     MAG_BUFFER_LOCK.lock();
+        //     std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
         //     MAG_WORLD_BUFFER.pop_front();
         //     MAG_WORLD_BUFFER.push_back(std::array<double, 3>{
         //         world_mag_data.x, world_mag_data.y, world_mag_data.z
         //     });
-        //     MAG_BUFFER_LOCK.unlock();
         // }
 
         // Log orientation information to file.
@@ -457,15 +456,15 @@ void transmit_lora()
 
     while (!SHUTDOWN)
     {
-        // Grab all relevant data from buffers.
-        POSITION_BUFFER_LOCK.lock();
-        position = POSITION_BUFFER.back();
-        POSITION_BUFFER_LOCK.unlock();
+        { // Grab all relevant data from buffers.
+            std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
+            position = POSITION_BUFFER.back();
+        }
 
         ss << position[0] << "," << position[1] << "," << position[2] << ",";
-        ss << (STATUS.falling == arwain::StanceDetector::Falling) ? "f" : "0";
+        ss << (STATUS.falling == arwain::StanceDetector::Falling ? "f" : "0");
         ss << ",";
-        ss << (STATUS.entangled == arwain::StanceDetector::Entangled) ? "e" : "0";
+        ss << (STATUS.entangled == arwain::StanceDetector::Entangled ? "e" : "0");
         ss << ",";
 
         STATUS.falling = arwain::StanceDetector::NotFalling;
@@ -583,10 +582,10 @@ void transmit_lora()
     uint64_t testval = 12345678910;
     while (!SHUTDOWN)
     {
-        // Get positions as float16.
-        POSITION_BUFFER_LOCK.lock();
-        position = POSITION_BUFFER.back();
-        POSITION_BUFFER_LOCK.unlock();
+        { // Get positions as float16.
+            std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
+            position = POSITION_BUFFER.back();
+        }
         // std::cout << xa << "\n";
         position[0] = xa;
         position[1] = 3.5;
@@ -756,10 +755,10 @@ void predict_velocity()
 
     while (!SHUTDOWN)
     {
-        // Grab latest IMU packet
-        IMU_BUFFER_LOCK.lock();
-        imu = IMU_WORLD_BUFFER;
-        IMU_BUFFER_LOCK.unlock();
+        { // Grab latest IMU packet
+            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+            imu = IMU_WORLD_BUFFER;
+        }
 
         // Load the IMU data into a string for serial transmission.
         for (unsigned int i = 0; i < imu.size(); i++)
@@ -791,22 +790,22 @@ void predict_velocity()
         std::stringstream(answer.substr(0, delimiter)) >> velocity[1];
         std::stringstream(answer.substr(delimiter+1)) >> velocity[2];
 
-        // Store velocity in global buffer.
-        VELOCITY_BUFFER_LOCK.lock();
-        VELOCITY_BUFFER.pop_front();
-        VELOCITY_BUFFER.push_back(velocity);
-        VELOCITY_BUFFER_LOCK.unlock();
+        { // Store velocity in global buffer.
+            std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
+            VELOCITY_BUFFER.pop_front();
+            VELOCITY_BUFFER.push_back(velocity);
+        }
 
         // Compute new position.
         position[0] = position[0] + interval_seconds * velocity[0];
         position[0] = position[0] + interval_seconds * velocity[1];
         position[0] = position[0] + interval_seconds * velocity[2];
 
-        // Add new position to global buffer.
-        POSITION_BUFFER_LOCK.lock();
-        POSITION_BUFFER.pop_front();
-        POSITION_BUFFER.push_back(position);
-        POSITION_BUFFER_LOCK.unlock();
+        { // Add new position to global buffer.
+            std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
+            POSITION_BUFFER.pop_front();
+            POSITION_BUFFER.push_back(position);
+        }
 
         // Log results to file.
         if (LOG_TO_FILE)
@@ -883,10 +882,10 @@ void predict_velocity()
         
         while (!SHUTDOWN)
         {
-            // Grab latest IMU packet
-            IMU_BUFFER_LOCK.lock();
-            imu = IMU_WORLD_BUFFER;
-            IMU_BUFFER_LOCK.unlock();
+            { // Grab latest IMU packet
+                std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+                imu = IMU_WORLD_BUFFER;
+            }
 
             // TEST Make velocity prediction
             std::vector<double> v = model.infer(imu);
@@ -908,10 +907,11 @@ void predict_velocity()
             // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
             vel = vel + vel_previous;
 
-            VELOCITY_BUFFER_LOCK.lock();
-            VELOCITY_BUFFER.pop_front();
-            VELOCITY_BUFFER.push_back(vel);
-            VELOCITY_BUFFER_LOCK.unlock();
+            {
+                std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
+                VELOCITY_BUFFER.pop_front();
+                VELOCITY_BUFFER.push_back(vel);
+            }
 
             // TEST Store the velocity for use in the next loop (saves having to access the buffer for a single element).
             vel_previous = vel;
@@ -921,11 +921,11 @@ void predict_velocity()
             position[1] = position[1] + interval_seconds * vel[1];
             position[2] = position[2] + interval_seconds * vel[2];
             
-            // Update position buffer.
-            POSITION_BUFFER_LOCK.lock();
-            POSITION_BUFFER.pop_front();
-            POSITION_BUFFER.push_back(position);
-            POSITION_BUFFER_LOCK.unlock();
+            { // Update position buffer.
+                std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
+                POSITION_BUFFER.pop_front();
+                POSITION_BUFFER.push_back(position);
+            }
 
             // Add position and velocity data to file.
             if (LOG_TO_FILE)
@@ -988,10 +988,10 @@ void indoor_positioning()
 
         while (!SHUTDOWN)
         {
-            // Get most recent velocity data.
-            VELOCITY_BUFFER_LOCK.lock();
-            velocity = VELOCITY_BUFFER.back();
-            VELOCITY_BUFFER_LOCK.unlock();
+            { // Get most recent velocity data.
+                std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
+                velocity = VELOCITY_BUFFER.back();
+            }
 
             // Run update and get new position.
             ips.update(
@@ -1002,11 +1002,11 @@ void indoor_positioning()
             );
             position = ips.getPosition();
 
-            // Put IPS position in buffer.
-            POSITION_BUFFER_LOCK.lock();
-            IPS_BUFFER.pop_front();
-            IPS_BUFFER.push_back(position);
-            POSITION_BUFFER_LOCK.unlock();
+            { // Put IPS position in buffer.
+                std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
+                IPS_BUFFER.pop_front();
+                IPS_BUFFER.push_back(position);
+            }
 
             // Log result to file.
             if (LOG_TO_FILE)
@@ -1068,14 +1068,14 @@ void stance_detector()
 
     while (!SHUTDOWN)
     {
-        // Get all relevant data.
-        IMU_BUFFER_LOCK.lock();
-        imu_data = IMU_BUFFER;
-        IMU_BUFFER_LOCK.unlock();
-
-        VELOCITY_BUFFER_LOCK.lock();
-        vel_data = VELOCITY_BUFFER;
-        VELOCITY_BUFFER_LOCK.unlock();
+        { // Get all relevant data.
+            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+            imu_data = IMU_BUFFER;
+        }
+        {
+            std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
+            vel_data = VELOCITY_BUFFER;
+        }
 
         // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
         stance.run(imu_data, vel_data);

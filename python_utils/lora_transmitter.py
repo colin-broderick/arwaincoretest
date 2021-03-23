@@ -126,8 +126,5 @@ def main():
         socket.send(response)
 
 
-
 if __name__ == "__main__":
     main()
-    
-
