@@ -23,6 +23,8 @@ Other python requirements can be installed by
 pip3 install -r ./python_utils/requirements.txt
 ```
 
+2. Need openvino. Follow the installation guide at https://docs.openvinotoolkit.org/2019_R2/_docs_install_guides_installing_openvino_raspbian.html, but using the raspbian runtime we have on S3.
+
 2. Some apt packages:
 ```
 sudo apt install i2c-tools libzmq3-dev libi2c-dev cmake
