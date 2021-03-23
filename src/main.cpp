@@ -844,7 +844,7 @@ void stance_detector()
 
 void py_transmitter()
 {
-    system("python3 ./python_utils/lora_transmitter.py &");
+    system("python3 ./python_utils/lora_transmitter.py > /dev/null &");
 }
 
 void py_inference()
