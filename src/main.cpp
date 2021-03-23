@@ -496,6 +496,7 @@ void transmit_lora()
         std::string fromStream = ss.str();
         const char* str = fromStream.c_str();
         zmq_send(responder, str, strlen(str), 0);
+        zmq_recv(responder, NULL, 50, 0);  // Don't need the response.
         ss.str("");
 
         if (LOG_TO_FILE)
@@ -1113,9 +1114,10 @@ int main(int argc, char **argv)
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
 
+    // TODO Better to start these externally?
     // Start the python scripts used by inference and radio.
-    // system("python3 ./python_utils/lora_transmitter.py");
-    // system("python3 ./python_utils/ncs2_interface.py");
+    system("python3 ./python_utils/lora_transmitter.py");
+    system("python3 ./python_utils/ncs2_interface.py");
 
     // Determine logging behaviour from command line arguments.
     arwain::InputParser input{argc, argv};
