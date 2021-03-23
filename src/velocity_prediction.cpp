@@ -30,8 +30,6 @@ void predict_velocity()
     std::array<double, 3> position{0, 0, 0};
     std::array<double, 3> velocity{0, 0, 0};
 
-    double interval_seconds = ((double)VELOCITY_PREDICTION_INTERVAL)/1000.0;
-
     // Request and response buffers.
     std::stringstream request;
     char response_buffer[50];
@@ -49,7 +47,8 @@ void predict_velocity()
     }
 
     // Set up timing.
-    auto time = std::chrono::system_clock::now();
+    std::chrono::time_point<std::chrono::system_clock> lastTime = std::chrono::system_clock::now();
+    std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{VELOCITY_PREDICTION_INTERVAL};
 
     while (!SHUTDOWN)
@@ -59,6 +58,13 @@ void predict_velocity()
             imu = IMU_WORLD_BUFFER;
         }
 
+        // Check what the time really is since it might not be accurate.
+        time = std::chrono::system_clock::now();
+
+        // Get dt in seconds since last udpate, and update lastTime.
+        auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - lastTime).count()/1000.0;
+        lastTime = time;
+        
         // Load the IMU data into a string for serial transmission.
         for (unsigned int i = 0; i < imu.size(); i++)
         {
@@ -96,9 +102,9 @@ void predict_velocity()
         }
 
         // Compute new position.
-        position[0] = position[0] + interval_seconds * velocity[0];
-        position[1] = position[1] + interval_seconds * velocity[1];
-        position[2] = position[2] + interval_seconds * velocity[2];
+        position[0] = position[0] + dt * velocity[0];
+        position[1] = position[1] + dt * velocity[1];
+        position[2] = position[2] + dt * velocity[2];
 
         { // Add new position to global buffer.
             std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
@@ -286,15 +292,15 @@ static T operator*(const T& a1, U scalar)
   return a;
 }
 
-// Overload array operator-.
-template <class T>
-static T operator-(const T& a1, const T& a2)
-{
-  T a;
-  for (typename T::size_type i = 0; i < a1.size(); i++)
-    a[i] = a1[i] - a2[i];
-  return a;
-}
+// // Overload array operator-.
+// template <class T>
+// static T operator-(const T& a1, const T& a2)
+// {
+//   T a;
+//   for (typename T::size_type i = 0; i < a1.size(); i++)
+//     a[i] = a1[i] - a2[i];
+//   return a;
+// }
 
 // Overload array operator+.
 template <class T>
