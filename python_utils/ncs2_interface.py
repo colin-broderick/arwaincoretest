@@ -57,7 +57,10 @@ def main():
     socket.send("accept".encode("ascii"))
     while True:
         message = socket.recv()
-        nums  = [float(i) for i in message.decode("ascii").split(",")[:-1]]
+        message = message.decode("ascii")
+        if message == "stop":
+            break
+        nums  = [float(i) for i in message.split(",")[:-1]]
         n += 1
         print("Got data and doing prediction", len(nums))
         prediction = predictor.predict(nums)

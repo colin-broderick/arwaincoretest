@@ -111,9 +111,12 @@ def main():
     while True:
         ## Wait for incoming message
         message = socket.recv()
+        message = message.decode("ascii")
+        if message == "stop":
+            break
         
         ## Process message
-        message = message.decode("ascii").split(",")
+        message = message.split(",")
         x = float(message[0])
         y = float(message[1])
         z = float(message[2])
