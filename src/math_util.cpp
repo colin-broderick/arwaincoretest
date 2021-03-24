@@ -4,56 +4,52 @@
 
 
 /// Computes the L2 norm of a 3-vector as a double.
-double norm(std::array<double, 3> arr)
+double norm(const std::array<double, 3>& arr)
 {
     double res;
     res = arr[0] * arr[0] + arr[1] * arr[1] + arr[2] * arr[2];
     res = sqrt(res);
-    return (double)res;
+    return res;
 }
 
 /// Rotates a 3-vector according to a quaternion orientation.
-std::array<double, 3> world_align(std::array<double, 3> vec, quaternion orientation)
+std::array<double, 3> world_align(const std::array<double, 3>& vec, const quaternion& orientation)
 {
     // Convert the 3-vector into a quaternion.
-    quaternion quat_vec((double)0, (double)vec[0], (double)vec[1], (double)vec[2]);
-    quaternion quat_ori(orientation.w, orientation.x, orientation.y, orientation.z);
+    quaternion quat_vec{0, vec[0], vec[1], vec[2]};
+    quaternion quat_ori{orientation.w, orientation.x, orientation.y, orientation.z};
 
     // Compute the rotated vector as a quaternion.
     quaternion oriented_quat_vec = quat_ori * quat_vec * quat_ori.conj();
 
     // Cast the rotated quaternion back into a 3-vector.
-    std::array<double, 3> oriented_vec = std::array<double, 3>{
+    return std::array<double, 3>{
         (double)oriented_quat_vec.x,
         (double)oriented_quat_vec.y,
         (double)oriented_quat_vec.z
     };
-
-    return oriented_vec;
 }
 
 /// Rotates a 3-vector according to a quaternion orientation.
-vector3 world_align(vector3 vec, quaternion orientation)
+vector3 world_align(const vector3& vec, const quaternion& orientation)
 {
     // Convert the 3-vector into a quaternion.
-    quaternion quat_vec((double)0, (double)vec.x, (double)vec.y, (double)vec.z);
-    quaternion quat_ori(orientation.w, orientation.x, orientation.y, orientation.z);
+    quaternion quat_vec{0, vec.x, vec.y, vec.z};
+    quaternion quat_ori{orientation.w, orientation.x, orientation.y, orientation.z};
 
     // Compute the rotated vector as a quaternion.
     quaternion oriented_quat_vec = quat_ori * quat_vec * quat_ori.conj();
 
     // Cast the rotated quaternion back into a 3-vector.
-    vector3 oriented_vec{
+    return vector3{
         (double)oriented_quat_vec.x,
         (double)oriented_quat_vec.y,
         (double)oriented_quat_vec.z
     };
-
-    return oriented_vec;
 }
 
 /// Rotates a pair of 3-vectors, represented as a single 6-vector, according to a quaternion orientation.
-std::array<double, 6> world_align(std::array<double, 6> imu, quaternion orientation)
+std::array<double, 6> world_align(const std::array<double, 6>& imu, const quaternion& orientation)
 {
     // Split out the acceleration and gyroscope parts of the 6-vector.
     std::array<double, 3> acce = std::array<double, 3>{
@@ -68,10 +64,8 @@ std::array<double, 6> world_align(std::array<double, 6> imu, quaternion orientat
     std::array<double, 3> gyro_aligned = world_align(gyro, orientation);
 
     // Recombine the accleration and gyro parts.
-    std::array<double, 6> imu_aligned = std::array<double, 6>{
+    return std::array<double, 6>{
         acce_aligned[0], acce_aligned[1], acce_aligned[2],
         gyro_aligned[0], gyro_aligned[1], gyro_aligned[2]
     };
-
-    return imu_aligned;
 }

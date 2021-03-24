@@ -9,7 +9,7 @@
 
 /// Computes the cross product of two 3-vectors. The result is a new 3-vector.
 template <class T>
-T cross(T v1, T v2)
+T cross(const T& v1, const T& v2)
 {
     /*
     Computes the cross product using determinant formula:
@@ -27,19 +27,19 @@ T cross(T v1, T v2)
 }
 
 /// Computes the L2 norm of a 3-vector as a double.
-double norm(std::array<double, 3> arr);
+double norm(const std::array<double, 3>& arr);
 
 /// Computes the L2 norm of a 3-vector as a double.
-double norm(std::array<double, 3> arr);
+double norm(const std::array<double, 3>& arr);
 
 /// Rotates a 3-vector according to a quaternion orientation.
-std::array<double, 3> world_align(std::array<double, 3> vec, quaternion orientation);
+std::array<double, 3> world_align(const std::array<double, 3>& vec, const quaternion& orientation);
 
 /// Rotates a 3-vector according to a quaternion orientation.
-vector3 world_align(vector3 vec, quaternion orientation);
+vector3 world_align(const vector3& vec, const quaternion& orientation);
 
 /// Rotates a pair of 3-vectors, represented as a single 6-vector, according to a quaternion orientation.
-std::array<double, 6> world_align(std::array<double, 6> imu, quaternion orientation);
+std::array<double, 6> world_align(const std::array<double, 6>& imu, const quaternion& orientation);
 
 template <class T>
 int sign(T value)
