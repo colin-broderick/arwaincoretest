@@ -156,7 +156,7 @@ void predict_velocity()
 
         // Set up timing.
         auto time = std::chrono::system_clock::now();
-        std::chrono::milliseconds interval(VELOCITY_PREDICTION_INTERVAL);
+        std::chrono::milliseconds interval{VELOCITY_PREDICTION_INTERVAL};
 
         // Initialize buffers to contain working values.
         std::array<double, 3> vel;                        // The sum of npu_vel and imu_vel_delta.
@@ -254,7 +254,34 @@ void predict_velocity()
         }
     }
 }
-#endif
+
+/** \brief Multiple double 3-array by scalar value. */
+template <typename U>
+static std::array<double, 3> operator*(const std::array<double, 3>& a1, U scalar)
+{
+  std::array<double, 3> a;
+  for (typename std::array<double, 3>::size_type i = 0; i < a1.size(); i++)
+    a[i] = a1[i]*scalar;
+  return a;
+}
+
+/** \brief Element-wise difference of two double 3-arrays. */
+static std::array<double, 3> operator-(const std::array<double, 3>& a1, const std::array<double, 3>& a2)
+{
+  std::array<double, 3> a;
+  for (typename std::array<double, 3>::size_type i = 0; i < a1.size(); i++)
+    a[i] = a1[i] - a2[i];
+  return a;
+}
+
+/** \brief Element-wise sum of two double 3-arrays. */
+static std::array<double, 3> operator+(const std::array<double, 3>& a1, const std::array<double, 3>& a2)
+{
+  std::array<double, 3> a;
+  for (typename std::array<double, 3>::size_type i = 0; i < a1.size(); i++)
+    a[i] = a1[i] + a2[i];
+  return a;
+}
 
 /** \brief Integrates acceleration data over a small window to generate velocity delta.
  * \param data The buffer to integrate over.
@@ -277,39 +304,4 @@ static std::array<double, 3> integrate(std::deque<std::array<double, 6>> &data, 
     return integrated_data;
 }
 
-
-// TODO Everything from here until the finish line can be removed if we fully convert to vector3 --
-// These functions are addition etc. operators for std::array<double, .>, which is being phased out
-// in preference for vector3 objects.
-
-// Overload array operator*.
-template <class T, class U>
-static T operator*(const T& a1, U scalar)
-{
-  T a;
-  for (typename T::size_type i = 0; i < a1.size(); i++)
-    a[i] = a1[i]*scalar;
-  return a;
-}
-
-// // Overload array operator-.
-// template <class T>
-// static T operator-(const T& a1, const T& a2)
-// {
-//   T a;
-//   for (typename T::size_type i = 0; i < a1.size(); i++)
-//     a[i] = a1[i] - a2[i];
-//   return a;
-// }
-
-// Overload array operator+.
-template <class T>
-static T operator+(const T& a1, const T& a2)
-{
-  T a;
-  for (typename T::size_type i = 0; i < a1.size(); i++)
-    a[i] = a1[i] + a2[i];
-  return a;
-}
-
-// Finish line ------------------------------------------------------------------------------------
+#endif
