@@ -15,10 +15,10 @@ namespace arwain
             virtual ~Filter() = default;
             virtual void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az) = 0;
             virtual void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz) = 0;
-            virtual double getW() {return 0;}
-            virtual double getX() {return 0;}
-            virtual double getY() {return 0;}
-            virtual double getZ() {return 0;}
+            virtual double getW() = 0;
+            virtual double getX() = 0;
+            virtual double getY() = 0;
+            virtual double getZ() = 0;
             virtual double getPitch() = 0;
             virtual double getRoll() = 0;
             virtual double getYaw() = 0;
