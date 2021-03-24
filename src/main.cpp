@@ -56,7 +56,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <string.h>
 #include <iomanip>
 
-//#include "arwain_torch.h"
+// #include "arwain_torch.h"
 #include "quaternions.h"
 #include "stance.h"
 #include "imu_utils.h"
@@ -71,11 +71,11 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "velocity_prediction.h"
 #include "lora.h"
 #include "packet.h"
-#include "half.h"
+// #include "half.h"
 // #include "rknn_api.h"
 
 // Time intervals, all in milliseconds.
-unsigned int IMU_READING_INTERVAL = 5;
+unsigned int IMU_READING_INTERVAL = 5;    // You don't need to change this; switch to 10 ms is controlled by a #define at the top
 unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
 unsigned int LORA_TRANSMISSION_INTERVAL = 500;
 unsigned int STANCE_DETECTION_INTERVAL = 1000;
@@ -83,7 +83,7 @@ unsigned int INDOOR_POSITIONING_INTERVAL = 50;
 unsigned int STD_OUT_INTERVAL = 250;
 
 // Buffer sizes.
-unsigned int POSITION_BUFFER_LEN = 200;
+unsigned int POSITION_BUFFER_LEN = 200;    // 1 second is (1000/VELOCITY_PREDICTION_INTERVAL) samples.
 unsigned int MAG_BUFFER_LEN = 200;
 unsigned int VELOCITY_BUFFER_LEN = 200;
 unsigned int ORIENTATION_BUFFER_LEN = 200;
@@ -462,15 +462,15 @@ void imu_reader()
     int get_mag = 0;
 
     // Local buffers for IMU data.
-    vector3 accelPrevious{0, 0, 0};
-    vector3 accelMid{0, 0, 0};
-    vector3 accel{0, 0, 0};
-    vector3 gyroPrevious{0, 0, 0};
-    vector3 gyroMid{0, 0, 0};
-    vector3 gyro{0, 0, 0};
-    vector3 mag_data{0, 0, 0};
-    quaternion quat_data;
-    quaternion quat_data_mid;
+    vector3 accel_previous{0, 0, 0};  // Previous -> Data from the start of the previous loop
+    vector3 accel_mid{0, 0, 0};       // Mid      -> Data halfway between the start of current loop and previous loop
+    vector3 accel_now{0, 0, 0};       // Now      -> Data from the start of the current loop
+    vector3 gyro_previous{0, 0, 0};
+    vector3 gyro_mid{0, 0, 0};
+    vector3 gyro_now{0, 0, 0};
+    vector3 magnet_now{0, 0, 0};
+    quaternion quaternion_now;
+    quaternion quaternion_mid;
 
     // File handles for logging.
     std::ofstream acce_file;
@@ -495,7 +495,7 @@ void imu_reader()
 
     // Set up timing.
     auto timePrevious = std::chrono::system_clock::now();
-    auto timeStart = std::chrono::system_clock::now();
+    auto timeNow = std::chrono::system_clock::now();
     auto timeMid = std::chrono::system_clock::now();
     auto loopTime = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{IMU_READING_INTERVAL * 2};
@@ -505,70 +505,74 @@ void imu_reader()
         // Whether or not to get magnetometer on this spin.
         get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
 
-        timeStart = std::chrono::system_clock::now();
-        timeMid = timeStart - (timeStart - timePrevious)/2;
+        // Get the current time, and the midpoint in time between now and the start of the previous spin.
+        timeNow = std::chrono::system_clock::now();
+        timeMid = timeNow - (timeNow - timePrevious)/2;
         
-        get_bmi270_data(&accel, &gyro);
+        // Read sensor data and apply bias corrections.
+        get_bmi270_data(&accel_now, &gyro_now);
         if (get_mag)
         {
-            get_bmm150_data(&mag_data);
-            mag_data = mag_data - CONFIG.mag_bias;
-            mag_data = mag_data * CONFIG.mag_scale;
+            get_bmm150_data(&magnet_now);
+            magnet_now = magnet_now - CONFIG.mag_bias;
+            magnet_now = magnet_now * CONFIG.mag_scale;
         }
-        accel = accel - CONFIG.accel_bias;
-        gyro = gyro - CONFIG.gyro_bias;
-        accelMid = (accel + accelPrevious)/2;
-        gyroMid = (gyro + gyroPrevious)/2;
+        accel_now = accel_now - CONFIG.accel_bias;
+        gyro_now = gyro_now - CONFIG.gyro_bias;
+        
+        // Interpolate the accel and gyro readings halfway between the previous time step and now.
+        accel_mid = (accel_now + accel_previous)/2.0;
+        gyro_mid = (gyro_now + gyro_previous)/2.0;
 
-        { // Add new readings to end of buffer, and remove oldest from start of buffer.
+        { // Add new readings to end of IMU buffer, and remove oldest two from start of buffer.
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
             IMU_BUFFER.pop_front();
             IMU_BUFFER.pop_front();
-            IMU_BUFFER.push_back({accelMid.x, accelMid.y, accelMid.z, gyroMid.x, gyroMid.y, gyroMid.z});
-            IMU_BUFFER.push_back({accel.x, accel.y, accel.z, gyro.x, gyro.y, gyro.z});
+            IMU_BUFFER.push_back({accel_mid.x, accel_mid.y, accel_mid.z, gyro_mid.x, gyro_mid.y, gyro_mid.z});
+            IMU_BUFFER.push_back({accel_now.x, accel_now.y, accel_now.z, gyro_now.x, gyro_now.y, gyro_now.z});
         }
 
         if (LOG_TO_FILE)
-        { // Log IMU to file
-            acce_file << timeMid.time_since_epoch().count() << " " << accelMid.x << " " << accelMid.y << " " << accelMid.z << "\n";
-            gyro_file << timeMid.time_since_epoch().count() << " " << gyroMid.x << " " << gyroMid.y << " " << gyroMid.z << "\n";
-            acce_file << timeStart.time_since_epoch().count() << " " << accel.x << " " << accel.y << " " << accel.z << "\n";
-            gyro_file << timeStart.time_since_epoch().count() << " " << gyro.x << " " << gyro.y << " " << gyro.z << "\n";
+        { // Log IMU to file.
+            acce_file << timeMid.time_since_epoch().count() << " " << accel_mid.x << " " << accel_mid.y << " " << accel_mid.z << "\n";
+            gyro_file << timeMid.time_since_epoch().count() << " " << gyro_mid.x << " " << gyro_mid.y << " " << gyro_mid.z << "\n";
+            acce_file << timeNow.time_since_epoch().count() << " " << accel_now.x << " " << accel_now.y << " " << accel_now.z << "\n";
+            gyro_file << timeNow.time_since_epoch().count() << " " << gyro_now.x << " " << gyro_now.y << " " << gyro_now.z << "\n";
             if (CONFIG.log_magnetometer)
-            {
-                mag_file << timeStart.time_since_epoch().count() << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
+            { // Log magnetometer to file.
+                mag_file << timeNow.time_since_epoch().count() << " " << magnet_now.x << " " << magnet_now.y << " " << magnet_now.z << "\n";
             }
         }
 
-        // Update orientation filter
+        // Update orientation filter twice, using interpolated sample and current sample.
         if (CONFIG.use_magnetometer)
         {
-            filter->update(timeMid.time_since_epoch().count(), gyroMid.x, gyroMid.y, gyroMid.z, accelMid.x, accelMid.y, accelMid.z, mag_data.z, mag_data.y, mag_data.z);
-            quat_data_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
-            filter->update(timeStart.time_since_epoch().count(), gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z, mag_data.z, mag_data.y, mag_data.z);
-            quat_data = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+            filter->update(timeMid.time_since_epoch().count(), gyro_mid.x, gyro_mid.y, gyro_mid.z, accel_mid.x, accel_mid.y, accel_mid.z, magnet_now.z, magnet_now.y, magnet_now.z);
+            quaternion_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+            filter->update(timeNow.time_since_epoch().count(), gyro_now.x, gyro_now.y, gyro_now.z, accel_now.x, accel_now.y, accel_now.z, magnet_now.z, magnet_now.y, magnet_now.z);
+            quaternion_now = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
         }
         else
         {
-            filter->update(timeMid.time_since_epoch().count(), gyroMid.x, gyroMid.y, gyroMid.z, accelMid.x, accelMid.y, accelMid.z);
-            quat_data_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
-            filter->update(timeStart.time_since_epoch().count(), gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
-            quat_data = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+            filter->update(timeMid.time_since_epoch().count(), gyro_mid.x, gyro_mid.y, gyro_mid.z, accel_mid.x, accel_mid.y, accel_mid.z);
+            quaternion_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+            filter->update(timeNow.time_since_epoch().count(), gyro_now.x, gyro_now.y, gyro_now.z, accel_now.x, accel_now.y, accel_now.z);
+            quaternion_now = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
         }
 
-        { // Add orientation to buffer
+        { // Add orientation to buffer and remove oldest two samples.
             std::lock_guard<std::mutex> lock{ORIENTATION_BUFFER_LOCK};
             QUAT_ORIENTATION_BUFFER.pop_front();
             QUAT_ORIENTATION_BUFFER.pop_front();
-            QUAT_ORIENTATION_BUFFER.push_back(quat_data_mid);
-            QUAT_ORIENTATION_BUFFER.push_back(quat_data);
+            QUAT_ORIENTATION_BUFFER.push_back(quaternion_mid);
+            QUAT_ORIENTATION_BUFFER.push_back(quaternion_now);
         }
 
-        // Add world-aligned IMU to its own buffer
-        auto world_accel_mid = world_align(accelMid, quat_data_mid);
-        auto world_accel = world_align(accel, quat_data);
-        auto world_gyro_mid = world_align(gyroMid, quat_data_mid);
-        auto world_gyro = world_align(gyro, quat_data);
+        // World-align IMU data and add to its own buffer.
+        auto world_accel_mid = world_align(accel_mid, quaternion_mid);
+        auto world_accel = world_align(accel_now, quaternion_now);
+        auto world_gyro_mid = world_align(gyro_mid, quaternion_mid);
+        auto world_gyro = world_align(gyro_now, quaternion_now);
         {
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
             IMU_WORLD_BUFFER.pop_front();
@@ -580,14 +584,15 @@ void imu_reader()
         // Log orientation information to file.
         if (LOG_TO_FILE)
         {
-            quat_file << timeMid.time_since_epoch().count() << " " << quat_data_mid.w << " " << quat_data_mid.x << " " << quat_data_mid.y << " " << quat_data_mid.z << "\n";
-            quat_file << timeStart.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
+            quat_file << timeMid.time_since_epoch().count() << " " << quaternion_mid.w << " " << quaternion_mid.x << " " << quaternion_mid.y << " " << quaternion_mid.z << "\n";
+            quat_file << timeNow.time_since_epoch().count() << " " << quaternion_now.w << " " << quaternion_now.x << " " << quaternion_now.y << " " << quaternion_now.z << "\n";
         }
 
         // Store last reading and wait until next tick.
-        accelPrevious = accel;
-        gyroPrevious = gyro;
-        timePrevious = timeStart;
+        accel_previous = accel_now;
+        gyro_previous = gyro_now;
+        timePrevious = timeNow;
+        count += 2;
         loopTime = loopTime + interval;
         std::this_thread::sleep_until(loopTime);
     }
