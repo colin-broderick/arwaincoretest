@@ -79,6 +79,7 @@ unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
 unsigned int LORA_TRANSMISSION_INTERVAL = 500;
 unsigned int STANCE_DETECTION_INTERVAL = 1000;
 unsigned int INDOOR_POSITIONING_INTERVAL = 50;
+unsigned int STD_OUT_INTERVAL = 250;
 
 // Buffer sizes.
 unsigned int POSITION_BUFFER_LEN = 200;
@@ -195,7 +196,7 @@ void std_output()
         std::stringstream ss;
 
         // Set up timing, including pause while IMU warms up.
-        std::chrono::milliseconds interval(100);
+        std::chrono::milliseconds interval{STD_OUT_INTERVAL};
         std::this_thread::sleep_for(interval*3);
         auto time = std::chrono::system_clock::now();
 
@@ -228,6 +229,174 @@ void std_output()
             time = time + interval;
             std::this_thread::sleep_until(time);
         }
+    }
+}
+
+void imu_reader_slow()
+{
+    ////////////////////////////////////////////////
+    // COMPLETELY UNTESTED, DO NOT ATTEMPT TO USE //
+    ////////////////////////////////////////////////
+    
+    // Quit immediately if IMU not enabled.
+    if (NO_IMU)
+    {
+        return;
+    }
+
+    // Choose an orientation filter depending on configuration, with Madgwick as default.
+    arwain::Filter* filter;
+    if (CONFIG.orientation_filter == "efaroe")
+    {
+        filter = new arwain::eFaroe{quaternion{0,0,0,0}, CONFIG.gyro_bias, 100, CONFIG.efaroe_beta, CONFIG.efaroe_zeta};
+    }
+    else
+    {
+        filter = new arwain::Madgwick{1000.0/IMU_READING_INTERVAL, CONFIG.madgwick_beta};
+    }
+
+    int count = 0;
+    int get_mag = 0;
+
+    // Local buffers for IMU data.
+    vector3 accelPrevious{0, 0, 0};
+    vector3 accelMid{0, 0, 0};
+    vector3 accel{0, 0, 0};
+    vector3 gyroPrevious{0, 0, 0};
+    vector3 gyroMid{0, 0, 0};
+    vector3 gyro{0, 0, 0};
+    vector3 mag_data{0, 0, 0};
+    quaternion quat_data;
+    quaternion quat_data_mid;
+
+    // File handles for logging.
+    std::ofstream acce_file;
+    std::ofstream gyro_file;
+    std::ofstream mag_file;
+    std::ofstream quat_file;
+
+    if (LOG_TO_FILE)
+    {
+        // Open file handles for data logging.
+        acce_file.open(FOLDER_DATE_STRING + "/acce.txt");
+        gyro_file.open(FOLDER_DATE_STRING + "/gyro.txt");
+        mag_file.open(FOLDER_DATE_STRING + "/mag.txt");
+        quat_file.open(FOLDER_DATE_STRING + "/quat_orientation.txt");
+
+        // File headers
+        acce_file << "# time x y z" << "\n";
+        gyro_file << "# time x y z" << "\n";
+        mag_file << "# time x y z" << "\n";
+        quat_file << "# time w x y z" << "\n";
+    }
+
+    // Set up timing.
+    auto timePrevious = std::chrono::system_clock::now();
+    auto timeStart = std::chrono::system_clock::now();
+    auto timeMid = std::chrono::system_clock::now();
+    auto loopTime = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{10};
+
+    while (!SHUTDOWN)
+    {
+        // Whether or not to get magnetometer on this spin.
+        get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
+
+        timeStart = std::chrono::system_clock::now();
+        timeMid = timeStart - (timeStart - timePrevious)/2;
+        
+        get_bmi270_data(&accel, &gyro);
+        if (get_mag)
+        {
+            get_bmm150_data(&mag_data);
+            mag_data = mag_data - CONFIG.mag_bias;
+            mag_data = mag_data * CONFIG.mag_scale;
+        }
+        accel = accel - CONFIG.accel_bias;
+        gyro = gyro - CONFIG.gyro_bias;
+        accelMid = (accel + accelPrevious)/2;
+
+        { // Add new readings to end of buffer, and remove oldest from start of buffer.
+            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+            IMU_BUFFER.pop_front();
+            IMU_BUFFER.pop_front();
+            IMU_BUFFER.push_back({accelMid.x, accelMid.y, accelMid.z, gyroMid.x, gyroMid.y, gyroMid.z});
+            IMU_BUFFER.push_back({accel.x, accel.y, accel.z, gyro.x, gyro.y, gyro.z});
+        }
+
+        if (LOG_TO_FILE)
+        { // Log IMU to file
+            acce_file << timeMid.time_since_epoch().count() << " " << accelMid.x << " " << accelMid.y << " " << accelMid.z << "\n";
+            gyro_file << timeMid.time_since_epoch().count() << " " << gyroMid.x << " " << gyroMid.y << " " << gyroMid.z << "\n";
+            acce_file << timeStart.time_since_epoch().count() << " " << accel.x << " " << accel.y << " " << accel.z << "\n";
+            gyro_file << timeStart.time_since_epoch().count() << " " << gyro.x << " " << gyro.y << " " << gyro.z << "\n";
+            if (CONFIG.log_magnetometer)
+            {
+                mag_file << timeStart.time_since_epoch().count() << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
+            }
+        }
+
+        // Update orientation filter
+        if (CONFIG.use_magnetometer)
+        {
+            filter->update(timeMid.time_since_epoch().count(), gyroMid.x, gyroMid.y, gyroMid.z, accelMid.x, accelMid.y, accelMid.z, mag_data.z, mag_data.y, mag_data.z);
+            quat_data_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+            filter->update(timeStart.time_since_epoch().count(), gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z, mag_data.z, mag_data.y, mag_data.z);
+            quat_data = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+        }
+        else
+        {
+            filter->update(timeMid.time_since_epoch().count(), gyroMid.x, gyroMid.y, gyroMid.z, accelMid.x, accelMid.y, accelMid.z);
+            quat_data_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+            filter->update(timeStart.time_since_epoch().count(), gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
+            quat_data = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+        }
+
+        { // Add orientation to buffer
+            std::lock_guard<std::mutex> lock{ORIENTATION_BUFFER_LOCK};
+            QUAT_ORIENTATION_BUFFER.pop_front();
+            QUAT_ORIENTATION_BUFFER.pop_front();
+            QUAT_ORIENTATION_BUFFER.push_back(quat_data_mid);
+            QUAT_ORIENTATION_BUFFER.push_back(quat_data);
+        }
+
+        // Add world-aligned IMU to its own buffer
+        auto world_accel_mid = world_align(accelMid, quat_data_mid);
+        auto world_accel = world_align(accel, quat_data);
+        auto world_gyro_mid = world_align(gyroMid, quat_data_mid);
+        auto world_gyro = world_align(gyro, quat_data);
+        {
+            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+            IMU_WORLD_BUFFER.pop_front();
+            IMU_WORLD_BUFFER.pop_front();
+            IMU_WORLD_BUFFER.push_back({world_accel_mid.x, world_accel_mid.y, world_accel_mid.z, world_gyro_mid.x, world_gyro_mid.y, world_gyro_mid.z});
+            IMU_WORLD_BUFFER.push_back({world_accel.x, world_accel.y, world_accel.z, world_gyro.x, world_gyro.y, world_gyro.z});
+        }
+
+        // Log orientation information to file.
+        if (LOG_TO_FILE)
+        {
+            quat_file << timeMid.time_since_epoch().count() << " " << quat_data_mid.w << " " << quat_data_mid.x << " " << quat_data_mid.y << " " << quat_data_mid.z << "\n";
+            quat_file << timeStart.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
+        }
+
+        // Store last reading and wait until next tick.
+        accelPrevious = accel;
+        gyroPrevious = gyro;
+        timePrevious = timeStart;
+        loopTime = loopTime + interval;
+        std::this_thread::sleep_until(loopTime);
+    }
+
+    delete filter;
+
+    // Close file handles.
+    if (LOG_TO_FILE)
+    {
+        acce_file.close();
+        gyro_file.close();
+        quat_file.close();
+        mag_file.close();
     }
 }
 
@@ -295,7 +464,7 @@ void imu_reader()
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(5);
+    std::chrono::milliseconds interval{IMU_READING_INTERVAL};
 
     while (!SHUTDOWN)
     {
@@ -584,7 +753,7 @@ void transmit_lora()
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(LORA_TRANSMISSION_INTERVAL);
+    std::chrono::milliseconds interval{LORA_TRANSMISSION_INTERVAL};
 
     // Open file handles for data logging.
     if (LOG_TO_FILE)
@@ -662,42 +831,6 @@ void transmit_lora()
 }
 #endif
 
-// TODO Everything from here until the finish line can be removed if we fully convert to vector3 --
-// These functions are addition etc. operators for std::array<double, .>, which is being phased out
-// in preference for vector3 objects.
-
-// Overload array operator*.
-template <class T, class U>
-T operator*(const T& a1, U scalar)
-{
-  T a;
-  for (typename T::size_type i = 0; i < a1.size(); i++)
-    a[i] = a1[i]*scalar;
-  return a;
-}
-
-// Overload array operator-.
-template <class T>
-T operator-(const T& a1, const T& a2)
-{
-  T a;
-  for (typename T::size_type i = 0; i < a1.size(); i++)
-    a[i] = a1[i] - a2[i];
-  return a;
-}
-
-// Overload array operator+.
-template <class T>
-T operator+(const T& a1, const T& a2)
-{
-  T a;
-  for (typename T::size_type i = 0; i < a1.size(); i++)
-    a[i] = a1[i] + a2[i];
-  return a;
-}
-
-// Finish line ------------------------------------------------------------------------------------
-
 /** \brief Capture the SIGINT signal for clean exit.
  * Sets the global SHUTDOWN flag informing all threads to clean up and exit.
  * \param signal The signal to capture.
@@ -733,7 +866,7 @@ void indoor_positioning()
 
         // Set up timing.
         auto time = std::chrono::system_clock::now();
-        std::chrono::milliseconds interval(INDOOR_POSITIONING_INTERVAL);
+        std::chrono::milliseconds interval{INDOOR_POSITIONING_INTERVAL};
 
         while (!SHUTDOWN)
         {

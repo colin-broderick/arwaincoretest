@@ -97,7 +97,7 @@ void arwain::test_imu(int &shutdown)
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval(5);
+    std::chrono::milliseconds interval{10};
 
     while (!shutdown)
     {
