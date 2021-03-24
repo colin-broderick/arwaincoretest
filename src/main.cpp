@@ -33,6 +33,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #define USE_SOCKET_INFERENCE 1
 #define USE_SOCKET_RADIO 1
 #define GYRO_BIAS_EXPERIMENT 0
+#define IMU_FREQ_200 0
 
 #include <algorithm>
 #include <csignal>
@@ -232,174 +233,7 @@ void std_output()
     }
 }
 
-void imu_reader_slow()
-{
-    ////////////////////////////////////////////////
-    // COMPLETELY UNTESTED, DO NOT ATTEMPT TO USE //
-    ////////////////////////////////////////////////
-    
-    // Quit immediately if IMU not enabled.
-    if (NO_IMU)
-    {
-        return;
-    }
-
-    // Choose an orientation filter depending on configuration, with Madgwick as default.
-    arwain::Filter* filter;
-    if (CONFIG.orientation_filter == "efaroe")
-    {
-        filter = new arwain::eFaroe{quaternion{0,0,0,0}, CONFIG.gyro_bias, 100, CONFIG.efaroe_beta, CONFIG.efaroe_zeta};
-    }
-    else
-    {
-        filter = new arwain::Madgwick{1000.0/IMU_READING_INTERVAL, CONFIG.madgwick_beta};
-    }
-
-    int count = 0;
-    int get_mag = 0;
-
-    // Local buffers for IMU data.
-    vector3 accelPrevious{0, 0, 0};
-    vector3 accelMid{0, 0, 0};
-    vector3 accel{0, 0, 0};
-    vector3 gyroPrevious{0, 0, 0};
-    vector3 gyroMid{0, 0, 0};
-    vector3 gyro{0, 0, 0};
-    vector3 mag_data{0, 0, 0};
-    quaternion quat_data;
-    quaternion quat_data_mid;
-
-    // File handles for logging.
-    std::ofstream acce_file;
-    std::ofstream gyro_file;
-    std::ofstream mag_file;
-    std::ofstream quat_file;
-
-    if (LOG_TO_FILE)
-    {
-        // Open file handles for data logging.
-        acce_file.open(FOLDER_DATE_STRING + "/acce.txt");
-        gyro_file.open(FOLDER_DATE_STRING + "/gyro.txt");
-        mag_file.open(FOLDER_DATE_STRING + "/mag.txt");
-        quat_file.open(FOLDER_DATE_STRING + "/quat_orientation.txt");
-
-        // File headers
-        acce_file << "# time x y z" << "\n";
-        gyro_file << "# time x y z" << "\n";
-        mag_file << "# time x y z" << "\n";
-        quat_file << "# time w x y z" << "\n";
-    }
-
-    // Set up timing.
-    auto timePrevious = std::chrono::system_clock::now();
-    auto timeStart = std::chrono::system_clock::now();
-    auto timeMid = std::chrono::system_clock::now();
-    auto loopTime = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{10};
-
-    while (!SHUTDOWN)
-    {
-        // Whether or not to get magnetometer on this spin.
-        get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
-
-        timeStart = std::chrono::system_clock::now();
-        timeMid = timeStart - (timeStart - timePrevious)/2;
-        
-        get_bmi270_data(&accel, &gyro);
-        if (get_mag)
-        {
-            get_bmm150_data(&mag_data);
-            mag_data = mag_data - CONFIG.mag_bias;
-            mag_data = mag_data * CONFIG.mag_scale;
-        }
-        accel = accel - CONFIG.accel_bias;
-        gyro = gyro - CONFIG.gyro_bias;
-        accelMid = (accel + accelPrevious)/2;
-
-        { // Add new readings to end of buffer, and remove oldest from start of buffer.
-            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
-            IMU_BUFFER.pop_front();
-            IMU_BUFFER.pop_front();
-            IMU_BUFFER.push_back({accelMid.x, accelMid.y, accelMid.z, gyroMid.x, gyroMid.y, gyroMid.z});
-            IMU_BUFFER.push_back({accel.x, accel.y, accel.z, gyro.x, gyro.y, gyro.z});
-        }
-
-        if (LOG_TO_FILE)
-        { // Log IMU to file
-            acce_file << timeMid.time_since_epoch().count() << " " << accelMid.x << " " << accelMid.y << " " << accelMid.z << "\n";
-            gyro_file << timeMid.time_since_epoch().count() << " " << gyroMid.x << " " << gyroMid.y << " " << gyroMid.z << "\n";
-            acce_file << timeStart.time_since_epoch().count() << " " << accel.x << " " << accel.y << " " << accel.z << "\n";
-            gyro_file << timeStart.time_since_epoch().count() << " " << gyro.x << " " << gyro.y << " " << gyro.z << "\n";
-            if (CONFIG.log_magnetometer)
-            {
-                mag_file << timeStart.time_since_epoch().count() << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
-            }
-        }
-
-        // Update orientation filter
-        if (CONFIG.use_magnetometer)
-        {
-            filter->update(timeMid.time_since_epoch().count(), gyroMid.x, gyroMid.y, gyroMid.z, accelMid.x, accelMid.y, accelMid.z, mag_data.z, mag_data.y, mag_data.z);
-            quat_data_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
-            filter->update(timeStart.time_since_epoch().count(), gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z, mag_data.z, mag_data.y, mag_data.z);
-            quat_data = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
-        }
-        else
-        {
-            filter->update(timeMid.time_since_epoch().count(), gyroMid.x, gyroMid.y, gyroMid.z, accelMid.x, accelMid.y, accelMid.z);
-            quat_data_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
-            filter->update(timeStart.time_since_epoch().count(), gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
-            quat_data = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
-        }
-
-        { // Add orientation to buffer
-            std::lock_guard<std::mutex> lock{ORIENTATION_BUFFER_LOCK};
-            QUAT_ORIENTATION_BUFFER.pop_front();
-            QUAT_ORIENTATION_BUFFER.pop_front();
-            QUAT_ORIENTATION_BUFFER.push_back(quat_data_mid);
-            QUAT_ORIENTATION_BUFFER.push_back(quat_data);
-        }
-
-        // Add world-aligned IMU to its own buffer
-        auto world_accel_mid = world_align(accelMid, quat_data_mid);
-        auto world_accel = world_align(accel, quat_data);
-        auto world_gyro_mid = world_align(gyroMid, quat_data_mid);
-        auto world_gyro = world_align(gyro, quat_data);
-        {
-            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
-            IMU_WORLD_BUFFER.pop_front();
-            IMU_WORLD_BUFFER.pop_front();
-            IMU_WORLD_BUFFER.push_back({world_accel_mid.x, world_accel_mid.y, world_accel_mid.z, world_gyro_mid.x, world_gyro_mid.y, world_gyro_mid.z});
-            IMU_WORLD_BUFFER.push_back({world_accel.x, world_accel.y, world_accel.z, world_gyro.x, world_gyro.y, world_gyro.z});
-        }
-
-        // Log orientation information to file.
-        if (LOG_TO_FILE)
-        {
-            quat_file << timeMid.time_since_epoch().count() << " " << quat_data_mid.w << " " << quat_data_mid.x << " " << quat_data_mid.y << " " << quat_data_mid.z << "\n";
-            quat_file << timeStart.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
-        }
-
-        // Store last reading and wait until next tick.
-        accelPrevious = accel;
-        gyroPrevious = gyro;
-        timePrevious = timeStart;
-        loopTime = loopTime + interval;
-        std::this_thread::sleep_until(loopTime);
-    }
-
-    delete filter;
-
-    // Close file handles.
-    if (LOG_TO_FILE)
-    {
-        acce_file.close();
-        gyro_file.close();
-        quat_file.close();
-        mag_file.close();
-    }
-}
-
+#if IMU_FREQ_200
 /** \brief Reads IMU data, runs orientation filter(s), rotates IMU data, and buffers everything.
  * This is the root of the entire tree. Quite a lot goes on here and a lot of buffers
  * are fed. This is also the most time-sensitive thread. A single loop must not take
@@ -480,7 +314,9 @@ void imu_reader()
             mag_data = mag_data * CONFIG.mag_scale;
         }
         accel_data = accel_data - CONFIG.accel_bias;
+        // std::cout << CONFIG.gyro_bias.x << " " << CONFIG.gyro_bias.y << " " << CONFIG.gyro_bias.z << "\n";
         gyro_data = gyro_data - CONFIG.gyro_bias;
+        // std::cout << gyro_data.x << "\n";
         
         { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
@@ -598,6 +434,176 @@ void imu_reader()
         mag_file.close();
     }
 }
+#else
+void imu_reader()
+{
+    ////////////////////////////////////////////////
+    // COMPLETELY UNTESTED, DO NOT ATTEMPT TO USE //
+    ////////////////////////////////////////////////
+    
+    // Quit immediately if IMU not enabled.
+    if (NO_IMU)
+    {
+        return;
+    }
+
+    // Choose an orientation filter depending on configuration, with Madgwick as default.
+    arwain::Filter* filter;
+    if (CONFIG.orientation_filter == "efaroe")
+    {
+        filter = new arwain::eFaroe{quaternion{0,0,0,0}, CONFIG.gyro_bias, 100, CONFIG.efaroe_beta, CONFIG.efaroe_zeta};
+    }
+    else
+    {
+        filter = new arwain::Madgwick{1000.0/IMU_READING_INTERVAL, CONFIG.madgwick_beta};
+    }
+
+    int count = 0;
+    int get_mag = 0;
+
+    // Local buffers for IMU data.
+    vector3 accelPrevious{0, 0, 0};
+    vector3 accelMid{0, 0, 0};
+    vector3 accel{0, 0, 0};
+    vector3 gyroPrevious{0, 0, 0};
+    vector3 gyroMid{0, 0, 0};
+    vector3 gyro{0, 0, 0};
+    vector3 mag_data{0, 0, 0};
+    quaternion quat_data;
+    quaternion quat_data_mid;
+
+    // File handles for logging.
+    std::ofstream acce_file;
+    std::ofstream gyro_file;
+    std::ofstream mag_file;
+    std::ofstream quat_file;
+
+    if (LOG_TO_FILE)
+    {
+        // Open file handles for data logging.
+        acce_file.open(FOLDER_DATE_STRING + "/acce.txt");
+        gyro_file.open(FOLDER_DATE_STRING + "/gyro.txt");
+        mag_file.open(FOLDER_DATE_STRING + "/mag.txt");
+        quat_file.open(FOLDER_DATE_STRING + "/quat_orientation.txt");
+
+        // File headers
+        acce_file << "# time x y z" << "\n";
+        gyro_file << "# time x y z" << "\n";
+        mag_file << "# time x y z" << "\n";
+        quat_file << "# time w x y z" << "\n";
+    }
+
+    // Set up timing.
+    auto timePrevious = std::chrono::system_clock::now();
+    auto timeStart = std::chrono::system_clock::now();
+    auto timeMid = std::chrono::system_clock::now();
+    auto loopTime = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{IMU_READING_INTERVAL * 2};
+
+    while (!SHUTDOWN)
+    {
+        // Whether or not to get magnetometer on this spin.
+        get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
+
+        timeStart = std::chrono::system_clock::now();
+        timeMid = timeStart - (timeStart - timePrevious)/2;
+        
+        get_bmi270_data(&accel, &gyro);
+        if (get_mag)
+        {
+            get_bmm150_data(&mag_data);
+            mag_data = mag_data - CONFIG.mag_bias;
+            mag_data = mag_data * CONFIG.mag_scale;
+        }
+        accel = accel - CONFIG.accel_bias;
+        gyro = gyro - CONFIG.gyro_bias;
+        accelMid = (accel + accelPrevious)/2;
+        gyroMid = (gyro + gyroPrevious)/2;
+
+        { // Add new readings to end of buffer, and remove oldest from start of buffer.
+            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+            IMU_BUFFER.pop_front();
+            IMU_BUFFER.pop_front();
+            IMU_BUFFER.push_back({accelMid.x, accelMid.y, accelMid.z, gyroMid.x, gyroMid.y, gyroMid.z});
+            IMU_BUFFER.push_back({accel.x, accel.y, accel.z, gyro.x, gyro.y, gyro.z});
+        }
+
+        if (LOG_TO_FILE)
+        { // Log IMU to file
+            acce_file << timeMid.time_since_epoch().count() << " " << accelMid.x << " " << accelMid.y << " " << accelMid.z << "\n";
+            gyro_file << timeMid.time_since_epoch().count() << " " << gyroMid.x << " " << gyroMid.y << " " << gyroMid.z << "\n";
+            acce_file << timeStart.time_since_epoch().count() << " " << accel.x << " " << accel.y << " " << accel.z << "\n";
+            gyro_file << timeStart.time_since_epoch().count() << " " << gyro.x << " " << gyro.y << " " << gyro.z << "\n";
+            if (CONFIG.log_magnetometer)
+            {
+                mag_file << timeStart.time_since_epoch().count() << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
+            }
+        }
+
+        // Update orientation filter
+        if (CONFIG.use_magnetometer)
+        {
+            filter->update(timeMid.time_since_epoch().count(), gyroMid.x, gyroMid.y, gyroMid.z, accelMid.x, accelMid.y, accelMid.z, mag_data.z, mag_data.y, mag_data.z);
+            quat_data_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+            filter->update(timeStart.time_since_epoch().count(), gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z, mag_data.z, mag_data.y, mag_data.z);
+            quat_data = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+        }
+        else
+        {
+            filter->update(timeMid.time_since_epoch().count(), gyroMid.x, gyroMid.y, gyroMid.z, accelMid.x, accelMid.y, accelMid.z);
+            quat_data_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+            filter->update(timeStart.time_since_epoch().count(), gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
+            quat_data = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
+        }
+
+        { // Add orientation to buffer
+            std::lock_guard<std::mutex> lock{ORIENTATION_BUFFER_LOCK};
+            QUAT_ORIENTATION_BUFFER.pop_front();
+            QUAT_ORIENTATION_BUFFER.pop_front();
+            QUAT_ORIENTATION_BUFFER.push_back(quat_data_mid);
+            QUAT_ORIENTATION_BUFFER.push_back(quat_data);
+        }
+
+        // Add world-aligned IMU to its own buffer
+        auto world_accel_mid = world_align(accelMid, quat_data_mid);
+        auto world_accel = world_align(accel, quat_data);
+        auto world_gyro_mid = world_align(gyroMid, quat_data_mid);
+        auto world_gyro = world_align(gyro, quat_data);
+        {
+            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+            IMU_WORLD_BUFFER.pop_front();
+            IMU_WORLD_BUFFER.pop_front();
+            IMU_WORLD_BUFFER.push_back({world_accel_mid.x, world_accel_mid.y, world_accel_mid.z, world_gyro_mid.x, world_gyro_mid.y, world_gyro_mid.z});
+            IMU_WORLD_BUFFER.push_back({world_accel.x, world_accel.y, world_accel.z, world_gyro.x, world_gyro.y, world_gyro.z});
+        }
+
+        // Log orientation information to file.
+        if (LOG_TO_FILE)
+        {
+            quat_file << timeMid.time_since_epoch().count() << " " << quat_data_mid.w << " " << quat_data_mid.x << " " << quat_data_mid.y << " " << quat_data_mid.z << "\n";
+            quat_file << timeStart.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
+        }
+
+        // Store last reading and wait until next tick.
+        accelPrevious = accel;
+        gyroPrevious = gyro;
+        timePrevious = timeStart;
+        loopTime = loopTime + interval;
+        std::this_thread::sleep_until(loopTime);
+    }
+
+    delete filter;
+
+    // Close file handles.
+    if (LOG_TO_FILE)
+    {
+        acce_file.close();
+        gyro_file.close();
+        quat_file.close();
+        mag_file.close();
+    }
+}
+#endif
 
 #if USE_SOCKET_INFERENCE
 void transmit_lora()
@@ -988,16 +994,18 @@ void stance_detector()
 
 void py_transmitter()
 {
-    if (NO_LORA)
+    if (!NO_LORA)
     {
-        return;
+        system("python3 ./python_utils/lora_transmitter.py > /dev/null &");
     }
-    system("python3 ./python_utils/lora_transmitter.py > /dev/null &");
 }
 
 void py_inference()
 {
-    system("python3 ./python_utils/ncs2_interface.py > /dev/null &");
+    if (!NO_INFERENCE)
+    {
+        system("python3 ./python_utils/ncs2_interface.py > /dev/null &");
+    }
 }
 
 /** \brief Main loop.

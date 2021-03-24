@@ -20,6 +20,10 @@ from vpython import *
 
 
 if __name__ == "__main__":
+    """
+    This randomly stopped working one day and I don't know why. The script freezes when vpython tries to create a box.
+    """
+
     ## Create canvas with size:
     scene = canvas(width=600, height=400)
 
@@ -62,6 +66,7 @@ if __name__ == "__main__":
 
     for line in sys.stdin:
         if "Orientation (E)" in line:
+            print("sdf")
             bx.rotate(angle=-rad_angles[2], axis=Z)
             bx.rotate(angle=-rad_angles[1], axis=Y)
             bx.rotate(angle=-rad_angles[0], axis=X)

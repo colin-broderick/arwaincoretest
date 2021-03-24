@@ -7,6 +7,10 @@ std::string inference_tcp_socket = "tcp://*:5555";
  */
 void predict_velocity()
 {
+    if (NO_INFERENCE)
+    {
+        return;
+    }
     // *****************************************************************//
     // NOTE This has only been developed to the proof of concept stage. //
     // It will not work fully without additional work.                  //
