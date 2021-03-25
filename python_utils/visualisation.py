@@ -16,7 +16,7 @@ For testing purposes only. Requires vpython:
 import sys
 import time
 import math
-from vpython import *
+from vpython import box, vector, canvas
 
 
 if __name__ == "__main__":
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
             ## Parse angles from the orientation string.
             deg_angles = [float(angle) for angle in line[18:-2].split(",")]
-            rad_angles = [angle*pi/180 for angle in deg_angles]
+            rad_angles = [angle*math.pi/180 for angle in deg_angles]
             
             if first_angles is None:
                 first_angles = deg_angles[:]
