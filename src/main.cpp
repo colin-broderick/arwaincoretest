@@ -208,17 +208,22 @@ void std_output()
                 ss << "Position:        (" << POSITION_BUFFER.back()[0] << ", " << POSITION_BUFFER.back()[1] << ", " << POSITION_BUFFER.back()[2] << ")" << "\n";
             }
 
-            { // Add Euler and quaternion orientations to the string stream.
+            // Add Euler and quaternion orientations to the string stream.
+            quaternion quat;
+            {
                 std::lock_guard<std::mutex> lock{ORIENTATION_BUFFER_LOCK};
-                ss << "Orientation (E): (" << EULER_ORIENTATION_BUFFER.back().roll << ", " << EULER_ORIENTATION_BUFFER.back().pitch << ", " << EULER_ORIENTATION_BUFFER.back().yaw << ")" << "\n";;
-                ss << "Orientation (Q): (" << QUAT_ORIENTATION_BUFFER.back().w << ", " << QUAT_ORIENTATION_BUFFER.back().x << ", " << QUAT_ORIENTATION_BUFFER.back().y << ", " << QUAT_ORIENTATION_BUFFER.back().z << ")" << "\n";
+                quat = QUAT_ORIENTATION_BUFFER.back();
             }
+            auto euler_angles = arwain::Filter::getEulerAnglesDegrees(quat.w, quat.x, quat.y, quat.z);
+            ss << "Orientation (E): (" << "R:" << euler_angles[0] << ", " << "P:" << euler_angles[1] << ", " << "Y:" << euler_angles[2] << ")" << "\n";;
+            ss << "Orientation (Q): (" << quat.w << ", " << quat.x << ", " << quat.y << ", " << quat.z << ")" << "\n";
 
             // Add stance to the string stream.
             ss << "Stance flag:     " << STATUS.current_stance << "\n";
             ss << "Horizontal:      " << STATUS.attitude << "\n";
             ss << "Fall flag:       " << STATUS.falling << "\n";
             ss << "Entangled flag:  " << STATUS.entangled << "\n";
+            ss << "CPU temperature: " << arwain::getCPUTemp() << "\n";
 
             // Print the string.
             std::cout << ss.str() << std::endl;

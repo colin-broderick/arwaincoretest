@@ -123,6 +123,7 @@ namespace arwain
     };
     
     void test_imu(int &shutdown);
+    float getCPUTemp();
 
     arwain::Configuration get_configuration(const std::string &filename);
 }

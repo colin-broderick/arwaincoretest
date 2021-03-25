@@ -5,9 +5,26 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <array>
 
 #include "utils.h"
 #include "imu_utils.h"
+
+float arwain::getCPUTemp()
+{
+    float ret;
+    std::array<char, 32> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("vcgencmd measure_temp", "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    std::stringstream{result.substr(5, 4)} >> ret;
+    return ret;
+}
 
 /** \brief Get the current system datetime as a string.
  * \return Datetime as string.
