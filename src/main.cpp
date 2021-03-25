@@ -111,6 +111,8 @@ int NO_LORA = 0;
 // Name for data folder
 std::string FOLDER_DATE_STRING;
 
+std::ofstream ERROR_LOG;
+
 // Data buffers.
 std::deque<std::array<double, 6>> IMU_BUFFER{IMU_BUFFER_LEN};
 std::deque<std::array<double, 6>> IMU_WORLD_BUFFER{IMU_BUFFER_LEN};
@@ -135,6 +137,7 @@ std::mutex VELOCITY_BUFFER_LOCK;
 std::mutex STATUS_FLAG_LOCK;
 std::mutex POSITION_BUFFER_LOCK;
 std::mutex ORIENTATION_BUFFER_LOCK;
+std::mutex LOG_FILE_LOCK;
 
 #if GYRO_BIAS_EXPERIMENT
 void gyro_bias_estimation()
@@ -291,7 +294,7 @@ void imu_reader()
         gyro_file.open(FOLDER_DATE_STRING + "/gyro.txt");
         mag_file.open(FOLDER_DATE_STRING + "/mag.txt");
         euler_file.open(FOLDER_DATE_STRING + "/euler_orientation.txt");
-        quat_file.open(FOLDER_DATE_STRING + "/quat_orientation.txt");
+        quat_file.open(FOLDER_DATE_STRING + "/game_rv.txt");
 
         // File headers
         acce_file << "# time x y z" << "\n";
@@ -305,13 +308,21 @@ void imu_reader()
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{IMU_READING_INTERVAL};
 
+    int imu_error;
+
     while (!SHUTDOWN)
     {
         // Whether or not to get magnetometer on this spin.
         get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
 
         // Read current sensor values and apply bias correction.
-        get_bmi270_data(&accel_data, &gyro_data);
+        imu_error = get_bmi270_data(&accel_data, &gyro_data);
+        if (imu_error)
+        { // Log any IMU reading error events.
+            std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
+            ERROR_LOG << time.time_since_epoch().count() << " " << "IMU_READ_ERROR" << std::endl;
+        }
+
         if (get_mag)
         {
             get_bmm150_data(&mag_data);
@@ -489,7 +500,7 @@ void imu_reader()
         acce_file.open(FOLDER_DATE_STRING + "/acce.txt");
         gyro_file.open(FOLDER_DATE_STRING + "/gyro.txt");
         mag_file.open(FOLDER_DATE_STRING + "/mag.txt");
-        quat_file.open(FOLDER_DATE_STRING + "/quat_orientation.txt");
+        quat_file.open(FOLDER_DATE_STRING + "/game_rv.txt");
 
         // File headers
         acce_file << "# time x y z" << "\n";
@@ -1018,6 +1029,43 @@ void py_inference()
     }
 }
 
+void calibrate_gyroscope_online()
+{
+    std::cout << "Gyroscope calibration is about to start; makes sure the device is completely stationary" << std::endl;
+    for (int i = 1; i < 6; i++)
+    {
+        std::cout << "Starting in " << 6-i << " seconds" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds{1});
+    }
+
+    std::cout << "Gyroscope calibration: Leave the device completely still for 10 seconds\n";
+    vector3 gyro_d;
+    vector3 accel_d;
+    int gyro_reading_count = 0;
+    double gx = 0, gy = 0, gz = 0;
+    for (int i = 0; i < 10*100; i++)
+    {
+        get_bmi270_data(&accel_d, &gyro_d);
+        gx += gyro_d.x;
+        gy += gyro_d.y;
+        gz += gyro_d.z;
+        gyro_reading_count += 1;
+        if (i % 100 == 0)
+        {
+            std::cout << "T = " << (int)(i/100) << "\n";
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+    double gx_bias = gx/gyro_reading_count;
+    double gy_bias = gy/gyro_reading_count;
+    double gz_bias = gz/gyro_reading_count;
+    arwain::config_replace(CONFIG_FILE, "gyro_bias_x", gx_bias);
+    arwain::config_replace(CONFIG_FILE, "gyro_bias_y", gy_bias);
+    arwain::config_replace(CONFIG_FILE, "gyro_bias_z", gz_bias);
+
+    std::cout << "Gyroscope calibration is complete, you may now operate the device normally" << std::endl;
+}
+
 /** \brief Main loop.
  * \param argc Nmber of arguments.
  * \param argv List of arguments.
@@ -1037,6 +1085,7 @@ int main(int argc, char **argv)
         std::cout << "  -lstd        Log friendly output to stdout\n";
         std::cout << "  -lfile       Record sensor data to file - files are stored in ./data_<datetime>\n";
         std::cout << "  -conf        Specify alternate configuration file\n";
+        std::cout << "  -calib       Perform online calibration - make sure the device is totally stationary\n";
         std::cout << "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n";
         std::cout << "  -noinf       Do not do velocity inference\n";
         std::cout << "  -noimu       Do not turn on the IMU - for testing\n";
@@ -1087,6 +1136,21 @@ int main(int argc, char **argv)
         std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
     }
 
+    // Initialize the IMU.
+    if (!NO_IMU)
+    {
+        if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
+        {
+            std::cout << "IMU failed to start" << "\n";
+            return -1;
+        }
+    }
+
+    if (input.contains("-calib"))
+    {
+        calibrate_gyroscope_online();
+    }
+
     // Attempt to read the config file and quit if failed.
     try
     {
@@ -1113,14 +1177,10 @@ int main(int argc, char **argv)
         std::experimental::filesystem::copy(CONFIG_FILE, FOLDER_DATE_STRING + "/config.conf");
     }
 
-    // Initialize the IMU.
-    if (!NO_IMU)
-    {
-        if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
-        {
-            std::cout << "IMU failed to start" << "\n";
-            return -1;
-        }
+    { // Open error log file, protect by log mutex
+        std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
+        ERROR_LOG.open(FOLDER_DATE_STRING + "/ERRORS.txt");
+        ERROR_LOG << "# time event" << std::endl;
     }
 
     // Start threads.
