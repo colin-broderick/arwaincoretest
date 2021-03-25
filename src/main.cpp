@@ -319,8 +319,11 @@ void imu_reader()
         imu_error = get_bmi270_data(&accel_data, &gyro_data);
         if (imu_error)
         { // Log any IMU reading error events.
-            std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
-            ERROR_LOG << time.time_since_epoch().count() << " " << "IMU_READ_ERROR" << std::endl;
+            if (LOG_TO_FILE)
+            {
+                std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
+                ERROR_LOG << time.time_since_epoch().count() << " " << "IMU_READ_ERROR" << std::endl;
+            }
         }
 
         if (get_mag)
@@ -1177,6 +1180,7 @@ int main(int argc, char **argv)
         std::experimental::filesystem::copy(CONFIG_FILE, FOLDER_DATE_STRING + "/config.conf");
     }
 
+    if (LOG_TO_FILE)
     { // Open error log file, protect by log mutex
         std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
         ERROR_LOG.open(FOLDER_DATE_STRING + "/ERRORS.txt");
