@@ -33,7 +33,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #define USE_SOCKET_INFERENCE 1
 #define USE_SOCKET_RADIO 1
 #define GYRO_BIAS_EXPERIMENT 0
-#define IMU_FREQ_200 0
+#define IMU_FREQ_200 1
 
 #include <algorithm>
 #include <csignal>
@@ -851,7 +851,7 @@ void transmit_lora()
  * Sets the global SHUTDOWN flag informing all threads to clean up and exit.
  * \param signal The signal to capture.
  */
-void sigint_handler(int signal)
+static void sigint_handler(int signal)
 {
     if (signal == SIGINT)
     {
