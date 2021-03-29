@@ -312,6 +312,9 @@ void imu_reader()
 
     while (!SHUTDOWN)
     {
+        // get_bmi270_temperature();
+        // std::cout << "Temperature: " << get_bmi270_temperature() << std::endl;
+
         // Whether or not to get magnetometer on this spin.
         get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
 
@@ -319,6 +322,7 @@ void imu_reader()
         imu_error = get_bmi270_data(&accel_data, &gyro_data);
         if (imu_error)
         { // Log any IMU reading error events.
+            STATUS.errors = arwain::Errors::IMUReadError;
             if (LOG_TO_FILE)
             {
                 std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
@@ -674,9 +678,6 @@ void transmit_lora()
         ss << (STATUS.entangled == arwain::StanceDetector::Entangled ? "e" : "0");
         ss << ",";
 
-        STATUS.falling = arwain::StanceDetector::NotFalling;
-        STATUS.entangled = arwain::StanceDetector::NotEntangled;
-
         switch (STATUS.current_stance)
         {
             case arwain::StanceDetector::Inactive:
@@ -698,6 +699,29 @@ void transmit_lora()
                 ss << "unknown";
                 break;
         }
+
+        // TODO Add IMU error to the message
+        // ss << ",";
+        // switch (STATUS.errors)
+        // {
+        //     case arwain::Errors::AllOk:
+        //         ss << "allok";
+        //         break;
+        //     case arwain::Errors::IMUReadError:
+        //         ss << "imureaderror";
+        //         break;
+        //     case arwain::Errors::OtherError:
+        //         ss << "othererror";
+        //         break;
+        //     default:
+        //         ss << "allok";
+        //         break;
+        // }
+
+        // Reset the flags that were just read.
+        STATUS.falling = arwain::StanceDetector::NotFalling;
+        STATUS.entangled = arwain::StanceDetector::NotEntangled;
+        STATUS.errors = arwain::Errors::AllOk;
 
         // TODO Send by socket and reset stringstream.
         std::string fromStream = ss.str();

@@ -23,14 +23,36 @@ class Tx:
         self.falling = 0
         self.entangled = 0
         self.stance = "inactive"
+        self.error="allok"
 
+    # TODO def store_alert(self, x, y, z, falling, entangled, stance, error):
     def store_alert(self, x, y, z, falling, entangled, stance):
+        """
+        Current alert format:
+
+        Bytes 0-5 are position bytes, storing x, y, z each as 16-bit floats.
+
+        Bytes 6 stores status flags like so:
+
+            0   Falling flag, default 0
+            1   Entangled flag, default 0
+            2     ⌉
+            3     |- Values 0-8 reserved for stance, default 0 which implies inactive.
+            4     ⌋
+            5   ⌉
+            6   |- Values 0-8 reserved for error conditions, TODO
+            7   ⌋
+
+        Byte 7 not yet used.
+
+        """
         self.x = x
         self.y = y
         self.z = z
         self.falling = falling
         self.entangled = entangled
         self.stance = stance
+        # TODO self.error = error
 
         alert_flag = 0
         if self.falling:
@@ -51,36 +73,30 @@ class Tx:
         elif self.stance == "unknown":
             alert_flag = alert_flag | (5<<2)
 
-        self.alert_flag = alert_flag
+        # TODO
+        # if self.error == "allok":
+        #     alert_flag = alert_flag | (0<<5)
+        # elif self.error == "imureaderror":
+        #     alert_flag = alert_flag | (1<<5)
+        # elif self.error == "othererror":
+        #     alert_flag = alert_flag | (2<<5)
 
-        return True
+        self.alert_flag = alert_flag
 
     def encode_message(self):
         x1 = np.float16(self.x).tobytes()
         y1 = np.float16(self.y).tobytes()
         z1 = np.float16(self.z).tobytes()
-        flag = np.float16(self.alert_flag).tobytes()
+        flag = np.float16(self.alert_flag).tobytes()  ## TODO This should be fine as a half float since ints in [-2048,2048] are exactly representable, but keep an eye on it. Might need to be an int.
         return x1 + y1 + z1 + flag
 
-    def tx(self):
-        """
-        Enable transmitter mode.
-        """
-        #cb = PeriodicCallback(self.send, 1000)
-        #cb.start()
-        #print(cb.is_running())
-        pass
-
     def send(self):
-        print("hello")
         """
         Transmit the most recently-receceived position update.
         """
-        if True:
-            print("sending")
-            message = self.encode_message()
-            self.rfm.send(message)
-            print("message tx", message, len(message), "bytes")
+        message = self.encode_message()
+        self.rfm.send(message)
+        print("message tx", message, len(message), "bytes")
 
     def radio(self):
         """
@@ -93,9 +109,6 @@ class Tx:
         frequency = 868.0
         rfm9x = adafruit_rfm9x.RFM9x(spi, cs, reset, frequency)
         rfm9x.tx_power = 23
-        #rfm9x.spreading_factor = 12
-        #rfm9x.signal_bandwidth = 125000
-        #rfm9x.coding_rate = 8
         rfm9x.enable_crc = True
         return rfm9x
 
@@ -103,7 +116,6 @@ class Tx:
 def main():
     ## Create radio
     lora = Tx()
-    lora.tx()
 
     ## Create socket
     context = zmq.Context()
@@ -129,7 +141,9 @@ def main():
         falling = 1 if message[3] == "f" else 0
         entangled = 1 if message[4] == "e" else 0
         stance = message[5]
+        # TODO error = message[6]
         lora.store_alert(x, y, z, falling, entangled, stance)
+        # TODO lora.store_alert(x, y, z, falling, entangled, stance, error)
         lora.send()
         
         ## Send acknowledgement
