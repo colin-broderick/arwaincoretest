@@ -286,6 +286,7 @@ void imu_reader()
     std::ofstream mag_file;
     std::ofstream euler_file;
     std::ofstream quat_file;
+    std::ofstream temp_file;
 
     if (LOG_TO_FILE)
     {
@@ -295,6 +296,7 @@ void imu_reader()
         mag_file.open(FOLDER_DATE_STRING + "/mag.txt");
         euler_file.open(FOLDER_DATE_STRING + "/euler_orientation.txt");
         quat_file.open(FOLDER_DATE_STRING + "/game_rv.txt");
+        temp_file.open(FOLDER_DATE_STRING + "/imu_temperature.txt");
 
         // File headers
         acce_file << "# time x y z" << "\n";
@@ -302,18 +304,27 @@ void imu_reader()
         mag_file << "# time x y z" << "\n";
         euler_file << "# time roll pitch yaw" << "\n";
         quat_file << "# time w x y z" << "\n";
+        temp_file << "# time temperature" << "\n";
+
     }
 
     // Set up timing.
+    auto loopTime = std::chrono::system_clock::now();
     auto time = std::chrono::system_clock::now();
+    auto timeCount = time.time_since_epoch().count();
     std::chrono::milliseconds interval{IMU_READING_INTERVAL};
 
     int imu_error;
 
     while (!SHUTDOWN)
     {
-        // get_bmi270_temperature();
-        // std::cout << "Temperature: " << get_bmi270_temperature() << std::endl;
+        time = std::chrono::system_clock::now();
+        timeCount = time.time_since_epoch().count();
+
+        if (count % 200 == 0)
+        {
+            temp_file << timeCount << " " << get_bmi270_temperature() << "\n";
+        }
 
         // Whether or not to get magnetometer on this spin.
         get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
@@ -326,7 +337,7 @@ void imu_reader()
             if (LOG_TO_FILE)
             {
                 std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
-                ERROR_LOG << time.time_since_epoch().count() << " " << "IMU_READ_ERROR" << std::endl;
+                ERROR_LOG << timeCount << " " << "IMU_READ_ERROR" << std::endl;
             }
         }
 
@@ -347,7 +358,7 @@ void imu_reader()
             std::array<double, 6> newData{accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z};
             if (IMU_BUFFER.back() == newData)
             {
-                std::cout << "IMU reading duplication at " << time.time_since_epoch().count() << "\n";
+                std::cout << "IMU reading duplication at " << timeCount << "\n";
             }
             IMU_BUFFER.push_back(newData);
         }
@@ -363,11 +374,11 @@ void imu_reader()
         // Log IMU to file.
         if (LOG_TO_FILE)
         {
-            acce_file << time.time_since_epoch().count() << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << "\n";
-            gyro_file << time.time_since_epoch().count() << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
+            acce_file << timeCount << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << "\n";
+            gyro_file << timeCount << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
             if (CONFIG.log_magnetometer)
             {
-                mag_file << time.time_since_epoch().count() << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
+                mag_file << timeCount << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
             }
         }
 
@@ -375,7 +386,7 @@ void imu_reader()
         if (CONFIG.use_magnetometer)
         {
             filter->update(
-                time.time_since_epoch().count(),
+                timeCount,
                 gyro_data.x, gyro_data.y, gyro_data.z,
                 accel_data.x, accel_data.y, accel_data.z,
                 mag_data.x, mag_data.y, mag_data.z
@@ -384,7 +395,7 @@ void imu_reader()
         else
         {
             filter->update(
-                time.time_since_epoch().count(),
+                timeCount,
                 gyro_data.x, gyro_data.y, gyro_data.z,
                 accel_data.x, accel_data.y, accel_data.z
             );
@@ -435,14 +446,14 @@ void imu_reader()
         // Log orientation information to file.
         if (LOG_TO_FILE)
         {
-            euler_file << time.time_since_epoch().count() << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << "\n";
-            quat_file << time.time_since_epoch().count() << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
+            euler_file << timeCount << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << "\n";
+            quat_file << timeCount << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
         }
         
         // Wait until the next tick.
         count++;
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+        loopTime = loopTime + interval;
+        std::this_thread::sleep_until(loopTime);
     }
 
     delete filter;

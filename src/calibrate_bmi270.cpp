@@ -162,7 +162,7 @@ void calibrate_gyroscope_temperature()
         auto time = std::chrono::system_clock::now();
 
         // Take 100 readings over 1 second.
-        for (int i=0; i < 100; i++)
+        for (int i=0; i < 30; i++)
         {
             get_bmi270_data(&_dump, &gyro_d);
             gx += gyro_d.x;
