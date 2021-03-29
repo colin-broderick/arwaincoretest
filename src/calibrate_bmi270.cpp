@@ -162,7 +162,7 @@ void calibrate_gyroscope_temperature()
         auto time = std::chrono::system_clock::now();
 
         // Take 100 readings over 1 second.
-        for (int i=0; i < 5*100; i++)
+        for (int i=0; i < 100; i++)
         {
             get_bmi270_data(&_dump, &gyro_d);
             gx += gyro_d.x;
@@ -174,7 +174,7 @@ void calibrate_gyroscope_temperature()
         }
 
         // Measure CPU temperature.
-        float cpu_temp = arwain::getCPUTemp();
+        float cpu_temp = get_bmi270_temperature();
 
         // Calculate average gyro reading.
         double gx_bias = gx / gyro_reading_count;
