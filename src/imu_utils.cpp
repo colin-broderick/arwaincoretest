@@ -121,6 +121,19 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     // Disable self offset correction
     bmi2_sensor_disable(&sensorOffList[0], 1, &bmi270);
     
+    // Disable all offset compensation
+    // uint8_t reg_data = 0;
+    // int8_t rslt = bmi2_get_regs(BMI2_GYR_OFF_COMP_6_ADDR, &reg_data, 1, &bmi270);
+    // if (rslt == BMI2_OK)
+    // {
+    //     reg_data = BMI2_SET_BITS(reg_data, BMI2_GYR_OFF_COMP_EN, 0);
+    //     rslt = bmi2_set_regs(BMI2_GYR_OFF_COMP_6_ADDR, &reg_data, 1, &bmi270);
+    // }
+    // if (rslt != BMI2_OK)
+    // {
+    //     printf("Failed to set reg\n");
+    // }
+
     //Magnetometer setup
     if (mag_enabled)
     {	

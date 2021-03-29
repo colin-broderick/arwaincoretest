@@ -131,6 +131,7 @@ namespace arwain
         arwain::StanceDetector::ENTANGLED entangled;
         arwain::StanceDetector::FALLING falling;
         arwain::Errors::ErrorCondition errors;
+        int IMUTemperature;
     };
     
     void test_imu(int &shutdown);

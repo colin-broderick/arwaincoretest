@@ -17289,6 +17289,7 @@ static int8_t enable_gyro_gain(uint8_t enable, struct bmi2_dev *dev)
     if (rslt == BMI2_OK)
     {
         reg_data = BMI2_SET_BITS(reg_data, BMI2_GYR_GAIN_EN, enable);
+        reg_data = BMI2_SET_BITS(reg_data, BMI2_GYR_OFF_COMP_EN, 0);
         rslt = bmi2_set_regs(BMI2_GYR_OFF_COMP_6_ADDR, &reg_data, 1, dev);
     }
 
