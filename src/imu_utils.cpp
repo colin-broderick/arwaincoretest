@@ -45,10 +45,17 @@ int i2c_init(int addr)
 	return file_i2c;
 }
 
+float get_bmi270_temperature()
+{
+    uint8_t buffer[2] = {0, 0};
+    bmi270_reg_read(BMI2_I2C_SEC_ADDR, 0x22, buffer, 2);
+    return (((int)buffer[1] << 8) | ((int)buffer[0]))*0.001953f + 23.0f;
+}
+
 int init_bmi270(int mag_enabled, std::string calib_file)
 {
     float g = 9.8067;
-    float pi = 3.1416;
+    float pi = 3.14159265359;
     float max_value = 32767.0;
     float acc_range = g*16.0;
     float gyr_range = 2000.0*(pi/180.0);
@@ -84,6 +91,7 @@ int init_bmi270(int mag_enabled, std::string calib_file)
 
     // Enable accelerometer
     uint8_t sensorList[] = {BMI2_ACCEL, BMI2_GYRO, BMI2_AUX};
+    uint8_t sensorOffList[] = {BMI2_GYRO_SELF_OFF};
     bmi2_sensor_enable(&sensorList[0], 1, &bmi270);
     
     // Configure accelerometer
@@ -109,6 +117,9 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     gyroscopeConfig.cfg.gyr.range = BMI2_GYR_RANGE_2000;
     gyroscopeConfig.cfg.gyr.noise_perf = 1;
     bmi2_set_sensor_config(&gyroscopeConfig, 1, &bmi270);
+
+    // Disable self offset correction
+    bmi2_sensor_disable(&sensorOffList[0], 1, &bmi270);
     
     //Magnetometer setup
     if (mag_enabled)

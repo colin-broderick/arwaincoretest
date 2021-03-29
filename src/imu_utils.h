@@ -14,6 +14,8 @@ int init_bmi270(int mag_enabled, std::string calib_file);
 int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr);
 int get_bmm150_data(struct vector3 *mag);
 void read_calib_data(std::string path);
+float get_bmi270_temperature();
+
 
 void delay_us(uint32_t period);
 void delay_ms(uint32_t period);

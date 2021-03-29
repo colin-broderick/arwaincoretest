@@ -17,6 +17,16 @@
 #include "stance.h"
 #include "lora.h"
 
+namespace arwain::Errors
+{
+    enum ErrorCondition
+    {
+        AllOk,
+        IMUReadError,
+        OtherError
+    };
+}
+
 namespace arwain
 {
     /** \brief Configuration struct for whole programme.
@@ -120,6 +130,7 @@ namespace arwain
         arwain::StanceDetector::ATTITUDE attitude;
         arwain::StanceDetector::ENTANGLED entangled;
         arwain::StanceDetector::FALLING falling;
+        arwain::Errors::ErrorCondition errors;
     };
     
     void test_imu(int &shutdown);
