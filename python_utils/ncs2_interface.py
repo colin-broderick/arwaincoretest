@@ -1,21 +1,10 @@
 #!/usr/bin/python3
 
+import sys
 import zmq
 import torch
 from openvino.inference_engine import IECore, IENetwork
 
-
-# MODEL_FILE_XML = "/home/pi/ips_experimental/model/XYZ_RoNIN_v0.6.xml"
-# MODEL_FILE_BIN = "/home/pi/ips_experimental/model/XYZ_RoNIN_v0.6.bin"
-
-# MODEL_FILE_XML = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.xml"
-# MODEL_FILE_BIN = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.bin"
-
-# MODEL_FILE_XML = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.6.xml"
-# MODEL_FILE_BIN = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.6.bin"
-
-MODEL_FILE_XML = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.5.xml"
-MODEL_FILE_BIN = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.5.bin"
 
 class Predictor:
     def __init__(self, model_xml, model_bin):
@@ -56,25 +45,40 @@ class Predictor:
 
 
 def main():
-    predictor = Predictor(MODEL_FILE_XML, MODEL_FILE_BIN)
+    ## Get model file location from command line.
+    model_xml = sys.argv[1]
+    model_bin  = sys.argv[1][:-3] + "bin"
+
+    ## Create a predictor object; this abstracts all the NCS2 stuff.
+    predictor = Predictor(model_xml, model_bin)
+    
+    ## Open a socket and send first message.
     context = zmq.Context()
     print("Waiting for data connection")
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
-    n = 0
     socket.send("accept".encode("ascii"))
+    inference_counter = 0
+
+    ## Receive a message, process it, and send a response.
     while True:
         message = socket.recv()
         message = message.decode("ascii")
+
+        ## Quit loop and end program if "stop" received from socket.
         if message == "stop":
             break
-        nums  = [float(i) for i in message.split(",")[:-1]]
-        n += 1
-        print("Got data and doing prediction", len(nums))
+
+        ## Otherwise, assume message has the appropriate form and decode it.
+        nums = [float(i) for i in message.split(",")[:-1]]
+
+        ## Use NCS2 for inference.
         prediction = predictor.predict(nums)
-        print(prediction)
+
+        ## Form and send response.
         response = f"{prediction[0]},{prediction[1]},{prediction[2]}".encode("ascii")
         socket.send(response)
+        inference_counter += 1
 
 
 if __name__ == "__main__":

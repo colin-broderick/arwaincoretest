@@ -1051,6 +1051,7 @@ void stance_detector()
     }
 }
 
+/** \brief Start a python script which opens a socket and forms/transmit a LoRa message from information we send it. */
 void py_transmitter()
 {
     if (!NO_LORA)
@@ -1059,11 +1060,13 @@ void py_transmitter()
     }
 }
 
+/** \brief Start a python script which opens a socket and does inference on data we send it. */
 void py_inference()
 {
     if (!NO_INFERENCE)
-    {
-        system("python3 ./python_utils/ncs2_interface.py > /dev/null &");
+    {   
+        std::string command = "python3 ./python_utils/ncs2_interface.py " + CONFIG.inference_model_xml + " > /dev/null &";
+        system(command.c_str());
     }
 }
 

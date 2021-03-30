@@ -191,6 +191,7 @@ arwain::Configuration arwain::get_configuration(const std::string &filename)
     stringstream(options["madgwick_beta"]) >> cf.madgwick_beta;
     stringstream(options["use_indoor_positioning_system"]) >> cf.use_indoor_positioning_system;
     stringstream(options["orientation_filter"]) >> cf.orientation_filter;
+    stringstream(options["inference_model_xml"]) >> cf.inference_model_xml;
     
     // Apply LoRa settings
     stringstream(options["lora_tx_power"]) >> cf.lora_tx_power;

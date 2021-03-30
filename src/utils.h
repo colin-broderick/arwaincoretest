@@ -58,6 +58,8 @@ namespace arwain
      * \param lora_coding_rate LoRa coding rate.
      * \param lora_sync_word LoRa sync word.
      * \param lora_header_mode LoRa header mode, implicit or explicit.
+     * \param lora_enable_crc Whether to add CRC to LoRa messages.
+     * \param inference_model_xml The location of the inference model xml file.
      */
     struct Configuration {
         double active_threshold;
@@ -89,6 +91,7 @@ namespace arwain
         int lora_sync_word;
         LoRa::hm_t lora_header_mode;
         int lora_enable_crc;
+        std::string inference_model_xml;
     };
 
     /** \brief Overwrite the content of a configuration file.
