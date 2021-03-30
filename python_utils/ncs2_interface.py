@@ -8,12 +8,14 @@ from openvino.inference_engine import IECore, IENetwork
 # MODEL_FILE_XML = "/home/pi/ips_experimental/model/XYZ_RoNIN_v0.6.xml"
 # MODEL_FILE_BIN = "/home/pi/ips_experimental/model/XYZ_RoNIN_v0.6.bin"
 
-MODEL_FILE_XML = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.xml"
-MODEL_FILE_BIN = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.bin"
+# MODEL_FILE_XML = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.xml"
+# MODEL_FILE_BIN = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.4.bin"
 
 # MODEL_FILE_XML = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.6.xml"
 # MODEL_FILE_BIN = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.6.bin"
 
+MODEL_FILE_XML = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.5.xml"
+MODEL_FILE_BIN = "/home/pi/arwain_inference_core/models/XYZ_RoNIN_v0.5.bin"
 
 class Predictor:
     def __init__(self, model_xml, model_bin):
