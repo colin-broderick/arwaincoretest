@@ -27,7 +27,7 @@ def q2eWithProjection(w, x, y, z, axis=quaternion.quaternion(0,0,0,1)):
 
 def createHeadingArray(quaternionArray, headingAxis=quaternion.quaternion(0, 0, 0, 1)):
     headings = list()
-    i = startingIndex
+    # i = startingIndex
     for d in quaternionArray:
         heading = q2eWithProjection(d[0], d[1], d[2], d[3], axis=headingAxis)
         headings.append(heading)
@@ -85,6 +85,10 @@ def process(files, startingIndex, axis):
     for data in datasets:
         headings.append( smooth(np.unwrap(createHeadingArray(data, axis))) )
 
+    return datasets, headings
+
+def draw_comparison_plot(datasets, headings, startingIndex):
+
     fig, (a0, a1) = plt.subplots(2, 1, gridspec_kw={"height_ratios":[3,1]})
 
     for i in range(len(headings)):
@@ -103,8 +107,8 @@ def process(files, startingIndex, axis):
 
     a0.legend()
     a1.legend()
-    # plt.savefig("plot.png")
-    plt.show()
+    plt.savefig("plot.png")
+    # plt.show()
 
 
 if __name__ == "__main__":
@@ -132,4 +136,5 @@ if __name__ == "__main__":
     files = sys.argv[3:]
 
     ## Go.
-    process(files, startingIndex, axis)
+    datasets, headings = process(files, startingIndex, axis)
+    draw_comparison_plot(datasets, headings, startingIndex)
