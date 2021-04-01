@@ -69,18 +69,18 @@ namespace arwain
             static unsigned char REGISTER_DATA = 0xF7;
 
             // Calibration values
-            static unsigned int p1;
-            static unsigned int p2;
-            static unsigned int p3;
-            static unsigned int t1;
-            static unsigned int t2;
-            static unsigned int t3;
-            static unsigned int t4;
-            static unsigned int t5;
-            static unsigned int t6;
-            static unsigned int t7;
-            static unsigned int t8;
-            static unsigned int t9;
+            static unsigned char p1;
+            static unsigned char p2;
+            static unsigned char p3;
+            static unsigned char t1;
+            static unsigned char t2;
+            static unsigned char t3;
+            static unsigned char t4;
+            static unsigned char t5;
+            static unsigned char t6;
+            static unsigned char t7;
+            static unsigned char t8;
+            static unsigned char t9;
 
             bool gotPressure;
             bool gotTemperature;
