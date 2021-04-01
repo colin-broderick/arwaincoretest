@@ -1051,7 +1051,7 @@ void stance_detector()
     }
 }
 
-/** \brief Start a python script which opens a socket and forms/transmit a LoRa message from information we send it. */
+/** \brief Start a Python script which opens a socket and forms/transmit a LoRa message from information we send it. */
 void py_transmitter()
 {
     if (!NO_LORA)
@@ -1060,7 +1060,7 @@ void py_transmitter()
     }
 }
 
-/** \brief Start a python script which opens a socket and does inference on data we send it. */
+/** \brief Start a Python script which opens a socket and does inference on data we send it. */
 void py_inference()
 {
     if (!NO_INFERENCE)
@@ -1142,42 +1142,58 @@ int main(int argc, char **argv)
         std::cout << "  -2           Problem reading configuration file\n";
         return 1;
     }
+
+    // Start IMU test mode. This returns so the program will quit when the test is stopped.
     if (input.contains("-testimu"))
     {
         arwain::test_imu(SHUTDOWN);
         return 1;
     }
+    
+    // Enable/disable stdout logging.
     if (input.contains("-lstd"))
-    { // Enable stdout logging.
+    {
         LOG_TO_STDOUT = 1;
     }
+
+    // Disable/enable velocity inference.
     if (input.contains("-noinf"))
     {
         NO_INFERENCE = 1;
     }
+
+    // Disable/enable LoRa transmission.
     if (input.contains("-nolora"))
     {
         NO_LORA = 1;
     }
+
+    // Disable/enable IMU.
     if (input.contains("-noimu"))
     {
         NO_IMU = 1;
     }
+
+    // Enable/disable logging to file.
     if (input.contains("-lfile"))
-    { // Enable file logging.
+    {
         std::cout << "Logging to file" << "\n";
         LOG_TO_FILE = 1;
     }
+
+    // If alternate configuration file supplied, read it instead of default.
     if (input.contains("-conf"))
-    { // If alternate configuration file supplied, read it instead of default.
+    {
         CONFIG_FILE = input.getCmdOption("-conf");
     }
+
+    // If neither file nor std logging are enabled, warn the user that no data will be logged.
     if (!input.contains("-lstd") && !input.contains("-lfile"))
     {
         std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
     }
 
-    // Initialize the IMU.
+    // Initialize the IMU if not explicitly disabled.
     if (!NO_IMU)
     {
         if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
@@ -1187,18 +1203,19 @@ int main(int argc, char **argv)
         }
     }
 
+    // Attempt to calibrate the gyroscope before commencing other activities.
     if (input.contains("-calib"))
     {
         calibrate_gyroscope_online();
     }
 
-    // Attempt to read the config file and quit if failed.
+    // TEST FAILURE MODES: Attempt to read the config file and quit if failed.
     try
     {
         CONFIG = arwain::get_configuration(CONFIG_FILE);
         if (LOG_TO_STDOUT)
         {
-            std::cout << "Configuration file read\n";
+            std::cout << "Configuration file read successfully\n";
         }
     }
     catch (int n)
@@ -1218,24 +1235,26 @@ int main(int argc, char **argv)
         std::experimental::filesystem::copy(CONFIG_FILE, FOLDER_DATE_STRING + "/config.conf");
     }
 
+    // Open an error log file. This must be globally accessible so must be protected by.
+    // TODO: Create a logging class so mutex can be internal and not possible to forget.
     if (LOG_TO_FILE)
-    { // Open error log file, protect by log mutex
+    {
         std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
         ERROR_LOG.open(FOLDER_DATE_STRING + "/ERRORS.txt");
         ERROR_LOG << "# time event" << std::endl;
     }
 
-    // Start threads.
-    std::thread imu_reader_thread(imu_reader);
-    std::thread predict_velocity_thread(predict_velocity);
-    std::thread stance_detector_thread(stance_detector);
-    std::thread transmit_lora_thread(transmit_lora);
-    std::thread std_output_thread(std_output);
-    std::thread indoor_positioning_thread(indoor_positioning);
+    // Start worker threads.
+    std::thread imu_reader_thread(imu_reader);                   // Reading IMU data, updating orientation filters.
+    std::thread predict_velocity_thread(predict_velocity);       // Velocity and position inference.
+    std::thread stance_detector_thread(stance_detector);         // Stance, freefall, entanglement detection.
+    std::thread transmit_lora_thread(transmit_lora);             // LoRa packet transmissions.
+    std::thread std_output_thread(std_output);                   // Prints useful output to std out.
+    std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     
-    // Start external python scripts.
-    std::thread py_transmitter_thread{py_transmitter};
-    std::thread py_inference_thread{py_inference};
+    // Start external Python scripts.
+    std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
+    std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     
     #if GYRO_BIAS_EXPERIMENT
     std::thread gyro_bias_estimator(gyro_bias_estimation);
