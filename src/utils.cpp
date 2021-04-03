@@ -276,3 +276,21 @@ arwain::Configuration arwain::get_configuration(const std::string &filename)
 
     return cf;
 }
+
+std::ostream& operator<<(std::ostream& stream, const std::array<double, 3>& vector)
+{
+    stream << "vector3(" << vector[0] << ", " << vector[1] << ", " << vector[2] << ")";
+    return stream;
+}
+
+std::array<double, 3> normalised(const std::array<double, 3>& vector)
+{
+    double invNorm = 1.0/sqrt(
+        vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]
+    );
+    return std::array<double, 3>{
+        vector[0] * invNorm,
+        vector[1] * invNorm,
+        vector[2] * invNorm
+    };
+}

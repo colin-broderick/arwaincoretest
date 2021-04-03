@@ -151,7 +151,7 @@ void calibrate_gyroscope_temperature()
 
     // Open file handle to store results.
     std::ofstream output_file{"gyro_temp.txt"};
-    output_file << "# time cpu_temp x_bias y_bias z_bias" << std::endl;
+    output_file << "# time imu_temp x_bias y_bias z_bias" << std::endl;
     
     while (!SHUTDOWN)
     {
@@ -173,8 +173,8 @@ void calibrate_gyroscope_temperature()
             delay_ms(10);
         }
 
-        // Measure CPU temperature.
-        float cpu_temp = get_bmi270_temperature();
+        // Measure IMU temperature.
+        float imu_temp = get_bmi270_temperature();
 
         // Calculate average gyro reading.
         double gx_bias = gx / gyro_reading_count;
@@ -182,8 +182,8 @@ void calibrate_gyroscope_temperature()
         double gz_bias = gz / gyro_reading_count;
 
         // Write all to file with timestamp.
-        output_file << time.time_since_epoch().count() << " " << cpu_temp << " " << gx_bias << " " << gy_bias << " " << gz_bias << std::endl;
-        std::cout << time.time_since_epoch().count() << " " << cpu_temp << " " << gx_bias << " " << gy_bias << " " << gz_bias << std::endl;
+        output_file << time.time_since_epoch().count() << " " << imu_temp << " " << gx_bias << " " << gy_bias << " " << gz_bias << std::endl;
+        std::cout << time.time_since_epoch().count() << " " << imu_temp << " " << gx_bias << " " << gy_bias << " " << gz_bias << std::endl;
     }
 }
 
@@ -203,7 +203,7 @@ int main(int argc, char **argv)
         std::cout << "  -gyro        Calibrate gyroscope\n";
         std::cout << "  -accel       Calibrate accelerometer\n";
         std::cout << "  -mag         Calibrate magnetometer\n";
-        std::cout << "  -temp        Log gyroscope offsets against CPU temperature; overrides other arguments\n";
+        std::cout << "  -temp        Log gyroscope offsets against IMU temperature; overrides other arguments\n";
         std::cout << "  -conf        Specify alternate configuration file\n";
         std::cout << "  -h           Show this help text\n";
         std::cout << "\n";

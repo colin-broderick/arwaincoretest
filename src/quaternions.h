@@ -60,5 +60,11 @@ class quaternion
         double getIm_j(); // return j component
         double getIm_k(); // return k component
 };
+
+inline std::ostream& operator<<(std::ostream& stream, quaternion quat)
+{
+    stream << "quaternion(" << quat.w << ", " << quat.x << ", " << quat.y << ", " << quat.z << ")";
+    return stream;
+}
  
 #endif

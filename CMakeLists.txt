@@ -33,7 +33,7 @@ add_executable(${PROJECT_NAME}_calibration ${CALIBRATE_CPP_FILES} ${BMI_C_FILES}
 add_executable(lora_rx_test lora_driver/lora_rx_test.cpp)
 add_executable(lora_tx_test lora_driver/lora_tx_test.cpp)
 add_executable(madgwick_standalone orientation/madgwick.cpp src/input_parser.cpp orientation/madgwick_standalone.cpp)
-add_executable(efaroe_standalone orientation/efaroe.cpp src/input_parser.cpp orientation/efaroe_standalone.cpp src/quaternions.cpp)
+add_executable(efaroe_standalone orientation/efaroe.cpp src/input_parser.cpp orientation/efaroe_standalone.cpp src/quaternions.cpp src/math_util.cpp)
 
 ## Force the BMI270 C files to be compiled as C++
 set_source_files_properties(${BMI_C_FILES} PROPERTIES LANGUAGE CXX)

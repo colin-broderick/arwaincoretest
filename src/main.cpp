@@ -228,6 +228,39 @@ void std_output()
             ss << "Entangled flag:  " << STATUS.entangled << "\n";
             ss << "CPU temperature: " << arwain::getCPUTemp() << "\n";
 
+            {
+                // The following is a magnetic orientation experiment.
+                /*
+                I am attempting to make a magneto-only orientation filter, i.e. a filter which tells how a sensor is rotated relative to
+                the local geomagnetic vector.
+
+                mag_target is the vector representing the expected magnetic field at a given location.
+                mag_data is the actual magnetic vector measured by the sensor.
+                We compute the angle between these two vectors using the dot product.
+                We compute an axis orthogonal to both of these vectors using the cross product.
+                Rotating by the computed angle, aroud the computed vector, should carry one of these vectors onto the other.
+                We construct a quaternion using the axis-angle pair.
+                This quaternion describes how rotated our sensor is compared to the local geomagnetic vector.
+                */
+                // std::array<double, 3> mag_target = {18.895, -0.361, 45.372};           // Local magnetic vector. Real vector should go here.
+                // mag_target = normalised(mag_target);
+                // std::array<double, 3> mag_data;                         // Measured magnetic field.
+                // { // TODO REMOVE THIS WHEN DONE
+                //     std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
+                //     mag_data = MAG_BUFFER.back();
+                // }
+                // mag_data = normalised(mag_data);                         // Normalize the measured magnetic field.
+                // double angle = acos(mag_data[0]*mag_target[0] + mag_data[1]*mag_target[1]+mag_data[2]*mag_target[2]);  // Angle between measured field and expected local field.
+                // auto axis = cross(mag_data, mag_target);             // An axis orthogonal to the local field vector and measured field vector.
+                // quaternion quat2 = quaternion{                       // Quaternion representaiton of how device is rotated relative to local field.
+                //     cos(angle/2.0),
+                //     sin(angle/2.0) * axis[0],
+                //     sin(angle/2.0) * axis[1],
+                //     sin(angle/2.0) * axis[2]
+                // };
+                // std::cout << quat2 << "\n";
+            }
+
             // Print the string.
             std::cout << ss.str() << std::endl;
 
@@ -276,6 +309,7 @@ void imu_reader()
     vector3 mag_data;
     vector3 world_accel_data;
     vector3 world_gyro_data;
+    vector3 world_mag_data;
     // vector3 world_mag_data;
     euler_orientation_t euler_data;
     quaternion quat_data;
@@ -364,12 +398,12 @@ void imu_reader()
         }
 
         // Buffer mag_data if collected. TODO Is there actually any reason to buffer this?
-        // if (get_mag)
-        // {
-        //     std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
-        //     MAG_BUFFER.pop_front();
-        //     MAG_BUFFER.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
-        // }
+        if (get_mag)
+        {
+            std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
+            MAG_BUFFER.pop_front();
+            MAG_BUFFER.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
+        }
 
         // Log IMU to file.
         if (LOG_TO_FILE)
@@ -433,15 +467,15 @@ void imu_reader()
         }
 
         // Add world-aligned magnetic field to buffer. TODO Why?
-        // if (get_mag)
-        // {
-        //     world_mag_data = world_align(mag_data, quat_data);
-        //     std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
-        //     MAG_WORLD_BUFFER.pop_front();
-        //     MAG_WORLD_BUFFER.push_back(std::array<double, 3>{
-        //         world_mag_data.x, world_mag_data.y, world_mag_data.z
-        //     });
-        // }
+        if (get_mag)
+        {
+            world_mag_data = world_align(mag_data, quat_data);
+            std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
+            MAG_WORLD_BUFFER.pop_front();
+            MAG_WORLD_BUFFER.push_back(std::array<double, 3>{
+                world_mag_data.x, world_mag_data.y, world_mag_data.z
+            });
+        }
 
         // Log orientation information to file.
         if (LOG_TO_FILE)
@@ -1193,6 +1227,21 @@ int main(int argc, char **argv)
         std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
     }
 
+    // TEST FAILURE MODES: Attempt to read the config file and quit if failed.
+    try
+    {
+        CONFIG = arwain::get_configuration(CONFIG_FILE);
+        if (LOG_TO_STDOUT)
+        {
+            std::cout << "Configuration file read successfully\n";
+        }
+    }
+    catch (int n)
+    {
+        std::cout << "Problem reading configuration file\n";
+        return -2;
+    }
+
     // Initialize the IMU if not explicitly disabled.
     if (!NO_IMU)
     {
@@ -1209,20 +1258,6 @@ int main(int argc, char **argv)
         calibrate_gyroscope_online();
     }
 
-    // TEST FAILURE MODES: Attempt to read the config file and quit if failed.
-    try
-    {
-        CONFIG = arwain::get_configuration(CONFIG_FILE);
-        if (LOG_TO_STDOUT)
-        {
-            std::cout << "Configuration file read successfully\n";
-        }
-    }
-    catch (int n)
-    {
-        std::cout << "Problem reading configuration file\n";
-        return -2;
-    }
     
     // Create output directory and write copy of current configuration.
     if (LOG_TO_FILE)

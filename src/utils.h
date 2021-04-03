@@ -150,4 +150,7 @@ typedef struct euler_orientation_t
     double yaw;
 } euler_orientation_t;
 
+std::ostream& operator<<(std::ostream& stream, const std::array<double, 3>& vector);
+std::array<double, 3> normalised(const std::array<double, 3>& vector);
+
 #endif
