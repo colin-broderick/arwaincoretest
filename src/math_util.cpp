@@ -69,3 +69,37 @@ std::array<double, 6> world_align(const std::array<double, 6>& imu, const quater
         gyro_aligned[0], gyro_aligned[1], gyro_aligned[2]
     };
 }
+
+std::array<double, 3> cross(const std::array<double, 3>& v1, const std::array<double, 3>& v2)
+{
+    /*
+    Computes the cross product using determinant formula:
+
+    a x b = |  i   j   k | = i(a1a1 - b1a2) + j(a0b2 - b0a2) + k(a0b1 - b0a1)
+            | a0  a1  a2 |
+            | b0  b1  b2 |
+
+    */
+    return {
+        v1[1] * v2[2] - v2[1] * v1[2],
+        -(v1[0] * v2[2] - v2[0] * v1[2]),
+        v1[0] * v2[1] - v2[0] * v1[1]
+    };
+}
+
+vector3 cross(const vector3& v1, const vector3& v2)
+{
+    /*
+    Computes the cross product using determinant formula:
+
+    a x b = |  i   j   k | = i(a1a1 - b1a2) + j(a0b2 - b0a2) + k(a0b1 - b0a1)
+            | a0  a1  a2 |
+            | b0  b1  b2 |
+
+    */
+    return {
+        v1.y * v2.z - v2.y * v1.z,
+        -(v1.x * v2.z - v2.x * v1.z),
+        v1.x * v2.y - v2.x * v1.y
+    };
+}

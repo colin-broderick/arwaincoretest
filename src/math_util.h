@@ -6,28 +6,11 @@
 #include "utils.h"
 #include "imu_utils.h"
 #include "quaternions.h"
+#include "vector3.h"
 
 /// Computes the cross product of two 3-vectors. The result is a new 3-vector.
-template <class T>
-T cross(const T& v1, const T& v2)
-{
-    /*
-    Computes the cross product using determinant formula:
-
-    a x b = |  i   j   k | = i(a1a1 - b1a2) + j(a0b2 - b0a2) + k(a0b1 - b0a1)
-            | a0  a1  a2 |
-            | b0  b1  b2 |
-
-    */
-    T res;
-    res.x = v1.y * v2.z - v2.y * v1.z;
-    res.y = -(v1.x * v2.z - v2.x * v1.z);
-    res.z = v1.x * v2.y - v2.x * v1.y;
-    return res;
-}
-
-/// Computes the L2 norm of a 3-vector as a double.
-double norm(const std::array<double, 3>& arr);
+std::array<double, 3> cross(const std::array<double, 3>& v1, const std::array<double, 3>& v2);
+vector3 cross(const vector3& v1, const vector3& v2);
 
 /// Computes the L2 norm of a 3-vector as a double.
 double norm(const std::array<double, 3>& arr);

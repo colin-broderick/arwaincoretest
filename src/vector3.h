@@ -2,6 +2,7 @@
 #define VECTOR3_H
 
 #include <math.h>
+#include <iostream>
 
 /** \brief Object for representing a 3-vector of various types, e.g. Eucliden displacement vector.
  */
@@ -91,6 +92,12 @@ inline vector3 operator*(const vector3 &v, const T &scalar)
         v.y*scalar,
         v.z*scalar
     };
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const vector3& vector)
+{
+    stream << "vector3(" << vector.x << ", " << vector.y << ", " << vector.z << ")";
+    return stream;
 }
 
 #endif

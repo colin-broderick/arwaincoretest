@@ -190,13 +190,13 @@ int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr)
 {
     int rslt;
     rslt = bmi2_get_sensor_data(&acce, 1, &bmi270);
-    if (rslt != 0)
+    if (rslt != BMI2_OK)
     {
     	printf("Acc Error num %d\n", rslt);
     	return 1;
     }
     rslt = bmi2_get_sensor_data(&gyro, 1, &bmi270);
-    if (rslt != 0)
+    if (rslt != BMI2_OK)
     {
     	printf("Gyr Error num %d\n", rslt);
     	return 1;
