@@ -7,7 +7,7 @@ project(arwain)
 #find_package(Torch REQUIRED)
 
 ## Set include and library source directories
-include_directories(arwain_torch lora_driver orientation src)
+include_directories(arwain_torch lora_driver orientation bmp280 src)
 link_directories(lib)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -18,7 +18,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 ## Locate source files
 set(BMI_C_FILES src/bmi2_ois.c src/bmi2.c src/bmi270.c src/bmm150.c)
-set(ARWAIN_CPP_FILES src/main.cpp src/bin_log.cpp src/imu_utils.cpp src/indoor_positioning_wrapper.cpp src/input_parser.cpp src/math_util.cpp src/quaternions.cpp src/stance.cpp src/utils.cpp src/velocity_prediction.cpp)
+set(BMP280_C_FILES bmp280/bmp280.c)
+set(ARWAIN_CPP_FILES src/bmp280.cpp src/main.cpp src/bin_log.cpp src/imu_utils.cpp src/indoor_positioning_wrapper.cpp src/input_parser.cpp src/math_util.cpp src/quaternions.cpp src/stance.cpp src/utils.cpp src/velocity_prediction.cpp)
 set(CALIBRATE_CPP_FILES src/calibrate_bmi270.cpp src/utils.cpp src/input_parser.cpp src/imu_utils.cpp)
 
 ## Static libraries to build
@@ -28,7 +29,7 @@ add_library(${PROJECT_NAME}_madgwick STATIC orientation/madgwick.cpp)
 add_library(${PROJECT_NAME}_efaroe STATIC orientation/efaroe.cpp)
 
 ## Executables to build
-add_executable(${PROJECT_NAME} ${ARWAIN_CPP_FILES} ${BMI_C_FILES})
+add_executable(${PROJECT_NAME} ${ARWAIN_CPP_FILES} ${BMI_C_FILES} ${BMP280_C_FILES})
 add_executable(${PROJECT_NAME}_calibration ${CALIBRATE_CPP_FILES} ${BMI_C_FILES})
 add_executable(lora_rx_test lora_driver/lora_rx_test.cpp)
 add_executable(lora_tx_test lora_driver/lora_tx_test.cpp)
@@ -37,6 +38,7 @@ add_executable(efaroe_standalone orientation/efaroe.cpp src/input_parser.cpp ori
 
 ## Force the BMI270 C files to be compiled as C++
 set_source_files_properties(${BMI_C_FILES} PROPERTIES LANGUAGE CXX)
+set_source_files_properties(${BMP280_C_FILES} PROPERTIES LANGUAGE CXX)
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -Wno-psabi -Wall -Wshadow)
