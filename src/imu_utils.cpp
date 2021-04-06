@@ -9,6 +9,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <mutex>
 extern "C" {
     #include <linux/i2c-dev.h>
     #include "smbus.h"
@@ -26,7 +27,7 @@ struct bmi2_sensor_data magn;
 
 vector3 mag_calib_offset, mag_calib_scale;
 
-static float acc_scale, gyr_scale, mag_scale;
+static float acc_scale, gyr_scale;
 
 int i2c_init(int addr)
 {
@@ -40,7 +41,7 @@ int i2c_init(int addr)
 
 	if (ioctl(file_i2c, I2C_SLAVE, addr) < 0)
 	{
-		printf("Failed to acquire bus access and/or talk to slave.\n");
+		printf("Failed to acquire bus access or talk to BMI270.\n");
 	}
 	return file_i2c;
 }
@@ -62,7 +63,6 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     
     acc_scale = acc_range/max_value;
     gyr_scale = gyr_range/max_value;
-    mag_scale = 1;
 
     acce.type = BMI2_ACCEL;
     gyro.type = BMI2_GYRO;
