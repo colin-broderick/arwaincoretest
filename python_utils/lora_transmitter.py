@@ -24,12 +24,11 @@ class Tx:
         self.falling = 0
         self.entangled = 0
         self.stance = "inactive"
-        # self.error = "allok"
+        self.error = "allok"
         self.bmp = BMP280(t_mode=BMP280.OSAMPLE_8, p_mode=BMP280.OSAMPLE_8, filter=BMP280.FILTER_16, formula=1)
         self.zero_alt = self.bmp.alt
 
-    # def store_alert(self, x, y, z, falling, entangled, stance, error):
-    def store_alert(self, x, y, z, falling, entangled, stance):
+    def store_alert(self, x, y, z, falling, entangled, stance, error):
         """
         Current alert format:
 
@@ -55,7 +54,7 @@ class Tx:
         self.falling = falling
         self.entangled = entangled
         self.stance = stance
-        # self.error = error
+        self.error = error
 
         alert_flag = 0
         if self.falling:
@@ -76,13 +75,12 @@ class Tx:
         elif self.stance == "unknown":
             alert_flag = alert_flag | (5<<2)
 
-        # TODO
-        # if self.error == "allok":
-        #     alert_flag = alert_flag | (0<<5)
-        # elif self.error == "imureaderror":
-        #     alert_flag = alert_flag | (1<<5)
-        # elif self.error == "othererror":
-        #     alert_flag = alert_flag | (2<<5)
+        if self.error == "allok":
+            alert_flag = alert_flag | (0<<5)
+        elif self.error == "imureaderror":
+            alert_flag = alert_flag | (1<<5)
+        elif self.error == "othererror":
+            alert_flag = alert_flag | (2<<5)
 
         self.alert_flag = alert_flag
 
@@ -150,9 +148,8 @@ def main():
         falling = 1 if message[3] == "f" else 0
         entangled = 1 if message[4] == "e" else 0
         stance = message[5]
-        # error = message[6]
-        lora.store_alert(x, y, z, falling, entangled, stance)
-        # lora.store_alert(x, y, z, falling, entangled, stance, error)
+        error = message[6]
+        lora.store_alert(x, y, z, falling, entangled, stance, error)
         lora.send()
         
         ## Send acknowledgement
