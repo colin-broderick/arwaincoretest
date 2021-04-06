@@ -204,6 +204,16 @@ void std_output()
         std::this_thread::sleep_for(interval*3);
         auto time = std::chrono::system_clock::now();
 
+        // For magnetic orientation
+        std::array<double, 3> mag_target{18.895, -0.361, 45.372};  // Local magnetic vector.
+        mag_target = normalised(mag_target);
+        std::array<double, 3> mag_data = mag_target;               // Measured magnetic field.
+        std::array<double, 3> new_mag_data{0, 0, 0};
+        double angle;
+        std::array<double, 3> axis;
+        quaternion quat2;
+
+
         while (!SHUTDOWN)
         {
             { // Add position to the string stream.        
@@ -219,7 +229,7 @@ void std_output()
             }
             auto euler_angles = arwain::Filter::getEulerAnglesDegrees(quat.w, quat.x, quat.y, quat.z);
             ss << "Orientation (E): (" << "R:" << euler_angles[0] << ", " << "P:" << euler_angles[1] << ", " << "Y:" << euler_angles[2] << ")" << "\n";;
-            ss << "Orientation (Q): (" << quat.w << ", " << quat.x << ", " << quat.y << ", " << quat.z << ")" << "\n";
+            ss << "Orientation (Q): (" << quat << "\n";
 
             // Add stance to the string stream.
             ss << "Stance flag:     " << STATUS.current_stance << "\n";
@@ -228,6 +238,7 @@ void std_output()
             ss << "Entangled flag:  " << STATUS.entangled << "\n";
             ss << "CPU temperature: " << arwain::getCPUTemp() << "\n";
 
+            if (1)
             {
                 // The following is a magnetic orientation experiment.
                 /*
@@ -238,27 +249,32 @@ void std_output()
                 mag_data is the actual magnetic vector measured by the sensor.
                 We compute the angle between these two vectors using the dot product.
                 We compute an axis orthogonal to both of these vectors using the cross product.
-                Rotating by the computed angle, aroud the computed vector, should carry one of these vectors onto the other.
+                Rotating by the computed angle, aroud the orthogonal vector, should carry one of these vectors onto the other.
                 We construct a quaternion using the axis-angle pair.
                 This quaternion describes how rotated our sensor is compared to the local geomagnetic vector.
                 */
-                // std::array<double, 3> mag_target = {18.895, -0.361, 45.372};           // Local magnetic vector. Real vector should go here.
-                // mag_target = normalised(mag_target);
-                // std::array<double, 3> mag_data;                         // Measured magnetic field.
-                // { // TODO REMOVE THIS WHEN DONE
-                //     std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
-                //     mag_data = MAG_BUFFER.back();
-                // }
-                // mag_data = normalised(mag_data);                         // Normalize the measured magnetic field.
-                // double angle = acos(mag_data[0]*mag_target[0] + mag_data[1]*mag_target[1]+mag_data[2]*mag_target[2]);  // Angle between measured field and expected local field.
-                // auto axis = cross(mag_data, mag_target);             // An axis orthogonal to the local field vector and measured field vector.
-                // quaternion quat2 = quaternion{                       // Quaternion representaiton of how device is rotated relative to local field.
-                //     cos(angle/2.0),
-                //     sin(angle/2.0) * axis[0],
-                //     sin(angle/2.0) * axis[1],
-                //     sin(angle/2.0) * axis[2]
-                // };
-                // std::cout << quat2 << "\n";
+                {
+                    std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
+                    new_mag_data = MAG_BUFFER.back();
+                }
+                new_mag_data = normalised(new_mag_data);           // Normalize the measured magnetic field.
+                mag_data[0] = 0.95 * mag_data[0] + 0.05 * new_mag_data[0];
+                mag_data[1] = 0.95 * mag_data[1] + 0.05 * new_mag_data[1];
+                mag_data[2] = 0.95 * mag_data[2] + 0.05 * new_mag_data[2];
+
+                mag_data = normalised(mag_data);
+
+                angle = acos(mag_data[0]*mag_target[0] 
+                           + mag_data[1]*mag_target[1]
+                           + mag_data[2]*mag_target[2]);           // Angle between measured field and expected local field.
+                axis = cross(mag_data, mag_target);                // An axis orthogonal to the local field vector and measured field vector.
+                quat2 = quaternion{                                // Quaternion representaiton of how device is rotated relative to local field.
+                    cos(angle/2.0),
+                    sin(angle/2.0) * axis[0],
+                    sin(angle/2.0) * axis[1],
+                    sin(angle/2.0) * axis[2]
+                };
+                ss << "Magnetic vector: " << quat2 << "\n";
             }
 
             // Print the string.
@@ -390,10 +406,10 @@ void imu_reader()
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
             IMU_BUFFER.pop_front();
             std::array<double, 6> newData{accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z};
-            if (IMU_BUFFER.back() == newData)
-            {
-                std::cout << "IMU reading duplication at " << timeCount << "\n";
-            }
+            // if (IMU_BUFFER.back() == newData)  // Check for duplicate readings
+            // {
+            //     std::cout << "IMU reading duplication at " << timeCount << "\n";
+            // }
             IMU_BUFFER.push_back(newData);
         }
 
@@ -745,23 +761,23 @@ void transmit_lora()
                 break;
         }
 
-        // TODO Add IMU error to the message
-        // ss << ",";
-        // switch (STATUS.errors)
-        // {
-        //     case arwain::Errors::AllOk:
-        //         ss << "allok";
-        //         break;
-        //     case arwain::Errors::IMUReadError:
-        //         ss << "imureaderror";
-        //         break;
-        //     case arwain::Errors::OtherError:
-        //         ss << "othererror";
-        //         break;
-        //     default:
-        //         ss << "allok";
-        //         break;
-        // }
+        // Add error state to the message
+        ss << ",";
+        switch (STATUS.errors)
+        {
+            case arwain::Errors::AllOk:
+                ss << "allok";
+                break;
+            case arwain::Errors::IMUReadError:
+                ss << "imureaderror";
+                break;
+            case arwain::Errors::OtherError:
+                ss << "othererror";
+                break;
+            default:
+                ss << "allok";
+                break;
+        }
 
         // Reset the flags that were just read.
         STATUS.falling = arwain::StanceDetector::NotFalling;
