@@ -56,7 +56,6 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <string.h>
 #include <iomanip>
 
-// #include "arwain_torch.h"
 #include "quaternions.h"
 #include "stance.h"
 #include "imu_utils.h"
@@ -67,15 +66,14 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "bin_log.h"
 #include "indoor_positioning_wrapper.h"
 #include "filter.h"
+#include "logger.h"
 
 #include "velocity_prediction.h"
 #include "lora.h"
 #include "packet.h"
-// #include "half.h"
-// #include "rknn_api.h"
 
 // Time intervals, all in milliseconds.
-unsigned int IMU_READING_INTERVAL = 5;    // You don't need to change this; switch to 10 ms is controlled by a #define at the top
+unsigned int IMU_READING_INTERVAL = 5;            // You don't need to change this; switch to 10 ms is controlled by a #define at the top
 unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
 unsigned int LORA_TRANSMISSION_INTERVAL = 500;
 unsigned int STANCE_DETECTION_INTERVAL = 1000;
@@ -83,7 +81,7 @@ unsigned int INDOOR_POSITIONING_INTERVAL = 50;
 unsigned int STD_OUT_INTERVAL = 250;
 
 // Buffer sizes.
-unsigned int POSITION_BUFFER_LEN = 200;    // 1 second is (1000/VELOCITY_PREDICTION_INTERVAL) samples.
+unsigned int POSITION_BUFFER_LEN = 200;           // 1 second is (1000/VELOCITY_PREDICTION_INTERVAL) samples.
 unsigned int MAG_BUFFER_LEN = 200;
 unsigned int VELOCITY_BUFFER_LEN = 200;
 unsigned int ORIENTATION_BUFFER_LEN = 200;
@@ -95,7 +93,6 @@ unsigned int LORA_MESSAGE_LENGTH = 8;
 arwain::Configuration CONFIG;
 arwain::Status STATUS;
 
-// std::string inference_tcp_socket = "tcp://*:5555";
 std::string radio_tcp_socket = "tcp://*:5556";
 
 // Default config file locations.
@@ -111,7 +108,7 @@ int NO_LORA = 0;
 // Name for data folder
 std::string FOLDER_DATE_STRING;
 
-std::ofstream ERROR_LOG;
+arwain::Logger ERROR_LOG;
 
 // Data buffers.
 std::deque<std::array<double, 6>> IMU_BUFFER{IMU_BUFFER_LEN};
@@ -137,7 +134,6 @@ std::mutex VELOCITY_BUFFER_LOCK;
 std::mutex STATUS_FLAG_LOCK;
 std::mutex POSITION_BUFFER_LOCK;
 std::mutex ORIENTATION_BUFFER_LOCK;
-std::mutex LOG_FILE_LOCK;
 
 #if GYRO_BIAS_EXPERIMENT
 void gyro_bias_estimation()
@@ -386,8 +382,7 @@ void imu_reader()
             STATUS.errors = arwain::Errors::IMUReadError;
             if (LOG_TO_FILE)
             {
-                std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
-                ERROR_LOG << timeCount << " " << "IMU_READ_ERROR" << std::endl;
+                ERROR_LOG << timeCount << " " << "IMU_READ_ERROR" << "\n";
             }
         }
 
@@ -1290,9 +1285,8 @@ int main(int argc, char **argv)
     // TODO: Create a logging class so mutex can be internal and not possible to forget.
     if (LOG_TO_FILE)
     {
-        std::lock_guard<std::mutex> lock{LOG_FILE_LOCK};
         ERROR_LOG.open(FOLDER_DATE_STRING + "/ERRORS.txt");
-        ERROR_LOG << "# time event" << std::endl;
+        ERROR_LOG << "# time event" << "\n";
     }
 
     // Start worker threads.
@@ -1308,7 +1302,7 @@ int main(int argc, char **argv)
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     
     #if GYRO_BIAS_EXPERIMENT
-    std::thread gyro_bias_estimator(gyro_bias_estimation);
+    std::thread gyro_bias_estimator(gyro_bias_estimation);       // Continuously estimates gyro bias
     #endif
 
     #if THREAD_AFFINITY_EXPERIMENT

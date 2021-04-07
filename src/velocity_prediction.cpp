@@ -1,6 +1,6 @@
 #include "velocity_prediction.h"
 
-std::string inference_tcp_socket = "tcp://*:5555";
+static std::string inference_tcp_socket = "tcp://*:5555";
 
 #if USE_SOCKET_INFERENCE
 /** \brief This has only been developed to the proof of concept stage and is not suitable for deployment.
