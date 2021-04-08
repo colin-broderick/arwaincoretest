@@ -15,7 +15,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 ## Locate source files
 set(BMI_C_FILES src/bmi2_ois.c src/bmi2.c src/bmi270.c src/bmm150.c)
 set(BMP280_C_FILES bmp280/bmp280.c)
-set(ARWAIN_CPP_FILES src/bmp280.cpp src/main.cpp src/bin_log.cpp src/imu_utils.cpp src/indoor_positioning_wrapper.cpp src/input_parser.cpp src/math_util.cpp src/quaternions.cpp src/stance.cpp src/utils.cpp src/velocity_prediction.cpp src/logger.cpp)
+set(ARWAIN_CPP_FILES src/bmp280.cpp src/main.cpp src/imu_utils.cpp src/indoor_positioning_wrapper.cpp src/input_parser.cpp src/math_util.cpp src/quaternions.cpp src/stance.cpp src/utils.cpp src/velocity_prediction.cpp src/logger.cpp)
 set(CALIBRATE_CPP_FILES src/calibrate_bmi270.cpp src/utils.cpp src/input_parser.cpp src/imu_utils.cpp)
 
 ## Static libraries to build

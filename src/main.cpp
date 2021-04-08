@@ -63,11 +63,9 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "efaroe.h"
 #include "math_util.h"
 #include "input_parser.h"
-#include "bin_log.h"
 #include "indoor_positioning_wrapper.h"
 #include "filter.h"
 #include "logger.h"
-#include "bmp280.h"
 #include "bmp280a.h"
 
 #include "velocity_prediction.h"
