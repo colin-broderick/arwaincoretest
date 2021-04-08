@@ -1,4 +1,5 @@
 #include "velocity_prediction.h"
+#include "logger.h"
 
 static std::string inference_tcp_socket = "tcp://*:5555";
 
@@ -18,7 +19,7 @@ void predict_velocity()
 
     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
     std::chrono::milliseconds presleep(1000);
-    std::this_thread::sleep_for(presleep*3);
+    std::this_thread::sleep_for(presleep*10);
 
     // Set up socket
     void *context = zmq_ctx_new();
@@ -27,9 +28,6 @@ void predict_velocity()
 
     // Buffer to contain local copy of IMU data.
     std::deque<std::array<double, 6>> imu;
-
-    // TODO Run Python inference script as service or something?
-    // TODO Make sure Python script can resume inference if the main program stops and starts.
 
     std::array<double, 3> position{0, 0, 0};
     std::array<double, 3> velocity{0, 0, 0};
@@ -40,8 +38,8 @@ void predict_velocity()
 
     // Open files for logging.
     // File handles for logging.
-    std::ofstream position_file;
-    std::ofstream velocity_file;
+    arwain::Logger position_file;
+    arwain::Logger velocity_file;
     if (LOG_TO_FILE)
     {
         velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
@@ -173,8 +171,8 @@ void predict_velocity()
         std::deque<std::array<double, 6>> imu_latest;     // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
 
         // File handles for logging.
-        std::ofstream position_file;
-        std::ofstream velocity_file;
+        arwain::Logger position_file;
+        arwain::Logger velocity_file;
 
         // Time in seconds between inferences.
         double interval_seconds = ((double)(VELOCITY_PREDICTION_INTERVAL))/1000.0;

@@ -42,7 +42,7 @@ class Tx:
             3     |- Values 0-8 reserved for stance, default 0 which implies inactive.
             4     ⌋
             5   ⌉
-            6   |- Values 0-8 reserved for error conditions, TODO
+            6   |- Values 0-8 reserved for error conditions
             7   ⌋
 
         Byte 7 not yet used.
@@ -94,7 +94,7 @@ class Tx:
         
         z1 = np.float16(self.bmp.altitude - self.zero_alt).tobytes()
 
-        flag = np.float16(self.alert_flag).tobytes()  ## TODO This should be fine as a half float since ints in [-2048,2048] are exactly representable, but keep an eye on it. Might need to be an int.
+        flag = np.float16(self.alert_flag).tobytes()  ## This should be fine as a half float since ints in [-2048,2048] are exactly representable, but keep an eye on it. Might need to be an int.
         return x1 + y1 + z1 + flag
 
     def send(self):

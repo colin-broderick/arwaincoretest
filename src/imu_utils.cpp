@@ -16,8 +16,8 @@ extern "C" {
 }		
 #include "imu_utils.h"
 
-
-int file_i2c = -1;
+std::mutex I2C_LOCK;
+int bmi_file_i2c = -1;
 struct timespec tim, tim_r;
 struct bmi2_dev bmi270;
 struct bmm150_dev bmm150;
@@ -29,20 +29,21 @@ vector3 mag_calib_offset, mag_calib_scale;
 
 static float acc_scale, gyr_scale;
 
-int i2c_init(int addr)
+int i2c_init(const int address, int& file_i2c)
 {
 	//----- OPEN THE I2C BUS -----
 	char *filename = (char*)"/dev/i2c-1";
 	if ((file_i2c = open(filename, O_RDWR)) < 0)
 	{
 		//ERROR HANDLING: you can check errno to see what went wrong
-		printf("Failed to open the i2c bus");
+		std::cout << "Failed to open I2C bus" << std::endl;
 	}
 
-	if (ioctl(file_i2c, I2C_SLAVE, addr) < 0)
-	{
-		printf("Failed to acquire bus access or talk to BMI270.\n");
-	}
+    if (ioctl(file_i2c, I2C_SLAVE, address) < 0)
+    {
+        std::cout << "Failed to connect to I2C address " << std::hex << address << std::endl;
+    }
+
 	return file_i2c;
 }
 
@@ -75,17 +76,17 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     bmi270.read_write_len = 32;
     bmi270.intf = BMI2_I2C_INTERFACE;
     bmi270.dev_id = BMI2_I2C_SEC_ADDR;
+    i2c_init(bmi270.dev_id, bmi_file_i2c);
     	
 	// Initialise device
-    i2c_init(bmi270.dev_id);
     int bmi_rslt = bmi270_init(&bmi270);
     if (bmi_rslt == 0)
     {
-	    printf("IMU initialised\n");
+	    std::cout << "IMU initialised" << std::endl;
     }
     else
     {
-        printf("IMU init failed. Error %d\n", bmi_rslt);
+        std::cout << "IMU init failed. Error " << bmi_rslt << std::endl;
         return 1;
     }
 
@@ -131,7 +132,7 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     // }
     // if (rslt != BMI2_OK)
     // {
-    //     printf("Failed to set reg\n");
+    //     std::cout << "Failed to set reg" << std::endl;
     // }
 
     //Magnetometer setup
@@ -164,11 +165,11 @@ int init_bmi270(int mag_enabled, std::string calib_file)
         int bmm_rslt = bmm150_init(&bmm150);
         if (bmm_rslt == 0)
         {
-            printf("Magnetometer initialised\n");
+            std::cout << "Magnetometer initialised" << std::endl;
         }
         else
         {
-            printf("Magnetometer init failed. Error %d\n", bmm_rslt);
+            std::cout << "Magnetometer init failed. Error " << bmm_rslt << std::endl;
             return 1;
         }
         
@@ -192,13 +193,13 @@ int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr)
     rslt = bmi2_get_sensor_data(&acce, 1, &bmi270);
     if (rslt != BMI2_OK)
     {
-    	printf("Acc Error num %d\n", rslt);
+    	std::cout << "Acc Error num " << rslt << std::endl;
     	return 1;
     }
     rslt = bmi2_get_sensor_data(&gyro, 1, &bmi270);
     if (rslt != BMI2_OK)
     {
-    	printf("Gyr Error num %d\n", rslt);
+    	std::cout << "Gyr Error num " << rslt << std::endl;
     	return 1;
     }
 
@@ -219,7 +220,7 @@ int get_bmm150_data(struct vector3 *mag)
     rslt = bmm150_read_mag_data(&bmm150);
     if (rslt != 0)
     {
-        printf("Mag Error num %d\n", rslt);
+        std::cout << "Mag Error num " << rslt << std::endl;
         return 1;
     }
     mag->x = (bmm150.data.x - mag_calib_offset.x) * mag_calib_scale.x;
@@ -243,7 +244,7 @@ void read_calib_data(std::string path)
 
     if (!source)
     {
-	    printf("No calibration file found, magnetometer will only use on-board calibration\n");
+	    std::cout << "No calibration file found, magnetometer will only use on-board calibration" << std::endl;
     }
     else
     {
@@ -301,7 +302,8 @@ void delay_ms(uint32_t period)
  */
 int8_t bmi270_reg_write(uint8_t i2c_addr, uint8_t reg_addr, const uint8_t *reg_data, uint16_t length)
 {
-    int8_t ret = i2c_smbus_write_i2c_block_data(file_i2c, reg_addr, length, reg_data);
+    std::lock_guard<std::mutex> lock{I2C_LOCK};
+    int8_t ret = i2c_smbus_write_i2c_block_data(bmi_file_i2c, reg_addr, length, reg_data);
     return ret < 0;
 }
 
@@ -320,8 +322,8 @@ int8_t bmi270_reg_write(uint8_t i2c_addr, uint8_t reg_addr, const uint8_t *reg_d
  */
 int8_t bmi270_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
 {
-
-    int8_t ret = i2c_smbus_read_i2c_block_data(file_i2c, reg_addr, length, reg_data);
+    std::lock_guard<std::mutex> lock{I2C_LOCK};
+    int8_t ret = i2c_smbus_read_i2c_block_data(bmi_file_i2c, reg_addr, length, reg_data);
     return ret < 0;
 }
 

@@ -3,13 +3,14 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 
 #include "bmi2.h"
 #include "bmi270.h"
 #include "bmm150.h"
 #include "vector3.h"
 
-int i2c_init(int addr);
+int i2c_init(const int address, int& file_i2c);
 int init_bmi270(int mag_enabled, std::string calib_file);
 int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr);
 int get_bmm150_data(struct vector3 *mag);

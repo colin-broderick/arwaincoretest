@@ -1,11 +1,11 @@
 #include "efaroe.h"
-
+ 
 /** \brief Constructor for eFaroe class.
  * eFaroe is an orientation filter which uses acceleration and angular velocity measurements from accelerometer and gyroscope to attempt to track current orientation.
  * \param initial_quaternion The known initial orientation as a quaternion. Use {1, 0, 0, 0} if unknown.
  * \param gyro_bias The known constant bias in the gyroscope. Use zeroes if unknown.
  * \param gyro_error TODO not sure what this is for.
- * TODO Make use of beta and zeta being passed in.
+ * TODO Make use of beta being passed in.
  */
 arwain::eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, double beta, double zeta)
 {
@@ -105,7 +105,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
     // gyro_bias = gyro_bias + gyro*0.0001;
 
     // TODO What is this?
-    vector3 a_v = (gyro - gradient*m_beta)*dt;
+    vector3 a_v = (gyro - gradient * m_beta) * dt;
     quaternion qav{a_v};
 
     // Calculate delta orientation quaternion.
@@ -198,7 +198,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
     // gyro_bias = gyro_bias + gyro*0.0001;
 
     // TODO What is this?
-    vector3 a_v = (gyro - gradient*m_beta)*dt;
+    vector3 a_v = (gyro - gradient * m_beta) * dt;
     quaternion qav{a_v};
 
     // Calculate delta orientation quaternion.
