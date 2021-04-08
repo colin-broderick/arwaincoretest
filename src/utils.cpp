@@ -193,6 +193,7 @@ arwain::Configuration arwain::get_configuration(const std::string &filename)
     stringstream(options["orientation_filter"]) >> cf.orientation_filter;
     stringstream(options["inference_model_xml"]) >> cf.inference_model_xml;
     stringstream(options["use_pressure"]) >> cf.use_pressure;
+    stringstream(options["sea_level_pressure"]) >> cf.sea_level_pressure;
     
     // Apply LoRa settings
     stringstream(options["lora_tx_power"]) >> cf.lora_tx_power;

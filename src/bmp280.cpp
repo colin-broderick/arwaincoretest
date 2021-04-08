@@ -29,17 +29,23 @@ int bmp_file_i2c;
 struct timespec tim2, tim_r2;
 extern std::mutex I2C_LOCK;
 
-double sea_level_pressure = 1018.250;
+double sea_level_pressure;
 
+/** \brief Compute the altitude using the hypsometric formula.
+ * The hypsometric formula considers temperature as a variable. This generally make it more
+ * accurate but this may not hold true at extremes of temperature.
+ */
 double altitude_from_pressure_and_temperature(const double pressure, const double temperature)
 {
     return ((pow((sea_level_pressure/(pressure/100)), (1.0/5.257))-1)*(temperature + 273.15))/0.0065;
-    // return 44330.0 * (1.0 - pow(pressure/100.0/sea_level_pressure, 0.1903));
 }
 
-int init_bmp280(bmp280_dev& bmp, bmp280_config &conf, bmp280_uncomp_data& uncomp_data, double& temp, double& alt, double& pres)
+int init_bmp280(bmp280_dev& bmp, bmp280_config &conf, bmp280_uncomp_data& uncomp_data, const double sealevelpressure)
 {
     int8_t rslt;
+
+    sea_level_pressure = sealevelpressure;
+
     /* Map the delay function pointer with the function responsible for implementing the delay */
     bmp.delay_ms = delay_ms;
 
@@ -65,10 +71,11 @@ int init_bmp280(bmp280_dev& bmp, bmp280_config &conf, bmp280_uncomp_data& uncomp
     print_rslt(" bmp280_get_config status", rslt);
 
     // Configure temp oversampling, filter coeff, and ODR
-    conf.filter = BMP280_FILTER_COEFF_2;
-
+    conf.filter = BMP280_FILTER_COEFF_16;
+    
     // Configure pressure oversampling
-    conf.os_pres = BMP280_OS_4X;
+    conf.os_pres = BMP280_OS_16X;
+    conf.os_temp = BMP280_OS_16X;
 
     // Configure ODR at 1 Hz
     conf.odr = BMP280_ODR_125_MS;

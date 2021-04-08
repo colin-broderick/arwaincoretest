@@ -1165,15 +1165,17 @@ void altimiter()
     }
 
     // Initialize the sensor.
-    struct bmp280_dev bmp;
-    struct bmp280_config conf;
-    struct bmp280_uncomp_data uncomp_data;
+    bmp280_dev bmp;
+    bmp280_config conf;
+    bmp280_uncomp_data uncomp_data;
     double pres, temp, alt;
-    init_bmp280(bmp, conf, uncomp_data, temp, alt, pres);
+    init_bmp280(bmp, conf, uncomp_data, CONFIG.sea_level_pressure);
 
     // Set up timing.
     auto loopTime = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{250};
+
+    int result;
 
     while (!SHUTDOWN)
     {
@@ -1185,7 +1187,7 @@ void altimiter()
         bmp280_get_comp_temp_double(&temp, uncomp_data.uncomp_temp, &bmp);
         alt = altitude_from_pressure_and_temperature(pres, temp);
 
-        // Display output
+        // Store output
         PRESSURE_BUFFER.pop_front();
         PRESSURE_BUFFER.push_back({pres, temp, alt});
 

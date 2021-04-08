@@ -61,6 +61,7 @@ namespace arwain
      * \param lora_enable_crc Whether to add CRC to LoRa messages.
      * \param inference_model_xml The location of the inference model xml file.
      * \param use_pressure Whether to use BMP280 pressure sensor for altitude.
+     * \param sea_level_pressure Sea level pressure near the region of interest.
      */
     struct Configuration {
         double active_threshold;
@@ -94,6 +95,7 @@ namespace arwain
         int lora_enable_crc;
         std::string inference_model_xml;
         int use_pressure;
+        double sea_level_pressure;
     };
 
     /** \brief Overwrite the content of a configuration file.
