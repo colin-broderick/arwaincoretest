@@ -43,6 +43,10 @@ class Predictor:
             print("Inference test failed - is the NSC2 accessible?")
             raise e
 
+    def __del__(self):
+        del self.net
+        del self.exec_net
+
 
 def main():
     ## Get model file location from command line.

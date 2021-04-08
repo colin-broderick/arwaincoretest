@@ -67,6 +67,8 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "indoor_positioning_wrapper.h"
 #include "filter.h"
 #include "logger.h"
+#include "bmp280.h"
+#include "bmp280a.h"
 
 #include "velocity_prediction.h"
 #include "lora.h"
@@ -78,7 +80,7 @@ unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
 unsigned int LORA_TRANSMISSION_INTERVAL = 500;
 unsigned int STANCE_DETECTION_INTERVAL = 1000;
 unsigned int INDOOR_POSITIONING_INTERVAL = 50;
-unsigned int STD_OUT_INTERVAL = 250;
+unsigned int STD_OUT_INTERVAL = 1000;
 
 // Buffer sizes.
 unsigned int POSITION_BUFFER_LEN = 200;           // 1 second is (1000/VELOCITY_PREDICTION_INTERVAL) samples.
@@ -93,8 +95,6 @@ unsigned int LORA_MESSAGE_LENGTH = 8;
 arwain::Configuration CONFIG;
 arwain::Status STATUS;
 
-std::string radio_tcp_socket = "tcp://*:5556";
-
 // Default config file locations.
 std::string CONFIG_FILE = "./arwain.conf";
 
@@ -104,6 +104,7 @@ int LOG_TO_FILE = 0;
 int NO_INFERENCE = 0;
 int NO_IMU = 0;
 int NO_LORA = 0;
+int NO_PRESSURE = 0;
 
 // Name for data folder
 std::string FOLDER_DATE_STRING;
@@ -118,6 +119,7 @@ std::deque<std::array<double, 3>> POSITION_BUFFER{POSITION_BUFFER_LEN};
 std::deque<std::array<double, 3>> MAG_BUFFER{MAG_BUFFER_LEN};
 std::deque<std::array<double, 3>> MAG_WORLD_BUFFER{MAG_BUFFER_LEN};
 std::deque<std::array<double, 3>> IPS_BUFFER{IPS_BUFFER_LEN};
+std::deque<std::array<double, 3>> PRESSURE_BUFFER{100};
 std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{ORIENTATION_BUFFER_LEN};
 std::deque<quaternion> QUAT_ORIENTATION_BUFFER{ORIENTATION_BUFFER_LEN};
 
@@ -232,6 +234,7 @@ void std_output()
             ss << "Horizontal:      " << STATUS.attitude << "\n";
             ss << "Fall flag:       " << STATUS.falling << "\n";
             ss << "Entangled flag:  " << STATUS.entangled << "\n";
+            ss << "Air pressure:    " << PRESSURE_BUFFER.back() << "\n";
             ss << "CPU temperature: " << arwain::getCPUTemp() << "\n";
 
             if (1)
@@ -327,12 +330,12 @@ void imu_reader()
     quaternion quat_data;
 
     // File handles for logging.
-    std::ofstream acce_file;
-    std::ofstream gyro_file;
-    std::ofstream mag_file;
-    std::ofstream euler_file;
-    std::ofstream quat_file;
-    std::ofstream temp_file;
+    arwain::Logger acce_file;
+    arwain::Logger gyro_file;
+    arwain::Logger mag_file;
+    arwain::Logger euler_file;
+    arwain::Logger quat_file;
+    arwain::Logger temp_file;
 
     if (LOG_TO_FILE)
     {
@@ -393,19 +396,12 @@ void imu_reader()
             mag_data = mag_data * CONFIG.mag_scale;
         }
         accel_data = accel_data - CONFIG.accel_bias;
-        // std::cout << CONFIG.gyro_bias.x << " " << CONFIG.gyro_bias.y << " " << CONFIG.gyro_bias.z << "\n";
         gyro_data = gyro_data - CONFIG.gyro_bias;
-        // std::cout << gyro_data.x << "\n";
         
         { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
             IMU_BUFFER.pop_front();
-            std::array<double, 6> newData{accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z};
-            // if (IMU_BUFFER.back() == newData)  // Check for duplicate readings
-            // {
-            //     std::cout << "IMU reading duplication at " << timeCount << "\n";
-            // }
-            IMU_BUFFER.push_back(newData);
+            IMU_BUFFER.push_back({accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z});
         }
 
         // Buffer mag_data if collected. TODO Is there actually any reason to buffer this?
@@ -552,10 +548,10 @@ void imu_reader()
     quaternion quaternion_mid;
 
     // File handles for logging.
-    std::ofstream acce_file;
-    std::ofstream gyro_file;
-    std::ofstream mag_file;
-    std::ofstream quat_file;
+    arwain::Logger acce_file;
+    arwain::Logger gyro_file;
+    arwain::Logger mag_file;
+    arwain::Logger quat_file;
 
     if (LOG_TO_FILE)
     {
@@ -588,6 +584,9 @@ void imu_reader()
         timeNow = std::chrono::system_clock::now();
         timeMid = timeNow - (timeNow - timePrevious)/2;
         
+        auto timeMidCount = timeMidCount;
+        auto timeNowCount = timeNowCount;
+
         // Read sensor data and apply bias corrections.
         get_bmi270_data(&accel_now, &gyro_now);
         if (get_mag)
@@ -613,29 +612,29 @@ void imu_reader()
 
         if (LOG_TO_FILE)
         { // Log IMU to file.
-            acce_file << timeMid.time_since_epoch().count() << " " << accel_mid.x << " " << accel_mid.y << " " << accel_mid.z << "\n";
-            gyro_file << timeMid.time_since_epoch().count() << " " << gyro_mid.x << " " << gyro_mid.y << " " << gyro_mid.z << "\n";
-            acce_file << timeNow.time_since_epoch().count() << " " << accel_now.x << " " << accel_now.y << " " << accel_now.z << "\n";
-            gyro_file << timeNow.time_since_epoch().count() << " " << gyro_now.x << " " << gyro_now.y << " " << gyro_now.z << "\n";
+            acce_file << timeMidCount << " " << accel_mid.x << " " << accel_mid.y << " " << accel_mid.z << "\n";
+            gyro_file << timeMidCount << " " << gyro_mid.x << " " << gyro_mid.y << " " << gyro_mid.z << "\n";
+            acce_file << timeNowCount << " " << accel_now.x << " " << accel_now.y << " " << accel_now.z << "\n";
+            gyro_file << timeNowCount << " " << gyro_now.x << " " << gyro_now.y << " " << gyro_now.z << "\n";
             if (CONFIG.log_magnetometer)
             { // Log magnetometer to file.
-                mag_file << timeNow.time_since_epoch().count() << " " << magnet_now.x << " " << magnet_now.y << " " << magnet_now.z << "\n";
+                mag_file << timeNowCount << " " << magnet_now.x << " " << magnet_now.y << " " << magnet_now.z << "\n";
             }
         }
 
         // Update orientation filter twice, using interpolated sample and current sample.
         if (CONFIG.use_magnetometer)
         {
-            filter->update(timeMid.time_since_epoch().count(), gyro_mid.x, gyro_mid.y, gyro_mid.z, accel_mid.x, accel_mid.y, accel_mid.z, magnet_now.z, magnet_now.y, magnet_now.z);
+            filter->update(timeMidCount, gyro_mid.x, gyro_mid.y, gyro_mid.z, accel_mid.x, accel_mid.y, accel_mid.z, magnet_now.z, magnet_now.y, magnet_now.z);
             quaternion_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
-            filter->update(timeNow.time_since_epoch().count(), gyro_now.x, gyro_now.y, gyro_now.z, accel_now.x, accel_now.y, accel_now.z, magnet_now.z, magnet_now.y, magnet_now.z);
+            filter->update(timeNowCount, gyro_now.x, gyro_now.y, gyro_now.z, accel_now.x, accel_now.y, accel_now.z, magnet_now.z, magnet_now.y, magnet_now.z);
             quaternion_now = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
         }
         else
         {
-            filter->update(timeMid.time_since_epoch().count(), gyro_mid.x, gyro_mid.y, gyro_mid.z, accel_mid.x, accel_mid.y, accel_mid.z);
+            filter->update(timeMidCount, gyro_mid.x, gyro_mid.y, gyro_mid.z, accel_mid.x, accel_mid.y, accel_mid.z);
             quaternion_mid = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
-            filter->update(timeNow.time_since_epoch().count(), gyro_now.x, gyro_now.y, gyro_now.z, accel_now.x, accel_now.y, accel_now.z);
+            filter->update(timeNowCount, gyro_now.x, gyro_now.y, gyro_now.z, accel_now.x, accel_now.y, accel_now.z);
             quaternion_now = {filter->getW(),filter->getX(),filter->getY(),filter->getZ()};
         }
 
@@ -663,8 +662,8 @@ void imu_reader()
         // Log orientation information to file.
         if (LOG_TO_FILE)
         {
-            quat_file << timeMid.time_since_epoch().count() << " " << quaternion_mid.w << " " << quaternion_mid.x << " " << quaternion_mid.y << " " << quaternion_mid.z << "\n";
-            quat_file << timeNow.time_since_epoch().count() << " " << quaternion_now.w << " " << quaternion_now.x << " " << quaternion_now.y << " " << quaternion_now.z << "\n";
+            quat_file << timeMidCount << " " << quaternion_mid.w << " " << quaternion_mid.x << " " << quaternion_mid.y << " " << quaternion_mid.z << "\n";
+            quat_file << timeNowCount << " " << quaternion_now.w << " " << quaternion_now.x << " " << quaternion_now.y << " " << quaternion_now.z << "\n";
         }
 
         // Store last reading and wait until next tick.
@@ -697,12 +696,14 @@ void transmit_lora()
         return;
     }
 
+    std::string radio_tcp_socket{"tcp://*:5556"};
+
     char response_buffer[50];
     // Wait until there's something worth transmitting.
     std::this_thread::sleep_for(std::chrono::milliseconds{3000});
 
     // Set up log file.
-    std::ofstream lora_file;
+    arwain::Logger lora_file;
     if (LOG_TO_FILE)
     {
         lora_file.open(FOLDER_DATE_STRING + "/lora_log.txt");
@@ -779,7 +780,7 @@ void transmit_lora()
         STATUS.entangled = arwain::StanceDetector::NotEntangled;
         STATUS.errors = arwain::Errors::AllOk;
 
-        // TODO Send by socket and reset stringstream.
+        // Send by socket and reset stringstream.
         std::string fromStream = ss.str();
         const char* str = fromStream.c_str();
         zmq_send(responder, str, strlen(str), 0);
@@ -856,7 +857,7 @@ void transmit_lora()
     // std::cout << lora.getHeaderMode() << std::endl;
 
     // Local buffers.
-    std::ofstream lora_file;
+    arwain::Logger lora_file;
     std::array<double, 3> position;
     uint16_t alerts;
     // FLOAT16 x16, y16, z16;
@@ -966,7 +967,7 @@ void indoor_positioning()
         std::array<double, 3> velocity;
         std::array<double, 3> position;
 
-        std::ofstream ips_position_file;
+        arwain::Logger ips_position_file;
 
         if (LOG_TO_FILE)
         {
@@ -1039,7 +1040,7 @@ void stance_detector()
     std::deque<std::array<double, 3>> vel_data;
 
     // Open file for freefall/entanglement logging
-    std::ofstream freefall_file;
+    arwain::Logger freefall_file;
     if (LOG_TO_FILE)
     {
         freefall_file.open(FOLDER_DATE_STRING + "/freefall.txt");
@@ -1047,7 +1048,7 @@ void stance_detector()
     }
 
     // File handle for stance logging.
-    std::ofstream stance_file;
+    arwain::Logger stance_file;
     if (LOG_TO_FILE)
     {
         stance_file.open(FOLDER_DATE_STRING + "/stance.txt");
@@ -1151,6 +1152,43 @@ void calibrate_gyroscope_online()
 
     std::cout << "Gyroscope calibration is complete, you may now operate the device normally" << std::endl;
 }
+
+
+
+/** \brief Uses the BMP280 pressure sensor to determine altitude. */
+void altimiter()
+{
+    // Initialize the sensor.
+    struct bmp280_dev bmp;
+    struct bmp280_config conf;
+    struct bmp280_uncomp_data uncomp_data;
+    double pres, temp, alt;
+    init_bmp280(bmp, conf, uncomp_data, temp, alt, pres);
+
+    // Set up timing.
+    auto loopTime = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{250};
+
+    while (!SHUTDOWN)
+    {
+        // Read the raw data
+        bmp280_get_uncomp_data(&uncomp_data, &bmp);
+
+        // Convert the raw data to doubles
+        bmp280_get_comp_pres_double(&pres, uncomp_data.uncomp_press, &bmp);
+        bmp280_get_comp_temp_double(&temp, uncomp_data.uncomp_temp, &bmp);
+        alt = altitude_from_pressure_and_temperature(pres, temp);
+
+        // Display output
+        PRESSURE_BUFFER.pop_front();
+        PRESSURE_BUFFER.push_back({pres, temp, alt});
+
+        // Wait
+        loopTime = loopTime + interval;
+        std::this_thread::sleep_until(loopTime);
+    }
+}
+
 
 /** \brief Main loop.
  * \param argc Nmber of arguments.
@@ -1296,6 +1334,7 @@ int main(int argc, char **argv)
     std::thread transmit_lora_thread(transmit_lora);             // LoRa packet transmissions.
     std::thread std_output_thread(std_output);                   // Prints useful output to std out.
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
+    std::thread altimiter_thread(altimiter);                     // Uses the BMP280 sensor to determine altitude.
     
     // Start external Python scripts.
     std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
@@ -1341,6 +1380,7 @@ int main(int argc, char **argv)
     indoor_positioning_thread.join();
     py_transmitter_thread.join();
     py_inference_thread.join();
+    altimiter_thread.join();
     #if GYRO_BIAS_EXPERIMENT
     gyro_bias_estimator.join();
     #endif

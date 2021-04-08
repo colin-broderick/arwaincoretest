@@ -1,11 +1,17 @@
+// TODO Lots of tidying up needed.
+// TODO Turn into a class.
+
+
+
+
 /*!
  *  @brief Example shows basic setup of sensor which includes following
  *      Initialization of the interface.
  *      performing the sensor initialization.
  */
-
+ 
 #include "stdio.h"
-#include "bmp280.h"
+#include "bmp280a.h"
 extern "C" {
     #include <linux/i2c-dev.h>
     #include <smbus.h>
@@ -13,43 +19,35 @@ extern "C" {
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <mutex>
+#include <deque>
+#include <chrono>
+#include <thread>
 #include <time.h>
+#include "imu_utils.h"
 
-void bmp_delay_ms(uint32_t period_ms);
 int8_t i2c_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
 int8_t i2c_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
-int8_t spi_reg_write(uint8_t cs, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
-int8_t spi_reg_read(uint8_t cs, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
 void print_rslt(const char api_name[], int8_t rslt);
 
-int bmp_file_i2c = -1;
+extern int SHUTDOWN;
+extern std::deque<std::array<double, 3>> PRESSURE_BUFFER;
+int bmp_file_i2c;
 struct timespec tim2, tim_r2;
-std::mutex I2C_LOCK;
+extern std::mutex I2C_LOCK;
 
-int bmp_i2c_init(int i2c_address)
+double sea_level_pressure = 1018.250;
+
+double altitude_from_pressure_and_temperature(const double pressure, const double temperature)
 {
-    // i2c init
-    char *filename = (char*)"/dev/i2c-1";
-    if ((bmp_file_i2c = open(filename, O_RDWR)) < 0)
-    {
-        printf("Failed to open i2c bus\n");
-    }
-
-    if (ioctl(bmp_file_i2c, I2C_SLAVE, i2c_address) < 0)
-    {
-        printf("Failed to acquire bus access or talk to BMP280\n");
-    }
-
-    return bmp_file_i2c;
+    return ((pow((sea_level_pressure/(pressure/100)), (1.0/5.257))-1)*(temperature + 273.15))/0.0065;
+    // return 44330.0 * (1.0 - pow(pressure/100.0/sea_level_pressure, 0.1903));
 }
 
-int bmp280_test(void)
+int init_bmp280(bmp280_dev& bmp, bmp280_config &conf, bmp280_uncomp_data& uncomp_data, double& temp, double& alt, double& pres)
 {
     int8_t rslt;
-    struct bmp280_dev bmp;
-
     /* Map the delay function pointer with the function responsible for implementing the delay */
-    bmp.delay_ms = bmp_delay_ms;
+    bmp.delay_ms = delay_ms;
 
     /* Assign device I2C address based on the status of SDO pin (GND for PRIMARY(0x76) & VDD for SECONDARY(0x77)) */
     bmp.dev_id = BMP280_I2C_ADDR_PRIM;
@@ -61,38 +59,35 @@ int bmp280_test(void)
     bmp.read = i2c_reg_read;
     bmp.write = i2c_reg_write;
 
-    /* To enable SPI interface: comment the above 4 lines and uncomment the below 4 lines */
+    // Create i2c file handle.
+    i2c_init(bmp.dev_id, bmp_file_i2c);
 
-    /*
-     * bmp.dev_id = 0;
-     * bmp.read = spi_reg_read;
-     * bmp.write = spi_reg_write;
-     * bmp.intf = BMP280_SPI_INTF;
-     */
-
-    bmp_i2c_init(bmp.dev_id);
-
+    // Attempt to initialize device.
     rslt = bmp280_init(&bmp);
     print_rslt(" bmp280_init status", rslt);
 
+    // Read current configuration.
+    rslt = bmp280_get_config(&conf, &bmp);
+    print_rslt(" bmp280_get_config status", rslt);
+
+    // Configure temp oversampling, filter coeff, and ODR
+    conf.filter = BMP280_FILTER_COEFF_2;
+
+    // Configure pressure oversampling
+    conf.os_pres = BMP280_OS_4X;
+
+    // Configure ODR at 1 Hz
+    conf.odr = BMP280_ODR_125_MS;
+    
+    // Apply configuration
+    rslt = bmp280_set_config(&conf, &bmp);
+    print_rslt(" bmp280_set_config status", rslt);
+
+    // Set normal power mode
+    rslt = bmp280_set_power_mode(BMP280_NORMAL_MODE, &bmp);
+    print_rslt(" bmp280_set_power_mode status", rslt);
+
     return 0;
-}
-
-/*!
- *  @brief Function that creates a mandatory delay required in some of the APIs such as "bmg250_soft_reset",
- *      "bmg250_set_foc", "bmg250_perform_self_test"  and so on.
- *
- *  @param[in] period_ms  : the required wait time in milliseconds.
- *  @return void.
- *
- */
-void bmp_delay_ms(uint32_t period_ms)
-{
-    /* Implement the delay routine according to the target machine */
-
-    /* Implemented for raspberry pi */
-    tim2.tv_nsec = period_ms * 1000000;
-    nanosleep(&tim2, &tim_r2);
 }
 
 /*!
@@ -142,46 +137,6 @@ int8_t i2c_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint1
     std::lock_guard<std::mutex> lock{I2C_LOCK};
     int8_t ret = i2c_smbus_read_i2c_block_data(bmp_file_i2c, reg_addr, length, reg_data);
     return ret < 0;
-}
-
-/*!
- *  @brief Function for writing the sensor's registers through SPI bus.
- *
- *  @param[in] cs           : Chip select to enable the sensor.
- *  @param[in] reg_addr     : Register address.
- *  @param[in] reg_data : Pointer to the data buffer whose data has to be written.
- *  @param[in] length       : No of bytes to write.
- *
- *  @return Status of execution
- *  @retval 0 -> Success
- *  @retval >0 -> Failure Info
- *
- */
-int8_t spi_reg_write(uint8_t cs, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
-{
-
-    /* Implement the SPI write routine according to the target machine. */
-    return -1;
-}
-
-/*!
- *  @brief Function for reading the sensor's registers through SPI bus.
- *
- *  @param[in] cs       : Chip select to enable the sensor.
- *  @param[in] reg_addr : Register address.
- *  @param[out] reg_data    : Pointer to the data buffer to store the read data.
- *  @param[in] length   : No of bytes to read.
- *
- *  @return Status of execution
- *  @retval 0 -> Success
- *  @retval >0 -> Failure Info
- *
- */
-int8_t spi_reg_read(uint8_t cs, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
-{
-
-    /* Implement the SPI read routine according to the target machine. */
-    return -1;
 }
 
 /*!
