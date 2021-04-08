@@ -1,9 +1,3 @@
-// TODO Lots of tidying up needed.
-// TODO Turn into a class.
-
-
-
-
 /*!
  *  @brief Example shows basic setup of sensor which includes following
  *      Initialization of the interface.

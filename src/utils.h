@@ -60,6 +60,7 @@ namespace arwain
      * \param lora_header_mode LoRa header mode, implicit or explicit.
      * \param lora_enable_crc Whether to add CRC to LoRa messages.
      * \param inference_model_xml The location of the inference model xml file.
+     * \param use_pressure Whether to use BMP280 pressure sensor for altitude.
      */
     struct Configuration {
         double active_threshold;
@@ -92,6 +93,7 @@ namespace arwain
         LoRa::hm_t lora_header_mode;
         int lora_enable_crc;
         std::string inference_model_xml;
+        int use_pressure;
     };
 
     /** \brief Overwrite the content of a configuration file.

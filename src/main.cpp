@@ -104,7 +104,6 @@ int LOG_TO_FILE = 0;
 int NO_INFERENCE = 0;
 int NO_IMU = 0;
 int NO_LORA = 0;
-int NO_PRESSURE = 0;
 
 // Name for data folder
 std::string FOLDER_DATE_STRING;
@@ -234,9 +233,13 @@ void std_output()
             ss << "Horizontal:      " << STATUS.attitude << "\n";
             ss << "Fall flag:       " << STATUS.falling << "\n";
             ss << "Entangled flag:  " << STATUS.entangled << "\n";
-            ss << "Air pressure:    " << PRESSURE_BUFFER.back() << "\n";
             ss << "CPU temperature: " << arwain::getCPUTemp() << "\n";
 
+            if (CONFIG.use_pressure)
+            {
+                ss << "Air pressure:    " << PRESSURE_BUFFER.back() << "\n";
+            }
+            
             if (1)
             {
                 // The following is a magnetic orientation experiment.
@@ -1158,6 +1161,11 @@ void calibrate_gyroscope_online()
 /** \brief Uses the BMP280 pressure sensor to determine altitude. */
 void altimiter()
 {
+    if (!CONFIG.use_pressure)
+    {
+        return;
+    }
+
     // Initialize the sensor.
     struct bmp280_dev bmp;
     struct bmp280_config conf;
