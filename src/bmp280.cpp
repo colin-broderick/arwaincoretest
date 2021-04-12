@@ -32,12 +32,33 @@ extern std::mutex I2C_LOCK;
 double sea_level_pressure;
 
 /** \brief Compute the altitude using the hypsometric formula.
- * The hypsometric formula considers temperature as a variable. This generally make it more
+ * The hypsometric formula considing temperature as a variable. This generally make it more
  * accurate but this may not hold true at extremes of temperature.
+ * 
+ * This function is based on the deriviation by Portland state aerospace society.
+ * https://www.researchgate.net/file.PostFileLoader.html?id=5409cac4d5a3f2e81f8b4568&assetKey=AS%3A273593643012096%401442241215893
+ * 
+ * Height h above sea level is given by
+ * 
+ * h = ((P0/P)^(LRg) - 1) * (T/L)    equation (8) in the linked derivation.
+ * 
+ * where P0 = sea level pressure, Pa
+ *       P  = measured local pressure, Pa
+ *       L  = Lapse rate of temperature with altitude, K/m
+ *       R  = gas constant for air, J/kg/K
+ *       T  = local measured temperature, Kelvin
+ * 
+ * \param pressure Measured atmospheric pressure in hPa.
+ * \param temperature Measured temperature in degrees C.
  */
 double altitude_from_pressure_and_temperature(const double pressure, const double temperature)
 {
-    return ((pow((sea_level_pressure/(pressure/100)), (1.0/5.257))-1)*(temperature + 273.15))/0.0065;
+
+    double lapse_rate = 0.00649;              // 0.0065 Kelvin/metre. This is theoretically variable.
+    double gas_constant_for_air = 287.053;
+    double gravity = 9.8127;                // This theoretically varies with location.
+
+    return ((pow((sea_level_pressure/pressure), (lapse_rate * gas_constant_for_air / gravity))-1)*(temperature + 273.15))/lapse_rate;
 }
 
 int init_bmp280(bmp280_dev& bmp, bmp280_config &conf, bmp280_uncomp_data& uncomp_data, const double sealevelpressure)

@@ -293,12 +293,28 @@ size_t LoRa::receive(unsigned char *buf)
 
 LoRaPacket LoRa::receivePacket()
 {
+	/*
+	TODO
+
+	In order to enable a received loop we would want a receive method with a timeout, so we can
+	switch back to transmit mode when the schedule demands it. This method would be the logical
+	place to implement that timeout.
+
+	Replace the while loop with
+
+		while ((bytes = receive(buf)) == 0 || time < switch_time);
+
+	where switch_time is the time we want to receive until. This obviously makes it possible to
+	fail to receive messages, so messages will need repeated transmissions for safety. For exa-
+	mple, sea level pressure updates could be transmitted every minute or so.
+	*/
+
 	unsigned char buf[256];
 	setHeaderMode(HM_EXPLICIT);
 	writeRegister(REG_FIFO_ADDR_PTR, 0);
 	setOpMode(OPMODE_RX);
 	size_t bytes = 0;
-	while ((bytes = receive(buf)) == 0) {
+	while ((bytes = receive(buf)) == 0) {  //   <--- timeout here
 		usleep(10000);
 	}
 	int packet_rssi = readRegister(REG_PACKET_RSSI) - (getFrequency() < FREQ_868 ? 164 : 157);
