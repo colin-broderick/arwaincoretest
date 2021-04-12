@@ -1080,7 +1080,7 @@ void stance_detector()
     while (!SHUTDOWN)
     {
         // Get all relevant data.
-        {
+        { // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
             imu_data = IMU_BUFFER;
         }
@@ -1206,16 +1206,16 @@ void altimiter()
         // Convert the raw data to doubles and calcualte altitude.
         bmp280_get_comp_pres_double(&pres, uncomp_data.uncomp_press, &bmp);
         bmp280_get_comp_temp_double(&temp, uncomp_data.uncomp_temp, &bmp);
-        alt = altitude_from_pressure_and_temperature(pres, temp);
+        alt = altitude_from_pressure_and_temperature(pres/100.0, temp);
 
         // Store output
         {
             std::lock_guard<std::mutex> lock{PRESSURE_BUFFER_LOCK};
             PRESSURE_BUFFER.pop_front();
-            PRESSURE_BUFFER.push_back({pres, temp, alt});
+            PRESSURE_BUFFER.push_back({pres/100.0, temp, alt});
         }
 
-        // Wait
+        // Wait until next scheduled run.
         loopTime = loopTime + interval;
         std::this_thread::sleep_until(loopTime);
     }
