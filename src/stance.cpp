@@ -38,6 +38,35 @@ arwain::StanceDetector::StanceDetector(double freefall_sensitivity, double crawl
 
 // General methods --------------------------------------------------------------------------------
 
+/** \brief Updates the attitude of the device, i.e. determines whether the device is horizontal or vertical.
+ * For the current hardware configuration (Pi + BMI270), we should expect the z axis of the IMU to be
+ * roughly horizontal when the device is worn and the wearer is standing. Therefore the angle between
+ * the device z axis and the world z axis should be about 90 degrees when the device is vertical. If this
+ * angle becomes less than 45 degrees, we infer that the z axes are approaching each other and therefore
+ * the device is in a horizontal configuration.
+ * 
+ * Actually we use the dot product between the two axes rather than the angle, and this reduces to simply
+ * the z component of the rotated device orientation, since other components are zero.
+ * 
+ * If this z component is less than 0.707 (cos 45 degrees), we infer the device and therefore wearer
+ * to be vertical.
+ * 
+ * \param rotation_quaternion The current rotation quaternion of the device, as determined by some orientation filter.
+ */
+void arwain::StanceDetector::update_attitude(quaternion rotation_quaternion)
+{
+    auto rotated_device_z_component = (rotation_quaternion * quaternion{0, 0, 0, 1} * rotation_quaternion.conj()).z;
+
+    if (abs(rotated_device_z_component) < 0.707)
+    {
+        m_attitude = Vertical;
+    }
+    else
+    {
+        m_attitude = Horizontal;
+    }
+}
+
 /** \brief Run detection algorithms against provided sensor data.
  * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
  * \param vel_data Pointer to deq<arr<double>> containing velocity data.
@@ -61,40 +90,28 @@ void arwain::StanceDetector::run(const std::deque<std::array<double, 6>> &imu_da
     m_v_mean_magnitude = buffer_mean_magnitude(vel_data);
     m_accel_means = get_means(accel_data);
     m_speed_means = get_means(vel_data);
-    m_primary_axis = biggest_axis(m_accel_means);
     m_speed_axis = biggest_axis(m_speed_means);
     m_a_twitch = abs(m_a_mean_magnitude - m_gravity);
     m_struggle = vector_mean(m_struggle_window);
     m_activity = activity(m_a_mean_magnitude, m_g_mean_magnitude, m_v_mean_magnitude);
     m_tmp_struggle = (m_a_twitch + m_g_mean_magnitude) / (m_v_mean_magnitude + m_sfactor);
     m_struggle_window[m_count] = m_tmp_struggle;
-    
-    { // Detect which axis is most closely aligned with gravity. If not the same as vertical axis, subject must be horizontal.
-        std::lock_guard<std::mutex> lock{m_stance_lock};
-        if (m_primary_axis != m_vertical_axis)
-        {
-            m_attitude = Horizontal;
-        }
-        else
-        {
-            m_attitude = Vertical;
-        }
-    }
 
     // TODO The assumptions about climbing are obviously wrong. Get rid of this or fix it.
     // If the axis with the highest average speed is the same as the vertical axis, subject must be climbing.
     // If the speed on the vertical axis exceed the climbing threshold, the subject must be climibing.
-    {
-        std::lock_guard<std::mutex> lock{m_stance_lock};
-        if (m_speed_axis == m_primary_axis || m_speed_means[m_vertical_axis] > m_climbing_threshold)
-        {
-            m_climbing = 1;
-        }
-        else
-        {
-            m_climbing = 0;
-        }
-    }
+    // {
+    //     m_primary_axis = biggest_axis(m_accel_means);
+    //     std::lock_guard<std::mutex> lock{m_stance_lock};
+    //     if (m_speed_axis == m_primary_axis || m_speed_means[m_vertical_axis] > m_climbing_threshold)
+    //     {
+    //         m_climbing = 1;
+    //     }
+    //     else
+    //     {
+    //         m_climbing = 0;
+    //     }
+    // }
 
     // Detect falling.
     if (m_a_mean_magnitude < m_freefall_sensitivity)
