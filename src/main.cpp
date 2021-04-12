@@ -88,6 +88,7 @@ unsigned int ORIENTATION_BUFFER_LEN = 200;
 unsigned int IMU_BUFFER_LEN = 200;
 unsigned int IPS_BUFFER_LEN = 50;
 unsigned int LORA_MESSAGE_LENGTH = 8;
+unsigned int PRESSURE_BUFFER_LEN = 100;
 
 // Globally accessible configuration and status.
 arwain::Configuration CONFIG;
@@ -116,7 +117,7 @@ std::deque<std::array<double, 3>> POSITION_BUFFER{POSITION_BUFFER_LEN};
 std::deque<std::array<double, 3>> MAG_BUFFER{MAG_BUFFER_LEN};
 std::deque<std::array<double, 3>> MAG_WORLD_BUFFER{MAG_BUFFER_LEN};
 std::deque<std::array<double, 3>> IPS_BUFFER{IPS_BUFFER_LEN};
-std::deque<std::array<double, 3>> PRESSURE_BUFFER{100};
+std::deque<std::array<double, 3>> PRESSURE_BUFFER{PRESSURE_BUFFER_LEN};
 std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{ORIENTATION_BUFFER_LEN};
 std::deque<quaternion> QUAT_ORIENTATION_BUFFER{ORIENTATION_BUFFER_LEN};
 
@@ -133,6 +134,7 @@ std::mutex VELOCITY_BUFFER_LOCK;
 std::mutex STATUS_FLAG_LOCK;
 std::mutex POSITION_BUFFER_LOCK;
 std::mutex ORIENTATION_BUFFER_LOCK;
+std::mutex PRESSURE_BUFFER_LOCK;
 
 #if GYRO_BIAS_EXPERIMENT
 void gyro_bias_estimation()
@@ -213,7 +215,7 @@ void std_output()
         {
             { // Add position to the string stream.        
                 std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
-                ss << "Position:        (" << POSITION_BUFFER.back()[0] << ", " << POSITION_BUFFER.back()[1] << ", " << POSITION_BUFFER.back()[2] << ")" << "\n";
+                ss << "Position:        " << POSITION_BUFFER.back() << "\n";
             }
 
             // Add Euler and quaternion orientations to the string stream.
@@ -223,8 +225,8 @@ void std_output()
                 quat = QUAT_ORIENTATION_BUFFER.back();
             }
             auto euler_angles = arwain::Filter::getEulerAnglesDegrees(quat.w, quat.x, quat.y, quat.z);
-            ss << "Orientation (E): (" << "R:" << euler_angles[0] << ", " << "P:" << euler_angles[1] << ", " << "Y:" << euler_angles[2] << ")" << "\n";;
-            ss << "Orientation (Q): (" << quat << "\n";
+            ss << "Orientation (E): " << "R:" << euler_angles[0] << ", " << "P:" << euler_angles[1] << ", " << "Y:" << euler_angles[2] << "\n";;
+            ss << "Orientation (Q): " << quat << "\n";
 
             // Add stance to the string stream.
             ss << "Stance flag:     " << STATUS.current_stance << "\n";
@@ -235,6 +237,7 @@ void std_output()
 
             if (CONFIG.use_pressure)
             {
+                std::lock_guard<std::mutex> lock{PRESSURE_BUFFER_LOCK};
                 ss << "Air pressure:    " << PRESSURE_BUFFER.back() << "\n";
             }
             
@@ -326,7 +329,6 @@ void imu_reader()
     vector3 world_accel_data;
     vector3 world_gyro_data;
     vector3 world_mag_data;
-    // vector3 world_mag_data;
     euler_orientation_t euler_data;
     quaternion quat_data;
 
@@ -389,15 +391,16 @@ void imu_reader()
                 ERROR_LOG << timeCount << " " << "IMU_READ_ERROR" << "\n";
             }
         }
+        accel_data = accel_data - CONFIG.accel_bias;
+        gyro_data = gyro_data - CONFIG.gyro_bias;
 
+        // Get magnetometer data.
         if (get_mag)
         {
             get_bmm150_data(&mag_data);
             mag_data = mag_data - CONFIG.mag_bias;
             mag_data = mag_data * CONFIG.mag_scale;
         }
-        accel_data = accel_data - CONFIG.accel_bias;
-        gyro_data = gyro_data - CONFIG.gyro_bias;
         
         { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
@@ -692,14 +695,12 @@ void imu_reader()
 #if USE_SOCKET_INFERENCE
 void transmit_lora()
 {
+    // Quit immediately if -nolora specified at command line.
     if (NO_LORA)
     {
         return;
     }
 
-    std::string radio_tcp_socket{"tcp://*:5556"};
-
-    char response_buffer[50];
     // Wait until there's something worth transmitting.
     std::this_thread::sleep_for(std::chrono::milliseconds{3000});
 
@@ -714,28 +715,35 @@ void transmit_lora()
     // Set up socket.
     void *context = zmq_ctx_new();
     void *responder = zmq_socket(context, ZMQ_REP);
+    std::string radio_tcp_socket{"tcp://*:5556"};
     zmq_bind(responder, radio_tcp_socket.c_str());
 
     // Local buffers.
+    char response_buffer[50];
     std::array<double, 3> position{0, 0, 0};
     std::stringstream ss;
 
+    // Set up timing.
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{LORA_TRANSMISSION_INTERVAL};
 
+    // Spin until shutdown signal received.
     while (!SHUTDOWN)
     {
-        { // Grab all relevant data from buffers.
+        // Add position to LoRa message.
+        {
             std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
             position = POSITION_BUFFER.back();
         }
-
         ss << position[0] << "," << position[1] << "," << position[2] << ",";
+
+        // Add falling/entanglement flags to LoRa message.
         ss << (STATUS.falling == arwain::StanceDetector::Falling ? "f" : "0");
         ss << ",";
         ss << (STATUS.entangled == arwain::StanceDetector::Entangled ? "e" : "0");
         ss << ",";
 
+        // Add current stance to LoRa message.
         switch (STATUS.current_stance)
         {
             case arwain::StanceDetector::Inactive:
@@ -776,28 +784,30 @@ void transmit_lora()
                 break;
         }
 
-        // Reset the flags that were just read.
+        // Reset the flags that were just read so they won't be transmitted again.
         STATUS.falling = arwain::StanceDetector::NotFalling;
         STATUS.entangled = arwain::StanceDetector::NotEntangled;
         STATUS.errors = arwain::Errors::AllOk;
 
-        // Send by socket and reset stringstream.
+        // Send message by socket, reset stringstream, and await response.
         std::string fromStream = ss.str();
         const char* str = fromStream.c_str();
         zmq_send(responder, str, strlen(str), 0);
         zmq_recv(responder, response_buffer, 50, 0);  // Don't need the response.
         ss.str("");
 
+        // Log full message to file.
         if (LOG_TO_FILE)
         {
             lora_file << time.time_since_epoch().count() << " " << ss.str() << "\n";
         }
 
+        // Wait until next time internval.
         time = time + interval;
         std::this_thread::sleep_until(time);
     }
 
-    // Instruct transmitter script to close and close log files.
+    // Instruct transmitter script to close, and close log file.
     zmq_send(responder, "stop", strlen("stop"), 0);
     if (LOG_TO_FILE)
     {
@@ -961,63 +971,66 @@ static void sigint_handler(int signal)
  */
 void indoor_positioning()
 {
-    if (CONFIG.use_indoor_positioning_system)
+    // Quit immediately if IPS disabled by configuration file.
+    if (!CONFIG.use_indoor_positioning_system)
     {
-        // TODO Create IPS object
-        arwain::IndoorPositioningWrapper ips;
-        std::array<double, 3> velocity;
-        std::array<double, 3> position;
+        return;
+    }
+    
+    // TODO Create IPS object
+    arwain::IndoorPositioningWrapper ips;
+    std::array<double, 3> velocity;
+    std::array<double, 3> position;
 
-        arwain::Logger ips_position_file;
+    arwain::Logger ips_position_file;
 
+    if (LOG_TO_FILE)
+    {
+        ips_position_file.open(FOLDER_DATE_STRING + "/ips_position.txt");
+        ips_position_file << "# time x y z" << "\n";
+    }
+
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{INDOOR_POSITIONING_INTERVAL};
+
+    while (!SHUTDOWN)
+    {
+        { // Get most recent velocity data.
+            std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
+            velocity = VELOCITY_BUFFER.back();
+        }
+
+        // Run update and get new position.
+        ips.update(
+            time.time_since_epoch().count(),
+            velocity[0],
+            velocity[1],
+            velocity[2]
+        );
+        position = ips.getPosition();
+
+        { // Put IPS position in buffer.
+            std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
+            IPS_BUFFER.pop_front();
+            IPS_BUFFER.push_back(position);
+        }
+
+        // Log result to file.
         if (LOG_TO_FILE)
         {
-            ips_position_file.open(FOLDER_DATE_STRING + "/ips_position.txt");
-            ips_position_file << "# time x y z" << "\n";
+            ips_position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] <<  " " << position[2] << "\n";
         }
 
-        // Set up timing.
-        auto time = std::chrono::system_clock::now();
-        std::chrono::milliseconds interval{INDOOR_POSITIONING_INTERVAL};
+        // Wait until next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
 
-        while (!SHUTDOWN)
-        {
-            { // Get most recent velocity data.
-                std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
-                velocity = VELOCITY_BUFFER.back();
-            }
-
-            // Run update and get new position.
-            ips.update(
-                time.time_since_epoch().count(),
-                velocity[0],
-                velocity[1],
-                velocity[2]
-            );
-            position = ips.getPosition();
-
-            { // Put IPS position in buffer.
-                std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
-                IPS_BUFFER.pop_front();
-                IPS_BUFFER.push_back(position);
-            }
-
-            // Log result to file.
-            if (LOG_TO_FILE)
-            {
-                ips_position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] <<  " " << position[2] << "\n";
-            }
-
-            // Wait until next tick.
-            time = time + interval;
-            std::this_thread::sleep_until(time);
-        }
-
-        // Close file handle(s);
-        if (LOG_TO_FILE)
-        {
-            ips_position_file.close();
-        }
+    // Close file handle(s);
+    if (LOG_TO_FILE)
+    {
+        ips_position_file.close();
     }
 }
 
@@ -1154,11 +1167,10 @@ void calibrate_gyroscope_online()
     std::cout << "Gyroscope calibration is complete, you may now operate the device normally" << std::endl;
 }
 
-
-
 /** \brief Uses the BMP280 pressure sensor to determine altitude. */
 void altimiter()
 {
+    // Quit immediately if pressure sensor disabled by configuration.
     if (!CONFIG.use_pressure)
     {
         return;
@@ -1175,28 +1187,29 @@ void altimiter()
     auto loopTime = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{250};
 
-    int result;
-
+    // Spin until shutdown signal received.
     while (!SHUTDOWN)
     {
         // Read the raw data
         bmp280_get_uncomp_data(&uncomp_data, &bmp);
 
-        // Convert the raw data to doubles
+        // Convert the raw data to doubles and calcualte altitude.
         bmp280_get_comp_pres_double(&pres, uncomp_data.uncomp_press, &bmp);
         bmp280_get_comp_temp_double(&temp, uncomp_data.uncomp_temp, &bmp);
         alt = altitude_from_pressure_and_temperature(pres, temp);
 
         // Store output
-        PRESSURE_BUFFER.pop_front();
-        PRESSURE_BUFFER.push_back({pres, temp, alt});
+        {
+            std::lock_guard<std::mutex> lock{PRESSURE_BUFFER_LOCK};
+            PRESSURE_BUFFER.pop_front();
+            PRESSURE_BUFFER.push_back({pres, temp, alt});
+        }
 
         // Wait
         loopTime = loopTime + interval;
         std::this_thread::sleep_until(loopTime);
     }
 }
-
 
 /** \brief Main loop.
  * \param argc Nmber of arguments.
@@ -1207,10 +1220,12 @@ int main(int argc, char **argv)
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
 
-    // Determine logging behaviour from command line arguments.
+    // Determine behaviour from command line arguments.
     arwain::InputParser input{argc, argv};
+    
+    // Output help text.
     if (input.contains("-h") || input.contains("-help"))
-    { // Output help text.
+    {
         std::cout << "Run without arguments for no logging\n";
         std::cout << "\n";
         std::cout << "Arguments:\n";
@@ -1284,7 +1299,8 @@ int main(int argc, char **argv)
         std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
     }
 
-    // TEST FAILURE MODES: Attempt to read the config file and quit if failed.
+    // Attempt to read the config file and quit if failed.
+    // TODO IMPLEMENT AND TEST FAILURE MODES
     try
     {
         CONFIG = arwain::get_configuration(CONFIG_FILE);
@@ -1314,7 +1330,6 @@ int main(int argc, char **argv)
     {
         calibrate_gyroscope_online();
     }
-
     
     // Create output directory and write copy of current configuration.
     if (LOG_TO_FILE)
@@ -1327,8 +1342,7 @@ int main(int argc, char **argv)
         std::experimental::filesystem::copy(CONFIG_FILE, FOLDER_DATE_STRING + "/config.conf");
     }
 
-    // Open an error log file. This must be globally accessible so must be protected by.
-    // TODO: Create a logging class so mutex can be internal and not possible to forget.
+    // Open error log file (globally accessible)
     if (LOG_TO_FILE)
     {
         ERROR_LOG.open(FOLDER_DATE_STRING + "/ERRORS.txt");

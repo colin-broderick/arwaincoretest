@@ -42,6 +42,7 @@ if __name__ == "__main__":
 
     ## Build box.
     bx = box(
+        pos=vector(0, 0, 0),
         color=vector(1,0,0),
         opacity=0.5,
         shininess=1,

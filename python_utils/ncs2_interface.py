@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from __future__ import print_function
 import sys
 import zmq
 import torch
@@ -38,9 +39,9 @@ class Predictor:
         try:
             data = torch.rand(1, 6, 200)
             sample = self.predict(data)
-            print("Inference test passed")
+            print("Inference test passed", file=sys.stderr)
         except Exception as e:
-            print("Inference test failed - is the NSC2 accessible?")
+            print("Inference test failed - is the NSC2 accessible?", file=sys.stderr)
             raise e
 
     def __del__(self):
@@ -49,12 +50,19 @@ class Predictor:
 
 
 def main():
+    ## TODO Currently, the main program will hang if this quits early due to a failure to get
+    ## a handle on the NCS2. Find some way to prevent that.
+
     ## Get model file location from command line.
     model_xml = sys.argv[1]
     model_bin  = sys.argv[1][:-3] + "bin"
 
     ## Create a predictor object; this abstracts all the NCS2 stuff.
-    predictor = Predictor(model_xml, model_bin)
+    try:
+        predictor = Predictor(model_xml, model_bin)
+    except Exception as e:
+        print("Failed to get handle on NCS2", file=sys.stderr)
+        raise e
     
     ## Open a socket and send first message.
     context = zmq.Context()
