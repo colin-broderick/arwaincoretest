@@ -1039,6 +1039,9 @@ void indoor_positioning()
  */
 void stance_detector()
 {
+    // A little presleep to give IMU data a chance to collect and orientation filter chance to converge.
+    std::this_thread::sleep_for(std::chrono::milliseconds{3000});
+
     // Stance detector object.
     arwain::StanceDetector stance{
         CONFIG.freefall_sensitivity,
@@ -1052,6 +1055,7 @@ void stance_detector()
     // Local buffers.
     std::deque<std::array<double, 6>> imu_data;
     std::deque<std::array<double, 3>> vel_data;
+    quaternion rotation_quaternion;
 
     // Open file for freefall/entanglement logging
     arwain::Logger freefall_file;
@@ -1075,7 +1079,8 @@ void stance_detector()
 
     while (!SHUTDOWN)
     {
-        { // Get all relevant data.
+        // Get all relevant data.
+        {
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
             imu_data = IMU_BUFFER;
         }
@@ -1083,8 +1088,13 @@ void stance_detector()
             std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
             vel_data = VELOCITY_BUFFER;
         }
+        {
+            std::lock_guard<std::mutex> lock{ORIENTATION_BUFFER_LOCK};
+            rotation_quaternion = QUAT_ORIENTATION_BUFFER.back();
+        }
 
         // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
+        stance.update_attitude(rotation_quaternion);
         stance.run(imu_data, vel_data);
         STATUS.current_stance = stance.getStance();
         STATUS.falling = STATUS.falling | stance.getFallingStatus();
