@@ -136,20 +136,22 @@ void arwain::test_imu(int &shutdown)
  * \param filename The location of the configuration file to read.
  * \return A Configuration object containing parameters read from the file.
  */
-arwain::Configuration arwain::get_configuration(const std::string &filename)
+int arwain::get_configuration(const std::string &filename, arwain::Configuration& output_config)
 {
-    using std::string;
-    using std::stringstream;
-
+    // TODO Checking file existence using std::filesystem would be preferred here but I had some build issue.
     // Open the configuration file name.
     std::ifstream file(filename);
+    if (!file.is_open())
+    {
+        return 0;
+    }
 
     // A map to store key value pairs from the configuration file.
-    std::map<string, string> options;
+    std::map<std::string, std::string> options;
 
     // Read each line into the map, based on the format "key=value".
-    string line;
-    while (getline(file, line))
+    std::string line;
+    while (std::getline(file, line))
     {
         if (line[0] == '[' || line.empty())
         {
@@ -164,119 +166,118 @@ arwain::Configuration arwain::get_configuration(const std::string &filename)
     // TODO Detect attempted read of non-existing options.
 
     // Read all options into a configuration object.
-    arwain::Configuration cf;
-    stringstream(options["active_threshold"]) >> cf.active_threshold;
-    stringstream(options["walking_threshold"]) >> cf.walking_threshold;
-    stringstream(options["running_threshold"]) >> cf.running_threshold;
-    stringstream(options["crawling_threshold"]) >> cf.crawling_threshold;
-    stringstream(options["climbing_threshold"]) >> cf.climbing_threshold;
-    stringstream(options["gravity"]) >> cf.gravity;
-    stringstream(options["struggle_threshold"]) >> cf.struggle_threshold;
-    stringstream(options["freefall_sensitivity"]) >> cf.freefall_sensitivity;
-    stringstream(options["accel_bias_x"]) >> cf.accel_bias.x;
-    stringstream(options["accel_bias_y"]) >> cf.accel_bias.y;
-    stringstream(options["accel_bias_z"]) >> cf.accel_bias.z;
-    stringstream(options["gyro_bias_x"]) >> cf.gyro_bias.x;
-    stringstream(options["gyro_bias_y"]) >> cf.gyro_bias.y;
-    stringstream(options["gyro_bias_z"]) >> cf.gyro_bias.z;
-    stringstream(options["mag_bias_x"]) >> cf.mag_bias.x;
-    stringstream(options["mag_bias_y"]) >> cf.mag_bias.y;
-    stringstream(options["mag_bias_z"]) >> cf.mag_bias.z;
-    stringstream(options["mag_scale_x"]) >> cf.mag_scale.x;
-    stringstream(options["mag_scale_y"]) >> cf.mag_scale.y;
-    stringstream(options["mag_scale_z"]) >> cf.mag_scale.z;
-    stringstream(options["use_magnetometer"]) >> cf.use_magnetometer;
-    stringstream(options["log_magnetometer"]) >> cf.log_magnetometer;
-    stringstream(options["npu_vel_weight_confidence"]) >> cf.npu_vel_weight_confidence;
-    stringstream(options["madgwick_beta"]) >> cf.madgwick_beta;
-    stringstream(options["use_indoor_positioning_system"]) >> cf.use_indoor_positioning_system;
-    stringstream(options["orientation_filter"]) >> cf.orientation_filter;
-    stringstream(options["inference_model_xml"]) >> cf.inference_model_xml;
-    stringstream(options["use_pressure"]) >> cf.use_pressure;
-    stringstream(options["sea_level_pressure"]) >> cf.sea_level_pressure;
+    std::stringstream(options["active_threshold"]) >> output_config.active_threshold;
+    std::stringstream(options["walking_threshold"]) >> output_config.walking_threshold;
+    std::stringstream(options["running_threshold"]) >> output_config.running_threshold;
+    std::stringstream(options["crawling_threshold"]) >> output_config.crawling_threshold;
+    std::stringstream(options["climbing_threshold"]) >> output_config.climbing_threshold;
+    std::stringstream(options["gravity"]) >> output_config.gravity;
+    std::stringstream(options["struggle_threshold"]) >> output_config.struggle_threshold;
+    std::stringstream(options["freefall_sensitivity"]) >> output_config.freefall_sensitivity;
+    std::stringstream(options["accel_bias_x"]) >> output_config.accel_bias.x;
+    std::stringstream(options["accel_bias_y"]) >> output_config.accel_bias.y;
+    std::stringstream(options["accel_bias_z"]) >> output_config.accel_bias.z;
+    std::stringstream(options["gyro_bias_x"]) >> output_config.gyro_bias.x;
+    std::stringstream(options["gyro_bias_y"]) >> output_config.gyro_bias.y;
+    std::stringstream(options["gyro_bias_z"]) >> output_config.gyro_bias.z;
+    std::stringstream(options["mag_bias_x"]) >> output_config.mag_bias.x;
+    std::stringstream(options["mag_bias_y"]) >> output_config.mag_bias.y;
+    std::stringstream(options["mag_bias_z"]) >> output_config.mag_bias.z;
+    std::stringstream(options["mag_scale_x"]) >> output_config.mag_scale.x;
+    std::stringstream(options["mag_scale_y"]) >> output_config.mag_scale.y;
+    std::stringstream(options["mag_scale_z"]) >> output_config.mag_scale.z;
+    std::stringstream(options["use_magnetometer"]) >> output_config.use_magnetometer;
+    std::stringstream(options["log_magnetometer"]) >> output_config.log_magnetometer;
+    std::stringstream(options["npu_vel_weight_confidence"]) >> output_config.npu_vel_weight_confidence;
+    std::stringstream(options["madgwick_beta"]) >> output_config.madgwick_beta;
+    std::stringstream(options["use_indoor_positioning_system"]) >> output_config.use_indoor_positioning_system;
+    std::stringstream(options["orientation_filter"]) >> output_config.orientation_filter;
+    std::stringstream(options["inference_model_xml"]) >> output_config.inference_model_xml;
+    std::stringstream(options["use_pressure"]) >> output_config.use_pressure;
+    std::stringstream(options["sea_level_pressure"]) >> output_config.sea_level_pressure;
     
     // Apply LoRa settings
-    stringstream(options["lora_tx_power"]) >> cf.lora_tx_power;
-    stringstream(options["lora_packet_frequency"]) >> cf.lora_packet_frequency;
+    std::stringstream(options["lora_tx_power"]) >> output_config.lora_tx_power;
+    std::stringstream(options["lora_packet_frequency"]) >> output_config.lora_packet_frequency;
 
     // Apply LoRa radio frequency setting with default 868 MHz.
     std::string rf = options["lora_rf_frequency"];
     if (rf == "433")
-        cf.lora_rf_frequency = LoRa::FREQ_433;
+        output_config.lora_rf_frequency = LoRa::FREQ_433;
     else if (rf == "868")
-        cf.lora_rf_frequency = LoRa::FREQ_868;
+        output_config.lora_rf_frequency = LoRa::FREQ_868;
     else if (rf == "915")
-        cf.lora_rf_frequency = LoRa::FREQ_915;
+        output_config.lora_rf_frequency = LoRa::FREQ_915;
     else
-        cf.lora_rf_frequency = LoRa::FREQ_868;
+        output_config.lora_rf_frequency = LoRa::FREQ_868;
 
     // Apply LoRa spread factor setting with default 12.
     std::string spreadfactor = options["lora_spread_factor"];
     if (spreadfactor == "6")
-        cf.lora_spread_factor = LoRa::SF_6;
+        output_config.lora_spread_factor = LoRa::SF_6;
     else if (spreadfactor == "7")
-        cf.lora_spread_factor = LoRa::SF_7;
+        output_config.lora_spread_factor = LoRa::SF_7;
     else if (spreadfactor == "8")
-        cf.lora_spread_factor = LoRa::SF_8;
+        output_config.lora_spread_factor = LoRa::SF_8;
     else if (spreadfactor == "9")
-        cf.lora_spread_factor = LoRa::SF_9;
+        output_config.lora_spread_factor = LoRa::SF_9;
     else if (spreadfactor == "10")
-        cf.lora_spread_factor = LoRa::SF_10;
+        output_config.lora_spread_factor = LoRa::SF_10;
     else if (spreadfactor == "11")
-        cf.lora_spread_factor = LoRa::SF_11;
+        output_config.lora_spread_factor = LoRa::SF_11;
     else if (spreadfactor == "12")
-        cf.lora_spread_factor = LoRa::SF_12;
+        output_config.lora_spread_factor = LoRa::SF_12;
     else
-        cf.lora_spread_factor = LoRa::SF_12;    
+        output_config.lora_spread_factor = LoRa::SF_12;    
 
     // Apply LoRa bandwidth setting with default 125k.
     std::string bandwidth = options["lora_bandwidth"];
     if (bandwidth == "7.8")
-        cf.lora_bandwidth = LoRa::BW_7k8;
+        output_config.lora_bandwidth = LoRa::BW_7k8;
     else if (bandwidth == "10.4")
-        cf.lora_bandwidth = LoRa::BW_10k4;
+        output_config.lora_bandwidth = LoRa::BW_10k4;
     else if (bandwidth == "15.6")
-        cf.lora_bandwidth = LoRa::BW_15k6;
+        output_config.lora_bandwidth = LoRa::BW_15k6;
     else if (bandwidth == "20.8")
-        cf.lora_bandwidth = LoRa::BW_20k8;
+        output_config.lora_bandwidth = LoRa::BW_20k8;
     else if (bandwidth == "31.25")
-        cf.lora_bandwidth = LoRa::BW_31k25;
+        output_config.lora_bandwidth = LoRa::BW_31k25;
     else if (bandwidth == "41.7")
-        cf.lora_bandwidth = LoRa::BW_41k7;
+        output_config.lora_bandwidth = LoRa::BW_41k7;
     else if (bandwidth == "62.5")
-        cf.lora_bandwidth = LoRa::BW_62k5;
+        output_config.lora_bandwidth = LoRa::BW_62k5;
     else if (bandwidth == "125")
-        cf.lora_bandwidth = LoRa::BW_125k;
+        output_config.lora_bandwidth = LoRa::BW_125k;
     else if (bandwidth == "250")
-        cf.lora_bandwidth = LoRa::BW_250k;
+        output_config.lora_bandwidth = LoRa::BW_250k;
     else if (bandwidth == "500")
-        cf.lora_bandwidth = LoRa::BW_500k;
+        output_config.lora_bandwidth = LoRa::BW_500k;
     else
-        cf.lora_bandwidth = LoRa::BW_125k;
+        output_config.lora_bandwidth = LoRa::BW_125k;
 
     // Apply LoRa coding rate with default 48.
     std::string codingrate = options["lora_coding_rate"];
     if (codingrate == "45")
-        cf.lora_coding_rate = LoRa::CR_45;
+        output_config.lora_coding_rate = LoRa::CR_45;
     else if (codingrate == "46")
-        cf.lora_coding_rate = LoRa::CR_46;
+        output_config.lora_coding_rate = LoRa::CR_46;
     else if (codingrate == "47")
-        cf.lora_coding_rate = LoRa::CR_47;
+        output_config.lora_coding_rate = LoRa::CR_47;
     else if (codingrate == "48")
-        cf.lora_coding_rate = LoRa::CR_48;
+        output_config.lora_coding_rate = LoRa::CR_48;
     else
-        cf.lora_coding_rate = LoRa::CR_48;
+        output_config.lora_coding_rate = LoRa::CR_48;
 
     // Apply LoRa header mode with implicit as default.
     if (options["lora_header_mode"] == "explicit")
-        cf.lora_header_mode = LoRa::HM_EXPLICIT;
+        output_config.lora_header_mode = LoRa::HM_EXPLICIT;
     else
-        cf.lora_header_mode = LoRa::HM_IMPLICIT;
+        output_config.lora_header_mode = LoRa::HM_IMPLICIT;
 
-    stringstream(options["lora_sync_word"]) >> cf.lora_sync_word;
-    stringstream(options["lora_enable_crc"]) >> cf.lora_enable_crc;
+    std::stringstream(options["lora_sync_word"]) >> output_config.lora_sync_word;
+    std::stringstream(options["lora_enable_crc"]) >> output_config.lora_enable_crc;
 
-    return cf;
+    return 1;
 }
 
 std::ostream& operator<<(std::ostream& stream, const std::array<double, 3>& vector)

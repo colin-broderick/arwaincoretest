@@ -46,7 +46,7 @@ target_compile_options(madgwick_standalone PRIVATE -Wno-psabi -Wall)
 target_compile_options(efaroe_standalone PRIVATE -Wno-psabi -Wall)
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_madgwick ${PROJECT_NAME}_efaroe -pthread -ldl -lstdc++fs -li2c -lrknn_api )
+target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_madgwick ${PROJECT_NAME}_efaroe -pthread -ldl -lstdc++fs -li2c -lrknn_api)
 target_link_libraries(${PROJECT_NAME}_calibration -li2c)
 # target_link_libraries(lora_rx_test arwain_lorapi -lwiringPi)
 # target_link_libraries(lora_tx_test arwain_lorapi -lwiringPi)

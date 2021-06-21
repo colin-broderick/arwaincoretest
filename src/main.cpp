@@ -1309,19 +1309,15 @@ int main(int argc, char **argv)
     }
 
     // Attempt to read the config file and quit if failed.
-    // TODO IMPLEMENT AND TEST FAILURE MODES
-    try
-    {
-        CONFIG = arwain::get_configuration(CONFIG_FILE);
-        if (LOG_TO_STDOUT)
-        {
-            std::cout << "Configuration file read successfully\n";
-        }
-    }
-    catch (int n)
+    int conf_read_success = arwain::get_configuration(CONFIG_FILE, CONFIG);
+    if (!conf_read_success)
     {
         std::cout << "Problem reading configuration file\n";
         return -2;
+    }
+    if (LOG_TO_STDOUT)
+    {
+        std::cout << "Configuration file read successfully\n";
     }
 
     // Initialize the IMU if not explicitly disabled.
