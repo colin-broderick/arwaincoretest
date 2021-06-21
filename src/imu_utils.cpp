@@ -12,7 +12,7 @@
 #include <mutex>
 extern "C" {
     #include <linux/i2c-dev.h>
-    #include "smbus.h"
+    #include <smbus.h>
 }		
 #include "imu_utils.h"
 
@@ -32,7 +32,7 @@ static float acc_scale, gyr_scale;
 int i2c_init(const int address, int& file_i2c)
 {
 	//----- OPEN THE I2C BUS -----
-	char *filename = (char*)"/dev/i2c-1";
+	char *filename = (char*)"/dev/i2c-4";
 	if ((file_i2c = open(filename, O_RDWR)) < 0)
 	{
 		//ERROR HANDLING: you can check errno to see what went wrong
@@ -273,8 +273,9 @@ void read_calib_data(std::string path)
 void delay_us(uint32_t period)
 {
     
-    tim.tv_nsec = period*1000;
-    nanosleep(&tim, &tim_r);
+    // tim.tv_nsec = period*1000;
+    usleep(period);
+    // nanosleep(&tim, &tim_r);
     
     /* Wait for a period amount of us*/
 }

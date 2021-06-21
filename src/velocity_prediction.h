@@ -1,11 +1,11 @@
 #ifndef PREDICT_VELOCITY_H
 #define PREDICT_VELOCITY_H
 
-#define USE_SOCKET_INFERENCE 1
+#define USE_SOCKET_INFERENCE 0
 
 #include <chrono>
 #include <thread>
-#include <zmq.h>
+// #include <zmq.h>
 #include <deque>
 #include <array>
 #include <sstream>

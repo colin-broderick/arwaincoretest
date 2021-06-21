@@ -285,6 +285,13 @@ std::ostream& operator<<(std::ostream& stream, const std::array<double, 3>& vect
     return stream;
 }
 
+/** \brief Print out a 6-wide IMU reading. */
+std::ostream& operator<<(std::ostream& stream, const std::array<double, 6>& line)
+{
+    stream << "IMU_data(" << line[0] << ", " <<line[1] << ", " <<line[2] << ", " <<line[3] << ", " <<line[4] << ", " <<line[5] << ")";
+    return stream;
+}
+
 std::array<double, 3> normalised(const std::array<double, 3>& vector)
 {
     double invNorm = 1.0/sqrt(
