@@ -12,8 +12,7 @@ This is the start of an attempt to make a thread safe wrapper for the std::deque
 
 namespace arwain
 {
-    template <typename T>
-    class Buffer
+    template <typename T> class Buffer
     {
         public:
             Buffer() { /* Empty constructor */ }

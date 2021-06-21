@@ -55,8 +55,7 @@ inline vector3 operator-(const vector3 &v1, const vector3 &v2)
  * \param scalar A scalar by which to divide the elements of the 3-vector.
  * \return A new 3-vector.
  */
-template <class T>
-inline vector3 operator/(const vector3 &v, const T &scalar)
+template <class T> inline vector3 operator/(const vector3 &v, const T &scalar)
 {
     return vector3{
         v.x/scalar,
@@ -84,8 +83,7 @@ inline vector3 operator*(const vector3 &v1, const vector3 &v2)
  * \param scalar A scalar by which to multiply the elements of the 3-vector.
  * \return A new 3-vector.
  */
-template <class T>
-inline vector3 operator*(const vector3 &v, const T &scalar)
+template <class T> inline vector3 operator*(const vector3 &v, const T &scalar)
 {
     return vector3{
         v.x*scalar,

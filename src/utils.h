@@ -103,8 +103,7 @@ namespace arwain
      * \param option The configuration option to overwrite.
      * \param new_value The new value of the parameter to be put in the file.
      */
-    template <class T>
-    void config_replace(std::string filename, std::string option, T new_value)
+    template <class T> void config_replace(std::string filename, std::string option, T new_value)
     {
         std::ifstream infile(filename);
         std::stringstream outstring;
