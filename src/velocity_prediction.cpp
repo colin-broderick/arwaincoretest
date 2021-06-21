@@ -143,118 +143,118 @@ void predict_velocity()
  */
 void predict_velocity()
 {
-    // Skip inference if command line says so.
-    if (!NO_INFERENCE)
-    {
-        // TODO: Merge the inference code into this function. Will need further abstraction?
-        // TODO: Set up NPU and feed in model.
-        // TODO: Make it possible to specify the model file path, and fail gracefully if not found.
-        // Torch model{"./xyzronin_v0-5_all2D_small.pt", {1, 6, 200, 1}};
-        arwain::Torch model{"./xyzronin_v0-6.pt", {1, 6, 200}};
+    // // Skip inference if command line says so.
+    // if (!NO_INFERENCE)
+    // {
+    //     // TODO: Merge the inference code into this function. Will need further abstraction?
+    //     // TODO: Set up NPU and feed in model.
+    //     // TODO: Make it possible to specify the model file path, and fail gracefully if not found.
+    //     // Torch model{"./xyzronin_v0-5_all2D_small.pt", {1, 6, 200, 1}};
+    //     arwain::Torch model{"./xyzronin_v0-6.pt", {1, 6, 200}};
 
-        // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
-        std::chrono::milliseconds presleep(1000);
-        std::this_thread::sleep_for(presleep*3);
+    //     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
+    //     std::chrono::milliseconds presleep(1000);
+    //     std::this_thread::sleep_for(presleep*3);
 
-        // Set up timing.
-        auto time = std::chrono::system_clock::now();
-        std::chrono::milliseconds interval{VELOCITY_PREDICTION_INTERVAL};
+    //     // Set up timing.
+    //     auto time = std::chrono::system_clock::now();
+    //     std::chrono::milliseconds interval{VELOCITY_PREDICTION_INTERVAL};
 
-        // Initialize buffers to contain working values.
-        std::array<double, 3> vel;                        // The sum of npu_vel and imu_vel_delta.
-        std::array<double, 3> npu_vel;                    // To hold the neural network prediction of velocity.
-        std::array<double, 3> vel_previous = {0, 0, 0};   // Contains the velocity calculation from the previous loop.
-        std::array<double, 3> npu_vel_delta;              // Stores the difference between the npu velocity prediction and vel_previous.
-        std::array<double, 3> imu_vel_delta;              // To integrate the velocity based on IMU readings.
-        std::array<double, 3> position;
-        std::deque<std::array<double, 6>> imu;            // To contain the last second of IMU data.
-        std::deque<std::array<double, 6>> imu_latest;     // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
+    //     // Initialize buffers to contain working values.
+    //     std::array<double, 3> vel;                        // The sum of npu_vel and imu_vel_delta.
+    //     std::array<double, 3> npu_vel;                    // To hold the neural network prediction of velocity.
+    //     std::array<double, 3> vel_previous = {0, 0, 0};   // Contains the velocity calculation from the previous loop.
+    //     std::array<double, 3> npu_vel_delta;              // Stores the difference between the npu velocity prediction and vel_previous.
+    //     std::array<double, 3> imu_vel_delta;              // To integrate the velocity based on IMU readings.
+    //     std::array<double, 3> position;
+    //     std::deque<std::array<double, 6>> imu;            // To contain the last second of IMU data.
+    //     std::deque<std::array<double, 6>> imu_latest;     // To contain the last VELOCITY_PREDICTION_INTERVAL of IMU data.
 
-        // File handles for logging.
-        arwain::Logger position_file;
-        arwain::Logger velocity_file;
+    //     // File handles for logging.
+    //     arwain::Logger position_file;
+    //     arwain::Logger velocity_file;
 
-        // Time in seconds between inferences.
-        double interval_seconds = ((double)(VELOCITY_PREDICTION_INTERVAL))/1000.0;
+    //     // Time in seconds between inferences.
+    //     double interval_seconds = ((double)(VELOCITY_PREDICTION_INTERVAL))/1000.0;
 
-        // TEST How far back to look in the IMU buffer for integration.
-        int backtrack = (int)((1000/IMU_READING_INTERVAL)*interval_seconds);
+    //     // TEST How far back to look in the IMU buffer for integration.
+    //     int backtrack = (int)((1000/IMU_READING_INTERVAL)*interval_seconds);
 
-        // Open files for logging.
-        if (LOG_TO_FILE)
-        {
-            velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
-            position_file.open(FOLDER_DATE_STRING + "/position.txt");
-            velocity_file << "# time x y z" << "\n";
-            position_file << "# time x y z" << "\n";
-        }
+    //     // Open files for logging.
+    //     if (LOG_TO_FILE)
+    //     {
+    //         velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
+    //         position_file.open(FOLDER_DATE_STRING + "/position.txt");
+    //         velocity_file << "# time x y z" << "\n";
+    //         position_file << "# time x y z" << "\n";
+    //     }
         
-        while (!SHUTDOWN)
-        {
-            { // Grab latest IMU packet
-                std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
-                imu = IMU_WORLD_BUFFER;
-            }
+    //     while (!SHUTDOWN)
+    //     {
+    //         { // Grab latest IMU packet
+    //             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
+    //             imu = IMU_WORLD_BUFFER;
+    //         }
 
-            // TEST Make velocity prediction
-            std::vector<double> v = model.infer(imu);
-            npu_vel = {v[0], v[1], v[2]};
-            // std::cout << v[0] << "," << v[1] << "," << v[2] << std::endl;
-            // TEST Find the change in velocity from the last period, as predicted by the npu.
-            npu_vel_delta = npu_vel - vel_previous;
+    //         // TEST Make velocity prediction
+    //         std::vector<double> v = model.infer(imu);
+    //         npu_vel = {v[0], v[1], v[2]};
+    //         // std::cout << v[0] << "," << v[1] << "," << v[2] << std::endl;
+    //         // TEST Find the change in velocity from the last period, as predicted by the npu.
+    //         npu_vel_delta = npu_vel - vel_previous;
 
-            // TEST Get last interval worth of IMU data.
-            imu_latest = {imu.end() - backtrack, imu.end()};
+    //         // TEST Get last interval worth of IMU data.
+    //         imu_latest = {imu.end() - backtrack, imu.end()};
 
-            // TEST Single integrate the small IMU slice to get delta-v over the period.
-            imu_vel_delta = integrate(imu_latest, interval_seconds );
+    //         // TEST Single integrate the small IMU slice to get delta-v over the period.
+    //         imu_vel_delta = integrate(imu_latest, interval_seconds );
 
-            // TEST Weighted combination of velocity deltas from NPU and IMU integration.
-            // TODO This gives very wrong results when trusting the IMU at all. Investigate and repair (or bin it).
-            vel = npu_vel_delta*CONFIG.npu_vel_weight_confidence + imu_vel_delta*(1-CONFIG.npu_vel_weight_confidence);
+    //         // TEST Weighted combination of velocity deltas from NPU and IMU integration.
+    //         // TODO This gives very wrong results when trusting the IMU at all. Investigate and repair (or bin it).
+    //         vel = npu_vel_delta*CONFIG.npu_vel_weight_confidence + imu_vel_delta*(1-CONFIG.npu_vel_weight_confidence);
 
-            // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
-            vel = vel + vel_previous;
+    //         // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
+    //         vel = vel + vel_previous;
 
-            {
-                std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
-                VELOCITY_BUFFER.pop_front();
-                VELOCITY_BUFFER.push_back(vel);
-            }
+    //         {
+    //             std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
+    //             VELOCITY_BUFFER.pop_front();
+    //             VELOCITY_BUFFER.push_back(vel);
+    //         }
 
-            // TEST Store the velocity for use in the next loop (saves having to access the buffer for a single element).
-            vel_previous = vel;
+    //         // TEST Store the velocity for use in the next loop (saves having to access the buffer for a single element).
+    //         vel_previous = vel;
 
-            // Iterate velocity onto position to get new position.
-            position[0] = position[0] + interval_seconds * vel[0];
-            position[1] = position[1] + interval_seconds * vel[1];
-            position[2] = position[2] + interval_seconds * vel[2];
+    //         // Iterate velocity onto position to get new position.
+    //         position[0] = position[0] + interval_seconds * vel[0];
+    //         position[1] = position[1] + interval_seconds * vel[1];
+    //         position[2] = position[2] + interval_seconds * vel[2];
             
-            { // Update position buffer.
-                std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
-                POSITION_BUFFER.pop_front();
-                POSITION_BUFFER.push_back(position);
-            }
+    //         { // Update position buffer.
+    //             std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
+    //             POSITION_BUFFER.pop_front();
+    //             POSITION_BUFFER.push_back(position);
+    //         }
 
-            // Add position and velocity data to file.
-            if (LOG_TO_FILE)
-            {
-                velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << "\n";
-                position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] << " " << position[2] << "\n";
-            }
+    //         // Add position and velocity data to file.
+    //         if (LOG_TO_FILE)
+    //         {
+    //             velocity_file << time.time_since_epoch().count() << " " << vel[0] << " " << vel[1] << " " << vel[2] << "\n";
+    //             position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] << " " << position[2] << "\n";
+    //         }
 
-            // Wait until next tick.
-            time = time + interval;
-            std::this_thread::sleep_until(time);
-        }
+    //         // Wait until next tick.
+    //         time = time + interval;
+    //         std::this_thread::sleep_until(time);
+    //     }
 
-        // Close file handle(s).
-        if (LOG_TO_FILE)
-        {
-            velocity_file.close();
-            position_file.close();
-        }
-    }
+    //     // Close file handle(s).
+    //     if (LOG_TO_FILE)
+    //     {
+    //         velocity_file.close();
+    //         position_file.close();
+    //     }
+    // }
 }
 
 /** \brief Multiple double 3-array by scalar value. */
