@@ -143,7 +143,7 @@ namespace arwain
     void test_imu(int &shutdown);
     float getCPUTemp();
 
-    arwain::Configuration get_configuration(const std::string &filename);
+    int get_configuration(const std::string &filename, arwain::Configuration& output_config);
 }
 
 typedef struct euler_orientation_t
