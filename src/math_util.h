@@ -24,8 +24,7 @@ vector3 world_align(const vector3& vec, const quaternion& orientation);
 /// Rotates a pair of 3-vectors, represented as a single 6-vector, according to a quaternion orientation.
 std::array<double, 6> world_align(const std::array<double, 6>& imu, const quaternion& orientation);
 
-template <class T>
-int sign(T value)
+template <class T> int sign(T value)
 {
     if (value < 0)
     {
@@ -38,8 +37,7 @@ int sign(T value)
 }
 
 // Determines which of a pair of numbers is closer to zero, i.e. smallest magnitude.
-template <class T, class U>
-double smallest(T val1, U val2)
+template <class T, class U> double smallest(T val1, U val2)
 {
     if (abs(val1) < abs(val2))
     {

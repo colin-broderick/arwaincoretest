@@ -258,8 +258,7 @@ void predict_velocity()
 }
 
 /** \brief Multiple double 3-array by scalar value. */
-template <typename U>
-static std::array<double, 3> operator*(const std::array<double, 3>& a1, U scalar)
+template <typename U> static std::array<double, 3> operator*(const std::array<double, 3>& a1, U scalar)
 {
   std::array<double, 3> a;
   for (typename std::array<double, 3>::size_type i = 0; i < a1.size(); i++)
