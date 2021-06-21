@@ -6,65 +6,56 @@ It has been written using only the C++ standard library so should be portable to
 
 It is almost feature-complete but no features have been formally tested. Missing feautres are
 
-1. NPU inference, though NCS2 and RKNN inference is partially written. Inference can also be done by Python NCS2 with data communicated between this software and the Python script via socket.
+1. NPU inference. RKNN is written and functions but there are outstanding questions about shaping data to get correct inference result.
 
-2. LoRa communication. Tranmission is implemented using an SX127x but not fully developed and not fully tested.
+2. LoRa communication. Had some trouble getting the C++ rewrite to work. This also depends on SPI which has not yet been worked out for the Rockchip board.
 
 ## Build
 
 ### Requirements
-1. Need pytorch installed. At time of writing the following wheel will work, but you may have to source your own.
-```
-wget https://wintics-opensource.s3.eu-west-3.amazonaws.com/torch-1.3.0a0%2Bdeadc27-cp37-cp37m-linux_armv7l.whl
-pip3 install torch-1.3.0a0+deadc27-cp37-cp37m-linux_armv7l.whl
-```
-Other python requirements can be installed by
-```
-pip3 install -r ./python_utils/requirements.txt
-```
 
-2. Need openvino. Follow the installation guide at https://docs.openvinotoolkit.org/2019_R2/_docs_install_guides_installing_openvino_raspbian.html, but using the raspbian runtime we have on S3.
+2. Generate buildroot compilcation toolchain:
+```
+sudo apt install cmake git-core gitk git-gui gcc-arm-linux-gnueabihf u-boot-tools device-tree-compiler gcc-aarch64-linux-gnu mtools parted libudev-dev libusb-1.0-0-dev python-linaro-image-tools linaro-image-tools autoconf autotools-dev libsigsegv2 m4 intltool libdrm-dev curl sed make binutils build-essential gcc g++ bash patch gzip bzip2 perl tar cpio python unzip rsync file bc wget libncurses5 libqt4-dev libglib2.0-dev libgtk2.0-dev libglade2-dev cvs git mercurial openssh-client subversion asciidoc w3m dblatex graphviz python-matplotlib libc6:i386 liblz4-tool
+mkdir ~/bin
+mkdir ~/buildroot
+curl https://storage.googleapis.com/git-repo-downloads/repo-1 > ~/bin/repo
+chmod a+x ~/bin/repo
+cd buildroot
+~/bin/repo init --repo-url http://github.com/aosp-mirror/tools_repo.git -u https://github.com/96boards-tb-96aiot/manifest.git
+~/bin/repo sync
+cd ~/buildroot/u-boot
+./make.sh rk1808
+cd ~/buildroot/kernel
+make rk1808_linux_defconfig 
+make rk1808_evb_v10.img
+16 | source ~/buildroot/buildroot/build/envsetup.sh
+make
+./mkfirmware.sh
+```
+I wouldn't try to run this all at once since some parts are very long running and you might get into trouble if something fails or has changed.
 
-2. Some apt packages:
-```
-sudo apt install i2c-tools libzmq3-dev libi2c-dev cmake
-```
-
-3. Enable I2C and SPI via `raspi-config`. You may need to restart to enable complete enablement of SPI.
-
-4. Clone repository
-```
-git clone https://bitbucket.org/arwain/arwain_inference_core
-```
+If any of this is out of date or depricated, Colin Broderick has a working VM with the toolchain already prepared.
 
 
 ### Building
-To build for the Raspberry Pi or similar ARM architectures:
+To build for the RK1808:
 ```
 cd ~/arwain_inference_core
 mkdir build lib
-cmake .
+cmake -DCMAKE_CXX_COMPILER=/path/to/buildroot/output/rockchip_rk1808/host/bin/aarch64-linux-g++ .
 make -j4
 ```
 
 ## Run
+Use `scp` or preferred method to get the `arwain` binary onto the Rockchip board. You will need a valid `arwain.conf` or it won't run. The default one from this repo will work.
+
 To run with just console output
 ```
-./build/arwain -lstd
+./path/to/arwain -lstd
 ```
 For other options run
 ```
-./build/arwain -h
+./path/to/arwain -h
 ```
-Code currently assumes running from the repository's root directory, so you'll need to specify `-conf` if you run from elsewhere. While testing I'd recommend running with `-noinf` for now since it will use a lot of CPU time.
-
-## Visualisation
-A simple Python visualisation script is included, to aid in testing and development of orientation filters. VPython is required. This will track orientation, and also position if inference is running. It fails half the time but I'm 99.9% sure it's a vpython bug, and nothing to do with arwain.
-```
-pip3 install vpython
-```
-To run it, pipe the output from the main program into this python script, e.g.
-```
-./build/arwain -lstd | ./visualisation.py
-```
-Other arguments can optionally be passed by `-lstd` is required.
+Code currently assumes running from the directory where the config file is found, and where `data_` folders should be created. If you want to run from somewhere else you'll need to pass the `-conf` option to specify the location of the configuration file.
