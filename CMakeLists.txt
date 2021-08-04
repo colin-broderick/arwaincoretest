@@ -3,12 +3,9 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 
 ## Set include and library source directories
-include_directories(arwain_torch lora_driver orientation bmp280 src)
+include_directories(lora_driver orientation bmp280 src)
 
 link_directories(lib)
-link_directories(/home/colin/buildroot/buildroot/output/rockchip_rk1808/build/i2c-tools-4.0/lib)
-link_directories(/home/colin/buildroot/buildroot/output/rockchip_rk1808/build/rknpu-1.2.1/rknn/rknn_api/librknn_api/lib64)
-include_directories(/home/colin/buildroot/buildroot/output/rockchip_rk1808/build/rknpu-1.2.1/rknn/rknn_api/librknn_api/include)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -19,7 +16,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 ## Locate source files
 set(BMI_C_FILES src/bmi2_ois.c src/bmi2.c src/bmi270.c src/bmm150.c)
 set(BMP280_C_FILES bmp280/bmp280.c)
-set(ARWAIN_CPP_FILES src/bmp280.cpp src/main.cpp src/imu_utils.cpp src/indoor_positioning_wrapper.cpp src/rknn.cpp src/input_parser.cpp src/math_util.cpp src/quaternions.cpp src/stance.cpp src/utils.cpp src/velocity_prediction.cpp src/logger.cpp)
+set(ARWAIN_CPP_FILES src/bmp280.cpp src/main.cpp src/imu_utils.cpp src/indoor_positioning_wrapper.cpp src/input_parser.cpp src/math_util.cpp src/quaternions.cpp src/stance.cpp src/utils.cpp src/velocity_prediction.cpp src/logger.cpp)
 set(CALIBRATE_CPP_FILES src/calibrate_bmi270.cpp src/utils.cpp src/input_parser.cpp src/imu_utils.cpp)
 
 ## Static libraries to build
@@ -46,7 +43,9 @@ target_compile_options(madgwick_standalone PRIVATE -Wno-psabi -Wall)
 target_compile_options(efaroe_standalone PRIVATE -Wno-psabi -Wall)
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_madgwick ${PROJECT_NAME}_efaroe -pthread -ldl -lstdc++fs -li2c -lrknn_api)
+target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_madgwick ${PROJECT_NAME}_efaroe -pthread -ldl -lstdc++fs -li2c)
 target_link_libraries(${PROJECT_NAME}_calibration -li2c)
 # target_link_libraries(lora_rx_test arwain_lorapi -lwiringPi)
 # target_link_libraries(lora_tx_test arwain_lorapi -lwiringPi)
+
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_calibration madgwick_standalone efaroe_standalone DESTINATION bin)
