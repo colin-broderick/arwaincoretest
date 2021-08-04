@@ -54,7 +54,6 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <experimental/filesystem>
 #include <string.h>
 #include <iomanip>
-#include <rknn_api.h>
 
 #include "quaternions.h"
 #include "stance.h"
