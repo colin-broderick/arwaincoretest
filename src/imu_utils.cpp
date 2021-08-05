@@ -32,7 +32,7 @@ static float acc_scale, gyr_scale;
 int i2c_init(const int address, int& file_i2c)
 {
 	//----- OPEN THE I2C BUS -----
-	char *filename = (char*)"/dev/i2c-4";
+	char *filename = (char*)"/dev/i2c-2";
 	if ((file_i2c = open(filename, O_RDWR)) < 0)
 	{
 		//ERROR HANDLING: you can check errno to see what went wrong
