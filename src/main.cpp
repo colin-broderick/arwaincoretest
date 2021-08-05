@@ -94,7 +94,7 @@ arwain::Configuration CONFIG;
 arwain::Status STATUS;
 
 // Default config file locations.
-std::string CONFIG_FILE = "./arwain.conf";
+std::string CONFIG_FILE = "/etc/arwain.conf";
 
 // Flags for whether to produce various log outputs.
 int LOG_TO_STDOUT = 0;
@@ -212,7 +212,7 @@ void std_output()
 
         while (!SHUTDOWN)
         {
-            { // Add position to the string stream.        
+            { // Add position to the string stream.
                 std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
                 ss << "Position:        " << POSITION_BUFFER.back() << "\n";
             }
@@ -238,7 +238,7 @@ void std_output()
                 std::lock_guard<std::mutex> lock{PRESSURE_BUFFER_LOCK};
                 ss << "Air pressure:    " << PRESSURE_BUFFER.back() << "\n";
             }
-            
+
             if (1)
             {
                 // The following is a magnetic orientation experiment.
@@ -399,7 +399,7 @@ void imu_reader()
             mag_data = mag_data - CONFIG.mag_bias;
             mag_data = mag_data * CONFIG.mag_scale;
         }
-        
+
         { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
             IMU_BUFFER.pop_front();
@@ -492,7 +492,7 @@ void imu_reader()
             euler_file << timeCount << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << "\n";
             quat_file << timeCount << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
         }
-        
+
         // Wait until the next tick.
         count++;
         loopTime = loopTime + interval;
@@ -517,7 +517,7 @@ void imu_reader()
     ////////////////////////////////////////////////
     // COMPLETELY UNTESTED, DO NOT ATTEMPT TO USE //
     ////////////////////////////////////////////////
-    
+
     // Quit immediately if IMU not enabled.
     if (NO_IMU)
     {
@@ -585,7 +585,7 @@ void imu_reader()
         // Get the current time, and the midpoint in time between now and the start of the previous spin.
         timeNow = std::chrono::system_clock::now();
         timeMid = timeNow - (timeNow - timePrevious)/2;
-        
+
         auto timeMidCount = timeMidCount;
         auto timeNowCount = timeNowCount;
 
@@ -599,7 +599,7 @@ void imu_reader()
         }
         accel_now = accel_now - CONFIG.accel_bias;
         gyro_now = gyro_now - CONFIG.gyro_bias;
-        
+
         // Interpolate the accel and gyro readings halfway between the previous time step and now.
         accel_mid = (accel_now + accel_previous)/2.0;
         gyro_mid = (gyro_now + gyro_previous)/2.0;
@@ -908,7 +908,7 @@ void transmit_lora()
     //     // Reset critical status flags now they have been read.
     //     STATUS.falling = arwain::StanceDetector::NotFalling;
     //     STATUS.entangled = arwain::StanceDetector::NotEntangled;
-        
+
     //     // TODO Build packet for transmission.
     //     char message[LORA_MESSAGE_LENGTH];
 
@@ -937,7 +937,7 @@ void transmit_lora()
     //     {
     //         lora_file << time.time_since_epoch().count() << " " << message << "\n";
     //     }
-        
+
     //     // Wait until next tick
     //     time = time + interval;
     //     std::this_thread::sleep_until(time);
@@ -974,7 +974,7 @@ void indoor_positioning()
     {
         return;
     }
-    
+
     // TODO Create IPS object
     arwain::IndoorPositioningWrapper ips;
     std::array<double, 3> velocity;
@@ -1132,7 +1132,7 @@ void py_transmitter()
 void py_inference()
 {
     if (!NO_INFERENCE)
-    {   
+    {
         std::string command = "python3 ./python_utils/ncs2_interface.py " + CONFIG.inference_model_xml + " > /dev/null &";
         system(command.c_str());
     }
@@ -1230,7 +1230,7 @@ int main(int argc, char **argv)
 
     // Determine behaviour from command line arguments.
     arwain::InputParser input{argc, argv};
-    
+
     // Output help text.
     if (input.contains("-h") || input.contains("-help"))
     {
@@ -1263,7 +1263,7 @@ int main(int argc, char **argv)
         arwain::test_imu(SHUTDOWN);
         return 1;
     }
-    
+
     // Enable/disable stdout logging.
     if (input.contains("-lstd"))
     {
@@ -1334,7 +1334,7 @@ int main(int argc, char **argv)
     {
         calibrate_gyroscope_online();
     }
-    
+
     // Create output directory and write copy of current configuration.
     if (LOG_TO_FILE)
     {
@@ -1361,11 +1361,11 @@ int main(int argc, char **argv)
     std::thread std_output_thread(std_output);                   // Prints useful output to std out.
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     // std::thread altimiter_thread(altimiter);                     // Uses the BMP280 sensor to determine altitude.
-    
+
     // Start external Python scripts.
     // std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
     // std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
-    
+
     #if GYRO_BIAS_EXPERIMENT
     std::thread gyro_bias_estimator(gyro_bias_estimation);       // Continuously estimates gyro bias
     #endif
@@ -1400,7 +1400,7 @@ int main(int argc, char **argv)
     // Wait for all threads to terminate.
     imu_reader_thread.join();
     predict_velocity_thread.join();
-    stance_detector_thread.join();    
+    stance_detector_thread.join();
     transmit_lora_thread.join();
     std_output_thread.join();
     indoor_positioning_thread.join();
