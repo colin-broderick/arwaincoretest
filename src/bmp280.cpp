@@ -7,7 +7,7 @@
 #include <stdio.h>
 extern "C" {
     #include <linux/i2c-dev.h>
-    #include <smbus.h>
+    #include <i2c/smbus.h>
 }
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -16,9 +16,12 @@ extern "C" {
 #include <chrono>
 #include <thread>
 #include <time.h>
+#include <math.h>
+#include <unistd.h>
+#include <iostream>
 
 #include "bmp280.hpp"
-#include "imu_utils.hpp"
+// #include "imu_utils.hpp"
 
 int8_t i2c_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
 int8_t i2c_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
@@ -60,6 +63,42 @@ double altitude_from_pressure_and_temperature(const double pressure, const doubl
     double gravity = 9.8127;                // This theoretically varies with location.
 
     return ((pow((sea_level_pressure/pressure), (lapse_rate * gas_constant_for_air / gravity))-1)*(temperature + 273.15))/lapse_rate;
+}
+
+static void delay_us(uint32_t period)
+{
+    
+    // tim.tv_nsec = period*1000;
+    usleep(period);
+    // nanosleep(&tim, &tim_r);
+    
+    /* Wait for a period amount of us*/
+}
+
+static void delay_ms(uint32_t period)
+{
+    
+    delay_us(period*1000);
+    
+    /* Wait for a period amount of ms*/
+}
+
+static int i2c_init(const int address, int& file_i2c)
+{
+	//----- OPEN THE I2C BUS -----
+	char *filename = (char*)"/dev/i2c-1";
+	if ((file_i2c = open(filename, O_RDWR)) < 0)
+	{
+		//ERROR HANDLING: you can check errno to see what went wrong
+		std::cout << "Failed to open I2C bus" << std::endl;
+	}
+
+    if (ioctl(file_i2c, I2C_SLAVE, address) < 0)
+    {
+        std::cout << "Failed to connect to I2C address " << std::hex << address << std::endl;
+    }
+
+	return file_i2c;
 }
 
 int init_bmp280(bmp280_dev& bmp, bmp280_config &conf, bmp280_uncomp_data& uncomp_data, const double sealevelpressure)

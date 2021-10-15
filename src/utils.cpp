@@ -8,9 +8,8 @@
 #include <array>
 
 #include "utils.hpp"
-#include "imu_utils.hpp"
-#include "bmi270.hpp"
 #include "input_parser.hpp"
+#include "IMU_IIM42652_driver.hpp"
 
 extern arwain::Configuration CONFIG;
 
@@ -155,13 +154,7 @@ std::string arwain::datetimestring()
 void arwain::test_imu(int &shutdown)
 {
     // Initialize the IMU.
-    BMI270 bmi270_h;
-    std::string path = "../calib.txt";
-    if (bmi270_h.init_bmi270(0, path) != 0)
-    {
-        printf("Node failed to start\n");
-        exit(1);
-    }
+    IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
 
     // Local buffers for IMU data
     vector3 accel_data;
@@ -173,7 +166,18 @@ void arwain::test_imu(int &shutdown)
 
     while (!shutdown)
     {
-        bmi270_h.get_bmi270_data(&accel_data, &gyro_data);
+        // bmi270_h.get_bmi270_data(&accel_data, &gyro_data);
+        imu.read_IMU();
+        accel_data = {
+            imu.accelerometer_x,
+            imu.accelerometer_y,
+            imu.accelerometer_z
+        };
+        gyro_data = {
+            imu.gyroscope_x,
+            imu.gyroscope_y,
+            imu.gyroscope_z,
+        };
 
         // Display IMU data.
         std::cout << time.time_since_epoch().count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";

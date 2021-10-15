@@ -51,10 +51,9 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <string.h>
 #include <iomanip>
 
-#include "bmi270.hpp"
+#include "IMU_IIM42652_driver.hpp"
 #include "quaternions.hpp"
 #include "stance.hpp"
-#include "imu_utils.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
 #include "math_util.hpp"
@@ -90,8 +89,6 @@ unsigned int PRESSURE_BUFFER_LEN = 100;
 arwain::Configuration CONFIG;
 arwain::Status STATUS;
 
-BMI270 bmi270_h;
-
 // Name for data folder
 std::string FOLDER_DATE_STRING;
 
@@ -123,6 +120,7 @@ std::mutex STATUS_FLAG_LOCK;
 std::mutex POSITION_BUFFER_LOCK;
 std::mutex ORIENTATION_BUFFER_LOCK;
 std::mutex PRESSURE_BUFFER_LOCK;
+std::mutex I2C_LOCK;
 
 /** \brief Periodically logs status messages to stdout.
  * Useful for debugging or testing, but probably not wanted at runtime.
@@ -246,6 +244,8 @@ void imu_reader()
         return;
     }
 
+    IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
+
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Filter* filter;
     if (CONFIG.orientation_filter == "efaroe")
@@ -304,7 +304,7 @@ void imu_reader()
     auto timeCount = time.time_since_epoch().count();
     std::chrono::milliseconds interval{IMU_READING_INTERVAL};
 
-    int imu_error;
+    // int imu_error; // TODO Can potentially be removed; was for the BMI270
 
     while (!SHUTDOWN)
     {
@@ -313,32 +313,45 @@ void imu_reader()
 
         if (count % 200 == 0)
         {
-            temp_file << timeCount << " " << get_bmi270_temperature() << "\n";
+            temp_file << timeCount << " " << imu.read_temperature() << "\n";
         }
 
         // Whether or not to get magnetometer on this spin.
         get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
 
         // Read current sensor values and apply bias correction.
-        imu_error = bmi270_h.get_bmi270_data(&accel_data, &gyro_data);
-        if (imu_error)
-        { // Log any IMU reading error events.
-            STATUS.errors = arwain::Errors::IMUReadError;
-            if (CONFIG.log_to_file)
-            {
-                ERROR_LOG << timeCount << " " << "IMU_READ_ERROR" << "\n";
-            }
-        }
-        accel_data = accel_data - CONFIG.accel_bias;
-        gyro_data = gyro_data - CONFIG.gyro_bias;
+        // imu_error = bmi270_h.get_bmi270_data(&accel_data, &gyro_data);
+
+        imu.read_IMU();
+        accel_data = {
+            imu.accelerometer_x,
+            imu.accelerometer_y,
+            imu.accelerometer_z,
+        };
+        gyro_data = {
+            imu.gyroscope_x,
+            imu.gyroscope_y,
+            imu.gyroscope_z,
+        };
+
+        // if (imu_error)
+        // { // Log any IMU reading error events.
+        //     STATUS.errors = arwain::Errors::IMUReadError;
+        //     if (CONFIG.log_to_file)
+        //     {
+        //         ERROR_LOG << timeCount << " " << "IMU_READ_ERROR" << "\n";
+        //     }
+        // }
+        // accel_data = accel_data - CONFIG.accel_bias;
+        // gyro_data = gyro_data - CONFIG.gyro_bias;
 
         // Get magnetometer data.
-        if (get_mag)
-        {
-            bmi270_h.get_bmm150_data(&mag_data);
-            mag_data = mag_data - CONFIG.mag_bias;
-            mag_data = mag_data * CONFIG.mag_scale;
-        }
+        // if (get_mag) // TODO For new magnetometer
+        // {
+        //     bmi270_h.get_bmm150_data(&mag_data);
+        //     mag_data = mag_data - CONFIG.mag_bias;
+        //     mag_data = mag_data * CONFIG.mag_scale;
+        // }
 
         { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
@@ -359,10 +372,10 @@ void imu_reader()
         {
             acce_file << timeCount << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << "\n";
             gyro_file << timeCount << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
-            if (CONFIG.log_magnetometer)
-            {
-                mag_file << timeCount << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
-            }
+            // if (CONFIG.log_magnetometer)
+            // {
+            //     mag_file << timeCount << " " << mag_data.x << " " << mag_data.y << " " << mag_data.z << "\n";
+            // }
         }
 
         // Perform an orientation filter step.
@@ -935,6 +948,8 @@ void stance_detector()
 
 void calibrate_gyroscope_online()
 {
+    IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
+
     std::cout << "Gyroscope calibration is about to start; makes sure the device is completely stationary" << std::endl;
     for (int i = 1; i < 6; i++)
     {
@@ -943,16 +958,14 @@ void calibrate_gyroscope_online()
     }
 
     std::cout << "Gyroscope calibration: Leave the device completely still for 10 seconds\n";
-    vector3 gyro_d;
-    vector3 accel_d;
     int gyro_reading_count = 0;
     double gx = 0, gy = 0, gz = 0;
     for (int i = 0; i < 10*100; i++)
     {
-        bmi270_h.get_bmi270_data(&accel_d, &gyro_d);
-        gx += gyro_d.x;
-        gy += gyro_d.y;
-        gz += gyro_d.z;
+        imu.read_IMU();
+        gx += imu.gyroscope_x;
+        gy += imu.gyroscope_y;
+        gz += imu.gyroscope_z;
         gyro_reading_count += 1;
         if (i % 100 == 0)
         {
@@ -1014,6 +1027,16 @@ void altimiter()
     }
 }
 
+/** \brief Start a Python script which opens a socket and does inference on data we send it. */
+static void py_inference()
+{
+    if (!CONFIG.no_inference)
+    {   
+        std::string command = "python3 ./python_utils/ncs2_interface.py " + CONFIG.inference_model_xml + " > /dev/null &";
+        system(command.c_str());
+    }
+}
+
 /** \brief Main loop.
  * \param argc Nmber of arguments.
  * \param argv List of arguments.
@@ -1068,15 +1091,15 @@ int main(int argc, char **argv)
         return -2;
     }
 
-    // Initialize the IMU if not explicitly disabled.
-    if (!CONFIG.no_imu)
-    {
-        if (bmi270_h.init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
-        {
-            std::cout << "IMU failed to start" << "\n";
-            return -1;
-        }
-    }
+    // // Initialize the IMU if not explicitly disabled.
+    // if (!CONFIG.no_imu)
+    // {
+    //     if (bmi270_h.init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
+    //     {
+    //         std::cout << "IMU failed to start" << "\n";
+    //         return -1;
+    //     }
+    // }
 
     // Attempt to calibrate the gyroscope before commencing other activities.
     if (input.contains("-calib"))
@@ -1113,7 +1136,7 @@ int main(int argc, char **argv)
 
     // Start external Python scripts.
     // std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
-    // std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
+    std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
 
     // Wait for all threads to terminate.
     imu_reader_thread.join();
@@ -1123,7 +1146,7 @@ int main(int argc, char **argv)
     std_output_thread.join();
     indoor_positioning_thread.join();
     // py_transmitter_thread.join();
-    // py_inference_thread.join();
+    py_inference_thread.join();
     // altimiter_thread.join();
 
     return 1;
