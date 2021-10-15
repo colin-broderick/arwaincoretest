@@ -1,5 +1,5 @@
-#include "velocity_prediction.h"
-#include "logger.h"
+#include "velocity_prediction.hpp"
+#include "logger.hpp"
 
 static std::string inference_tcp_socket = "tcp://*:5555";
 

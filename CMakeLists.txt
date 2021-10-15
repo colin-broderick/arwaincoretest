@@ -27,7 +27,7 @@ add_library(${PROJECT_NAME}_madgwick STATIC orientation/madgwick.cpp)
 add_library(${PROJECT_NAME}_efaroe STATIC orientation/efaroe.cpp)
 
 ## Executables to build
-add_executable(${PROJECT_NAME} ${ARWAIN_CPP_FILES} ${BMI_C_FILES} ${BMP280_C_FILES})
+add_executable(${PROJECT_NAME} ${ARWAIN_CPP_FILES} ${BMI_C_FILES} ${BMP280_C_FILES} src/bmi270.cpp)
 add_executable(${PROJECT_NAME}_calibration ${CALIBRATE_CPP_FILES} ${BMI_C_FILES})
 # add_executable(lora_rx_test lora_driver/lora_rx_test.cpp)
 # add_executable(lora_tx_test lora_driver/lora_tx_test.cpp)

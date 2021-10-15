@@ -6,13 +6,13 @@
 
 /** \brief Object for representing a 3-vector of various types, e.g. Eucliden displacement vector.
  */
-typedef struct vector3
+struct vector3
 {
     double x;
     double y;
     double z;
     double magnitude();
-} vector3;
+};
 
 /** \brief Find the Euclidean (L2) norm of a 3-vector.
  * \return A double representing the length of the vector.
@@ -97,5 +97,11 @@ inline std::ostream& operator<<(std::ostream& stream, const vector3& vector)
     stream << "vector3(" << vector.x << ", " << vector.y << ", " << vector.z << ")";
     return stream;
 }
+
+struct vector6
+{
+    vector3 acce;
+    vector3 gyro;
+};
 
 #endif

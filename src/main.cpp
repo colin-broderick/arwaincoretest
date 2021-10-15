@@ -29,10 +29,6 @@ from these rules should be accompanied by a comment clearly indiciating why.
 
 */
 
-#define THREAD_AFFINITY_EXPERIMENT 0
-#define USE_SOCKET_INFERENCE 0
-#define USE_SOCKET_RADIO 0
-#define GYRO_BIAS_EXPERIMENT 0
 #define IMU_FREQ_200 1
 
 #include <algorithm>
@@ -55,21 +51,22 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <string.h>
 #include <iomanip>
 
-#include "quaternions.h"
-#include "stance.h"
-#include "imu_utils.h"
-#include "madgwick.h"
-#include "efaroe.h"
-#include "math_util.h"
-#include "input_parser.h"
-#include "indoor_positioning_wrapper.h"
-#include "filter.h"
-#include "logger.h"
-#include "bmp280a.h"
+#include "bmi270.hpp"
+#include "quaternions.hpp"
+#include "stance.hpp"
+#include "imu_utils.hpp"
+#include "madgwick.hpp"
+#include "efaroe.hpp"
+#include "math_util.hpp"
+#include "input_parser.hpp"
+#include "indoor_positioning_wrapper.hpp"
+#include "filter.hpp"
+#include "logger.hpp"
+#include "bmp280.hpp"
 
-#include "velocity_prediction.h"
-#include "lora.h"
-#include "packet.h"
+#include "velocity_prediction.hpp"
+#include "lora.hpp"
+#include "packet.hpp"
 
 // Time intervals, all in milliseconds.
 unsigned int IMU_READING_INTERVAL = 5;            // You don't need to change this; switch to 10 ms is controlled by a #define at the top
@@ -93,15 +90,7 @@ unsigned int PRESSURE_BUFFER_LEN = 100;
 arwain::Configuration CONFIG;
 arwain::Status STATUS;
 
-// Default config file locations.
-std::string CONFIG_FILE = "/etc/arwain.conf";
-
-// Flags for whether to produce various log outputs.
-int LOG_TO_STDOUT = 0;
-int LOG_TO_FILE = 0;
-int NO_INFERENCE = 0;
-int NO_IMU = 0;
-int NO_LORA = 0;
+BMI270 bmi270_h;
 
 // Name for data folder
 std::string FOLDER_DATE_STRING;
@@ -109,14 +98,14 @@ std::string FOLDER_DATE_STRING;
 arwain::Logger ERROR_LOG;
 
 // Data buffers.
-std::deque<std::array<double, 6>> IMU_BUFFER{IMU_BUFFER_LEN};
-std::deque<std::array<double, 6>> IMU_WORLD_BUFFER{IMU_BUFFER_LEN};
-std::deque<std::array<double, 3>> VELOCITY_BUFFER{VELOCITY_BUFFER_LEN};
-std::deque<std::array<double, 3>> POSITION_BUFFER{POSITION_BUFFER_LEN};
-std::deque<std::array<double, 3>> MAG_BUFFER{MAG_BUFFER_LEN};
-std::deque<std::array<double, 3>> MAG_WORLD_BUFFER{MAG_BUFFER_LEN};
-std::deque<std::array<double, 3>> IPS_BUFFER{IPS_BUFFER_LEN};
-std::deque<std::array<double, 3>> PRESSURE_BUFFER{PRESSURE_BUFFER_LEN};
+std::deque<vector6> IMU_BUFFER{IMU_BUFFER_LEN};
+std::deque<vector6> IMU_WORLD_BUFFER{IMU_BUFFER_LEN};
+std::deque<vector3> VELOCITY_BUFFER{VELOCITY_BUFFER_LEN};
+std::deque<vector3> POSITION_BUFFER{POSITION_BUFFER_LEN};
+std::deque<vector3> MAG_BUFFER{MAG_BUFFER_LEN};
+std::deque<vector3> MAG_WORLD_BUFFER{MAG_BUFFER_LEN};
+std::deque<vector3> IPS_BUFFER{IPS_BUFFER_LEN};
+std::deque<vector3> PRESSURE_BUFFER{PRESSURE_BUFFER_LEN};
 std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{ORIENTATION_BUFFER_LEN};
 std::deque<quaternion> QUAT_ORIENTATION_BUFFER{ORIENTATION_BUFFER_LEN};
 
@@ -135,62 +124,13 @@ std::mutex POSITION_BUFFER_LOCK;
 std::mutex ORIENTATION_BUFFER_LOCK;
 std::mutex PRESSURE_BUFFER_LOCK;
 
-#if GYRO_BIAS_EXPERIMENT
-void gyro_bias_estimation()
-{
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{1057};
-
-    std::deque<std::array<double, 6>> imu;
-    std::array<double, 3> gyro_delta_sum;
-    std::array<double, 3> gyro_sum;
-    std::array<double, 3> bias_estimates = {
-        CONFIG.gyro_bias.x,
-        CONFIG.gyro_bias.y,
-        CONFIG.gyro_bias.z
-    };
-
-    while (!SHUTDOWN)
-    {
-        { // Get IMU data
-            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
-            imu = IMU_BUFFER;
-        }
-
-        gyro_sum = {0, 0, 0};
-        for (int i = 0; i < imu.size(); i++)
-        {
-            gyro_sum[0] += imu[i][3];
-            gyro_sum[1] += imu[i][4];
-            gyro_sum[2] += imu[i][5];
-        }
-        gyro_delta_sum = {0, 0, 0};
-        for (int i = 1; i < imu.size(); i++)
-        {
-            gyro_delta_sum[0] += (imu[i][3] - imu[i-1][3]);
-            gyro_delta_sum[1] += (imu[i][4] - imu[i-1][4]);
-            gyro_delta_sum[2] += (imu[i][5] - imu[i-1][5]);
-        }
-
-        bias_estimates[0] = bias_estimates[0]*0.95 + 0.05*(gyro_sum[0] - gyro_delta_sum[0])/(float)imu.size();
-        bias_estimates[1] = bias_estimates[1]*0.95 + 0.05*(gyro_sum[1] - gyro_delta_sum[1])/(float)imu.size();
-        bias_estimates[2] = bias_estimates[2]*0.95 + 0.05*(gyro_sum[2] - gyro_delta_sum[2])/(float)imu.size();
-
-        std::cout << bias_estimates[0] << "," << bias_estimates[1] << "," << bias_estimates[2] << std::endl;
-
-        time = time + interval;
-        std::this_thread::sleep_until(time);
-    }
-}
-#endif
-
 /** \brief Periodically logs status messages to stdout.
  * Useful for debugging or testing, but probably not wanted at runtime.
  * Output is of a form that can be easily piped to other processes.
  */
 void std_output()
 {
-    if (LOG_TO_STDOUT)
+    if (CONFIG.log_to_stdout)
     {
         // Output string built here.
         std::stringstream ss;
@@ -201,12 +141,12 @@ void std_output()
         auto time = std::chrono::system_clock::now();
 
         // For magnetic orientation
-        std::array<double, 3> mag_target{18.895, -0.361, 45.372};  // Local magnetic vector.
+        vector3 mag_target{18.895, -0.361, 45.372};  // Local magnetic vector.
         mag_target = normalised(mag_target);
-        std::array<double, 3> mag_data = mag_target;               // Measured magnetic field.
-        std::array<double, 3> new_mag_data{0, 0, 0};
+        vector3 mag_data = mag_target;               // Measured magnetic field.
+        vector3 new_mag_data{0, 0, 0};
         double angle;
-        std::array<double, 3> axis;
+        vector3 axis;
         quaternion quat2;
 
 
@@ -259,21 +199,21 @@ void std_output()
                     new_mag_data = MAG_BUFFER.back();
                 }
                 new_mag_data = normalised(new_mag_data);           // Normalize the measured magnetic field.
-                mag_data[0] = 0.95 * mag_data[0] + 0.05 * new_mag_data[0];
-                mag_data[1] = 0.95 * mag_data[1] + 0.05 * new_mag_data[1];
-                mag_data[2] = 0.95 * mag_data[2] + 0.05 * new_mag_data[2];
+                mag_data.x = 0.95 * mag_data.x + 0.05 * new_mag_data.x;
+                mag_data.y = 0.95 * mag_data.y + 0.05 * new_mag_data.y;
+                mag_data.z = 0.95 * mag_data.z + 0.05 * new_mag_data.z;
 
                 mag_data = normalised(mag_data);
 
-                angle = acos(mag_data[0]*mag_target[0] 
-                           + mag_data[1]*mag_target[1]
-                           + mag_data[2]*mag_target[2]);           // Angle between measured field and expected local field.
+                angle = acos(mag_data.x*mag_target.x 
+                           + mag_data.y*mag_target.y
+                           + mag_data.z*mag_target.z);           // Angle between measured field and expected local field.
                 axis = cross(mag_data, mag_target);                // An axis orthogonal to the local field vector and measured field vector.
                 quat2 = quaternion{                                // Quaternion representaiton of how device is rotated relative to local field.
                     cos(angle/2.0),
-                    sin(angle/2.0) * axis[0],
-                    sin(angle/2.0) * axis[1],
-                    sin(angle/2.0) * axis[2]
+                    sin(angle/2.0) * axis.x,
+                    sin(angle/2.0) * axis.y,
+                    sin(angle/2.0) * axis.z
                 };
                 ss << "Magnetic vector: " << quat2 << "\n";
             }
@@ -301,7 +241,7 @@ void std_output()
 void imu_reader()
 {
     // Quit immediately if IMU not enabled.
-    if (NO_IMU)
+    if (CONFIG.no_imu)
     {
         return;
     }
@@ -338,7 +278,7 @@ void imu_reader()
     arwain::Logger quat_file;
     arwain::Logger temp_file;
 
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         // Open file handles for data logging.
         acce_file.open(FOLDER_DATE_STRING + "/acce.txt");
@@ -380,11 +320,11 @@ void imu_reader()
         get_mag = ((count % 20 == 0) && (CONFIG.use_magnetometer || CONFIG.log_magnetometer));
 
         // Read current sensor values and apply bias correction.
-        imu_error = get_bmi270_data(&accel_data, &gyro_data);
+        imu_error = bmi270_h.get_bmi270_data(&accel_data, &gyro_data);
         if (imu_error)
         { // Log any IMU reading error events.
             STATUS.errors = arwain::Errors::IMUReadError;
-            if (LOG_TO_FILE)
+            if (CONFIG.log_to_file)
             {
                 ERROR_LOG << timeCount << " " << "IMU_READ_ERROR" << "\n";
             }
@@ -395,7 +335,7 @@ void imu_reader()
         // Get magnetometer data.
         if (get_mag)
         {
-            get_bmm150_data(&mag_data);
+            bmi270_h.get_bmm150_data(&mag_data);
             mag_data = mag_data - CONFIG.mag_bias;
             mag_data = mag_data * CONFIG.mag_scale;
         }
@@ -411,11 +351,11 @@ void imu_reader()
         {
             std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
             MAG_BUFFER.pop_front();
-            MAG_BUFFER.push_back(std::array<double, 3>{mag_data.x, mag_data.y, mag_data.z});
+            MAG_BUFFER.push_back({mag_data.x, mag_data.y, mag_data.z});
         }
 
         // Log IMU to file.
-        if (LOG_TO_FILE)
+        if (CONFIG.log_to_file)
         {
             acce_file << timeCount << " " << accel_data.x << " " << accel_data.y << " " << accel_data.z << "\n";
             gyro_file << timeCount << " " << gyro_data.x << " " << gyro_data.y << " " << gyro_data.z << "\n";
@@ -469,7 +409,7 @@ void imu_reader()
         {
             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
             IMU_WORLD_BUFFER.pop_front();
-            IMU_WORLD_BUFFER.push_back(std::array<double, 6>{
+            IMU_WORLD_BUFFER.push_back({
                 world_accel_data.x, world_accel_data.y, world_accel_data.z,
                 world_gyro_data.x, world_gyro_data.y, world_gyro_data.z
             });
@@ -481,13 +421,13 @@ void imu_reader()
             world_mag_data = world_align(mag_data, quat_data);
             std::lock_guard<std::mutex> lock{MAG_BUFFER_LOCK};
             MAG_WORLD_BUFFER.pop_front();
-            MAG_WORLD_BUFFER.push_back(std::array<double, 3>{
+            MAG_WORLD_BUFFER.push_back({
                 world_mag_data.x, world_mag_data.y, world_mag_data.z
             });
         }
 
         // Log orientation information to file.
-        if (LOG_TO_FILE)
+        if (CONFIG.log_to_file)
         {
             euler_file << timeCount << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << "\n";
             quat_file << timeCount << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
@@ -502,7 +442,7 @@ void imu_reader()
     delete filter;
 
     // Close all file handles.
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         acce_file.close();
         gyro_file.close();
@@ -690,131 +630,6 @@ void imu_reader()
 }
 #endif
 
-#if USE_SOCKET_INFERENCE
-void transmit_lora()
-{
-    // Quit immediately if -nolora specified at command line.
-    if (NO_LORA)
-    {
-        return;
-    }
-
-    // Wait until there's something worth transmitting.
-    std::this_thread::sleep_for(std::chrono::milliseconds{3000});
-
-    // Set up log file.
-    arwain::Logger lora_file;
-    if (LOG_TO_FILE)
-    {
-        lora_file.open(FOLDER_DATE_STRING + "/lora_log.txt");
-        lora_file << "# time packet" << "\n";
-    }
-
-    // Set up socket.
-    void *context = zmq_ctx_new();
-    void *responder = zmq_socket(context, ZMQ_REP);
-    std::string radio_tcp_socket{"tcp://*:5556"};
-    zmq_bind(responder, radio_tcp_socket.c_str());
-
-    // Local buffers.
-    char response_buffer[50];
-    std::array<double, 3> position{0, 0, 0};
-    std::stringstream ss;
-
-    // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{LORA_TRANSMISSION_INTERVAL};
-
-    // Spin until shutdown signal received.
-    while (!SHUTDOWN)
-    {
-        // Add position to LoRa message.
-        {
-            std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
-            position = POSITION_BUFFER.back();
-        }
-        ss << position[0] << "," << position[1] << "," << position[2] << ",";
-
-        // Add falling/entanglement flags to LoRa message.
-        ss << (STATUS.falling == arwain::StanceDetector::Falling ? "f" : "0");
-        ss << ",";
-        ss << (STATUS.entangled == arwain::StanceDetector::Entangled ? "e" : "0");
-        ss << ",";
-
-        // Add current stance to LoRa message.
-        switch (STATUS.current_stance)
-        {
-            case arwain::StanceDetector::Inactive:
-                ss << "inactive";
-                break;
-            case arwain::StanceDetector::Walking:
-                ss << "walking";
-                break;
-            case arwain::StanceDetector::Searching:
-                ss << "searching";
-                break;
-            case arwain::StanceDetector::Crawling:
-                ss << "crawling";
-                break;
-            case arwain::StanceDetector::Running:
-                ss << "running";
-                break;
-            default:
-                ss << "unknown";
-                break;
-        }
-
-        // Add error state to the message
-        ss << ",";
-        switch (STATUS.errors)
-        {
-            case arwain::Errors::AllOk:
-                ss << "allok";
-                break;
-            case arwain::Errors::IMUReadError:
-                ss << "imureaderror";
-                break;
-            case arwain::Errors::OtherError:
-                ss << "othererror";
-                break;
-            default:
-                ss << "allok";
-                break;
-        }
-
-        // Reset the flags that were just read so they won't be transmitted again.
-        STATUS.falling = arwain::StanceDetector::NotFalling;
-        STATUS.entangled = arwain::StanceDetector::NotEntangled;
-        STATUS.errors = arwain::Errors::AllOk;
-
-        // Send message by socket, reset stringstream, and await response.
-        std::string fromStream = ss.str();
-        const char* str = fromStream.c_str();
-        zmq_send(responder, str, strlen(str), 0);
-        zmq_recv(responder, response_buffer, 50, 0);  // Don't need the response.
-        ss.str("");
-
-        // Log full message to file.
-        if (LOG_TO_FILE)
-        {
-            lora_file << time.time_since_epoch().count() << " " << ss.str() << "\n";
-        }
-
-        // Wait until next time internval.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
-    }
-
-    // Instruct transmitter script to close, and close log file.
-    zmq_send(responder, "stop", strlen("stop"), 0);
-    if (LOG_TO_FILE)
-    {
-        lora_file.close();
-    }
-}
-
-#else
-
 /** \brief Forms and transmits LoRa messages on a loop.
  */
 void transmit_lora()
@@ -949,7 +764,6 @@ void transmit_lora()
     //     lora_file.close();
     // }
 }
-#endif
 
 /** \brief Capture the SIGINT signal for clean exit.
  * Sets the global SHUTDOWN flag informing all threads to clean up and exit.
@@ -977,12 +791,12 @@ void indoor_positioning()
 
     // TODO Create IPS object
     arwain::IndoorPositioningWrapper ips;
-    std::array<double, 3> velocity;
-    std::array<double, 3> position;
+    vector3 velocity;
+    vector3 position;
 
     arwain::Logger ips_position_file;
 
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         ips_position_file.open(FOLDER_DATE_STRING + "/ips_position.txt");
         ips_position_file << "# time x y z" << "\n";
@@ -1002,9 +816,9 @@ void indoor_positioning()
         // Run update and get new position.
         ips.update(
             time.time_since_epoch().count(),
-            velocity[0],
-            velocity[1],
-            velocity[2]
+            velocity.x,
+            velocity.y,
+            velocity.z
         );
         position = ips.getPosition();
 
@@ -1015,9 +829,9 @@ void indoor_positioning()
         }
 
         // Log result to file.
-        if (LOG_TO_FILE)
+        if (CONFIG.log_to_file)
         {
-            ips_position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] <<  " " << position[2] << "\n";
+            ips_position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y <<  " " << position.z << "\n";
         }
 
         // Wait until next tick.
@@ -1026,7 +840,7 @@ void indoor_positioning()
     }
 
     // Close file handle(s);
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         ips_position_file.close();
     }
@@ -1051,13 +865,13 @@ void stance_detector()
     };
 
     // Local buffers.
-    std::deque<std::array<double, 6>> imu_data;
-    std::deque<std::array<double, 3>> vel_data;
+    std::deque<vector6> imu_data;
+    std::deque<vector3> vel_data;
     quaternion rotation_quaternion;
 
     // Open file for freefall/entanglement logging
     arwain::Logger freefall_file;
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         freefall_file.open(FOLDER_DATE_STRING + "/freefall.txt");
         freefall_file << "# time freefall entanglement" << "\n";
@@ -1065,7 +879,7 @@ void stance_detector()
 
     // File handle for stance logging.
     arwain::Logger stance_file;
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         stance_file.open(FOLDER_DATE_STRING + "/stance.txt");
         stance_file << "# time stance" << "\n";
@@ -1100,7 +914,7 @@ void stance_detector()
         STATUS.attitude = stance.getAttitude();
 
         // Log to file.
-        if (LOG_TO_FILE)
+        if (CONFIG.log_to_file)
         {
             freefall_file << time.time_since_epoch().count() << " " << stance.getFallingStatus() << " " << stance.getEntangledStatus() << "\n";
             stance_file << time.time_since_epoch().count() << " " << stance.getStance() << "\n";
@@ -1112,29 +926,10 @@ void stance_detector()
     }
 
     // Close files
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         freefall_file.close();
         stance_file.close();
-    }
-}
-
-/** \brief Start a Python script which opens a socket and forms/transmit a LoRa message from information we send it. */
-void py_transmitter()
-{
-    if (!NO_LORA)
-    {
-        system("python3 ./python_utils/lora_transmitter.py > /dev/null &");
-    }
-}
-
-/** \brief Start a Python script which opens a socket and does inference on data we send it. */
-void py_inference()
-{
-    if (!NO_INFERENCE)
-    {
-        std::string command = "python3 ./python_utils/ncs2_interface.py " + CONFIG.inference_model_xml + " > /dev/null &";
-        system(command.c_str());
     }
 }
 
@@ -1154,7 +949,7 @@ void calibrate_gyroscope_online()
     double gx = 0, gy = 0, gz = 0;
     for (int i = 0; i < 10*100; i++)
     {
-        get_bmi270_data(&accel_d, &gyro_d);
+        bmi270_h.get_bmi270_data(&accel_d, &gyro_d);
         gx += gyro_d.x;
         gy += gyro_d.y;
         gz += gyro_d.z;
@@ -1168,9 +963,9 @@ void calibrate_gyroscope_online()
     double gx_bias = gx/gyro_reading_count;
     double gy_bias = gy/gyro_reading_count;
     double gz_bias = gz/gyro_reading_count;
-    arwain::config_replace(CONFIG_FILE, "gyro_bias_x", gx_bias);
-    arwain::config_replace(CONFIG_FILE, "gyro_bias_y", gy_bias);
-    arwain::config_replace(CONFIG_FILE, "gyro_bias_z", gz_bias);
+    arwain::config_replace(CONFIG.config_file, "gyro_bias_x", gx_bias);
+    arwain::config_replace(CONFIG.config_file, "gyro_bias_y", gy_bias);
+    arwain::config_replace(CONFIG.config_file, "gyro_bias_z", gz_bias);
 
     std::cout << "Gyroscope calibration is complete, you may now operate the device normally" << std::endl;
 }
@@ -1264,65 +1059,19 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // Enable/disable stdout logging.
-    if (input.contains("-lstd"))
-    {
-        LOG_TO_STDOUT = 1;
-    }
-
-    // Disable/enable velocity inference.
-    if (input.contains("-noinf"))
-    {
-        NO_INFERENCE = 1;
-    }
-
-    // Disable/enable LoRa transmission.
-    if (input.contains("-nolora"))
-    {
-        NO_LORA = 1;
-    }
-
-    // Disable/enable IMU.
-    if (input.contains("-noimu"))
-    {
-        NO_IMU = 1;
-    }
-
-    // Enable/disable logging to file.
-    if (input.contains("-lfile"))
-    {
-        std::cout << "Logging to file" << "\n";
-        LOG_TO_FILE = 1;
-    }
-
-    // If alternate configuration file supplied, read it instead of default.
-    if (input.contains("-conf"))
-    {
-        CONFIG_FILE = input.getCmdOption("-conf");
-    }
-
-    // If neither file nor std logging are enabled, warn the user that no data will be logged.
-    if (!input.contains("-lstd") && !input.contains("-lfile"))
-    {
-        std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
-    }
+    CONFIG = arwain::Configuration{input};
 
     // Attempt to read the config file and quit if failed.
-    int conf_read_success = arwain::get_configuration(CONFIG_FILE, CONFIG);
-    if (!conf_read_success)
+    if (!CONFIG.file_read_ok)
     {
         std::cout << "Problem reading configuration file\n";
         return -2;
     }
-    if (LOG_TO_STDOUT)
-    {
-        std::cout << "Configuration file read successfully\n";
-    }
 
     // Initialize the IMU if not explicitly disabled.
-    if (!NO_IMU)
+    if (!CONFIG.no_imu)
     {
-        if (init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
+        if (bmi270_h.init_bmi270(CONFIG.use_magnetometer || CONFIG.log_magnetometer, "none") != 0)
         {
             std::cout << "IMU failed to start" << "\n";
             return -1;
@@ -1336,18 +1085,18 @@ int main(int argc, char **argv)
     }
 
     // Create output directory and write copy of current configuration.
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         FOLDER_DATE_STRING = "./data_" + arwain::datetimestring();
         if (!std::experimental::filesystem::is_directory(FOLDER_DATE_STRING))
         {
             std::experimental::filesystem::create_directory(FOLDER_DATE_STRING);
         }
-        std::experimental::filesystem::copy(CONFIG_FILE, FOLDER_DATE_STRING + "/config.conf");
+        std::experimental::filesystem::copy(CONFIG.config_file, FOLDER_DATE_STRING + "/config.conf");
     }
 
     // Open error log file (globally accessible)
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         ERROR_LOG.open(FOLDER_DATE_STRING + "/ERRORS.txt");
         ERROR_LOG << "# time event" << "\n";
@@ -1366,37 +1115,6 @@ int main(int argc, char **argv)
     // std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
     // std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
 
-    #if GYRO_BIAS_EXPERIMENT
-    std::thread gyro_bias_estimator(gyro_bias_estimation);       // Continuously estimates gyro bias
-    #endif
-
-    #if THREAD_AFFINITY_EXPERIMENT
-    // Set the IMU thread to run on CPU0 only.
-    int rc;
-    cpu_set_t imu_cpu_set;
-    CPU_ZERO(&imu_cpu_set);
-    CPU_SET(0, &imu_cpu_set);
-    rc = pthread_setaffinity_np(imu_reader_thread.native_handle(), sizeof(cpu_set_t), &imu_cpu_set);
-    if (rc != 0)
-    {
-        std::cout << "Failed to set thread affinity for IMU\n";
-    }
-
-    // Set the inference thread to run on CPUs except that used by the IMU.
-    cpu_set_t inference_cpu_set;
-    CPU_ZERO(&inference_cpu_set);
-    std::cout << "CPUs: " << std::thread::hardware_concurrency() << "\n";
-    for (unsigned int i = 1; i < std::thread::hardware_concurrency(); i++)
-    {
-        CPU_SET(i, &inference_cpu_set);
-    }
-    rc = pthread_setaffinity_np(predict_velocity_thread.native_handle(), sizeof(cpu_set_t), &inference_cpu_set);
-    if (rc != 0)
-    {
-        std::cout << "Failed to set thread affinity for inference\n";
-    }
-    #endif
-
     // Wait for all threads to terminate.
     imu_reader_thread.join();
     predict_velocity_thread.join();
@@ -1407,9 +1125,6 @@ int main(int argc, char **argv)
     // py_transmitter_thread.join();
     // py_inference_thread.join();
     // altimiter_thread.join();
-    #if GYRO_BIAS_EXPERIMENT
-    gyro_bias_estimator.join();
-    #endif
 
     return 1;
 }
