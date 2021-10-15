@@ -13,9 +13,10 @@
 #include <thread>
 #include <pthread.h>
 
-#include "vector3.h"
-#include "stance.h"
-#include "lora.h"
+#include "vector3.hpp"
+#include "stance.hpp"
+#include "lora.hpp"
+#include "input_parser.hpp"
 
 namespace arwain::Errors
 {
@@ -63,39 +64,57 @@ namespace arwain
      * \param use_pressure Whether to use BMP280 pressure sensor for altitude.
      * \param sea_level_pressure Sea level pressure near the region of interest.
      */
-    struct Configuration {
-        double active_threshold;
-        double walking_threshold;
-        double running_threshold;
-        double crawling_threshold;
-        double climbing_threshold;
-        double gravity;
-        double struggle_threshold;
-        double freefall_sensitivity;
-        vector3 accel_bias;
-        vector3 gyro_bias;
-        vector3 mag_bias;
-        vector3 mag_scale;
-        int use_magnetometer;
-        int log_magnetometer;
-        double npu_vel_weight_confidence;
-        double madgwick_beta;
-        double efaroe_beta;
-        double efaroe_zeta;
-        int use_indoor_positioning_system;
-        std::string orientation_filter;
-        LoRa::freq_t lora_rf_frequency;
-        int lora_packet_frequency;
-        int lora_tx_power;
-        LoRa::sf_t lora_spread_factor;
-        LoRa::bw_t lora_bandwidth;
-        LoRa::cr_t lora_coding_rate;
-        int lora_sync_word;
-        LoRa::hm_t lora_header_mode;
-        int lora_enable_crc;
-        std::string inference_model_xml;
-        int use_pressure;
-        double sea_level_pressure;
+    class Configuration
+    {
+        public:
+            Configuration()
+            {
+                
+            }
+
+            Configuration(const arwain::InputParser& input);
+            int read_from_file();
+            
+        public:
+            double active_threshold;
+            double walking_threshold;
+            double running_threshold;
+            double crawling_threshold;
+            double climbing_threshold;
+            double gravity;
+            double struggle_threshold;
+            double freefall_sensitivity;
+            vector3 accel_bias;
+            vector3 gyro_bias;
+            vector3 mag_bias;
+            vector3 mag_scale;
+            int use_magnetometer;
+            int log_magnetometer;
+            double npu_vel_weight_confidence;
+            double madgwick_beta;
+            double efaroe_beta;
+            double efaroe_zeta;
+            int use_indoor_positioning_system;
+            std::string orientation_filter;
+            LoRa::freq_t lora_rf_frequency;
+            int lora_packet_frequency;
+            int lora_tx_power;
+            LoRa::sf_t lora_spread_factor;
+            LoRa::bw_t lora_bandwidth;
+            LoRa::cr_t lora_coding_rate;
+            int lora_sync_word;
+            LoRa::hm_t lora_header_mode;
+            int lora_enable_crc;
+            std::string inference_model_xml;
+            int use_pressure;
+            double sea_level_pressure;
+            int log_to_stdout = 0;
+            int log_to_file = 0;
+            int no_inference = 0;
+            int no_imu = 0;
+            int no_lora = 0;
+            std::string config_file = "/etc/arwain.conf";
+            int file_read_ok;
     };
 
     /** \brief Overwrite the content of a configuration file.
@@ -155,6 +174,6 @@ typedef struct euler_orientation_t
 
 std::ostream& operator<<(std::ostream& stream, const std::array<double, 6>& line);
 std::ostream& operator<<(std::ostream& stream, const std::array<double, 3>& vector);
-std::array<double, 3> normalised(const std::array<double, 3>& vector);
+vector3 normalised(vector3& vector);
 
 #endif

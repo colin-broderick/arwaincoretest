@@ -8,7 +8,7 @@
 #include "bmi2.h"
 #include "bmi270.h"
 #include "bmm150.h"
-#include "vector3.h"
+#include "vector3.hpp"
 
 int i2c_init(const int address, int& file_i2c);
 int init_bmi270(int mag_enabled, std::string calib_file);

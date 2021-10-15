@@ -4,8 +4,7 @@
  *      performing the sensor initialization.
  */
  
-#include "stdio.h"
-#include "bmp280a.h"
+#include <stdio.h>
 extern "C" {
     #include <linux/i2c-dev.h>
     #include <smbus.h>
@@ -17,7 +16,9 @@ extern "C" {
 #include <chrono>
 #include <thread>
 #include <time.h>
-#include "imu_utils.h"
+
+#include "bmp280.hpp"
+#include "imu_utils.hpp"
 
 int8_t i2c_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
 int8_t i2c_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);

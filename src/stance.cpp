@@ -8,8 +8,8 @@
 #include <deque>
 #include <fstream>
 
-#include "stance.h"
-#include "utils.h"
+#include "stance.hpp"
+#include "utils.hpp"
 
 // Constructors -----------------------------------------------------------------------------------
 
@@ -71,18 +71,18 @@ void arwain::StanceDetector::update_attitude(quaternion rotation_quaternion)
  * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
  * \param vel_data Pointer to deq<arr<double>> containing velocity data.
  */
-void arwain::StanceDetector::run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data)
+void arwain::StanceDetector::run(const std::deque<vector6> &imu_data, const std::deque<vector3> &vel_data)
 {
     // Crunch the numbers ...
-    std::vector<std::array<double, 3>> accel_data;
-    std::vector<std::array<double, 3>> gyro_data;
+    std::vector<vector3> accel_data;
+    std::vector<vector3> gyro_data;
     for (int i = 0; i < 20; i++)
     {
-        accel_data.push_back(std::array<double, 3>{
-            imu_data[i][0], imu_data[i][1], imu_data[i][2]
+        accel_data.push_back(vector3{
+            imu_data[i].acce.x, imu_data[i].acce.y, imu_data[i].acce.z
         });
-        gyro_data.push_back(std::array<double, 3>{
-            imu_data[i][3], imu_data[i][4], imu_data[i][5]
+        gyro_data.push_back(vector3{
+            imu_data[i].gyro.x, imu_data[i].gyro.y, imu_data[i].gyro.z
         });
     }
     m_a_mean_magnitude = buffer_mean_magnitude(accel_data);
@@ -178,11 +178,11 @@ void arwain::StanceDetector::run(const std::deque<std::array<double, 6>> &imu_da
  * \param arr Vector of e.g. 3-velocity, 3-acceleration, etc.
  * \return The index of the element with largest value.
  */
-arwain::StanceDetector::AXIS arwain::StanceDetector::biggest_axis(const std::array<double, 3> &arr)
+arwain::StanceDetector::AXIS arwain::StanceDetector::biggest_axis(const vector3 &arr)
 {
     // This should be using absolute value, since large negative values are 'bigger' than small positive values.
     AXIS axis;
-    double x = abs(arr[0]), y = abs(arr[1]), z = abs(arr[2]);
+    double x = abs(arr.x), y = abs(arr.y), z = abs(arr.z);
     if (x > y && x > z)
     {
         axis = XAxis;
@@ -237,16 +237,17 @@ double arwain::StanceDetector::vector_mean(const std::vector<double> &values)
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double arwain::StanceDetector::buffer_mean_magnitude(const std::vector<std::array<double, 3>> &buffer)
+double arwain::StanceDetector::buffer_mean_magnitude(const std::vector<vector3> &buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
     {
         double square_sum = 0;
-        for (unsigned int j=0; j < 3; j++)
-        {
-            square_sum += buffer[i][j] * buffer[i][j];
-        }
+        
+            square_sum += buffer[i].x * buffer[i].x;
+            square_sum += buffer[i].y * buffer[i].y;
+            square_sum += buffer[i].z * buffer[i].z;
+    
         mean += sqrt(square_sum);
     }
     mean /= buffer.size();
@@ -258,16 +259,17 @@ double arwain::StanceDetector::buffer_mean_magnitude(const std::vector<std::arra
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double arwain::StanceDetector::buffer_mean_magnitude(const std::deque<std::array<double, 3>> &buffer)
+double arwain::StanceDetector::buffer_mean_magnitude(const std::deque<vector3> &buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
     {
         double square_sum = 0;
-        for (unsigned int j=0; j < 3; j++)
-        {
-            square_sum += buffer[i][j] * buffer[i][j];
-        }
+
+            square_sum += buffer[i].x * buffer[i].x;
+            square_sum += buffer[i].y * buffer[i].y;
+            square_sum += buffer[i].z * buffer[i].z;
+
         mean += sqrt(square_sum);
     }
     mean /= buffer.size();
@@ -277,19 +279,19 @@ double arwain::StanceDetector::buffer_mean_magnitude(const std::deque<std::array
 /** \brief Return the column-wise means of a size (x, 3) vector.
  * \param source_vector Pointer to source array.
  */
-std::array<double, 3> arwain::StanceDetector::get_means(const std::vector<std::array<double, 3>> &source_vector)
+vector3 arwain::StanceDetector::get_means(const std::vector<vector3> &source_vector)
 {
-    std::array<double, 3> ret;
+    vector3 ret;
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
-        ret[0] += abs(source_vector[i][0]);
-        ret[1] += abs(source_vector[i][1]);
-        ret[2] += abs(source_vector[i][2]);
+        ret.x += abs(source_vector[i].x);
+        ret.y += abs(source_vector[i].y);
+        ret.z += abs(source_vector[i].z);
     }
-    ret[0] /= length;
-    ret[1] /= length;
-    ret[2] /= length;
+    ret.x /= length;
+    ret.y /= length;
+    ret.z /= length;
 
     return ret;
 }
@@ -298,19 +300,19 @@ std::array<double, 3> arwain::StanceDetector::get_means(const std::vector<std::a
  * \param source_vector Pointer to source array.
  * \return A 3-array containing the means.
  */
-std::array<double, 3> arwain::StanceDetector::get_means(const std::deque<std::array<double, 3>> &source_vector)
+vector3 arwain::StanceDetector::get_means(const std::deque<vector3> &source_vector)
 {
-    std::array<double, 3> ret;
+    vector3 ret;
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
-        ret[0] += abs(source_vector[i][0]);
-        ret[1] += abs(source_vector[i][1]);
-        ret[2] += abs(source_vector[i][2]);
+         ret.x += abs(source_vector[i].x);
+        ret.y += abs(source_vector[i].y);
+        ret.z += abs(source_vector[i].z);
     }
-    ret[0] /= length;
-    ret[1] /= length;
-    ret[2] /= length;
+    ret.x /= length;
+    ret.y /= length;
+    ret.z /= length;
 
     return ret;
 }

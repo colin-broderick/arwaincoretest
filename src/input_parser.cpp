@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "input_parser.h"
+#include "input_parser.hpp"
 
 /** \brief Constructor.
  * \param argc Number of command line arguments received.

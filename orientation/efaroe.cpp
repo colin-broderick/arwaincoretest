@@ -1,4 +1,4 @@
-#include "efaroe.h"
+#include "efaroe.hpp"
  
 /** \brief Constructor for eFaroe class.
  * eFaroe is an orientation filter which uses acceleration and angular velocity measurements from accelerometer and gyroscope to attempt to track current orientation.
