@@ -5,7 +5,6 @@
 #include <array>
 
 #include "utils.hpp"
-#include "imu_utils.hpp"
 #include "quaternions.hpp"
 #include "vector3.hpp"
 
