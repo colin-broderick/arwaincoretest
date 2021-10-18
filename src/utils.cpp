@@ -11,6 +11,34 @@
 #include "input_parser.hpp"
 #include "IMU_IIM42652_driver.hpp"
 
+MultiIMU::MultiIMU()
+{
+
+}
+
+void MultiIMU::read_IMU()
+{
+    imu1.read_IMU();
+    imu2.read_IMU();
+    imu3.read_IMU();
+   
+    this->accelerometer_x = (imu1.accelerometer_x + imu2.accelerometer_x + imu3.accelerometer_x) / 3.0;
+    this->accelerometer_y = (imu1.accelerometer_y + imu2.accelerometer_y + imu3.accelerometer_y) / 3.0;
+    this->accelerometer_z = (imu1.accelerometer_z + imu2.accelerometer_z + imu3.accelerometer_z) / 3.0;
+    this->gyroscope_x = (imu1.gyroscope_x + imu2.gyroscope_x + imu3.gyroscope_x) / 3.0;
+    this->gyroscope_y = (imu1.gyroscope_y + imu2.gyroscope_y + imu3.gyroscope_y) / 3.0;
+    this->gyroscope_z = (imu1.gyroscope_z + imu2.gyroscope_z + imu3.gyroscope_z) / 3.0;
+}
+
+double MultiIMU::read_temperature()
+{
+    double temperature = 0;
+    temperature += imu1.read_temperature();
+    temperature += imu2.read_temperature();
+    temperature += imu3.read_temperature();
+    return temperature / 3.0;
+}
+
 extern arwain::Configuration CONFIG;
 
 arwain::Configuration::Configuration(const arwain::InputParser& input)
@@ -178,6 +206,9 @@ void arwain::test_imu(int &shutdown)
             imu.gyroscope_y,
             imu.gyroscope_z,
         };
+
+        accel_data = accel_data - CONFIG.accel_bias;
+        gyro_data = gyro_data - CONFIG.gyro_bias;
 
         // Display IMU data.
         std::cout << time.time_since_epoch().count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";

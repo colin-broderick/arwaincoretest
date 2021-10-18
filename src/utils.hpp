@@ -17,6 +17,23 @@
 #include "stance.hpp"
 #include "lora.hpp"
 #include "input_parser.hpp"
+#include "IMU_IIM42652_driver.hpp"
+
+class MultiIMU
+{
+    public:
+        MultiIMU();
+        void read_IMU();
+        double read_temperature();
+        double accelerometer_x, accelerometer_y, accelerometer_z, gyroscope_x, gyroscope_y, gyroscope_z;
+    
+    private:
+        IMU_IIM42652 imu1{0x68, "/dev/i2c-4"};
+        IMU_IIM42652 imu2{0x69, "/dev/i2c-4"};
+        IMU_IIM42652 imu3{0x68, "/dev/i2c-1"};
+
+
+};
 
 namespace arwain::Errors
 {
