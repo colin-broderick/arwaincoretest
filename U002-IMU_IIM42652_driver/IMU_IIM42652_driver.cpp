@@ -6,15 +6,15 @@
 IMU_IIM42652::IMU_IIM42652(int bus_address, std::string bus_name)
 {
     // Default configuration.
-    unsigned char accel_config = ACCEL_200HZ | ACCEL_FSR_2G;
-    unsigned char gyro_config = GYRO_200HZ | GYRO_FSR_2000;
+    unsigned char accel_config = ACCEL_ODR_200HZ | ACCEL_FSR_16G;
+    unsigned char gyro_config = GYRO_ODR_200HZ | GYRO_FSR_2000;
 
     i2c_init(bus_address, bus_name);
     soft_reset();
     std::this_thread::sleep_for(std::chrono::milliseconds{2});
-    enable();
     IMU_config(gyro_config, accel_config);
-    set_resolutions(ACCEL_RES_2G, GYRO_RES_15_625);
+    set_resolutions(ACCEL_RES_16G, GYRO_RES_2000);
+    enable();
     std::this_thread::sleep_for(std::chrono::milliseconds{5});
 }
 
