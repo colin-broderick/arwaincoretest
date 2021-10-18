@@ -1,0 +1,3 @@
+[submodule "U002-IMU_IIM42652_driver"]
+	path = U002-IMU_IIM42652_driver
+	url = http://git/U002/U002-IMU_IIM42652_driver

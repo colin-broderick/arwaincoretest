@@ -19,10 +19,10 @@
 #include "input_parser.hpp"
 #include "IMU_IIM42652_driver.hpp"
 
-class MultiIMU
+class Multi_IIM42652
 {
     public:
-        MultiIMU();
+        Multi_IIM42652();
         void read_IMU();
         double read_temperature();
         double accelerometer_x, accelerometer_y, accelerometer_z, gyroscope_x, gyroscope_y, gyroscope_z;
@@ -31,8 +31,6 @@ class MultiIMU
         IMU_IIM42652 imu1{0x68, "/dev/i2c-4"};
         IMU_IIM42652 imu2{0x69, "/dev/i2c-4"};
         IMU_IIM42652 imu3{0x68, "/dev/i2c-1"};
-
-
 };
 
 namespace arwain::Errors
@@ -139,7 +137,7 @@ namespace arwain
      * \param option The configuration option to overwrite.
      * \param new_value The new value of the parameter to be put in the file.
      */
-    template <class T> void config_replace(std::string filename, std::string option, T new_value)
+    template <class T> void config_replace(const std::string& filename, const std::string& option, T new_value)
     {
         std::ifstream infile(filename);
         std::stringstream outstring;
