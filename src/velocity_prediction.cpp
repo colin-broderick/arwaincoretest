@@ -76,9 +76,9 @@ void predict_velocity()
             request << std::setprecision(15) << (float)imu[i].gyro.x << ",";
             request << std::setprecision(15) << (float)imu[i].gyro.y << ",";
             request << std::setprecision(15) << (float)imu[i].gyro.z << ",";
+            request << std::setprecision(15) << (float)imu[i].acce.x << ",";
             request << std::setprecision(15) << (float)imu[i].acce.y << ",";
-            request << std::setprecision(15) << (float)imu[i].acce.y << ",";
-            request << std::setprecision(15) << (float)imu[i].acce.y << ",";
+            request << std::setprecision(15) << (float)imu[i].acce.z << ",";
         }
 
         // Send the data and await response.

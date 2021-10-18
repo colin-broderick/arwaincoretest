@@ -10,6 +10,7 @@
 #include "utils.hpp"
 #include "input_parser.hpp"
 #include "IMU_IIM42652_driver.hpp"
+#include "bmi270.hpp"
 
 MultiIMU::MultiIMU()
 {
@@ -182,7 +183,8 @@ std::string arwain::datetimestring()
 void arwain::test_imu(int &shutdown)
 {
     // Initialize the IMU.
-    IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
+    // IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
+    BMI270 imu{0x69, "/dev/i2c-1"};
 
     // Local buffers for IMU data
     vector3 accel_data;
