@@ -62,6 +62,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "filter.hpp"
 #include "logger.hpp"
 #include "bmp280.hpp"
+#include "bmi270.hpp"
 
 #include "velocity_prediction.hpp"
 #include "lora.hpp"
@@ -245,7 +246,7 @@ void imu_reader()
     }
 
     // IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
-    MultiIMU imu;
+    BMI270 imu{0x69, "/dev/i2c-1"};
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Filter* filter;
