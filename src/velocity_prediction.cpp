@@ -67,7 +67,7 @@ void predict_velocity()
         time = std::chrono::system_clock::now();
 
         // Get dt in seconds since last udpate, and update lastTime.
-        auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - lastTime).count()/1000.0;
+        double dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - lastTime).count()/1000.0;
         lastTime = time;
         
         // Load the IMU data into a string for serial transmission, gyro first.
@@ -101,6 +101,8 @@ void predict_velocity()
         delimiter = answer.find(",");
         std::stringstream(answer.substr(0, delimiter)) >> velocity.y;
         std::stringstream(answer.substr(delimiter+1)) >> velocity.z;
+
+        // std::cout << "VL: " << velocity << "\n";
 
         { // Store velocity in global buffer.
             std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};

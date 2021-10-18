@@ -244,7 +244,8 @@ void imu_reader()
         return;
     }
 
-    IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
+    // IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
+    MultiIMU imu;
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Filter* filter;
@@ -342,8 +343,9 @@ void imu_reader()
         //         ERROR_LOG << timeCount << " " << "IMU_READ_ERROR" << "\n";
         //     }
         // }
-        // accel_data = accel_data - CONFIG.accel_bias;
-        // gyro_data = gyro_data - CONFIG.gyro_bias;
+
+        accel_data = accel_data - CONFIG.accel_bias;
+        gyro_data = gyro_data - CONFIG.gyro_bias;
 
         // Get magnetometer data.
         // if (get_mag) // TODO For new magnetometer
@@ -1075,20 +1077,19 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // Attempt to read the config file and quit if failed.
+    CONFIG = arwain::Configuration{input};
+    if (!CONFIG.file_read_ok)
+    {
+        std::cout << "Problem reading configuration file\n";
+        return -2;
+    }
+    
     // Start IMU test mode. This returns so the program will quit when the test is stopped.
     if (input.contains("-testimu"))
     {
         arwain::test_imu(SHUTDOWN);
         return 1;
-    }
-
-    CONFIG = arwain::Configuration{input};
-
-    // Attempt to read the config file and quit if failed.
-    if (!CONFIG.file_read_ok)
-    {
-        std::cout << "Problem reading configuration file\n";
-        return -2;
     }
 
     // // Initialize the IMU if not explicitly disabled.
