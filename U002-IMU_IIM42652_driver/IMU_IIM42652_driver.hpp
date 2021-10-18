@@ -1,3 +1,7 @@
+#ifndef GREEVE_IIM42652_HPP
+#define GREEVE_IIM42652_HPP
+
+
 #include <iostream>
 #include <map>
 #include <sys/ioctl.h>
@@ -21,10 +25,11 @@ extern "C"
 #define CONFIG_ENABLE_TMPRTR  0b00000000
 #define CONFIG_DISABLE_TMPRTR 0b01000000
 
-#define ACCEL_200HZ  0b00000111
-#define ACCEL_FSR_2G 0b01100000
+#define ACCEL_ODR_200HZ   0b00000111
+#define ACCEL_FSR_2G  0b01100000
+#define ACCEL_FSR_16G 0b00000000
 
-#define GYRO_200HZ    0b00000111
+#define GYRO_ODR_200HZ    0b00000111
 #define GYRO_FSR_2000 0b00000000
 
 // DATA REGISTERS ================================================================
@@ -99,3 +104,5 @@ public:
     double accelerometer_y = 0;
     double accelerometer_z = 0;
 };
+
+#endif
