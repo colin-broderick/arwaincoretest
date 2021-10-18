@@ -38,7 +38,7 @@ double BMI270::read_temperature()
 }
 
 
-int init_bmi270(int mag_enabled, std::string calib_file, const std::string& i2c_bus)
+int init_bmi270(int mag_enabled, const std::string& calib_file, const std::string& i2c_bus)
 {
     float g = 9.8067;
     float pi = 3.14159265359;
@@ -283,7 +283,7 @@ int8_t bmm150_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, ui
     return bmi2_read_aux_man_mode(reg_addr, reg_data, length, &bmi270);
 }
 
-void read_calib_data(std::string path)
+void read_calib_data(const std::string& path)
 {
     //Read calibration
     std::ifstream source;

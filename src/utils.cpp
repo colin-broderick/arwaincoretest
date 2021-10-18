@@ -12,12 +12,12 @@
 #include "IMU_IIM42652_driver.hpp"
 #include "bmi270.hpp"
 
-MultiIMU::MultiIMU()
+Multi_IIM42652::Multi_IIM42652()
 {
 
 }
 
-void MultiIMU::read_IMU()
+void Multi_IIM42652::read_IMU()
 {
     imu1.read_IMU();
     imu2.read_IMU();
@@ -31,7 +31,7 @@ void MultiIMU::read_IMU()
     this->gyroscope_z = (imu1.gyroscope_z + imu2.gyroscope_z + imu3.gyroscope_z) / 3.0;
 }
 
-double MultiIMU::read_temperature()
+double Multi_IIM42652::read_temperature()
 {
     double temperature = 0;
     temperature += imu1.read_temperature();
@@ -184,7 +184,8 @@ void arwain::test_imu(int &shutdown)
 {
     // Initialize the IMU.
     // IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
-    BMI270 imu{0x69, "/dev/i2c-1"};
+    // BMI270 imu{0x69, "/dev/i2c-1"};
+    Multi_IIM42652 imu;
 
     // Local buffers for IMU data
     vector3 accel_data;
