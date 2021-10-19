@@ -18,8 +18,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 ## Locate source files
 set(BMP280_C_FILES bmp280/bmp280.c)
 set(BMI270_C_FILES bmi270/bmi2_ois.c bmi270/bmi2.c bmi270/bmi270.c bmi270/bmm150.c)
+set(IIM42652_FILES iim42652/IMU_IIM42652_driver.cpp)
+set(MULTI_IMU_FILES src/multi_imu.cpp)
 set(ARWAIN_CPP_FILES bmp280/bmp280.cpp src/main.cpp src/indoor_positioning_wrapper.cpp src/input_parser.cpp src/math_util.cpp src/quaternions.cpp src/stance.cpp src/utils.cpp src/velocity_prediction.cpp src/logger.cpp iim42652/IMU_IIM42652_driver.cpp bmi270/bmi270.cpp)
-set(CALIBRATE_CPP_FILES src/utils.cpp src/input_parser.cpp)
+set(CALIBRATE_CPP_FILES src/input_parser.cpp src/calibrate_imu.cpp ${IIM42652_FILES})
+set(TEMPERATURE_EXPT_FILES temperature_analysis/main.cpp)
 
 ## Static libraries to build
 add_library(${PROJECT_NAME}_lorapi STATIC lora_driver/lora.cpp lora_driver/packet.cpp)
@@ -27,8 +30,9 @@ add_library(${PROJECT_NAME}_madgwick STATIC orientation/madgwick.cpp)
 add_library(${PROJECT_NAME}_efaroe STATIC orientation/efaroe.cpp)
 
 ## Executables to build
-add_executable(${PROJECT_NAME} ${ARWAIN_CPP_FILES} ${BMP280_C_FILES} ${BMI270_C_FILES})
+add_executable(${PROJECT_NAME} ${ARWAIN_CPP_FILES} ${BMP280_C_FILES} ${BMI270_C_FILES} ${MULTI_IMU_FILES})
 add_executable(${PROJECT_NAME}_calibration ${CALIBRATE_CPP_FILES})
+add_executable(${PROJECT_NAME}_temperature ${TEMPERATURE_EXPT_FILES} ${IIM42652_FILES})
 add_executable(lora_rx_test lora_driver/lora_rx_test.cpp)
 add_executable(lora_tx_test lora_driver/lora_tx_test.cpp)
 add_executable(madgwick_standalone orientation/madgwick.cpp src/input_parser.cpp orientation/madgwick_standalone.cpp)
@@ -48,6 +52,7 @@ target_compile_options(efaroe_standalone PRIVATE -Wno-psabi -Wall)
 ## Link libraries
 target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_madgwick ${PROJECT_NAME}_efaroe -pthread -ldl -lstdc++fs -li2c -lzmq)
 target_link_libraries(${PROJECT_NAME}_calibration -li2c)
+target_link_libraries(${PROJECT_NAME}_temperature -li2c)
 target_link_libraries(onnx_test -lonnxruntime)
 target_link_libraries(lora_rx_test arwain_lorapi -lwiringPi)
 target_link_libraries(lora_tx_test arwain_lorapi -lwiringPi)

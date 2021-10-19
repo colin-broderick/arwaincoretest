@@ -13,8 +13,6 @@ extern "C"
 
 #include "bmi270.hpp"
 
-extern std::mutex I2C_LOCK;
-
 BMI270::BMI270(const int i2c_address, const std::string& i2c_bus)
 {
     init_bmi270(0, "none", i2c_bus);
@@ -186,7 +184,6 @@ int init_bmi270(int mag_enabled, const std::string& calib_file, const std::strin
  */
 int8_t bmi270_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
 {
-    std::lock_guard<std::mutex> lock{I2C_LOCK};
     int8_t ret = i2c_smbus_read_i2c_block_data(bmi_file_i2c, reg_addr, length, reg_data);
     return ret < 0;
 }
@@ -206,7 +203,6 @@ int8_t bmi270_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, ui
  */
 int8_t bmi270_reg_write(uint8_t i2c_addr, uint8_t reg_addr, const uint8_t *reg_data, uint16_t length)
 {
-    std::lock_guard<std::mutex> lock{I2C_LOCK};
     int8_t ret = i2c_smbus_write_i2c_block_data(bmi_file_i2c, reg_addr, length, reg_data);
     return ret < 0;
 }
