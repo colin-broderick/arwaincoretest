@@ -1,18 +1,4 @@
 /*
-Code style conventions
-===============================================================================
-
-I have attempted to use the following conventions throughout this project.
-If anything doesn't follow convention, feel free to change it
-
-ENUM           Enumeration types are named in all caps.
-EnumElement    Enumerations are named in Pascal case.
-Class          Classes are named in Pascal Case and represent complex types.
-structType     Structs are reserved for simple data types, named in camel case.
-getMethod      Class and struct methods are named in camel case.
-GLOBAL_VAR     File- or project-global variables are named in upper snake case.
-local_var      Local variables are named in lower snake case.
-a_function     Functions are named in lower snake case.
 
 Data integrity
 ===============================================================================
@@ -51,7 +37,11 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <string.h>
 #include <iomanip>
 
+// IMUs ==========================
 #include "IMU_IIM42652_driver.hpp"
+#include "bmi270.hpp"
+#include "multi_imu.hpp"
+
 #include "quaternions.hpp"
 #include "stance.hpp"
 #include "madgwick.hpp"
@@ -62,7 +52,6 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "filter.hpp"
 #include "logger.hpp"
 #include "bmp280.hpp"
-#include "bmi270.hpp"
 
 #include "velocity_prediction.hpp"
 #include "lora.hpp"
@@ -121,7 +110,6 @@ std::mutex STATUS_FLAG_LOCK;
 std::mutex POSITION_BUFFER_LOCK;
 std::mutex ORIENTATION_BUFFER_LOCK;
 std::mutex PRESSURE_BUFFER_LOCK;
-std::mutex I2C_LOCK;
 
 /** \brief Periodically logs status messages to stdout.
  * Useful for debugging or testing, but probably not wanted at runtime.

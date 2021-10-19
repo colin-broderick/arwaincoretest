@@ -31,7 +31,6 @@ extern int SHUTDOWN;
 extern std::deque<std::array<double, 3>> PRESSURE_BUFFER;
 int bmp_file_i2c;
 struct timespec tim2, tim_r2;
-extern std::mutex I2C_LOCK;
 
 double sea_level_pressure;
 
@@ -171,7 +170,6 @@ int8_t i2c_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint
     // return -1;
 
     /* Implemented for raspberry pi using smbus */
-    std::lock_guard<std::mutex> lock{I2C_LOCK};
     int8_t ret = i2c_smbus_write_i2c_block_data(bmp_file_i2c, reg_addr, length, reg_data);
     return ret < 0;
 }
@@ -196,7 +194,6 @@ int8_t i2c_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint1
     // return -1;
 
     // Implemented for raspberry pi using smbus */
-    std::lock_guard<std::mutex> lock{I2C_LOCK};
     int8_t ret = i2c_smbus_read_i2c_block_data(bmp_file_i2c, reg_addr, length, reg_data);
     return ret < 0;
 }
