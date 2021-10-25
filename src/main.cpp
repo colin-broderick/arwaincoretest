@@ -233,7 +233,7 @@ void imu_reader()
         return;
     }
 
-    // IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
+    // IMU_IIM42652 imu{0x69, "/dev/i2c-1"};
     // BMI270 imu{0x69, "/dev/i2c-1"};
     Multi_IIM42652 imu;
 
