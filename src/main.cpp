@@ -52,6 +52,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "filter.hpp"
 #include "logger.hpp"
 #include "bmp280.hpp"
+#include "kalman.hpp"
 
 #include "velocity_prediction.hpp"
 #include "lora.hpp"
@@ -1029,6 +1030,109 @@ static void py_inference()
     }
 }
 
+/** \brief runs a kalman filter to determine the altiude*/ //errors to be determined
+void kalman()
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds{2000});
+
+    double altitude_offset;
+    {
+        std::lock_guard<std::mutex> lock{PRESSURE_BUFFER_LOCK};
+        altitude_offset = PRESSURE_BUFFER.back().z;
+    }
+    double alt = 0;
+    double alt_prev = 0;
+    MatrixXd observation(2,1);
+
+    //parameter matices
+    MatrixXd state_matrix(2, 1);
+    MatrixXd blank_2d(2,2);
+    MatrixXd P(2, 2);
+    MatrixXd U(1, 1); //model/ predicted change - acceleration in this case
+    MatrixXd A(2, 2);
+    MatrixXd m(2, 1); //error  
+    MatrixXd r(2, 2); //sensor noice covariance matrix
+    MatrixXd w(2, 1); //error - predicted state noice matrix 
+    MatrixXd q(2, 2); //error - process noice covariace matrix 
+
+    //initial values:
+    //errors - to be determined
+    w(0, 0) = 0;
+    w(1, 0) = 0;
+
+    q(0, 0) = 1;
+    q(1, 0) = 0;
+    q(0, 1) = 0;
+    q(1, 1) = 1;
+
+    m(0, 0) = 1;
+    m(1, 0) = 1;
+
+    state_matrix(0, 0) = 0; 
+
+    state_matrix(1, 0) = 0; 
+    {
+        std::lock_guard<std::mutex> lock{PRESSURE_BUFFER_LOCK};
+        U(0, 0) = IMU_WORLD_BUFFER.back().acce.z - 9.81;
+    }
+    
+    A(0, 0) = 1;
+    A(1, 0) = 0;
+    A(0, 1) = 0.1; //delta T
+    A(1, 1) = 1;
+
+    //ERROR
+    P(0, 0) = 1;
+    P(1, 0) = 0;
+    P(0, 1) = 0;
+    P(1, 1) = 1;
+
+    blank_2d(0, 0) = 1;
+    blank_2d(1, 0) = 0;
+    blank_2d(0, 1) = 0;
+    blank_2d(1, 1) = 1;
+
+    //error
+    r(0, 0) = 1;
+    r(1, 0) = 0;
+    r(0, 1) = 0;
+    r(1, 1) = 1;
+
+    double dt = 0.1;
+
+    kalman_filter filter(state_matrix, P, 0.1, U, A, blank_2d, m, r, blank_2d, blank_2d, w, q); //parameters to determine
+
+    while (!SHUTDOWN)
+    {
+
+        //get sensor reading
+        {
+            std::lock_guard<std::mutex> lock{PRESSURE_BUFFER_LOCK};
+            alt = PRESSURE_BUFFER.back().z - altitude_offset;
+        }
+
+        observation(0,0) = alt;
+        observation(1,0) = (alt - alt_prev)/dt;
+        {
+            std::lock_guard<std::mutex> lock{PRESSURE_BUFFER_LOCK};
+            U(0, 0) = IMU_WORLD_BUFFER.back().acce.z - 9.81;
+        }
+        std::cout << U << std::endl;
+
+        std::cout << "State_matrix: " << state_matrix << "\t";
+        state_matrix = filter.kalman_one_cycle(observation, U);
+        std::cout << "State_matrix: " << state_matrix << "\t"
+                  << "\n"
+                  << std::endl;
+
+
+        alt_prev = alt;
+
+
+        std::this_thread::sleep_for(std::chrono::milliseconds{100});
+    }
+}
+
 /** \brief Main loop.
  * \param argc Nmber of arguments.
  * \param argv List of arguments.
@@ -1123,11 +1227,12 @@ int main(int argc, char **argv)
     std::thread transmit_lora_thread(transmit_lora);             // LoRa packet transmissions.
     std::thread std_output_thread(std_output);                   // Prints useful output to std out.
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
-    // std::thread altimiter_thread(altimiter);                     // Uses the BMP280 sensor to determine altitude.
+    std::thread altimiter_thread(altimiter);                     // Uses the BMP280 sensor to determine altitude.
+    // std::thread kalman_filter(kalman);
 
     // Start external Python scripts.
     // std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
-    std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
+    std::thread py_inference_thread{py_inference}; // Temporary: Run Python script to handle velocity inference.
 
     // Wait for all threads to terminate.
     imu_reader_thread.join();
@@ -1138,7 +1243,8 @@ int main(int argc, char **argv)
     indoor_positioning_thread.join();
     // py_transmitter_thread.join();
     py_inference_thread.join();
-    // altimiter_thread.join();
+    altimiter_thread.join();
+    // kalman_filter.join();
 
     return 1;
 }
