@@ -30,7 +30,7 @@ add_library(${PROJECT_NAME}_madgwick STATIC orientation/madgwick.cpp)
 add_library(${PROJECT_NAME}_efaroe STATIC orientation/efaroe.cpp)
 
 ## Executables to build
-add_executable(${PROJECT_NAME} ${ARWAIN_CPP_FILES} ${BMP280_C_FILES} ${BMI270_C_FILES} ${MULTI_IMU_FILES})
+add_executable(${PROJECT_NAME} ${ARWAIN_CPP_FILES} ${BMP280_C_FILES} ${BMI270_C_FILES} ${MULTI_IMU_FILES} src/kalman.cpp)
 add_executable(${PROJECT_NAME}_calibration ${CALIBRATE_CPP_FILES})
 add_executable(${PROJECT_NAME}_temperature ${TEMPERATURE_EXPT_FILES} ${IIM42652_FILES})
 add_executable(lora_rx_test lora_driver/lora_rx_test.cpp)
