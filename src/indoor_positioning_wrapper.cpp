@@ -1,4 +1,4 @@
-#include "indoor_positioning_wrapper.h"
+#include "indoor_positioning_wrapper.hpp"
 
 void arwain::IndoorPositioningWrapper::update(const double &time, const double &x, const double &y, const double &z)
 {
@@ -6,9 +6,9 @@ void arwain::IndoorPositioningWrapper::update(const double &time, const double &
     // m_x, m_y, m_z.
 }
 
-std::array<double, 3> arwain::IndoorPositioningWrapper::getPosition()
+vector3 arwain::IndoorPositioningWrapper::getPosition()
 {
-    return std::array<double, 3>{
+    return vector3{
         m_x,
         m_y,
         m_z

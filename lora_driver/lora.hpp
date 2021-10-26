@@ -2,7 +2,7 @@
 #define _LORA_H
 
 #include <stdint.h>
-#include "packet.h"
+#include "packet.hpp"
 
 #define OSC_FREQ                 32e6
 #define MAX_PACKET_LEN           0xFF

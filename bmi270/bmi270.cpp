@@ -1,60 +1,42 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>		
-#include <time.h>		
-#include <fcntl.h>	
-#include <vector>			
-#include <sys/ioctl.h>
-#include <iostream>
-#include <fstream>
+#include <vector>
 #include <sstream>
-#include <string>
+#include <fstream>
+#include <iostream>
 #include <mutex>
-extern "C" {
+extern "C"
+{
+    #include <i2c/smbus.h>
     #include <linux/i2c-dev.h>
-    #include <smbus.h>
-}		
-#include "imu_utils.h"
+}
+#include <fcntl.h>
+#include <sys/ioctl.h>
 
-std::mutex I2C_LOCK;
-int bmi_file_i2c = -1;
-struct timespec tim, tim_r;
-struct bmi2_dev bmi270;
-struct bmm150_dev bmm150;
-struct bmi2_sensor_data acce;
-struct bmi2_sensor_data gyro;
-struct bmi2_sensor_data magn;
+#include "bmi270.hpp"
 
-vector3 mag_calib_offset, mag_calib_scale;
-
-static float acc_scale, gyr_scale;
-
-int i2c_init(const int address, int& file_i2c)
+BMI270::BMI270(const int i2c_address, const std::string& i2c_bus)
 {
-	//----- OPEN THE I2C BUS -----
-	char *filename = (char*)"/dev/i2c-4";
-	if ((file_i2c = open(filename, O_RDWR)) < 0)
-	{
-		//ERROR HANDLING: you can check errno to see what went wrong
-		std::cout << "Failed to open I2C bus" << std::endl;
-	}
-
-    if (ioctl(file_i2c, I2C_SLAVE, address) < 0)
-    {
-        std::cout << "Failed to connect to I2C address " << std::hex << address << std::endl;
-    }
-
-	return file_i2c;
+    init_bmi270(0, "none", i2c_bus);
 }
 
-float get_bmi270_temperature()
+void BMI270::read_IMU()
 {
-    uint8_t buffer[2] = {0, 0};
-    bmi270_reg_read(BMI2_I2C_SEC_ADDR, 0x22, buffer, 2);
-    return (((int)buffer[1] << 8) | ((int)buffer[0]))*0.001953f + 23.0f;
+    get_bmi270_data(&(this->acce), &(this->gyro));
+    accelerometer_x = this->acce.x;
+    accelerometer_y = this->acce.y;
+    accelerometer_z = this->acce.z;
+    gyroscope_x = this->gyro.x;
+    gyroscope_y = this->gyro.y;
+    gyroscope_z = this->gyro.z;
 }
 
-int init_bmi270(int mag_enabled, std::string calib_file)
+double BMI270::read_temperature()
+{
+    // TODO
+    return 0;
+}
+
+
+int init_bmi270(int mag_enabled, const std::string& calib_file, const std::string& i2c_bus)
 {
     float g = 9.8067;
     float pi = 3.14159265359;
@@ -76,7 +58,7 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     bmi270.read_write_len = 32;
     bmi270.intf = BMI2_I2C_INTERFACE;
     bmi270.dev_id = BMI2_I2C_SEC_ADDR;
-    i2c_init(bmi270.dev_id, bmi_file_i2c);
+    i2c_init(bmi270.dev_id, bmi_file_i2c, i2c_bus);
     	
 	// Initialise device
     int bmi_rslt = bmi270_init(&bmi270);
@@ -187,50 +169,117 @@ int init_bmi270(int mag_enabled, std::string calib_file)
     return 0;
 }
 
-int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr)
+/*!
+ *  @brief Function for reading the IMU's registers through I2C bus.
+ *
+ *  @param[in] i2c_addr : Sensor I2C address.
+ *  @param[in] reg_addr : Register address.
+ *  @param[out] reg_data    : Pointer to the data buffer to store the read data.
+ *  @param[in] length   : No of bytes to read.
+ *
+ *  @return Status of execution
+ *  @retval 0 -> Success
+ *  @retval >0 -> Failure Info
+ *
+ */
+int8_t bmi270_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
 {
-    int rslt;
-    rslt = bmi2_get_sensor_data(&acce, 1, &bmi270);
-    if (rslt != BMI2_OK)
-    {
-    	std::cout << "Acc Error num " << rslt << std::endl;
-    	return 1;
-    }
-    rslt = bmi2_get_sensor_data(&gyro, 1, &bmi270);
-    if (rslt != BMI2_OK)
-    {
-    	std::cout << "Gyr Error num " << rslt << std::endl;
-    	return 1;
-    }
-
-    acc->x = acce.sens_data.acc.x * acc_scale;
-    acc->y = acce.sens_data.acc.y * acc_scale;
-    acc->z = acce.sens_data.acc.z * acc_scale;
-    
-    gyr->x = gyro.sens_data.gyr.x * gyr_scale;
-    gyr->y = gyro.sens_data.gyr.y * gyr_scale;
-    gyr->z = gyro.sens_data.gyr.z * gyr_scale;
-    
-    return 0;
+    int8_t ret = i2c_smbus_read_i2c_block_data(bmi_file_i2c, reg_addr, length, reg_data);
+    return ret < 0;
 }
 
-int get_bmm150_data(struct vector3 *mag)
+/*!
+ *  @brief Function for writing the IMU's registers through I2C bus.
+ *
+ *  @param[in] i2c_addr : sensor I2C address.
+ *  @param[in] reg_addr : Register address.
+ *  @param[in] reg_data : Pointer to the data buffer whose value is to be written.
+ *  @param[in] length   : No of bytes to write.
+ *
+ *  @return Status of execution
+ *  @retval 0 -> Success
+ *  @retval >0 -> Failure Info
+ *
+ */
+int8_t bmi270_reg_write(uint8_t i2c_addr, uint8_t reg_addr, const uint8_t *reg_data, uint16_t length)
 {
-    int rslt;
-    rslt = bmm150_read_mag_data(&bmm150);
-    if (rslt != 0)
-    {
-        std::cout << "Mag Error num " << rslt << std::endl;
-        return 1;
-    }
-    mag->x = (bmm150.data.x - mag_calib_offset.x) * mag_calib_scale.x;
-    mag->y = (bmm150.data.y - mag_calib_offset.y) * mag_calib_scale.y;
-    mag->z = (bmm150.data.z - mag_calib_offset.z) * mag_calib_scale.z;
-    
-    return 0;
+    int8_t ret = i2c_smbus_write_i2c_block_data(bmi_file_i2c, reg_addr, length, reg_data);
+    return ret < 0;
 }
 
-void read_calib_data(std::string path)
+void delay_us(uint32_t period)
+{
+    
+    // tim.tv_nsec = period*1000;
+    usleep(period);
+    // nanosleep(&tim, &tim_r);
+    
+    /* Wait for a period amount of us*/
+}
+
+void delay_ms(uint32_t period)
+{
+    
+    delay_us(period*1000);
+    
+    /* Wait for a period amount of ms*/
+}
+
+int i2c_init(const int address, int& file_i2c, const std::string& i2c_bus)
+{
+	//----- OPEN THE I2C BUS -----
+	char *filename = (char*)(i2c_bus.c_str());
+	if ((file_i2c = open(filename, O_RDWR)) < 0)
+	{
+		//ERROR HANDLING: you can check errno to see what went wrong
+		std::cout << "Failed to open I2C bus" << std::endl;
+	}
+
+    if (ioctl(file_i2c, I2C_SLAVE, address) < 0)
+    {
+        std::cout << "Failed to connect to I2C address " << std::hex << address << std::endl;
+    }
+
+	return file_i2c;
+}
+
+/*!
+ *  @brief Function for writing the Magnetometers's registers through I2C bus.
+ *
+ *  @param[in] i2c_addr : sensor I2C address.
+ *  @param[in] reg_addr : Register address.
+ *  @param[in] reg_data : Pointer to the data buffer whose value is to be written.
+ *  @param[in] length   : No of bytes to write.
+ *
+ *  @return Status of execution
+ *  @retval 0 -> Success
+ *  @retval >0 -> Failure Info
+ *
+ */
+int8_t bmm150_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
+{
+    return bmi2_write_aux_man_mode(reg_addr, reg_data, length, &bmi270);
+}
+
+/*!
+ *  @brief Function for reading the Magnetometers's registers through I2C bus.
+ *
+ *  @param[in] i2c_addr : Sensor I2C address.
+ *  @param[in] reg_addr : Register address.
+ *  @param[out] reg_data    : Pointer to the data buffer to store the read data.
+ *  @param[in] length   : No of bytes to read.
+ *
+ *  @return Status of execution
+ *  @retval 0 -> Success
+ *  @retval >0 -> Failure Info
+ *
+ */
+int8_t bmm150_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
+{
+    return bmi2_read_aux_man_mode(reg_addr, reg_data, length, &bmi270);
+}
+
+void read_calib_data(const std::string& path)
 {
     //Read calibration
     std::ifstream source;
@@ -270,96 +319,29 @@ void read_calib_data(std::string path)
     source.close();
 }
 
-void delay_us(uint32_t period)
+int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr)
 {
+    int rslt;
+    rslt = bmi2_get_sensor_data(&acce, 1, &bmi270);
+    if (rslt != BMI2_OK)
+    {
+    	std::cout << "Acc Error num " << rslt << std::endl;
+    	return 1;
+    }
+    rslt = bmi2_get_sensor_data(&gyro, 1, &bmi270);
+    if (rslt != BMI2_OK)
+    {
+    	std::cout << "Gyr Error num " << rslt << std::endl;
+    	return 1;
+    }
+
+    acc->x = acce.sens_data.acc.x * acc_scale;
+    acc->y = acce.sens_data.acc.y * acc_scale;
+    acc->z = acce.sens_data.acc.z * acc_scale;
     
-    // tim.tv_nsec = period*1000;
-    usleep(period);
-    // nanosleep(&tim, &tim_r);
+    gyr->x = gyro.sens_data.gyr.x * gyr_scale;
+    gyr->y = gyro.sens_data.gyr.y * gyr_scale;
+    gyr->z = gyro.sens_data.gyr.z * gyr_scale;
     
-    /* Wait for a period amount of us*/
-}
-
-void delay_ms(uint32_t period)
-{
-    
-    delay_us(period*1000);
-    
-    /* Wait for a period amount of ms*/
-}
-
-/*!
- *  @brief Function for writing the IMU's registers through I2C bus.
- *
- *  @param[in] i2c_addr : sensor I2C address.
- *  @param[in] reg_addr : Register address.
- *  @param[in] reg_data : Pointer to the data buffer whose value is to be written.
- *  @param[in] length   : No of bytes to write.
- *
- *  @return Status of execution
- *  @retval 0 -> Success
- *  @retval >0 -> Failure Info
- *
- */
-int8_t bmi270_reg_write(uint8_t i2c_addr, uint8_t reg_addr, const uint8_t *reg_data, uint16_t length)
-{
-    std::lock_guard<std::mutex> lock{I2C_LOCK};
-    int8_t ret = i2c_smbus_write_i2c_block_data(bmi_file_i2c, reg_addr, length, reg_data);
-    return ret < 0;
-}
-
-/*!
- *  @brief Function for reading the IMU's registers through I2C bus.
- *
- *  @param[in] i2c_addr : Sensor I2C address.
- *  @param[in] reg_addr : Register address.
- *  @param[out] reg_data    : Pointer to the data buffer to store the read data.
- *  @param[in] length   : No of bytes to read.
- *
- *  @return Status of execution
- *  @retval 0 -> Success
- *  @retval >0 -> Failure Info
- *
- */
-int8_t bmi270_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
-{
-    std::lock_guard<std::mutex> lock{I2C_LOCK};
-    int8_t ret = i2c_smbus_read_i2c_block_data(bmi_file_i2c, reg_addr, length, reg_data);
-    return ret < 0;
-}
-
-/*!
- *  @brief Function for writing the Magnetometers's registers through I2C bus.
- *
- *  @param[in] i2c_addr : sensor I2C address.
- *  @param[in] reg_addr : Register address.
- *  @param[in] reg_data : Pointer to the data buffer whose value is to be written.
- *  @param[in] length   : No of bytes to write.
- *
- *  @return Status of execution
- *  @retval 0 -> Success
- *  @retval >0 -> Failure Info
- *
- */
-int8_t bmm150_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
-{
-    return bmi2_write_aux_man_mode(reg_addr, reg_data, length, &bmi270);
-}
-
-/*!
- *  @brief Function for reading the Magnetometers's registers through I2C bus.
- *
- *  @param[in] i2c_addr : Sensor I2C address.
- *  @param[in] reg_addr : Register address.
- *  @param[out] reg_data    : Pointer to the data buffer to store the read data.
- *  @param[in] length   : No of bytes to read.
- *
- *  @return Status of execution
- *  @retval 0 -> Success
- *  @retval >0 -> Failure Info
- *
- */
-int8_t bmm150_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length)
-{
-    return bmi2_read_aux_man_mode(reg_addr, reg_data, length, &bmi270);
+    return 0;
 }

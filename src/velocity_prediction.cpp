@@ -1,14 +1,17 @@
-#include "velocity_prediction.h"
-#include "logger.h"
+#include "velocity_prediction.hpp"
+#include "logger.hpp"
+
+#if USE_SOCKET_INFERENCE
+
+#include <zmq.h>
 
 static std::string inference_tcp_socket = "tcp://*:5555";
 
-#if USE_SOCKET_INFERENCE
 /** \brief This has only been developed to the proof of concept stage and is not suitable for deployment.
  */
 void predict_velocity()
 {
-    if (NO_INFERENCE)
+    if (CONFIG.no_inference)
     {
         return;
     }
@@ -27,10 +30,10 @@ void predict_velocity()
     zmq_bind(responder, inference_tcp_socket.c_str());
 
     // Buffer to contain local copy of IMU data.
-    std::deque<std::array<double, 6>> imu;
+    std::deque<vector6> imu;
 
-    std::array<double, 3> position{0, 0, 0};
-    std::array<double, 3> velocity{0, 0, 0};
+    vector3 position{0, 0, 0};
+    vector3 velocity{0, 0, 0};
 
     // Request and response buffers.
     std::stringstream request;
@@ -40,7 +43,7 @@ void predict_velocity()
     // File handles for logging.
     arwain::Logger position_file;
     arwain::Logger velocity_file;
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
         position_file.open(FOLDER_DATE_STRING + "/position.txt");
@@ -64,16 +67,18 @@ void predict_velocity()
         time = std::chrono::system_clock::now();
 
         // Get dt in seconds since last udpate, and update lastTime.
-        auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - lastTime).count()/1000.0;
+        double dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - lastTime).count()/1000.0;
         lastTime = time;
         
-        // Load the IMU data into a string for serial transmission.
+        // Load the IMU data into a string for serial transmission, gyro first.
         for (unsigned int i = 0; i < imu.size(); i++)
         {
-            for (unsigned int j = 0; j < 6; j++)
-            {
-                request << std::setprecision(15) << (float)imu[i][(j+3)%6] << ",";
-            }
+            request << std::setprecision(15) << (float)imu[i].gyro.x << ",";
+            request << std::setprecision(15) << (float)imu[i].gyro.y << ",";
+            request << std::setprecision(15) << (float)imu[i].gyro.z << ",";
+            request << std::setprecision(15) << (float)imu[i].acce.x << ",";
+            request << std::setprecision(15) << (float)imu[i].acce.y << ",";
+            request << std::setprecision(15) << (float)imu[i].acce.z << ",";
         }
 
         // Send the data and await response.
@@ -91,11 +96,13 @@ void predict_velocity()
             continue;
         }
         int delimiter = answer.find(",");
-        std::stringstream(answer.substr(0, delimiter)) >> velocity[0];
+        std::stringstream(answer.substr(0, delimiter)) >> velocity.x;
         answer = answer.substr(delimiter+1);
         delimiter = answer.find(",");
-        std::stringstream(answer.substr(0, delimiter)) >> velocity[1];
-        std::stringstream(answer.substr(delimiter+1)) >> velocity[2];
+        std::stringstream(answer.substr(0, delimiter)) >> velocity.y;
+        std::stringstream(answer.substr(delimiter+1)) >> velocity.z;
+
+        // std::cout << "VL: " << velocity << "\n";
 
         { // Store velocity in global buffer.
             std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
@@ -104,9 +111,7 @@ void predict_velocity()
         }
 
         // Compute new position.
-        position[0] = position[0] + dt * velocity[0];
-        position[1] = position[1] + dt * velocity[1];
-        position[2] = position[2] + dt * velocity[2];
+        position = position + dt * velocity;
 
         { // Add new position to global buffer.
             std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
@@ -115,10 +120,10 @@ void predict_velocity()
         }
 
         // Log results to file.
-        if (LOG_TO_FILE)
+        if (CONFIG.log_to_file)
         {
-            velocity_file << time.time_since_epoch().count() << " " << velocity[0] << " " << velocity[1] << " " << velocity[2] << "\n";
-            position_file << time.time_since_epoch().count() << " " << position[0] << " " << position[1] << " " << position[2] << "\n";
+            velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
+            position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
         }
 
         // Wait until next tick.
@@ -130,7 +135,7 @@ void predict_velocity()
     zmq_send(responder, "stop", strlen("stop"), 0);
 
     // Flush and close log files.
-    if (LOG_TO_FILE)
+    if (CONFIG.log_to_file)
     {
         velocity_file.close();
         position_file.close();

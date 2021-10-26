@@ -3,10 +3,10 @@
 
 #include <math.h>
 #include <array>
-#include "utils.h"
-#include "imu_utils.h"
-#include "quaternions.h"
-#include "vector3.h"
+
+#include "utils.hpp"
+#include "quaternions.hpp"
+#include "vector3.hpp"
 
 /// Computes the cross product of two 3-vectors. The result is a new 3-vector.
 std::array<double, 3> cross(const std::array<double, 3>& v1, const std::array<double, 3>& v2);

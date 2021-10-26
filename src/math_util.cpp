@@ -1,6 +1,5 @@
-#include "math_util.h"
-#include "quaternions.h"
-#include "imu_utils.h"
+#include "math_util.hpp"
+#include "quaternions.hpp"
 
 
 /// Computes the L2 norm of a 3-vector as a double.

@@ -17,9 +17,9 @@ https://www.sciencedirect.com/science/article/pii/S0888327019303012
 #include <iostream>
 #include <math.h>
 
-#include "math_util.h"
-#include "quaternions.h"
-#include "filter.h"
+#include "math_util.hpp"
+#include "quaternions.hpp"
+#include "filter.hpp"
 
 namespace arwain
 {

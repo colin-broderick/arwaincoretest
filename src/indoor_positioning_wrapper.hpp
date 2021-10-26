@@ -1,7 +1,7 @@
 #ifndef INDOOR_POSITIONING_WRAPPER_H
 #define INDOOR_POSITIONING_WRAPPER_H
 
-#include <array>
+#include "vector3.hpp"
 
 namespace arwain
 {
@@ -16,7 +16,7 @@ namespace arwain
 
         public:
             void update(const double &time, const double &x, const double &y, const double &z);
-            std::array<double, 3> getPosition();
+            vector3 getPosition();
             double getX();
             double getY();
             double getZ();
