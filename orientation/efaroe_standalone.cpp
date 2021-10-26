@@ -4,9 +4,9 @@
 #include <sstream>
 #include <algorithm>
 
-#include "efaroe.h"
-#include "input_parser.h"
-#include "quaternions.h"
+#include "efaroe.hpp"
+#include "input_parser.hpp"
+#include "quaternions.hpp"
 
 #define PI 3.14159265359
 

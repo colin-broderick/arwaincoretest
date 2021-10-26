@@ -26,7 +26,7 @@
 
 #include <math.h>
 
-#include "filter.h"
+#include "filter.hpp"
 
 namespace arwain
 {

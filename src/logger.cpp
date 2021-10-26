@@ -1,4 +1,4 @@
-#include "logger.h"
+#include "logger.hpp"
 
 /** \brief Constructor which does not open a file. */
 arwain::Logger::Logger()

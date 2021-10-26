@@ -6,13 +6,13 @@
 
 /** \brief Object for representing a 3-vector of various types, e.g. Eucliden displacement vector.
  */
-typedef struct vector3
+struct vector3
 {
     double x;
     double y;
     double z;
     double magnitude();
-} vector3;
+};
 
 /** \brief Find the Euclidean (L2) norm of a 3-vector.
  * \return A double representing the length of the vector.
@@ -92,10 +92,26 @@ template <class T> inline vector3 operator*(const vector3 &v, const T &scalar)
     };
 }
 
+/** \brief Multiply the elements of a 3-vector by a scalar value.
+ * \param scalar A scalar by which to multiply the elements of the 3-vector.
+ * \param v A 3-vector.
+ * \return A new 3-vector.
+ */
+template <class T> inline vector3 operator*(const T& scalar, const vector3& v)
+{
+    return v * scalar;
+}
+
 inline std::ostream& operator<<(std::ostream& stream, const vector3& vector)
 {
     stream << "vector3(" << vector.x << ", " << vector.y << ", " << vector.z << ")";
     return stream;
 }
+
+struct vector6
+{
+    vector3 acce;
+    vector3 gyro;
+};
 
 #endif

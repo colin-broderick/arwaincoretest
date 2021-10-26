@@ -7,7 +7,7 @@
 #include <mutex>
 #include <deque>
 
-#include "quaternions.h"
+#include "quaternions.hpp"
 
 namespace arwain
 {
@@ -45,8 +45,8 @@ namespace arwain
             double m_g_mean_magnitude;
             double m_v_mean_magnitude;
 
-            std::array<double, 3> m_accel_means;
-            std::array<double, 3> m_speed_means;
+            vector3 m_accel_means;
+            vector3 m_speed_means;
 
             int m_vertical_axis = 1;
             int m_primary_axis;
@@ -84,13 +84,13 @@ namespace arwain
             std::mutex m_stance_lock;
 
             // Utility methods.
-            AXIS biggest_axis(const std::array<double, 3> &arr);
+            AXIS biggest_axis(const vector3 &arr);
             double activity(double a, double g, double v);
             double vector_mean(const std::vector<double> &values);
-            double buffer_mean_magnitude(const std::vector<std::array<double, 3>> &buffer);
-            double buffer_mean_magnitude(const std::deque<std::array<double, 3>> &buffer);
-            std::array<double, 3> get_means(const std::vector<std::array<double, 3>> &source_vector);
-            std::array<double, 3> get_means(const std::deque<std::array<double, 3>> &source_vector);
+            double buffer_mean_magnitude(const std::vector<vector3> &buffer);
+            double buffer_mean_magnitude(const std::deque<vector3> &buffer);
+            vector3 get_means(const std::vector<vector3> &source_vector);
+            vector3 get_means(const std::deque<vector3> &source_vector);
             std::array<double, 6> get_means(const std::deque<std::array<double, 6>> &source_vector);
         
         public:
@@ -99,7 +99,7 @@ namespace arwain
 
             // General methods.
             void update_attitude(quaternion rotation_quaternion);
-            void run(const std::deque<std::array<double, 6>> &imu_data, const std::deque<std::array<double, 3>> &vel_data);
+            void run(const std::deque<vector6> &imu_data, const std::deque<vector3> &vel_data);
 
             // Getters.
             STANCE getStance();
