@@ -21,21 +21,21 @@ int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr);
 void delay_us(uint32_t period);
 void delay_ms(uint32_t period);
 
-static vector3 mag_calib_offset, mag_calib_scale;
+vector3 mag_calib_offset, mag_calib_scale;
 
 void read_calib_data(const std::string& path);
 
-static int bmi_file_i2c = -1;
+int bmi_file_i2c = -1;
 
-static double acc_scale;
-static double gyr_scale;
+double acc_scale;
+double gyr_scale;
 
-static struct bmi2_dev bmi270;
-static struct bmm150_dev bmm150;
+struct bmi2_dev bmi270;
+struct bmm150_dev bmm150;
 
-static struct bmi2_sensor_data acce;
-static struct bmi2_sensor_data gyro;
-static struct bmi2_sensor_data magn;
+struct bmi2_sensor_data acce;
+struct bmi2_sensor_data gyro;
+struct bmi2_sensor_data magn;
 
 class BMI270
 {

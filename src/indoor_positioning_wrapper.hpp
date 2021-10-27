@@ -3,6 +3,8 @@
 
 #include "vector3.hpp"
 
+void indoor_positioning();
+
 namespace arwain
 {
     class IndoorPositioningWrapper

@@ -19,9 +19,7 @@
 #ifndef QUAT_H
 #define QUAT_H
 
-#include <math.h>
-
-#include "vector3.hpp"
+#include <iostream>
 
 class quaternion
 {
@@ -32,7 +30,7 @@ class quaternion
         // Constructors.
         quaternion();
         quaternion(double real, double im_i, double im_j, double im_k);
-        quaternion(const vector3 &vec);
+        quaternion(const double x, const double y, const double z);
         
         // Operators.
         quaternion operator+(quaternion quat2);

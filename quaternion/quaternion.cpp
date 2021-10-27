@@ -16,16 +16,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
  
-#include "quaternions.hpp"
+#include <cmath>
+
+#include "quaternion.hpp"
 
 /** \brief Default quaternion constructor. Fills components with zeroes.
  */
 quaternion::quaternion()
 {
-    w = 0;
-    x = 0;
-    y = 0;
-    z = 0;
+    this->w = 0;
+    this->x = 0;
+    this->y = 0;
+    this->z = 0;
 }
 
 /** \brief Quaternion constructor. We always use the (w, x, y, z) convention, never (x, y, z, w).
@@ -36,21 +38,21 @@ quaternion::quaternion()
  */
 quaternion::quaternion(double real, double im_i, double im_j, double im_k)
 {
-    w = real;
-    x = im_i;
-    y = im_j;
-    z = im_k;
+    this->w = real;
+    this->x = im_i;
+    this->y = im_j;
+    this->z = im_k;
 }
 
 /** \brief Construct a quaternion from a three-vector.
- * \param vec A three-vector to convert to an orientation quaternion.
+ * \param vec A three-vector to convert to an quaternion.
  */
-quaternion::quaternion(const vector3 &vec)
+quaternion::quaternion(const double x_, const double y_, const double z_)
 {
-    w = 0;
-    x = vec.x;
-    y = vec.y;
-    z = vec.z;
+    this->w = 0;
+    this->x = x_;
+    this->y = y_;
+    this->z = z_;
 }
 
 /** \brief Add two quaternions.
@@ -67,10 +69,10 @@ quaternion quaternion::operator+(quaternion quat2)
 {
     quaternion temp;
     
-    temp.w = w + quat2.w;
-    temp.x = x + quat2.x;
-    temp.y = y + quat2.y;
-    temp.z = z + quat2.z;
+    temp.w = this->w + quat2.w;
+    temp.x = this->x + quat2.x;
+    temp.y = this->y + quat2.y;
+    temp.z = this->z + quat2.z;
     
     return temp;
 }
@@ -83,10 +85,10 @@ quaternion quaternion::operator-(quaternion quat2)
 {
     quaternion temp;
     
-    temp.w = w - quat2.w;
-    temp.x = x - quat2.x;
-    temp.y = y - quat2.y;
-    temp.z = z - quat2.z;
+    temp.w = this->w - quat2.w;
+    temp.x = this->x - quat2.x;
+    temp.y = this->y - quat2.y;
+    temp.z = this->z - quat2.z;
     
     return temp;
 }
@@ -100,10 +102,10 @@ quaternion quaternion::operator*(quaternion quat2)
     quaternion temp;
     double e=quat2.w, f=quat2.x, g=quat2.y, h=quat2.z;
     
-    temp.w = w*e -x*f -y*g -z*h;
-    temp.x = w*f +x*e +y*h -z*g;
-    temp.y = w*g -x*h +y*e +z*f;
-    temp.z = w*h +x*g -y*f +z*e;
+    temp.w = this->w*e - this->x*f - this->y*g - this->z*h;
+    temp.x = this->w*f + this->x*e + this->y*h - this->z*g;
+    temp.y = this->w*g - this->x*h + this->y*e + this->z*f;
+    temp.z = this->w*h + this->x*g - this->y*f + this->z*e;
     
     return temp;
 }
@@ -116,10 +118,10 @@ quaternion quaternion::operator*(double num)
 {
     quaternion temp;
     
-    temp.w = num*w;
-    temp.x = num*x;
-    temp.y = num*y;
-    temp.z = num*z;
+    temp.w = num*this->w;
+    temp.x = num*this->x;
+    temp.y = num*this->y;
+    temp.z = num*this->z;
     
     return temp;
 }
@@ -132,10 +134,10 @@ quaternion quaternion::operator/(double num)
 {
     quaternion temp;
     
-    temp.w = w/num;
-    temp.x = x/num;
-    temp.y = y/num;
-    temp.z = z/num;
+    temp.w = this->w/num;
+    temp.x = this->x/num;
+    temp.y = this->y/num;
+    temp.z = this->z/num;
     
     return temp;
 }
@@ -147,10 +149,10 @@ quaternion quaternion::operator+=(quaternion quat2)
 {
     quaternion temp;
     
-    temp.w = w + quat2.w;
-    temp.x = x + quat2.x;
-    temp.y = y + quat2.y;
-    temp.z = z + quat2.z;
+    temp.w = this->w + quat2.w;
+    temp.x = this->x + quat2.x;
+    temp.y = this->y + quat2.y;
+    temp.z = this->z + quat2.z;
     
     return temp;
 }
@@ -162,10 +164,10 @@ quaternion quaternion::operator-=(quaternion quat2)
 {
     quaternion temp;
     
-    temp.w = w - quat2.w;
-    temp.x = x - quat2.x;
-    temp.y = y - quat2.y;
-    temp.z = z - quat2.z;
+    temp.w = this->w - quat2.w;
+    temp.x = this->x - quat2.x;
+    temp.y = this->y - quat2.y;
+    temp.z = this->z - quat2.z;
     
     return temp;
 }
@@ -178,10 +180,10 @@ quaternion quaternion::operator*=(quaternion quat2)
     quaternion temp;
     double e=quat2.w, f=quat2.x, g=quat2.y, h=quat2.z;
     
-    temp.w = w*e -x*f -y*g -z*h;
-    temp.x = w*f +x*e +y*h -z*g;
-    temp.y = w*g -x*h +y*e +z*f;
-    temp.z = w*h +x*g -y*f +z*e;
+    temp.w = this->w*e - this->x*f - this->y*g - this->z*h;
+    temp.x = this->w*f + this->x*e + this->y*h - this->z*g;
+    temp.y = this->w*g - this->x*h + this->y*e + this->z*f;
+    temp.z = this->w*h + this->x*g - this->y*f + this->z*e;
     
     return temp;
 }
@@ -193,10 +195,10 @@ quaternion quaternion::operator*=(double num)
 {
     quaternion temp;
     
-    temp.w = num*w;
-    temp.x = num*x;
-    temp.y = num*y;
-    temp.z = num*z;
+    temp.w = num*this->w;
+    temp.x = num*this->x;
+    temp.y = num*this->y;
+    temp.z = num*this->z;
     
     return temp;
 }
@@ -208,10 +210,10 @@ quaternion quaternion::operator/=(double num)
 {
     quaternion temp;
     
-    temp.w = w/num;
-    temp.x = x/num;
-    temp.y = y/num;
-    temp.z = z/num;
+    temp.w = this->w/num;
+    temp.x = this->x/num;
+    temp.y = this->y/num;
+    temp.z = this->z/num;
     
     return temp;
 }
@@ -223,19 +225,19 @@ quaternion quaternion::operator/=(double num)
 int quaternion::operator==(quaternion q2)
 {
     int ret = 1;
-    if (w != q2.w)
+    if (this->w != q2.w)
     {
         ret = 0;
     }
-    if (x != q2.x)
+    if (this->x != q2.x)
     {
         ret = 0;
     }
-    if (y != q2.y)
+    if (this->y != q2.y)
     {
         ret = 0;
     }
-    if (z != q2.z)
+    if (this->z != q2.z)
     {
         ret = 0;
     }
@@ -247,7 +249,7 @@ int quaternion::operator==(quaternion q2)
  */
 double quaternion::mag()
 {
-    return sqrt(w*w + x*x + y*y + z*z);
+    return sqrt(this->w*this->w + this->x*this->x + this->y*this->y + this->z*this->z);
 }
 
 /** \brief Normalize a quaterion.
@@ -259,10 +261,10 @@ quaternion quaternion::unit()
     quaternion temp;
     double size = mag();
     
-    temp.w = w/size;
-    temp.x = x/size;
-    temp.y = y/size;
-    temp.z = z/size;
+    temp.w = this->w/size;
+    temp.x = this->x/size;
+    temp.y = this->y/size;
+    temp.z = this->z/size;
     
     return temp;
 }
@@ -275,10 +277,10 @@ quaternion quaternion::conj()
 {
     quaternion temp;
     
-    temp.w = w;
-    temp.x = -x;
-    temp.y = -y;
-    temp.z = -z;
+    temp.w = this->w;
+    temp.x = -this->x;
+    temp.y = -this->y;
+    temp.z = -this->z;
     
     return temp;
 }
@@ -289,7 +291,7 @@ quaternion quaternion::conj()
 quaternion quaternion::inv()
 {
     // 1/quat = conj / (quat*conj), but quat*conj = w^2 + x^2 + ... 
-    return conj()/(w*w + x*x + y*y + z*z);
+    return conj()/(this->w*this->w + this->x*this->x + this->y*this->y + this->z*this->z);
     
 }
 
@@ -306,7 +308,7 @@ quaternion quaternion::unit_inv()
  */
 double quaternion::getRe() 
 {
-    return w;
+    return this->w;
 }
 
 /** \brief Get the value of the first imaginary component.
@@ -314,7 +316,7 @@ double quaternion::getRe()
  */
 double quaternion::getIm_i() 
 {
-    return x;
+    return this->x;
 }
  
 /** \brief Get the value of the second imaginary component.
@@ -322,7 +324,7 @@ double quaternion::getIm_i()
  */
 double quaternion::getIm_j()
 {
-    return y;
+    return this->y;
 }
 
 /** \brief Get the value of the third imaginary component.
@@ -330,5 +332,5 @@ double quaternion::getIm_j()
  */
 double quaternion::getIm_k()
 { 
-    return z;
+    return this->z;
 }

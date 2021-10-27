@@ -8,7 +8,7 @@
 
 namespace arwain {
 
-enum filetypes {
+enum class filetypes {
     accelwrite,
     accelread,
     gyrowrite,
@@ -17,7 +17,7 @@ enum filetypes {
     magread
 };
 
-enum filemodes {
+enum class filemodes {
     read,
     write
 };

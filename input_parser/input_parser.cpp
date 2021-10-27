@@ -6,7 +6,7 @@
  * \param argc Number of command line arguments received.
  * \param argv All command line arguments.
  */
-arwain::InputParser::InputParser(int &argc, char **argv)
+InputParser::InputParser(int &argc, char **argv)
 {
     // Add all tokens in command line to tokens vector.
     for (int i=1; i < argc; ++i)
@@ -19,7 +19,7 @@ arwain::InputParser::InputParser(int &argc, char **argv)
  * \param option The name of the sought parameter.
  * \return The value of the sought parameter.
  */
-const std::string& arwain::InputParser::getCmdOption(const std::string &option) const
+const std::string& InputParser::getCmdOption(const std::string &option) const
 {
     // Identify the position of a requested option and return the next token if found.
     std::vector<std::string>::const_iterator itr;
@@ -36,7 +36,7 @@ const std::string& arwain::InputParser::getCmdOption(const std::string &option) 
  * \param option The parameter to check for.
  * \return True if the parameter is found, false otherwise.
  */
-bool arwain::InputParser::contains(const std::string &option) const
+bool InputParser::contains(const std::string &option) const
 {
     // Check for the presense of a sought option.
     return std::find(this->tokens.begin(), this->tokens.end(), option)

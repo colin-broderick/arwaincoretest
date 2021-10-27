@@ -16,7 +16,7 @@ float beta = 0.1;
 int main(int argc, char **argv)
 {
     // Create input parser.
-    arwain::InputParser input_parser{argc, argv};
+    InputParser input_parser{argc, argv};
     
     std::string line;   // Stores a line from the file being processed.
     int count = 0;      // Counts how many lines have been processed.

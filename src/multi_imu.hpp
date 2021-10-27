@@ -1,5 +1,7 @@
-#ifndef GREEVE_MULTI_IMU_HPP
-#define GREEVE_MULTI_IMU_HPP
+// TODO: The initialization of the IMUs should be in the constructor, perhaps with addresses/busses as params.
+
+#ifndef _ARWAIN_MULTI_IMU_HPP
+#define _ARWAIN_MULTI_IMU_HPP
 
 #include "IMU_IIM42652_driver.hpp"
 
