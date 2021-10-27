@@ -1,336 +1,253 @@
-/* Copyright (c) 2012 Alex Allen, MIT License
- *
- * Permission is hereby granted, free of charge, to any person obtaining w copy of this software 
- * and associated documentation files (the "Software"), to deal in the Software without restriction, 
- * including without limitation the rights to use, copy, modify, merge, publish, distribute, 
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is 
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or 
- * substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
- 
 #include <cmath>
 
 #include "quaternion.hpp"
 
-/** \brief Default quaternion constructor. Fills components with zeroes.
- */
-quaternion::quaternion()
+quaternion quaternion::slerp(const quaternion& quat1, const quaternion& quat2)
 {
-    this->w = 0;
-    this->x = 0;
-    this->y = 0;
-    this->z = 0;
-}
+    // TODO Check for valid lengths or other things that should generate errors.
 
-/** \brief Quaternion constructor. We always use the (w, x, y, z) convention, never (x, y, z, w).
- * \param real The real (w) component of the quaternion.
- * \param im_i The i imaginary component of the quaternion.
- * \param im_j The j imaginary component of the quaternion.
- * \param im_k The k imaginary component of the quaternion.
- */
-quaternion::quaternion(double real, double im_i, double im_j, double im_k)
-{
-    this->w = real;
-    this->x = im_i;
-    this->y = im_j;
-    this->z = im_k;
-}
+    // TODO Compute cosHalfAngle
+    double cosHalfAngle = quat1.w*quat2.w + quat1.x*quat2.x + quat1.y*quat2.y + quat1.z*quat2.z;
 
-/** \brief Construct a quaternion from a three-vector.
- * \param vec A three-vector to convert to an quaternion.
- */
-quaternion::quaternion(const double x_, const double y_, const double z_)
-{
-    this->w = 0;
-    this->x = x_;
-    this->y = y_;
-    this->z = z_;
-}
-
-/** \brief Add two quaternions.
- * Quaternions are added element-wise as
- * \f$ w = w_1 + w_2 \f$,
- * \f$x = x_1 + x_2\f$,
- * \f$y = y_1 + y_2\f$,
- * \f$z = z_1 + z_2\f$.
- * Quaternion addition is associative and commutative.
- * \param quat2 The quaternion to be added.
- * \return A new quaternion.
- */
-quaternion quaternion::operator+(quaternion quat2)
-{
-    quaternion temp;
-    
-    temp.w = this->w + quat2.w;
-    temp.x = this->x + quat2.x;
-    temp.y = this->y + quat2.y;
-    temp.z = this->z + quat2.z;
-    
-    return temp;
-}
-
-/** \brief See quaternion addition.
- * \param quat2 A quaternion to subtract.
- * \return A new quaternion.
- */
-quaternion quaternion::operator-(quaternion quat2)
-{
-    quaternion temp;
-    
-    temp.w = this->w - quat2.w;
-    temp.x = this->x - quat2.x;
-    temp.y = this->y - quat2.y;
-    temp.z = this->z - quat2.z;
-    
-    return temp;
-}
-
-/** \brief Quaternions follow a special multiplication rule.
- * \param quat2 Another quaternion by which to multiply.
- * \return A new quaternion.
- */
-quaternion quaternion::operator*(quaternion quat2)
-{
-    quaternion temp;
-    double e=quat2.w, f=quat2.x, g=quat2.y, h=quat2.z;
-    
-    temp.w = this->w*e - this->x*f - this->y*g - this->z*h;
-    temp.x = this->w*f + this->x*e + this->y*h - this->z*g;
-    temp.y = this->w*g - this->x*h + this->y*e + this->z*f;
-    temp.z = this->w*h + this->x*g - this->y*f + this->z*e;
-    
-    return temp;
-}
-
-/** \brief Scalar multiplication of quaternions is done element-wise.
- * \param num Scalar by which to multiply the quaternion.
- * \return A new quaternion.
- */
-quaternion quaternion::operator*(double num)
-{
-    quaternion temp;
-    
-    temp.w = num*this->w;
-    temp.x = num*this->x;
-    temp.y = num*this->y;
-    temp.z = num*this->z;
-    
-    return temp;
-}
-
-/** \brief Division by a scalar is done element-wise.
- * \param num Scalar by which to divide the quaternion.
- * \return A new quaternion.
- */
-quaternion quaternion::operator/(double num)
-{
-    quaternion temp;
-    
-    temp.w = this->w/num;
-    temp.x = this->x/num;
-    temp.y = this->y/num;
-    temp.z = this->z/num;
-    
-    return temp;
-}
-
-/** \brief See quaternion addition.
- * \return A new quaternion.
- */
-quaternion quaternion::operator+=(quaternion quat2)
-{
-    quaternion temp;
-    
-    temp.w = this->w + quat2.w;
-    temp.x = this->x + quat2.x;
-    temp.y = this->y + quat2.y;
-    temp.z = this->z + quat2.z;
-    
-    return temp;
-}
-
-/** \brief See quaternion subtraction.
- * \return A new quaternion.
- */
-quaternion quaternion::operator-=(quaternion quat2)
-{
-    quaternion temp;
-    
-    temp.w = this->w - quat2.w;
-    temp.x = this->x - quat2.x;
-    temp.y = this->y - quat2.y;
-    temp.z = this->z - quat2.z;
-    
-    return temp;
-}
-
-/** \brief See quaternion multiplication.
- * \return A new quaternion.
- */
-quaternion quaternion::operator*=(quaternion quat2)
-{
-    quaternion temp;
-    double e=quat2.w, f=quat2.x, g=quat2.y, h=quat2.z;
-    
-    temp.w = this->w*e - this->x*f - this->y*g - this->z*h;
-    temp.x = this->w*f + this->x*e + this->y*h - this->z*g;
-    temp.y = this->w*g - this->x*h + this->y*e + this->z*f;
-    temp.z = this->w*h + this->x*g - this->y*f + this->z*e;
-    
-    return temp;
-}
- 
-/** \brief See quaternion scalar multiplication.
- * \return A new quaternion.
- */
-quaternion quaternion::operator*=(double num)
-{
-    quaternion temp;
-    
-    temp.w = num*this->w;
-    temp.x = num*this->x;
-    temp.y = num*this->y;
-    temp.z = num*this->z;
-    
-    return temp;
-}
-
-/** \brief See quaternion scalar division.
- * \return A new quaternion.
- */
-quaternion quaternion::operator/=(double num)
-{
-    quaternion temp;
-    
-    temp.w = this->w/num;
-    temp.x = this->x/num;
-    temp.y = this->y/num;
-    temp.z = this->z/num;
-    
-    return temp;
-}
-
-/** \brief Compares quaternions for equality.
- * Two quaternions are considered equivalent if all corresponding elements are equal.
- * \return 0 for inequality, 1 for equality.
- */
-int quaternion::operator==(quaternion q2)
-{
-    int ret = 1;
-    if (this->w != q2.w)
+    // TODO If half angle is zero, return whichever
+    if (cosHalfAngle <= -1.0 || cosHalfAngle >= 1.0)
     {
-        ret = 0;
+        return quat1;
     }
-    if (this->x != q2.x)
+
+    // TODO if coshalfangle < 0, invert one of the quaternions
+    if (cosHalfAngle < 0.0)
     {
-        ret = 0;
+        auto quat3 = -1*quat1;
     }
-    if (this->y != q2.y)
+
+    // TODO if angle is big, slerp. If angle is small, lerp (cheaper).
+}
+
+// Constructors ===================================================================================
+
+quaternion::quaternion() : quaternion(1, 0, 0, 0)
+{
+}
+
+quaternion::quaternion(const std::array<double, 3>& vec) : quaternion(0, vec[0], vec[1], vec[2])
+{
+}
+
+/** \brief Construct a rotation from the axis-angle representation.
+ * \param angle The angle in radians by which to rotate the frame.
+ * \param axis The axis around which to rotate the frame.
+ */
+quaternion::quaternion(const double angle, const std::array<double, 3>& axis)
+{
+    double axisInvNorm = 1.0/std::sqrt(axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2]);
+    this->angle = angle;
+    this->axis = axis;
+    this->w = std::cos(angle/2.0);
+    this->x = std::sin(angle/2.0) * axis[0] * axisInvNorm;
+    this->y = std::sin(angle/2.0) * axis[1] * axisInvNorm;
+    this->z = std::sin(angle/2.0) * axis[2] * axisInvNorm;
+}
+
+/** \brief Construct a quaternion.
+ * \param w The real component of the quaternion.
+ * \param x The i component of the quaternion.
+ * \param y The j component of the quaternion.
+ * \param z The k component of the quaternion.
+ */
+quaternion::quaternion(const double w, const double x, const double y, const double z)
+{
+    this->w = w;
+    this->x = x;
+    this->y = y;
+    this->z = z;
+    this->angle = 2 * std::acos(w);
+    this->axis[0] = x / std::sqrt(1 - w*w);
+    this->axis[1] = y / std::sqrt(1 - w*w);
+    this->axis[2] = z / std::sqrt(1 - w*w);
+}
+
+// Static methods =================================================================================
+
+/** \brief Compute the inner product of two quaternions.
+ * \param quat1 The first quaternion.
+ * \param quat2 The second quaternion.
+ * \return Scalar inner product of the two quaternions.
+ */
+double quaternion::dotProduct(const quaternion& quat1, const quaternion& quat2)
+{
+    return quat1.getW() * quat2.getW()
+         + quat1.getX() * quat2.getX()
+         + quat1.getY() * quat2.getY()
+         + quat1.getZ() * quat2.getZ();
+}
+
+// Operators ======================================================================================
+
+/** \brief Arithmetic sum of two quaternions.
+ * \param quat1 The quaternion from which to subtract.
+ * \param quat2 The quaternion to subtract.
+ * \return The new quaternion after computing the difference.
+ */
+quaternion operator+(const quaternion& quat1, const quaternion& quat2)
+{
+    return quaternion{
+        quat1.getW() + quat2.getW(),
+        quat1.getX() + quat2.getX(),
+        quat1.getY() + quat2.getY(),
+        quat1.getZ() + quat2.getZ()
+    };
+}
+
+/** \brief Arithmetic difference of two quaternions.
+ * \param quat1 The first quaternion in the sum.
+ * \param quat2 The second quaternion in the sum.
+ * \return The new quaternion after computing the sum.
+ */
+quaternion operator-(const quaternion& quat1, const quaternion& quat2)
+{
+    return quaternion{
+        quat1.getW() - quat2.getW(),
+        quat1.getX() - quat2.getX(),
+        quat1.getY() - quat2.getY(),
+        quat1.getZ() - quat2.getZ()
+    };
+}
+
+/** \brief Multiply two quaternions.
+ * \param quat1 The first quaternion in the product.
+ * \param quat2 The second quaternion in the product.
+ * \return The new quaternion after computing the product.
+ */
+quaternion operator*(const quaternion& quat1, const quaternion& quat2)
+{
+    double p1 = quat1.getW();
+    double p2 = quat1.getX();
+    double p3 = quat1.getY();
+    double p4 = quat1.getZ();
+
+    double q1 = quat2.getW();
+    double q2 = quat2.getX();
+    double q3 = quat2.getY();
+    double q4 = quat2.getZ();
+
+    return quaternion{
+        p1*q1 - p2*q2 - p3*q3 - p4*q4,
+        p1*q2 + p2*q1 + p3*q4 - p4*q3,
+        p1*q3 - p2*q4 + p3*q1 + p4*q2,
+        p1*q4 + p2*q3 - p3*q2 + p4*q1
+    };
+}
+
+/** \brief Negate a quaternion, i.e. multiply by -1. */
+quaternion operator-(const quaternion& quaternion)
+{
+    return -1 * quaternion;
+}
+
+/** \brief Two quaternions are equal if all their elements are equal.
+ * \param quat1 The first quaternion.
+ * \param quat2 The second quaternion.
+ * \return Bool indicating equality.
+ */
+bool operator==(const quaternion& quat1, const quaternion& quat2)
+{
+    if (quat1.getW() != quat2.getW())
     {
-        ret = 0;
+        return false;
     }
-    if (this->z != q2.z)
+    if (quat1.getX() != quat2.getX())
     {
-        ret = 0;
+        return false;
     }
-    return ret;
+    if (quat1.getY() != quat2.getY())
+    {
+        return false;
+    }
+    if (quat1.getZ() != quat2.getZ())
+    {
+        return false;
+    }
+    return true;
 }
 
-/** \brief The L2 norm of the quaternion as an array.
- * \return Scalar value representing the L2 norm of the quaternion.
+/** \brief quaternion-stream insertion operator, for printing or writing to file.
+ * \param stream The ofstream to write the quaternion to.
+ * \param quaternion A quaternion to print or write to file.
+ * \return A reference to the output stream.
  */
-double quaternion::mag()
+std::ostream& operator<<(std::ostream& stream, const quaternion& quaternion)
 {
-    return sqrt(this->w*this->w + this->x*this->x + this->y*this->y + this->z*this->z);
+    stream << "quaternion(" << quaternion.getW() << ", " << quaternion.getX()
+                    << ", " << quaternion.getY() << ", " << quaternion.getZ() << ")";
+    return stream;
 }
 
-/** \brief Normalize a quaterion.
- * A quaternion is considered normal if its L2 norm is equal to 1.
- * \return A normalized quaternion.
- */
-quaternion quaternion::unit()
+// Getters ========================================================================================
+
+double quaternion::getW() const
 {
-    quaternion temp;
-    double size = mag();
-    
-    temp.w = this->w/size;
-    temp.x = this->x/size;
-    temp.y = this->y/size;
-    temp.z = this->z/size;
-    
-    return temp;
+    return w;
 }
 
-/** \brief Conjugates the quaternion.
- * A quaternion is conjugates by negating all its imaginary components.
- * \return A new quaternion.
- */
-quaternion quaternion::conj()
+double quaternion::getX() const
 {
-    quaternion temp;
-    
-    temp.w = this->w;
-    temp.x = -this->x;
-    temp.y = -this->y;
-    temp.z = -this->z;
-    
-    return temp;
-}
- 
-/** \brief Invert a quaterion.
- * \return A new quaternion.
- */
-quaternion quaternion::inv()
-{
-    // 1/quat = conj / (quat*conj), but quat*conj = w^2 + x^2 + ... 
-    return conj()/(this->w*this->w + this->x*this->x + this->y*this->y + this->z*this->z);
-    
+    return x;
 }
 
-/** \brief Conjugate a quaternion.
- * \return A new quaternion.
- */
-quaternion quaternion::unit_inv()
+double quaternion::getY() const
 {
-    return this->conj();
-}
- 
-/** \brief Get the value of the real component.
- * \return Real/w component of the quaternion.
- */
-double quaternion::getRe() 
-{
-    return this->w;
+    return y;
 }
 
-/** \brief Get the value of the first imaginary component.
- * \return Imaginary/i component of the quaternion.
- */
-double quaternion::getIm_i() 
+double quaternion::getZ() const
 {
-    return this->x;
-}
- 
-/** \brief Get the value of the second imaginary component.
- * \return Imaginary/j component of the quaternion.
- */
-double quaternion::getIm_j()
-{
-    return this->y;
+    return z;
 }
 
-/** \brief Get the value of the third imaginary component.
- * \return Imaginary/z component of the quaternion.
- */
-double quaternion::getIm_k()
-{ 
-    return this->z;
+double quaternion::getAngle() const
+{
+    return angle;
+}
+
+std::array<double, 3> quaternion::getAxis() const
+{
+    return axis;
+}
+
+/** \brief Compute the magnitude of the quaternion. */
+double quaternion::norm() const
+{
+    static double n = std::sqrt(w*w + x*x + y*y + z*z);
+    return n;
+}
+
+/** \brief Whether the quaternion has unit magnitude. */
+bool quaternion::isNormal() const
+{
+    return norm() == 1;
+}
+
+/** \brief Create a new quaternion by normalizing this one. */
+quaternion quaternion::normalized() const
+{
+    return *this / norm();
+}
+
+quaternion quaternion::unit() const
+{
+    return this->normalized();
+}
+
+/** \brief The conjugate is formed by negating all imaginary components. */
+quaternion quaternion::conjugate() const
+{
+    return quaternion{w, -x, -y, -z};
+}
+
+/** \brief The inverse of a quaternion is its conjugate over the square of its magnitude. */
+quaternion quaternion::inverse() const
+{
+    double n = norm();
+    return conjugate()/(n*n);
 }

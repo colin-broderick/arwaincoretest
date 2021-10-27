@@ -23,7 +23,7 @@ static vector3 world_align(const vector3& vec, const quaternion& rotation)
     quaternion quat_ori{rotation.w, rotation.x, rotation.y, rotation.z};
 
     // Compute the rotated vector as a quaternion.
-    quaternion rotated_quaternion_vector = quat_ori * quat_vec * quat_ori.conj();
+    quaternion rotated_quaternion_vector = quat_ori * quat_vec * quat_ori.conjugate();
 
     // Cast the rotated quaternion back into a 3-vector.
     return vector3{

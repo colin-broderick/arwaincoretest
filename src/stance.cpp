@@ -146,7 +146,7 @@ arwain::StanceDetector::StanceDetector(double freefall_sensitivity, double crawl
  */
 void arwain::StanceDetector::update_attitude(quaternion rotation_quaternion)
 {
-    auto rotated_device_z_component = (rotation_quaternion * quaternion{0, 0, 0, 1} * rotation_quaternion.conj()).z;
+    auto rotated_device_z_component = (rotation_quaternion * quaternion{0, 0, 0, 1} * rotation_quaternion.conjugate()).z;
 
     if (abs(rotated_device_z_component) < 0.707)
     {
