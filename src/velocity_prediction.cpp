@@ -1,5 +1,9 @@
+#include <iomanip>
+
 #include "velocity_prediction.hpp"
 #include "logger.hpp"
+#include "utils.hpp"
+#include "shared_resource.hpp"
 
 #if USE_SOCKET_INFERENCE
 
@@ -11,7 +15,7 @@ static std::string inference_tcp_socket = "tcp://*:5555";
  */
 void predict_velocity()
 {
-    if (CONFIG.no_inference)
+    if (arwain::config.no_inference)
     {
         return;
     }
@@ -43,10 +47,10 @@ void predict_velocity()
     // File handles for logging.
     arwain::Logger position_file;
     arwain::Logger velocity_file;
-    if (CONFIG.log_to_file)
+    if (arwain::config.log_to_file)
     {
-        velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
-        position_file.open(FOLDER_DATE_STRING + "/position.txt");
+        velocity_file.open(arwain::folder_date_string + "/velocity.txt");
+        position_file.open(arwain::folder_date_string + "/position.txt");
         velocity_file << "# time x y z" << "\n";
         position_file << "# time x y z" << "\n";
     }
@@ -54,13 +58,13 @@ void predict_velocity()
     // Set up timing.
     std::chrono::time_point<std::chrono::system_clock> lastTime = std::chrono::system_clock::now();
     std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{VELOCITY_PREDICTION_INTERVAL};
+    std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
 
-    while (!SHUTDOWN)
+    while (!arwain::shutdown)
     {
         { // Grab latest IMU packet
-            std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
-            imu = IMU_WORLD_BUFFER;
+            std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+            imu = arwain::Buffers::IMU_WORLD_BUFFER;
         }
 
         // Check what the time really is since it might not be accurate.
@@ -105,22 +109,22 @@ void predict_velocity()
         // std::cout << "VL: " << velocity << "\n";
 
         { // Store velocity in global buffer.
-            std::lock_guard<std::mutex> lock{VELOCITY_BUFFER_LOCK};
-            VELOCITY_BUFFER.pop_front();
-            VELOCITY_BUFFER.push_back(velocity);
+            std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
+            arwain::Buffers::VELOCITY_BUFFER.pop_front();
+            arwain::Buffers::VELOCITY_BUFFER.push_back(velocity);
         }
 
         // Compute new position.
         position = position + dt * velocity;
 
         { // Add new position to global buffer.
-            std::lock_guard<std::mutex> lock{POSITION_BUFFER_LOCK};
-            POSITION_BUFFER.pop_front();
-            POSITION_BUFFER.push_back(position);
+            std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
+            arwain::Buffers::POSITION_BUFFER.pop_front();
+            arwain::Buffers::POSITION_BUFFER.push_back(position);
         }
 
         // Log results to file.
-        if (CONFIG.log_to_file)
+        if (arwain::config.log_to_file)
         {
             velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
             position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
@@ -135,7 +139,7 @@ void predict_velocity()
     zmq_send(responder, "stop", strlen("stop"), 0);
 
     // Flush and close log files.
-    if (CONFIG.log_to_file)
+    if (arwain::config.log_to_file)
     {
         velocity_file.close();
         position_file.close();
@@ -163,7 +167,7 @@ void predict_velocity()
 
     //     // Set up timing.
     //     auto time = std::chrono::system_clock::now();
-    //     std::chrono::milliseconds interval{VELOCITY_PREDICTION_INTERVAL};
+    //     std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
 
     //     // Initialize buffers to contain working values.
     //     std::array<double, 3> vel;                        // The sum of npu_vel and imu_vel_delta.
@@ -180,21 +184,21 @@ void predict_velocity()
     //     arwain::Logger velocity_file;
 
     //     // Time in seconds between inferences.
-    //     double interval_seconds = ((double)(VELOCITY_PREDICTION_INTERVAL))/1000.0;
+    //     double interval_seconds = ((double)(arwain::Intervals::VELOCITY_PREDICTION_INTERVAL))/1000.0;
 
     //     // TEST How far back to look in the IMU buffer for integration.
-    //     int backtrack = (int)((1000/IMU_READING_INTERVAL)*interval_seconds);
+    //     int backtrack = (int)((1000/arwain::Intervals::IMU_READING_INTERVAL)*interval_seconds);
 
     //     // Open files for logging.
     //     if (LOG_TO_FILE)
     //     {
-    //         velocity_file.open(FOLDER_DATE_STRING + "/velocity.txt");
-    //         position_file.open(FOLDER_DATE_STRING + "/position.txt");
+    //         velocity_file.open(arwain::folder_date_string + "/velocity.txt");
+    //         position_file.open(arwain::folder_date_string + "/position.txt");
     //         velocity_file << "# time x y z" << "\n";
     //         position_file << "# time x y z" << "\n";
     //     }
         
-    //     while (!SHUTDOWN)
+    //     while (!arwain::shutdown)
     //     {
     //         { // Grab latest IMU packet
     //             std::lock_guard<std::mutex> lock{IMU_BUFFER_LOCK};
@@ -216,7 +220,7 @@ void predict_velocity()
 
     //         // TEST Weighted combination of velocity deltas from NPU and IMU integration.
     //         // TODO This gives very wrong results when trusting the IMU at all. Investigate and repair (or bin it).
-    //         vel = npu_vel_delta*CONFIG.npu_vel_weight_confidence + imu_vel_delta*(1-CONFIG.npu_vel_weight_confidence);
+    //         vel = npu_vel_delta*arwain::config.npu_vel_weight_confidence + imu_vel_delta*(1-arwain::config.npu_vel_weight_confidence);
 
     //         // TEST Add the filtered delta onto the previous vel estimate and add to buffer.
     //         vel = vel + vel_previous;

@@ -7,9 +7,100 @@
 #include <array>
 #include <deque>
 #include <fstream>
+#include <string>
 
 #include "stance.hpp"
 #include "utils.hpp"
+#include "logger.hpp"
+#include "vector3.hpp"
+#include "shared_resource.hpp"
+
+/** \brief Stance detection thread, periodically assesses mode of motion based in IMU and velocity data.
+ * Runs as a thread.
+ */
+void stance_detector()
+{
+    // A little presleep to give IMU data a chance to collect and orientation filter chance to converge.
+    std::this_thread::sleep_for(std::chrono::milliseconds{3000});
+
+    // Stance detector object.
+    arwain::StanceDetector stance{
+        arwain::config.freefall_sensitivity,
+        arwain::config.crawling_threshold,
+        arwain::config.running_threshold,
+        arwain::config.walking_threshold,
+        arwain::config.active_threshold,
+        arwain::config.struggle_threshold
+    };
+
+    // Local buffers.
+    std::deque<vector6> imu_data;
+    std::deque<vector3> vel_data;
+    quaternion rotation_quaternion;
+
+    // Open file for freefall/entanglement logging
+    arwain::Logger freefall_file;
+    if (arwain::config.log_to_file)
+    {
+        freefall_file.open(arwain::folder_date_string + "/freefall.txt");
+        freefall_file << "# time freefall entanglement" << "\n";
+    }
+
+    // File handle for stance logging.
+    arwain::Logger stance_file;
+    if (arwain::config.log_to_file)
+    {
+        stance_file.open(arwain::folder_date_string + "/stance.txt");
+        stance_file << "# time stance" << "\n";
+    }
+
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
+
+    while (!arwain::shutdown)
+    {
+        // Get all relevant data.
+        { // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
+            std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+            imu_data = arwain::Buffers::IMU_BUFFER;
+        }
+        {
+            std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
+            vel_data = arwain::Buffers::VELOCITY_BUFFER;
+        }
+        {
+            std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
+            rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
+        }
+
+        // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
+        stance.update_attitude(rotation_quaternion);
+        stance.run(imu_data, vel_data);
+        arwain::status.current_stance = stance.getStance();
+        arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
+        arwain::status.entangled = arwain::status.entangled | stance.getEntangledStatus();
+        arwain::status.attitude = stance.getAttitude();
+
+        // Log to file.
+        if (arwain::config.log_to_file)
+        {
+            freefall_file << time.time_since_epoch().count() << " " << stance.getFallingStatus() << " " << stance.getEntangledStatus() << "\n";
+            stance_file << time.time_since_epoch().count() << " " << stance.getStance() << "\n";
+        }
+
+        // Wait until the next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
+
+    // Close files
+    if (arwain::config.log_to_file)
+    {
+        freefall_file.close();
+        stance_file.close();
+    }
+}
 
 // Constructors -----------------------------------------------------------------------------------
 
@@ -178,10 +269,10 @@ void arwain::StanceDetector::run(const std::deque<vector6> &imu_data, const std:
  * \param arr Vector of e.g. 3-velocity, 3-acceleration, etc.
  * \return The index of the element with largest value.
  */
-arwain::StanceDetector::AXIS arwain::StanceDetector::biggest_axis(const vector3 &arr)
+arwain::StanceDetector::Axis arwain::StanceDetector::biggest_axis(const vector3 &arr)
 {
     // This should be using absolute value, since large negative values are 'bigger' than small positive values.
-    AXIS axis;
+    Axis axis;
     double x = abs(arr.x), y = abs(arr.y), z = abs(arr.z);
     if (x > y && x > z)
     {
@@ -349,30 +440,30 @@ std::array<double, 6> arwain::StanceDetector::get_means(const std::deque<std::ar
 /** \brief Returns string representing current stance.
  * \return Current stance.
  */
-arwain::StanceDetector::STANCE arwain::StanceDetector::getStance()
+arwain::StanceDetector::Stance arwain::StanceDetector::getStance()
 {
     std::lock_guard<std::mutex> lock{m_stance_lock};
-    STANCE ret = m_stance;
+    Stance ret = m_stance;
     return ret;
 }
 
 /** \brief Gets the horizontal flag.
  * \return Integer bool.
  */
-arwain::StanceDetector::ATTITUDE arwain::StanceDetector::getAttitude()
+arwain::StanceDetector::Attitude arwain::StanceDetector::getAttitude()
 {  
     std::lock_guard<std::mutex> lock{m_stance_lock};
-    ATTITUDE ret = m_attitude;
+    Attitude ret = m_attitude;
     return ret;
 }
 
 /** \brief Check if entangled flag set.
  * \return Integer bool.
  */
-arwain::StanceDetector::ENTANGLED arwain::StanceDetector::getEntangledStatus()
+arwain::StanceDetector::EntangleState arwain::StanceDetector::getEntangledStatus()
 {
     std::lock_guard<std::mutex> lock{m_fall_lock};
-    ENTANGLED ret = m_entangled;
+    EntangleState ret = m_entangled;
     m_entangled = NotEntangled;
     return ret;
 }
@@ -380,10 +471,10 @@ arwain::StanceDetector::ENTANGLED arwain::StanceDetector::getEntangledStatus()
 /** \brief Get current fall flag.
  * \return Integer bool.
  */
-arwain::StanceDetector::FALLING arwain::StanceDetector::getFallingStatus()
+arwain::StanceDetector::FallState arwain::StanceDetector::getFallingStatus()
 {
     std::lock_guard<std::mutex> lock{m_fall_lock};
-    FALLING ret = m_falling;
+    FallState ret = m_falling;
     m_falling = NotFalling;
     return ret;
 }
@@ -392,7 +483,7 @@ arwain::StanceDetector::FALLING arwain::StanceDetector::getFallingStatus()
  * \param stance1 One of the stances to compare.
  * \param stance2 The other stance to compare.
  */
-arwain::StanceDetector::FALLING operator|(const arwain::StanceDetector::FALLING &stance1, const arwain::StanceDetector::FALLING &stance2)
+arwain::StanceDetector::FallState operator|(const arwain::StanceDetector::FallState &stance1, const arwain::StanceDetector::FallState &stance2)
 {
     if (stance1 == arwain::StanceDetector::Falling || stance2 == arwain::StanceDetector::Falling)
     {
@@ -408,7 +499,7 @@ arwain::StanceDetector::FALLING operator|(const arwain::StanceDetector::FALLING 
  * \param stance1 One of the stances to compare.
  * \param stance2 The other stance to compare.
  */
-arwain::StanceDetector::ENTANGLED operator|(const arwain::StanceDetector::ENTANGLED &stance1, const arwain::StanceDetector::ENTANGLED &stance2)
+arwain::StanceDetector::EntangleState operator|(const arwain::StanceDetector::EntangleState &stance1, const arwain::StanceDetector::EntangleState &stance2)
 {
     if (stance1 == arwain::StanceDetector::Entangled || stance2 == arwain::StanceDetector::Entangled)
     {

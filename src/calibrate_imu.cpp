@@ -6,7 +6,7 @@
 int main(int argc, char* argv[])
 {
     // Check appropriate arguments passed.
-    arwain::InputParser input{argc, argv};
+    InputParser input{argc, argv};
     if (!input.contains("-address") || !input.contains("-bus"))
     {
         std::cout << "Specify I2C bus and address" << std::endl;

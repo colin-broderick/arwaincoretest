@@ -9,6 +9,7 @@
 
 #include "utils.hpp"
 #include "input_parser.hpp"
+#include "shared_resource.hpp"
 
 // IMUs ============================
 #include "IMU_IIM42652_driver.hpp"
@@ -17,7 +18,7 @@
 
 extern arwain::Configuration CONFIG;
 
-arwain::Configuration::Configuration(const arwain::InputParser& input)
+arwain::Configuration::Configuration(const InputParser& input)
 {    
     // Enable/disable stdout logging.
     if (input.contains("-lstd"))
@@ -35,6 +36,11 @@ arwain::Configuration::Configuration(const arwain::InputParser& input)
     if (input.contains("-nolora"))
     {
         this->no_lora = 1;
+    }
+
+    if (input.contains("-nopressure"))
+    {
+        this->no_pressure = 1;
     }
 
     // Disable/enable IMU.
@@ -155,7 +161,7 @@ std::string arwain::datetimestring()
 
 /** \brief Utility functional for checking that the IMU is operational.
  */
-void arwain::test_imu(int &shutdown)
+void arwain::test_imu()
 {
     // Initialize the IMU.
     // IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
@@ -170,7 +176,7 @@ void arwain::test_imu(int &shutdown)
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{10};
 
-    while (!shutdown)
+    while (!arwain::shutdown)
     {
         // bmi270_h.get_bmi270_data(&accel_data, &gyro_data);
         imu.read_IMU();
@@ -201,7 +207,6 @@ void arwain::test_imu(int &shutdown)
  */
 int arwain::Configuration::read_from_file()
 {
-    // TODO Checking file existence using std::filesystem would be preferred here but I had some build issue.
     // Open the configuration file name.
     std::ifstream file(this->config_file);
     if (!file.is_open())
@@ -225,8 +230,6 @@ int arwain::Configuration::read_from_file()
         std::string value = line.substr(delimiter + 1);
         options[name] = value;
     }
-
-    // TODO Detect attempted read of non-existing options.
 
     // Read all options into a configuration object.
     std::stringstream(options["active_threshold"]) >> this->active_threshold;
@@ -256,7 +259,6 @@ int arwain::Configuration::read_from_file()
     std::stringstream(options["use_indoor_positioning_system"]) >> this->use_indoor_positioning_system;
     std::stringstream(options["orientation_filter"]) >> this->orientation_filter;
     std::stringstream(options["inference_model_xml"]) >> this->inference_model_xml;
-    std::stringstream(options["use_pressure"]) >> this->use_pressure;
     std::stringstream(options["sea_level_pressure"]) >> this->sea_level_pressure;
     
     // Apply LoRa settings
@@ -347,26 +349,3 @@ int arwain::Configuration::read_from_file()
 
     return 1;
 }
-
-std::ostream& operator<<(std::ostream& stream, const std::array<double, 3>& vector)
-{
-    stream << "vector3(" << vector[0] << ", " << vector[1] << ", " << vector[2] << ")";
-    return stream;
-}
-
-/** \brief Print out a 6-wide IMU reading. */
-std::ostream& operator<<(std::ostream& stream, const std::array<double, 6>& line)
-{
-    stream << "IMU_data(" << line[0] << ", " <<line[1] << ", " <<line[2] << ", " <<line[3] << ", " <<line[4] << ", " <<line[5] << ")";
-    return stream;
-}
-
-vector3 normalised(vector3& vector)
-{
-    double invNorm = 1.0/vector.magnitude();
-    return vector3{
-        vector.x * invNorm,
-        vector.y * invNorm,
-        vector.z * invNorm
-    };
-} 

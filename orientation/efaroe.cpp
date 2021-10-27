@@ -106,7 +106,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
 
     // TODO What is this?
     vector3 a_v = (gyro - gradient * m_beta) * dt;
-    quaternion qav{a_v};
+    quaternion qav{a_v.x, a_v.y, a_v.z};
 
     // Calculate delta orientation quaternion.
     quaternion dq = q*qav*0.5;
@@ -199,7 +199,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
 
     // TODO What is this?
     vector3 a_v = (gyro - gradient * m_beta) * dt;
-    quaternion qav{a_v};
+    quaternion qav{a_v.x, a_v.y, a_v.z};
 
     // Calculate delta orientation quaternion.
     quaternion dq = q*qav*0.5;

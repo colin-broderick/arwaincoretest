@@ -7,14 +7,17 @@
 #include <mutex>
 #include <deque>
 
-#include "quaternions.hpp"
+#include "quaternion.hpp"
+#include "vector3.hpp"
+
+void stance_detector();
 
 namespace arwain
 {
     class StanceDetector
     {
         public:
-            enum STANCE {
+            enum Stance {
                 Inactive,
                 Walking,
                 Searching,
@@ -22,20 +25,20 @@ namespace arwain
                 Running,
                 Climbing
             };
-            enum FALLING {
+            enum FallState { 
                 NotFalling,
                 Falling
             };
-            enum ENTANGLED {
+            enum EntangleState {
                 NotEntangled,
                 Entangled
             };
-            enum AXIS {
+            enum Axis {
                 XAxis,
                 YAxis,
                 ZAxis
             };
-            enum ATTITUDE {
+            enum Attitude {
                 Vertical,
                 Horizontal
             };
@@ -56,10 +59,10 @@ namespace arwain
             double m_struggle = 0;
 
             // Status indicators.
-            FALLING m_falling = NotFalling;
-            ENTANGLED m_entangled = NotEntangled;
-            ATTITUDE m_attitude = Vertical;
-            STANCE m_stance = Inactive;
+            FallState m_falling = NotFalling;
+            EntangleState m_entangled = NotEntangled;
+            Attitude m_attitude = Vertical;
+            Stance m_stance = Inactive;
             int m_climbing = 0;
 
             // Fall/entanglment thresholding parameters.
@@ -84,7 +87,7 @@ namespace arwain
             std::mutex m_stance_lock;
 
             // Utility methods.
-            AXIS biggest_axis(const vector3 &arr);
+            Axis biggest_axis(const vector3 &arr);
             double activity(double a, double g, double v);
             double vector_mean(const std::vector<double> &values);
             double buffer_mean_magnitude(const std::vector<vector3> &buffer);
@@ -102,14 +105,14 @@ namespace arwain
             void run(const std::deque<vector6> &imu_data, const std::deque<vector3> &vel_data);
 
             // Getters.
-            STANCE getStance();
-            ATTITUDE getAttitude();
-            ENTANGLED getEntangledStatus();
-            FALLING getFallingStatus();
+            Stance getStance();
+            Attitude getAttitude();
+            EntangleState getEntangledStatus();
+            FallState getFallingStatus();
     };
 }
 
-arwain::StanceDetector::FALLING operator|(const arwain::StanceDetector::FALLING &stance1, const arwain::StanceDetector::FALLING &stance2);
-arwain::StanceDetector::ENTANGLED operator|(const arwain::StanceDetector::ENTANGLED &stance1, const arwain::StanceDetector::ENTANGLED &stance2);
+arwain::StanceDetector::FallState operator|(const arwain::StanceDetector::FallState &stance1, const arwain::StanceDetector::FallState &stance2);
+arwain::StanceDetector::EntangleState operator|(const arwain::StanceDetector::EntangleState &stance1, const arwain::StanceDetector::EntangleState &stance2);
 
 #endif

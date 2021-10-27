@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <chrono>
+#include <string>
 #include <map>
 #include <thread>
 #include <pthread.h>
@@ -19,9 +20,64 @@
 #include "input_parser.hpp"
 #include "IMU_IIM42652_driver.hpp"
 
+namespace arwain
+{
+    const std::string help_text = "Run without arguments for no logging\n"
+        "\n"
+        "Arguments:\n"
+        "  -lstd        Log friendly output to stdout\n"
+        "  -lfile       Record sensor data to file - files are stored in ./data_<datetime>\n"
+        "  -conf        Specify alternate configuration file\n"
+        "  -calib       Perform online calibration - make sure the device is totally stationary\n"
+        "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n"
+        "  -noinf       Do not do velocity inference\n"
+        "  -noimu       Do not turn on the IMU - for testing\n"
+        "  -nolora      Do not attempt to enable LoRa chip or send transmissions\n"
+        "  -nopressure  Do not use the pressure sensor to assist altitude tracking\n"
+        "  -h           Show this help text\n"
+        "\n"
+        "Example usage:\n"
+        "  ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile\n"
+        "\n"
+        "Error codes:\n"
+        "   1           Successfully executed\n"
+        "  -1           IMU failed to start\n"
+        "  -2           Problem reading configuration file";
+}
+
+namespace arwain::ExitCodes
+{
+    static const int Success = 1;
+    static const int FailedIMU = -1;
+    static const int FailedConfiguration = -2;
+}
+
+namespace arwain::Intervals
+{
+    // Time intervals, all in milliseconds.
+    static const unsigned int IMU_READING_INTERVAL = 5;
+    static const unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
+    static const unsigned int LORA_TRANSMISSION_INTERVAL = 500;
+    static const unsigned int STANCE_DETECTION_INTERVAL = 1000;
+    static const unsigned int INDOOR_POSITIONING_INTERVAL = 50;
+    static const unsigned int STD_OUT_INTERVAL = 1000;
+}
+
+namespace arwain::BufferSizes
+{
+    static const unsigned int POSITION_BUFFER_LEN = 200;
+    static const unsigned int MAG_BUFFER_LEN = 200;
+    static const unsigned int VELOCITY_BUFFER_LEN = 200;
+    static const unsigned int ORIENTATION_BUFFER_LEN = 200;
+    static const unsigned int IMU_BUFFER_LEN = 200;
+    static const unsigned int IPS_BUFFER_LEN = 50;
+    static const unsigned int LORA_MESSAGE_LENGTH = 8;
+    static const unsigned int PRESSURE_BUFFER_LEN = 100;
+}
+
 namespace arwain::Errors
 {
-    enum ErrorCondition
+    enum class ErrorCondition
     {
         AllOk,
         IMUReadError,
@@ -62,20 +118,17 @@ namespace arwain
      * \param lora_header_mode LoRa header mode, implicit or explicit.
      * \param lora_enable_crc Whether to add CRC to LoRa messages.
      * \param inference_model_xml The location of the inference model xml file.
-     * \param use_pressure Whether to use BMP280 pressure sensor for altitude.
      * \param sea_level_pressure Sea level pressure near the region of interest.
      */
     class Configuration
     {
         public:
-            Configuration()
-            {
-                
-            }
+            Configuration(){};
+            Configuration(const InputParser& input);
 
-            Configuration(const arwain::InputParser& input);
+        private:
             int read_from_file();
-            
+
         public:
             double active_threshold;
             double walking_threshold;
@@ -107,63 +160,60 @@ namespace arwain
             LoRa::hm_t lora_header_mode;
             int lora_enable_crc;
             std::string inference_model_xml;
-            int use_pressure;
             double sea_level_pressure;
             int log_to_stdout = 0;
             int log_to_file = 0;
             int no_inference = 0;
             int no_imu = 0;
             int no_lora = 0;
+            int no_pressure = 0;
             std::string config_file = "/etc/arwain.conf";
             int file_read_ok;
+
+            /** \brief Overwrite the content of the configuration file associated with this struct.
+             * \param option The configuration option to overwrite.
+             * \param new_value The new new value of the parameter to be put in the file.
+             */
+            template<typename T> void replace(const std::string& option, const T new_value)
+            {
+                std::ifstream infile(this->config_file);
+                std::stringstream outstring;
+
+                std::string line;
+                while (getline(infile, line))
+                {
+                    auto delimiter = line.find("=");
+                    std::string name = line.substr(0, delimiter);
+                    if (name == option)
+                    {
+                        outstring << name << "=" << new_value << "\n";
+                    }
+                    else
+                    {
+                        outstring << line << "\n";
+                    }
+                }
+                infile.close();
+
+                std::ofstream outfile(this->config_file);
+                outfile << outstring.str();
+                outfile.close();
+            }
     };
-
-    /** \brief Overwrite the content of a configuration file.
-     * \param filename The file in which to do the write operation.
-     * \param option The configuration option to overwrite.
-     * \param new_value The new value of the parameter to be put in the file.
-     */
-    template <class T> void config_replace(const std::string& filename, const std::string& option, T new_value)
-    {
-        std::ifstream infile(filename);
-        std::stringstream outstring;
-
-        std::string line;
-        while (getline(infile, line))
-        {
-            auto delimiter = line.find("=");
-            std::string name = line.substr(0, delimiter);
-            if (name == option)
-            {
-                outstring << name << "=" << new_value << "\n";
-            }
-            else
-            {
-                outstring << line << "\n";
-            }
-        }
-        infile.close();
-
-        std::ofstream outfile(filename);
-        outfile << outstring.str();
-        outfile.close();
-    }
 
     std::string datetimestring();
 
     struct Status {
-        arwain::StanceDetector::STANCE current_stance;
-        arwain::StanceDetector::ATTITUDE attitude;
-        arwain::StanceDetector::ENTANGLED entangled;
-        arwain::StanceDetector::FALLING falling;
+        arwain::StanceDetector::Stance current_stance;
+        arwain::StanceDetector::Attitude attitude;
+        arwain::StanceDetector::EntangleState entangled;
+        arwain::StanceDetector::FallState falling;
         arwain::Errors::ErrorCondition errors;
         int IMUTemperature;
     };
     
-    void test_imu(int &shutdown);
+    void test_imu();
     float getCPUTemp();
-
-    int get_configuration(const std::string &filename, arwain::Configuration& output_config);
 }
 
 typedef struct euler_orientation_t
@@ -172,9 +222,5 @@ typedef struct euler_orientation_t
     double pitch;
     double yaw;
 } euler_orientation_t;
-
-std::ostream& operator<<(std::ostream& stream, const std::array<double, 6>& line);
-std::ostream& operator<<(std::ostream& stream, const std::array<double, 3>& vector);
-vector3 normalised(vector3& vector);
 
 #endif
