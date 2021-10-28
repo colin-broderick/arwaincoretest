@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "IMU_IIM42652_driver.hpp"
+#include "kalman.hpp"
 
 #define V2_CALIB
 
@@ -333,29 +334,20 @@ void IMU_IIM42652::calibrate_accelerometer()
  */
 void IMU_IIM42652::calibrate_gyroscope()
 {
-    const int num_samples = 1000;
-    std::array<std::array<double, num_samples>, 3> data;
-    std::chrono::milliseconds reading_interval{10};
-    std::cout << "Gyroscope calibration will begin in 5 seconds; do not move the device." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds{5});
-    std::cout << "Calibration has started. Do not move the device for 10 seconds." << std::endl;
-
-    for (int i = 0; i < num_samples; i++)
+    kalman_filter_constant_1d kfx{0, 0.5};
+    kalman_filter_constant_1d kfy{0, 0.5};
+    kalman_filter_constant_1d kfz{0, 0.5};
+    while (!kfx.converged && !kfy.converged && !kfz.converged)
     {
         this->read_IMU();
-        data[0][i] = this->gyroscope_x;
-        data[1][i] = this->gyroscope_y;
-        data[2][i] = this->gyroscope_z;
-        std::this_thread::sleep_for(reading_interval);
+        kfx.update(this->gyroscope_x, 0.02);
+        kfy.update(this->gyroscope_y, 0.02);
+        kfz.update(this->gyroscope_z, 0.02);
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
     }
-    double gx = array_mean_1d(data[0]);
-    double gy = array_mean_1d(data[1]);
-    double gz = array_mean_1d(data[2]);
-
-    // Store offsets in appropriate registers.
-    std::cout << "gx: " << gx << std::endl;
-    std::cout << "gy: " << gy << std::endl;
-    std::cout << "gz: " << gz << std::endl;
+    std::cout << "gx offset: " << kfx.est << std::endl;
+    std::cout << "gy offset: " << kfy.est << std::endl;
+    std::cout << "gz offset: " << kfz.est << std::endl;
 }
 
 /** \brief Sets up the I2C file handle and connects to a device on the I2C bus.
