@@ -24,6 +24,7 @@ add_subdirectory(lora)
 add_subdirectory(quaternion)
 add_subdirectory(logger)
 add_subdirectory(input_parser)
+add_subdirectory(kalman)
 
 ## Executables to build
 add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
@@ -32,7 +33,7 @@ add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
 target_compile_options(${PROJECT_NAME} PRIVATE -Wno-psabi -Wall -Wshadow)
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver bmi270_driver bmp280_driver quaternion logger input_parser)
+target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver bmi270_driver bmp280_driver quaternion logger input_parser kalman)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/arwain.conf DESTINATION /etc)
