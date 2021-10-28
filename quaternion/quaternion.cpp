@@ -2,46 +2,59 @@
 
 #include "quaternion.hpp"
 
-/** \brief Computes a weighted 'average' of two quaternions by SLERP (or LERP if applicable).
- * \param quat1 The first quaternion. This one cannot be a const reference since we might need to modify it.
- * \param quat2 The second quaterion.
+/** \brief Computes a weighted 'average' of two quaternions by SLERP (or LERP if applicable). Does not normalize the result.
+ * The result of this function is not guaranteed to be of unit norm, but will be close if the quaternions
+ * are similar. If a normalized quaternion (versor) is needed, use nslerp() instead.
+ * \param q1 The first quaternion. This one cannot be a const reference since we might need to modify it.
+ * \param q2 The second quaterion.
  * \param t The interpolation factor. Between 0 and 1. Low numbers favour quat1, high numbers favour quat2.
  * \return A new quaternion.
  */
-quaternion quaternion::slerp(quaternion quat1, const quaternion& quat2, const double t)
+quaternion quaternion::slerp(quaternion q1, const quaternion& q2, const double t)
 {
     // TODO Check for valid lengths or other things that should generate errors.
-    double cosHalfAngle = quat1.w*quat2.w + quat1.x*quat2.x + quat1.y*quat2.y + quat1.z*quat2.z;
+    double cosHalfAngle = q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z;
 
     // If half angle is zero, return whichever
     if (cosHalfAngle <= -1.0 || cosHalfAngle >= 1.0)
     {
-        return quat1;
+        return q1;
     }
 
     // If coshalfangle < 0, invert one of the quaternions
     if (cosHalfAngle < 0.0)
     {
-        quat1 = -quat1;
+        q1 = -q1;
         cosHalfAngle = -cosHalfAngle;
     }
 
     // If the angle is large, do SLERP. If the angle is very small, LERP will suffice.
-    double blendA, blendB;
+    double weight_q1, weight_q2;
     if (cosHalfAngle < 0.99)
     {
         double halfAngle = std::acos(cosHalfAngle);
         double invSinHalfAngle = 1.0 / std::sin(halfAngle);
-        blendA = std::sin(halfAngle * (1.0 - t)) * invSinHalfAngle;
-        blendB = std::sin(halfAngle * t) * invSinHalfAngle;
+        weight_q1 = std::sin(halfAngle * (1.0 - t)) * invSinHalfAngle;
+        weight_q2 = std::sin(halfAngle * t) * invSinHalfAngle;
     }
     else
     {
-        blendA = 1.0 - t;
-        blendB = t;
+        weight_q1 = 1.0 - t;
+        weight_q2 = t;
     }
 
-    return (blendA * quat1 + blendB * quat2).unit();
+    return weight_q1 * q1 + weight_q2 * q2;
+}
+
+/** \brief Performs SLERP or LERP on a quaternion pair (depending on separation angle) and normalizes the result.
+ * \param q1 The first quaternion. This one cannot be a const reference since we might need to modify it.
+ * \param q2 The second quaterion.
+ * \param t The interpolation factor. Between 0 and 1. Low numbers favour quat1, high numbers favour quat2.
+ * \return A new unit quaternion.
+ */
+quaternion quaternion::nslerp(quaternion q1, const quaternion& q2, const double t)
+{
+    return quaternion::slerp(q1, q2, t).unit();
 }
 
 // Constructors ===================================================================================
