@@ -97,7 +97,13 @@ namespace arwain
      * \param struggle_threshold Heuristic parameter used to determine when a subject may be in distress. NOT YET WELL DEFINED.
      * \param freefall_sensitivity The acceleration magnitude below which a freefall event will be triggered.
      * \param accel_bias Biases in accelerometer measurements, subtracted from readings before processing.
+     * \param accel1_bias
+     * \param accel2_bias
+     * \param accel3_bias
      * \param gyro_bias Biases in gyroscope measurements, subtracted from readings before processing.
+     * \param gyro1_bias
+     * \param gyro2_bias
+     * \param gyro3_bias
      * \param mag_bias Biases in magnetometer measurements, subtracted from readings before processing.
      * \param mag_scale Magnetometer scale factor, multipled by readings before processing.
      * \param use_magnetometer Whether to use the magnetometer for orientation filtering.
@@ -139,7 +145,13 @@ namespace arwain
             double struggle_threshold;
             double freefall_sensitivity;
             vector3 accel_bias;
+            vector3 accel1_bias;
+            vector3 accel2_bias;
+            vector3 accel3_bias;
             vector3 gyro_bias;
+            vector3 gyro1_bias;
+            vector3 gyro2_bias;
+            vector3 gyro3_bias;
             vector3 mag_bias;
             vector3 mag_scale;
             int use_magnetometer;
