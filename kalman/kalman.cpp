@@ -71,6 +71,60 @@ MatrixXd kalman_filter::kalman_one_cycle(MatrixXd observation, MatrixXd U)
     return state_matrix;
 }
 
+kalman_filter_constant_1d::kalman_filter_constant_1d(double initial_estimate, double initial_estimate_error)
+{
+    est = initial_estimate;
+    E_est = initial_estimate_error;
+}
+
+void kalman_filter_constant_1d::update(const double measurement, const double measurement_error)
+{
+    if (converged)
+    {
+        return;
+    }
+    update_gain(measurement_error);
+    update_estimate(measurement);
+    update_estimate_error();
+    first_iter = false;
+}
+
+void kalman_filter_constant_1d::update_gain(const double measurement_error)
+{
+    KG = E_est / (E_est + measurement_error);
+}
+
+void kalman_filter_constant_1d::update_estimate(const double measurement)
+{
+    double prev_est = est;
+    est = est + KG * (measurement - est);
+    double a = (est / prev_est) - 1;
+    if (a < 0) { a = -a; }
+    if (!first_iter && a < 0.0001)
+    {
+        converged = true;
+    }
+}
+
+void kalman_filter_constant_1d::update_estimate_error()
+{
+    E_est = (1 - KG) * E_est;
+}
+
+// int main()
+// {
+//     kalman_filter_constant_1d kf{68, 2};
+//     kf.update(75, 4);
+//     std::cout << kf.est << std::endl;
+//     kf.update(71, 4);
+//     std::cout << kf.est << std::endl;
+//     kf.update(70, 4);
+//     std::cout << kf.est << std::endl;
+//     kf.update(74, 4);
+//     std::cout << kf.est << std::endl;
+//     return 0;
+// }
+
 /*
 //Example set up of a simple 2-D kalman filter
 int main()
