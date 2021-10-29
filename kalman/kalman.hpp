@@ -63,9 +63,10 @@ class kalman_filter_constant_1d
         double E_mea = 0;
         bool converged = false;
         bool first_iter = true;
+        double convergence_threshold = 0;
 
     public:
-        kalman_filter_constant_1d(double initial_estimate, double initial_estimate_error);
+        kalman_filter_constant_1d(double initial_estimate, double initial_estimate_error, double conv_threshold);
         void update(const double measurement, const double measurement_error);
         void update_gain(const double measurement_error);
         void update_estimate(const double measurement);
