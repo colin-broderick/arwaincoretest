@@ -170,6 +170,20 @@ int main(int argc, char **argv)
         return arwain::ExitCodes::Success;
     }
 
+    // Perform quick calibration of gyroscopes and write to config file.
+    if (input.contains("-calibg"))
+    {
+        if (!input.contains("-bus") || !input.contains("-address"))
+        {
+            std::cout << "Specify valid I2C bus and address to calibrate gyroscope" << std::endl;
+            return arwain::ExitCodes::FailedIMU;
+        }
+        std::string bus = input.getCmdOption("-bus");
+        int address;
+        std::stringstream(input.getCmdOption("-address")) >> std::hex >> address;
+        return calibrate_gyroscopes();
+    }
+
     // Attempt to calibrate the gyroscope before commencing other activities.
     if (input.contains("-calib"))
     {
