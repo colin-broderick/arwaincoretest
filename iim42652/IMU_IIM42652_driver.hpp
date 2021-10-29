@@ -83,8 +83,8 @@ public:
     void set_resolutions(double accel, double gyro);
     void read_IMU();
     double read_temperature();
-    void calibrate_accelerometer();
     vector3 calibrate_gyroscope();
+    vector3 calibrate_accelerometer();
 
 private:
     double accel_resolution = 0;
