@@ -25,24 +25,30 @@ namespace arwain
     const std::string help_text = "Run without arguments for no logging\n"
         "\n"
         "Arguments:\n"
-        "  -lstd        Log friendly output to stdout\n"
-        "  -lfile       Record sensor data to file - files are stored in ./data_<datetime>\n"
-        "  -conf        Specify alternate configuration file\n"
-        "  -calib       Perform online calibration - make sure the device is totally stationary\n"
-        "  -testimu     Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n"
-        "  -noinf       Do not do velocity inference\n"
-        "  -noimu       Do not turn on the IMU - for testing\n"
-        "  -nolora      Do not attempt to enable LoRa chip or send transmissions\n"
-        "  -nopressure  Do not use the pressure sensor to assist altitude tracking\n"
-        "  -h           Show this help text\n"
+        "    -lstd          Log friendly output to stdout\n"
+        "    -lfile         Record sensor data to file - files are stored in ./data_<datetime>\n"
+        "    -conf          Specify alternate configuration file\n"
+        "    -calib         Perform online calibration - make sure the device is totally stationary\n"
+        "    -noinf         Do not do velocity inference\n"
+        "    -noimu         Do not turn on the IMU - for testing\n"
+        "    -nolora        Do not attempt to enable LoRa chip or send transmissions\n"
+        "    -nopressure    Do not use the pressure sensor to assist altitude tracking\n"
+        "    -h             Show this help text\n"
+        "  (The following arguments are exclusive)\n"
+        "    -testimu       Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n"
+        "    -calibg        Calibrate the gyroscope for a give IMU. Must specify -bus and -address.\n"
+        "                   If a configuration file is specified, the result of the calibration will be written there.\n"
+        "        -bus       The bus on which to find the IMU, e.g. /dev/i2c-1\n"
+        "        -address   The address of the IMU in hexadecimal, e.g. 0x68\n"
         "\n"
-        "Example usage:\n"
-        "  ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile\n"
+        "Example usages:\n"
+        "    ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile\n"
+        "    ./arwain -calibg -bus /dev/i2c-1 -address 0x68 -conf /etc/arwain.conf\n"
         "\n"
-        "Error codes:\n"
-        "   1           Successfully executed\n"
-        "  -1           IMU failed to start\n"
-        "  -2           Problem reading configuration file";
+        "Return codes:\n"
+        "     1               Successfully executed\n"
+        "    -1               IMU failed to start\n"
+        "    -2               Problem reading configuration file";
 }
 
 namespace arwain::ExitCodes
@@ -87,45 +93,7 @@ namespace arwain::Errors
 
 namespace arwain
 {
-    /** \brief Configuration struct for whole programme.
-     * \param active_threshold Heuristic parameter used to distinguish types of motion at similar speeds. NOT YET WELL DEFINED.
-     * \param walking_threshold Velocity while vertical above which a subject is inferred to be walking.
-     * \param running_threshold  Velocity while vertical above which a subject is inferred to be running.
-     * \param crawling_threshold Velocity while horizontal above which a subject is inferred to be crawling.
-     * \param climbing_threshold Vertical velocity above which the activity is inferred to be climbing.
-     * \param gravity Magnitude of local gravity, e.g. 9.81.
-     * \param struggle_threshold Heuristic parameter used to determine when a subject may be in distress. NOT YET WELL DEFINED.
-     * \param freefall_sensitivity The acceleration magnitude below which a freefall event will be triggered.
-     * \param accel_bias Biases in accelerometer measurements, subtracted from readings before processing.
-     * \param accel1_bias
-     * \param accel2_bias
-     * \param accel3_bias
-     * \param gyro_bias Biases in gyroscope measurements, subtracted from readings before processing.
-     * \param gyro1_bias
-     * \param gyro2_bias
-     * \param gyro3_bias
-     * \param mag_bias Biases in magnetometer measurements, subtracted from readings before processing.
-     * \param mag_scale Magnetometer scale factor, multipled by readings before processing.
-     * \param use_magnetometer Whether to use the magnetometer for orientation filtering.
-     * \param log_magnetometer Whether to take and log magnetometer readings.
-     * \param npu_vel_weight_confidence Relative confidence in NPU vs. IMU integration for velocity predictions, 1 being 100% NPU, 0 being 100% integration.
-     * \param madgwick_beta Madgwick filter gain parameter.
-     * \param efaroe_beta EFAROE filter gain parameter.
-     * \param efaroe_zeta EFAROE filter gain parameter.
-     * \param use_indoor_positioning_system Whether to use IPS for stair and floor snapping.
-     * \param orientation_filter Which orientation filter to use out of options [efaroe, madgwick].
-     * \param lora_rf_frequency Frequency in MHz of the LoRa radio.
-     * \param lora_packet_frequency Times per second to transmit LoRa packet.
-     * \param lora_tx_power LoRa transmission power.
-     * \param lora_spread_factor LoRa spread factor.
-     * \param lora_bandwidth LoRa bandwidth.
-     * \param lora_coding_rate LoRa coding rate.
-     * \param lora_sync_word LoRa sync word.
-     * \param lora_header_mode LoRa header mode, implicit or explicit.
-     * \param lora_enable_crc Whether to add CRC to LoRa messages.
-     * \param inference_model_xml The location of the inference model xml file.
-     * \param sea_level_pressure Sea level pressure near the region of interest.
-     */
+    /** \brief Configuration struct for whole programme. */
     class Configuration
     {
         public:
@@ -136,51 +104,55 @@ namespace arwain
             int read_from_file();
 
         public:
-            double active_threshold;
-            double walking_threshold;
-            double running_threshold;
-            double crawling_threshold;
-            double climbing_threshold;
-            double gravity;
-            double struggle_threshold;
-            double freefall_sensitivity;
-            vector3 accel_bias;
-            vector3 accel1_bias;
-            vector3 accel2_bias;
-            vector3 accel3_bias;
-            vector3 gyro_bias;
-            vector3 gyro1_bias;
-            vector3 gyro2_bias;
-            vector3 gyro3_bias;
-            vector3 mag_bias;
-            vector3 mag_scale;
-            int use_magnetometer;
-            int log_magnetometer;
-            double npu_vel_weight_confidence;
-            double madgwick_beta;
-            double efaroe_beta;
-            double efaroe_zeta;
-            int use_indoor_positioning_system;
-            std::string orientation_filter;
-            LoRa::freq_t lora_rf_frequency;
-            int lora_packet_frequency;
-            int lora_tx_power;
-            LoRa::sf_t lora_spread_factor;
-            LoRa::bw_t lora_bandwidth;
-            LoRa::cr_t lora_coding_rate;
-            int lora_sync_word;
-            LoRa::hm_t lora_header_mode;
-            int lora_enable_crc;
-            std::string inference_model_xml;
-            double sea_level_pressure;
-            int log_to_stdout = 0;
-            int log_to_file = 0;
-            int no_inference = 0;
-            int no_imu = 0;
-            int no_lora = 0;
-            int no_pressure = 0;
-            std::string config_file = "/etc/arwain.conf";
-            int file_read_ok;
+            double active_threshold; // Heuristic parameter used to distinguish types of motion at similar speeds. NOT YET WELL DEFINED.
+            double walking_threshold; // Velocity while vertical above which a subject is inferred to be walking.
+            double running_threshold; // Velocity while vertical above which a subject is inferred to be running.
+            double crawling_threshold; // Velocity while horizontal above which a subject is inferred to be crawling.
+            double climbing_threshold; // Vertical velocity above which the activity is inferred to be climbing.
+            double gravity; // Magnitude of local gravity, e.g. 9.81.
+            double struggle_threshold; // Heuristic parameter used to determine when a subject may be in distress. NOT YET WELL DEFINED.
+            double freefall_sensitivity; // The sensitivity to freefall detection.
+            vector3 accel1_bias; // The systematic bias in measurements from accelerometer 1.
+            vector3 accel2_bias; // The systematic bias in measurements from accelerometer 2.
+            vector3 accel3_bias; // The systematic bias in measurements from accelerometer 3.
+            vector3 gyro1_bias; // The systematic bias in measurements from gyroscope 1.
+            vector3 gyro2_bias; // The systematic bias in measurements from gyroscope 2.
+            vector3 gyro3_bias; // The systematic bias in measurements from gyroscope 3.
+            vector3 mag_bias; // Biases in magnetometer measurements, subtracted from readings before processing.
+            vector3 mag_scale; // Magnetometer scale factor, multipled by readings before processing.
+            int use_magnetometer; // Whether to use the magnetometer for orientation filtering.
+            int log_magnetometer; // Whether to take and log magnetometer readings.
+            double npu_vel_weight_confidence; // Relative confidence in NPU vs. IMU integration for velocity predictions, 1 being 100% NPU, 0 being 100% integration.
+            double madgwick_beta; // Madgwick filter gain parameter.
+            double efaroe_beta; // EFAROE filter gain parameter.
+            double efaroe_zeta; // EFAROE filter gain parameter.
+            int use_indoor_positioning_system; // Whether to use IPS for stair and floor snapping.
+            std::string orientation_filter; // Which orientation filter to use out of options [efaroe, madgwick].
+            LoRa::freq_t lora_rf_frequency; // Frequency in MHz of the LoRa radio.
+            int lora_packet_frequency; // Times per second to transmit LoRa packet.
+            int lora_tx_power; // LoRa transmission power.
+            LoRa::sf_t lora_spread_factor; // LoRa spread factor.
+            LoRa::bw_t lora_bandwidth; // LoRa bandwidth.
+            LoRa::cr_t lora_coding_rate; // LoRa coding rate.
+            int lora_sync_word; // LoRa sync word.
+            LoRa::hm_t lora_header_mode; // LoRa header mode, implicit or explicit.
+            int lora_enable_crc; //  Whether to add CRC to LoRa messages.
+            std::string inference_model_xml; // The location of the inference model xml file.
+            double sea_level_pressure; // Sea level pressure near the region of interest.
+            int log_to_stdout = 0; // Whether to show printed output on the console.
+            int log_to_file = 0; // Whether to log data to file.
+            int no_inference = 0; // Disables inference using NPU.
+            int no_imu = 0; // Disables IMU.
+            int no_lora = 0; // Disables LoRa radio.
+            int no_pressure = 0; // Disables pressure sensor.
+            std::string config_file = "/etc/arwain.conf"; // Location of configuration file.
+            int file_read_ok; // Whether the configuration file was read successfully.
+            std::string imu1_bus; // The I2C bus on which to find IMU1.
+            std::string imu2_bus; // The I2C bus on which to find IMU2.
+            std::string imu3_bus; // The I2C bus on which to find IMU3.
+            int imu1_address; // The I2C address of IMU1.
+            int imu2_address; // The I2C address of IMU2.
+            int imu3_address; // The I2C address of IMU3.
 
             /** \brief Overwrite the content of the configuration file associated with this struct.
              * \param option The configuration option to overwrite.
@@ -211,6 +183,18 @@ namespace arwain
                 outfile << outstring.str();
                 outfile.close();
             }
+
+            /** \brief Reads an option into the specified storage space in the configuration struct.
+             * \param option String naming the option to parse from the file.
+             * \param storage The storage location of the data read from file, typically a struct member.
+             * \return ARWAIN exist code indiciating success or error.
+             */
+            template<typename T> int read_option(const std::map<std::string, std::string>& options, const std::string& option, T& storage)
+            {
+                // TODO Add error checking for bad reads and send it up the call stack.
+                std::stringstream(options.at(option)) >> storage;
+                return arwain::ExitCodes::Success;
+            }
     };
 
     std::string datetimestring();
@@ -234,5 +218,7 @@ typedef struct euler_orientation_t
     double pitch;
     double yaw;
 } euler_orientation_t;
+
+int calibrate_gyroscopes();
 
 #endif

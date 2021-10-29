@@ -231,53 +231,53 @@ int arwain::Configuration::read_from_file()
         options[name] = value;
     }
 
-    // Read all options into a configuration object.
-    std::stringstream(options["active_threshold"]) >> this->active_threshold;
-    std::stringstream(options["walking_threshold"]) >> this->walking_threshold;
-    std::stringstream(options["running_threshold"]) >> this->running_threshold;
-    std::stringstream(options["crawling_threshold"]) >> this->crawling_threshold;
-    std::stringstream(options["climbing_threshold"]) >> this->climbing_threshold;
-    std::stringstream(options["gravity"]) >> this->gravity;
-    std::stringstream(options["struggle_threshold"]) >> this->struggle_threshold;
-    std::stringstream(options["freefall_sensitivity"]) >> this->freefall_sensitivity;
-    std::stringstream(options["accel_bias_x"]) >> this->accel_bias.x;
-    std::stringstream(options["accel_bias_y"]) >> this->accel_bias.y;
-    std::stringstream(options["accel_bias_z"]) >> this->accel_bias.z;
-    std::stringstream(options["accel1_bias_x"]) >> this->accel1_bias.x;
-    std::stringstream(options["accel1_bias_y"]) >> this->accel1_bias.y;
-    std::stringstream(options["accel1_bias_z"]) >> this->accel1_bias.z;
-    std::stringstream(options["accel2_bias_x"]) >> this->accel2_bias.x;
-    std::stringstream(options["accel2_bias_y"]) >> this->accel2_bias.y;
-    std::stringstream(options["accel2_bias_z"]) >> this->accel2_bias.z;
-    std::stringstream(options["accel3_bias_x"]) >> this->accel3_bias.x;
-    std::stringstream(options["accel3_bias_y"]) >> this->accel3_bias.y;
-    std::stringstream(options["accel3_bias_z"]) >> this->accel3_bias.z;
-    std::stringstream(options["gyro_bias_x"]) >> this->gyro_bias.x;
-    std::stringstream(options["gyro_bias_y"]) >> this->gyro_bias.y;
-    std::stringstream(options["gyro_bias_z"]) >> this->gyro_bias.z;
-    std::stringstream(options["gyro1_bias_x"]) >> this->gyro1_bias.x;
-    std::stringstream(options["gyro1_bias_y"]) >> this->gyro1_bias.y;
-    std::stringstream(options["gyro1_bias_z"]) >> this->gyro1_bias.z;
-    std::stringstream(options["gyro2_bias_x"]) >> this->gyro2_bias.x;
-    std::stringstream(options["gyro2_bias_y"]) >> this->gyro2_bias.y;
-    std::stringstream(options["gyro2_bias_z"]) >> this->gyro2_bias.z;
-    std::stringstream(options["gyro3_bias_x"]) >> this->gyro3_bias.x;
-    std::stringstream(options["gyro3_bias_y"]) >> this->gyro3_bias.y;
-    std::stringstream(options["gyro3_bias_z"]) >> this->gyro3_bias.z;
-    std::stringstream(options["mag_bias_x"]) >> this->mag_bias.x;
-    std::stringstream(options["mag_bias_y"]) >> this->mag_bias.y;
-    std::stringstream(options["mag_bias_z"]) >> this->mag_bias.z;
-    std::stringstream(options["mag_scale_x"]) >> this->mag_scale.x;
-    std::stringstream(options["mag_scale_y"]) >> this->mag_scale.y;
-    std::stringstream(options["mag_scale_z"]) >> this->mag_scale.z;
-    std::stringstream(options["use_magnetometer"]) >> this->use_magnetometer;
-    std::stringstream(options["log_magnetometer"]) >> this->log_magnetometer;
-    std::stringstream(options["npu_vel_weight_confidence"]) >> this->npu_vel_weight_confidence;
-    std::stringstream(options["madgwick_beta"]) >> this->madgwick_beta;
-    std::stringstream(options["use_indoor_positioning_system"]) >> this->use_indoor_positioning_system;
-    std::stringstream(options["orientation_filter"]) >> this->orientation_filter;
-    std::stringstream(options["inference_model_xml"]) >> this->inference_model_xml;
-    std::stringstream(options["sea_level_pressure"]) >> this->sea_level_pressure;
+    // Read all options into the configuration object.
+    read_option(options, "active_threshold", this->active_threshold);
+    read_option(options, "walking_threshold", this->walking_threshold);
+    read_option(options, "running_threshold", this->running_threshold);
+    read_option(options, "crawling_threshold", this->crawling_threshold);
+    read_option(options, "climbing_threshold", this->climbing_threshold);
+    read_option(options, "gravity", this->gravity);
+    read_option(options, "struggle_threshold", this->struggle_threshold);
+    read_option(options, "freefall_sensitivity", this->freefall_sensitivity);
+    read_option(options, "accel1_bias_x", this->accel1_bias.x);
+    read_option(options, "accel1_bias_y", this->accel1_bias.y);
+    read_option(options, "accel1_bias_z", this->accel1_bias.z);
+    read_option(options, "accel2_bias_x", this->accel2_bias.x);
+    read_option(options, "accel2_bias_y", this->accel2_bias.y);
+    read_option(options, "accel2_bias_z", this->accel2_bias.z);
+    read_option(options, "accel3_bias_x", this->accel3_bias.x);
+    read_option(options, "accel3_bias_y", this->accel3_bias.y);
+    read_option(options, "accel3_bias_z", this->accel3_bias.z);
+    read_option(options, "gyro1_bias_x", this->gyro1_bias.x);
+    read_option(options, "gyro1_bias_y", this->gyro1_bias.y);
+    read_option(options, "gyro1_bias_z", this->gyro1_bias.z);
+    read_option(options, "gyro2_bias_x", this->gyro2_bias.x);
+    read_option(options, "gyro2_bias_y", this->gyro2_bias.y);
+    read_option(options, "gyro2_bias_z", this->gyro2_bias.z);
+    read_option(options, "gyro3_bias_x", this->gyro3_bias.x);
+    read_option(options, "gyro3_bias_y", this->gyro3_bias.y);
+    read_option(options, "gyro3_bias_z", this->gyro3_bias.z);
+    read_option(options, "mag_bias_x", this->mag_bias.x);
+    read_option(options, "mag_bias_y", this->mag_bias.y);
+    read_option(options, "mag_bias_z", this->mag_bias.z);
+    read_option(options, "mag_scale_x", this->mag_scale.x);
+    read_option(options, "mag_scale_y", this->mag_scale.y);
+    read_option(options, "mag_scale_z", this->mag_scale.z);
+    read_option(options, "use_magnetometer", this->use_magnetometer);
+    read_option(options, "log_magnetometer", this->log_magnetometer);
+    read_option(options, "npu_vel_weight_confidence", this->npu_vel_weight_confidence);
+    read_option(options, "madgwick_beta", this->madgwick_beta);
+    read_option(options, "use_indoor_positioning_system", this->use_indoor_positioning_system);
+    read_option(options, "orientation_filter", this->orientation_filter);
+    read_option(options, "inference_model_xml", this->inference_model_xml);
+    read_option(options, "sea_level_pressure", this->sea_level_pressure);
+    read_option(options, "imu1_bus", this->imu1_bus);
+    read_option(options, "imu2_bus", this->imu2_bus);
+    read_option(options, "imu3_bus", this->imu3_bus);
+    read_option(options, "imu1_address", this->imu1_address);
+    read_option(options, "imu2_address", this->imu2_address);
+    read_option(options, "imu3_address", this->imu3_address);
     
     // Apply LoRa settings
     std::stringstream(options["lora_tx_power"]) >> this->lora_tx_power;
@@ -366,4 +366,35 @@ int arwain::Configuration::read_from_file()
     }
 
     return 1;
+}
+
+int calibrate_gyroscopes()
+{
+    vector3 results;
+
+    IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+    std::cout << "Calibrating gyroscope on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;
+    results = imu1.calibrate_gyroscope();
+    std::cout << "Calibration complete" << std::endl;
+    arwain::config.replace("gyro1_bias_x", results.x);
+    arwain::config.replace("gyro1_bias_y", results.y);
+    arwain::config.replace("gyro1_bias_z", results.z);
+
+    IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
+    std::cout << "Calibrating gyroscope on " << arwain::config.imu2_bus << " at 0x" << std::hex << arwain::config.imu2_address << "; please wait" << std::endl;
+    results = imu2.calibrate_gyroscope();
+    std::cout << "Calibration complete" << std::endl;
+    arwain::config.replace("gyro2_bias_x", results.x);
+    arwain::config.replace("gyro2_bias_y", results.y);
+    arwain::config.replace("gyro2_bias_z", results.z);
+
+    IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
+    std::cout << "Calibrating gyroscope on " << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << "; please wait" << std::endl;
+    results = imu3.calibrate_gyroscope();
+    std::cout << "Calibration complete" << std::endl;
+    arwain::config.replace("gyro3_bias_x", results.x);
+    arwain::config.replace("gyro3_bias_y", results.y);
+    arwain::config.replace("gyro3_bias_z", results.z);
+
+    return arwain::ExitCodes::Success;
 }
