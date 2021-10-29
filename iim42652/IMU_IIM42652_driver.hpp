@@ -11,6 +11,8 @@ extern "C"
     #include <i2c/smbus.h>
 }
 
+#include "vector3.hpp"
+
 // CONSTANTS ===================================================================
 
 #define GRAVITY 9.8067
@@ -82,7 +84,7 @@ public:
     void read_IMU();
     double read_temperature();
     void calibrate_accelerometer();
-    void calibrate_gyroscope();
+    vector3 calibrate_gyroscope();
 
 private:
     double accel_resolution = 0;

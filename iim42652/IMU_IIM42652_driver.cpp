@@ -8,6 +8,7 @@
 
 #include "IMU_IIM42652_driver.hpp"
 #include "kalman.hpp"
+#include "vector3.hpp"
 
 #define V2_CALIB
 
@@ -332,7 +333,7 @@ void IMU_IIM42652::calibrate_accelerometer()
  * This procedure does not consider the change in offset as a
  * function of temperature.
  */
-void IMU_IIM42652::calibrate_gyroscope()
+vector3 IMU_IIM42652::calibrate_gyroscope()
 {
     kalman_filter_constant_1d kfx{0, 0.5};
     kalman_filter_constant_1d kfy{0, 0.5};
@@ -345,9 +346,7 @@ void IMU_IIM42652::calibrate_gyroscope()
         kfz.update(this->gyroscope_z, 0.02);
         std::this_thread::sleep_for(std::chrono::milliseconds{10});
     }
-    std::cout << "gx offset: " << kfx.est << std::endl;
-    std::cout << "gy offset: " << kfy.est << std::endl;
-    std::cout << "gz offset: " << kfz.est << std::endl;
+    return {kfx.est, kfy.est, kfz.est};
 }
 
 /** \brief Sets up the I2C file handle and connects to a device on the I2C bus.
