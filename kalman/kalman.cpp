@@ -71,10 +71,11 @@ MatrixXd kalman_filter::kalman_one_cycle(MatrixXd observation, MatrixXd U)
     return state_matrix;
 }
 
-kalman_filter_constant_1d::kalman_filter_constant_1d(double initial_estimate, double initial_estimate_error)
+kalman_filter_constant_1d::kalman_filter_constant_1d(double initial_estimate, double initial_estimate_error, double conv_threshold)
 {
     est = initial_estimate;
     E_est = initial_estimate_error;
+    convergence_threshold = conv_threshold;
 }
 
 void kalman_filter_constant_1d::update(const double measurement, const double measurement_error)
@@ -100,7 +101,7 @@ void kalman_filter_constant_1d::update_estimate(const double measurement)
     est = est + KG * (measurement - est);
     double a = (est / prev_est) - 1;
     if (a < 0) { a = -a; }
-    if (!first_iter && a < 0.0001)
+    if (!first_iter && a < convergence_threshold)
     {
         converged = true;
     }
