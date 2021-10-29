@@ -220,5 +220,6 @@ typedef struct euler_orientation_t
 } euler_orientation_t;
 
 int calibrate_gyroscopes();
+int calibrate_accelerometers();
 
 #endif

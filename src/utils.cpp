@@ -398,3 +398,34 @@ int calibrate_gyroscopes()
 
     return arwain::ExitCodes::Success;
 }
+
+int calibrate_accelerometers()
+{
+    vector3 results;
+
+    IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+    std::cout << "Calibrating accelerometer on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;
+    results = imu1.calibrate_accelerometer();
+    std::cout << "Calibration complete" << std::endl;
+    arwain::config.replace("accel1_bias_x", results.x);
+    arwain::config.replace("accel1_bias_y", results.y);
+    arwain::config.replace("accel1_bias_z", results.z);
+
+    IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
+    std::cout << "Calibrating accelerometer on " << arwain::config.imu2_bus << " at 0x" << std::hex << arwain::config.imu2_address << "; please wait" << std::endl;
+    results = imu2.calibrate_accelerometer();
+    std::cout << "Calibration complete" << std::endl;
+    arwain::config.replace("accel2_bias_x", results.x);
+    arwain::config.replace("accel2_bias_y", results.y);
+    arwain::config.replace("accel2_bias_z", results.z);
+
+    IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
+    std::cout << "Calibrating accelerometer on " << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << "; please wait" << std::endl;
+    results = imu3.calibrate_accelerometer();
+    std::cout << "Calibration complete" << std::endl;
+    arwain::config.replace("accel3_bias_x", results.x);
+    arwain::config.replace("accel3_bias_y", results.y);
+    arwain::config.replace("accel3_bias_z", results.z);
+
+    return arwain::ExitCodes::Success;
+}
