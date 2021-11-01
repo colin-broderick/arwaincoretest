@@ -3,6 +3,7 @@
 #include <mutex>
 #include <deque>
 #include <string>
+#include <cmath>
 
 #include "imu_reader.hpp"
 #include "utils.hpp"
@@ -33,6 +34,15 @@ static vector3 world_align(const vector3& vec, const quaternion& rotation)
     };
 }
 
+static euler_orientation_t compute_euler(quaternion& q)
+{
+    euler_orientation_t euler;
+    euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y);
+	euler.pitch = std::asin(-2.0 * (q.x*q.z - q.w*q.y));
+	euler.yaw = std::atan2(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z);
+    return euler;
+}
+
 /** \brief Reads IMU data, runs orientation filter(s), rotates IMU data, and buffers everything.
  * This is the root of the entire tree. Quite a lot goes on here and a lot of buffers
  * are fed. This is also the most time-sensitive thread. A single loop must not take
@@ -48,8 +58,8 @@ void imu_reader()
     }
 
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
-    IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu3_bus};
-    IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu2_bus};
+    IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
+    IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Filter* filter1;
@@ -140,7 +150,7 @@ void imu_reader()
         { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
             std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
             arwain::Buffers::IMU_BUFFER.pop_front();
-            arwain::Buffers::IMU_BUFFER.push_back({accel_data1.x, accel_data1.y, accel_data1.z, gyro_data1.x, gyro_data1.y, gyro_data1.z});
+            arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
         }
 
         // Log IMU to file.
@@ -166,9 +176,11 @@ void imu_reader()
             accel_data3.x, accel_data3.y, accel_data3.z
         );
 
+        // SLERP all orientation filters into a canonical filter.
         quat1 = {filter1->getW(), filter1->getX(), filter1->getY(), filter1->getZ()};
         quat2 = {filter2->getW(), filter2->getX(), filter2->getY(), filter2->getZ()};
         quat3 = {filter3->getW(), filter3->getX(), filter3->getY(), filter3->getZ()};
+        quat_data = quaternion::nslerp(quaternion::nslerp(quat1, quat2, 0.5), quat3, 0.6666666);
 
         if (cycle_count % 100 == 0)
         {
@@ -179,15 +191,7 @@ void imu_reader()
         }
 
         // Extract Euler orientation from filter.
-        euler_data.roll = filter1->getRoll();
-        euler_data.pitch = filter1->getPitch();
-        euler_data.yaw = filter1->getYaw();
-
-        // SLERP all orientation filters into a canonical filter.
-        quat_data = quaternion::nslerp(
-            quaternion::nslerp(quat1, quat2, 0.5),
-            quat3, 0.6666666
-        );
+        euler_data = compute_euler(quat_data);
 
         { // Add orientation information to buffers.
             std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
@@ -203,10 +207,7 @@ void imu_reader()
         {
             std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
             arwain::Buffers::IMU_WORLD_BUFFER.pop_front();
-            arwain::Buffers::IMU_WORLD_BUFFER.push_back({
-                world_accel_data1.x, world_accel_data1.y, world_accel_data1.z,
-                world_gyro_data1.x, world_gyro_data1.y, world_gyro_data1.z
-            });
+            arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
         }
 
         // Log orientation information to file.
