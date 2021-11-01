@@ -68,6 +68,9 @@ namespace arwain
             double getYaw() ;
             quaternion getQuat();
             std::array<double, 3> getEuler();
+
+            // Setters
+            void setQ(double, double, double, double);
         
         private:
             const double degrees_per_radian = 57.295779513082320876798154814105;
