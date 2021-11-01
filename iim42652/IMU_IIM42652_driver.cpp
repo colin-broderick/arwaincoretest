@@ -27,13 +27,13 @@ IMU_IIM42652::IMU_IIM42652(int bus_address, const std::string &bus_name)
 {
     // Default configuration.
     unsigned char accel_config = ACCEL_200HZ | ACCEL_FSR_16G;
-    unsigned char gyro_config = GYRO_200HZ | GYRO_FSR_2000;
+    unsigned char gyro_config = GYRO_200HZ | GYRO_FSR_1000;
 
     i2c_init(bus_address, bus_name);
     soft_reset();
     std::this_thread::sleep_for(std::chrono::milliseconds{2});
     IMU_config(gyro_config, accel_config);
-    set_resolutions(ACCEL_RES_16G, GYRO_RES_2000);
+    set_resolutions(ACCEL_RES_16G, GYRO_RES_1000);
     enable();
     std::this_thread::sleep_for(std::chrono::milliseconds{25});
 }
@@ -72,8 +72,11 @@ vector3 IMU_IIM42652::calibrate_accelerometer()
     // Collect samples =============================================================
     std::vector<Eigen::Matrix<double, 3, 1>> samples;
 
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 12; i++)
     {
+        std::cout << i+1 << ") Place the IMU in a random orientation ..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds{5});
+
         kalman_filter_constant_1d kfx{9.81, 1.0, 0.000001};
         kalman_filter_constant_1d kfy{9.81, 1.0, 0.000001};
         kalman_filter_constant_1d kfz{9.81, 1.0, 0.000001};
@@ -170,9 +173,9 @@ vector3 IMU_IIM42652::calibrate_accelerometer()
  */
 vector3 IMU_IIM42652::calibrate_gyroscope()
 {
-    kalman_filter_constant_1d kfx{0, 0.5, 0.0001};
-    kalman_filter_constant_1d kfy{0, 0.5, 0.0001};
-    kalman_filter_constant_1d kfz{0, 0.5, 0.0001};
+    kalman_filter_constant_1d kfx{0, 0.5, 0.0000051};
+    kalman_filter_constant_1d kfy{0, 0.5, 0.0000051};
+    kalman_filter_constant_1d kfz{0, 0.5, 0.0000051};
     while (!kfx.converged && !kfy.converged && !kfz.converged)
     {
         this->read_IMU();
@@ -275,6 +278,15 @@ int IMU_IIM42652::IMU_config(uint8_t gyro_config, uint8_t accel_config)
     {
         return ret_code;
     }
+
+    // Set internal gyro filter order.
+    uint8_t val = GYRO_UI_FILTER_ORD_3RD | 0b00000010;
+    ret_code = i2c_write(ADDR_GYRO_CONFIG1, 1, &val);
+    if (ret_code > 0)
+    {
+        return ret_code;
+    }
+
     return ret_code;
 }
 
