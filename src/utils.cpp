@@ -396,6 +396,8 @@ int calibrate_gyroscopes()
     arwain::config.replace("gyro3_bias_y", results.y);
     arwain::config.replace("gyro3_bias_z", results.z);
 
+    std::cout << std::dec;
+
     return arwain::ExitCodes::Success;
 }
 
@@ -426,6 +428,8 @@ int calibrate_accelerometers()
     arwain::config.replace("accel3_bias_x", results.x);
     arwain::config.replace("accel3_bias_y", results.y);
     arwain::config.replace("accel3_bias_z", results.z);
+
+    std::cout << std::dec;
 
     return arwain::ExitCodes::Success;
 }
