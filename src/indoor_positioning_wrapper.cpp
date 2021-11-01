@@ -1,12 +1,12 @@
 #include <string>
 #include <mutex>
 #include <deque>
+#include <thread>
 
 #include "indoor_positioning_wrapper.hpp"
-#include "utils.hpp"
 #include "logger.hpp"
 #include "vector3.hpp"
-#include "shared_resource.hpp"
+#include "arwain.hpp"
 
 /** \brief Indoor positioning system for recognising and snapping to stairs, floors, etc.
  * Runs as thread.

@@ -10,10 +10,9 @@
 #include <string>
 
 #include "stance.hpp"
-#include "utils.hpp"
 #include "logger.hpp"
 #include "vector3.hpp"
-#include "shared_resource.hpp"
+#include "arwain.hpp"
 
 /** \brief Stance detection thread, periodically assesses mode of motion based in IMU and velocity data.
  * Runs as a thread.

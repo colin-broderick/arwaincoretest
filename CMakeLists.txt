@@ -14,7 +14,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 ## Locate source files
-set(PROJECT_CPP_FILES src/main.cpp src/indoor_positioning_wrapper.cpp src/stance.cpp src/utils.cpp src/velocity_prediction.cpp src/altimeter.cpp src/imu_reader.cpp src/std_output.cpp src/transmit_lora.cpp src/multi_imu.cpp)
+set(PROJECT_CPP_FILES src/main.cpp src/indoor_positioning_wrapper.cpp src/stance.cpp src/velocity_prediction.cpp src/altimeter.cpp src/imu_reader.cpp src/std_output.cpp src/transmit_lora.cpp src/multi_imu.cpp src/arwain.cpp)
 
 add_subdirectory(iim42652)
 add_subdirectory(bmi270)
