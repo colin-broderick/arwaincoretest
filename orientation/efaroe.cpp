@@ -318,3 +318,8 @@ std::array<double, 3> arwain::eFaroe::getEuler()
     }
     return std::array<double, 3>{roll, pitch, yaw};
 }
+
+void arwain::eFaroe::setQ(double w, double x, double y, double z)
+{	
+	m_quaternion = quaternion{w, x, y, z};
+}

@@ -392,3 +392,11 @@ double arwain::Madgwick::getYawRadians()
 	}
 	return yaw;
 }
+
+void arwain::Madgwick::setQ(double w, double x, double y, double z)
+{	
+	q0 = w;
+	q1 = x;
+	q2 = y;
+	q3 = z;
+}
