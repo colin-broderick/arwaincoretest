@@ -1,8 +1,7 @@
 #include <mutex>
 
-#include "utils.hpp"
 #include "bmp280.cpp"
-#include "shared_resource.hpp"
+#include "arwain.hpp"
 
 /** \brief Uses the BMP280 pressure sensor to determine altitude. */
 void altimeter()

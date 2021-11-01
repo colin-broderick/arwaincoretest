@@ -4,14 +4,14 @@
 #include <deque>
 #include <string>
 #include <cmath>
+#include <thread>
 
 #include "imu_reader.hpp"
-#include "utils.hpp"
 #include "multi_imu.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
 #include "logger.hpp"
-#include "shared_resource.hpp"
+#include "arwain.hpp"
 
 /** \brief Rotates a 3-vector according to a quaternion orientation.
  * \param vec The 3-vector to rotate.
@@ -181,6 +181,14 @@ void imu_reader()
         quat2 = {filter2->getW(), filter2->getX(), filter2->getY(), filter2->getZ()};
         quat3 = {filter3->getW(), filter3->getX(), filter3->getY(), filter3->getZ()};
         quat_data = quaternion::nslerp(quaternion::nslerp(quat1, quat2, 0.5), quat3, 0.6666666);
+
+        // Back SLERP
+        quat1 = quaternion::slerp(quat1, quat_data, 0.02);
+        quat2 = quaternion::slerp(quat2, quat_data, 0.02);
+        quat3 = quaternion::slerp(quat3, quat_data, 0.02);
+        filter1->setQ(quat1.w, quat1.x, quat1.y, quat1.z);
+        filter2->setQ(quat2.w, quat2.x, quat2.y, quat2.z);
+        filter3->setQ(quat3.w, quat3.x, quat3.y, quat3.z);
 
         if (cycle_count % 100 == 0)
         {

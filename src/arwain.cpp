@@ -1,172 +1,74 @@
-#include <csignal>
-#include <sstream>
-#include <thread>
-#include <ctime>
-#include <fstream>
 #include <iostream>
+#include <experimental/filesystem>
 #include <iomanip>
-#include <array>
+#include <thread>
 
-#include "utils.hpp"
+#include "arwain.hpp"
 #include "input_parser.hpp"
-#include "shared_resource.hpp"
-
-// IMUs ============================
+#include "imu_reader.hpp"
+#include "velocity_prediction.hpp"
+#include "transmit_lora.hpp"
+#include "std_output.hpp"
+#include "indoor_positioning_wrapper.hpp"
+#include "altimeter.hpp"
+#include "logger.hpp"
 #include "IMU_IIM42652_driver.hpp"
-#include "bmi270.hpp"
-#include "multi_imu.hpp"
 
-extern arwain::Configuration CONFIG;
-
-arwain::Configuration::Configuration(const InputParser& input)
-{    
-    // Enable/disable stdout logging.
-    if (input.contains("-lstd"))
-    {
-        this->log_to_stdout = 1;
-    }
-
-    // Disable/enable velocity inference.
-    if (input.contains("-noinf"))
-    {
-        this->no_inference = 1;
-    }
-
-    // Disable/enable LoRa transmission.
-    if (input.contains("-nolora"))
-    {
-        this->no_lora = 1;
-    }
-
-    if (input.contains("-nopressure"))
-    {
-        this->no_pressure = 1;
-    }
-
-    // Disable/enable IMU.
-    if (input.contains("-noimu"))
-    {
-        this->no_imu = 1;
-    }
-
-    // Enable/disable logging to file.
-    if (input.contains("-lfile"))
-    {
-        std::cout << "Logging to file" << "\n";
-        this->log_to_file = 1;
-    }
-
-    // If alternate configuration file supplied, read it instead of default.
-    if (input.contains("-conf"))
-    {
-        this->config_file = input.getCmdOption("-conf");
-    }
-
-    // If neither file nor std logging are enabled, warn the user that no data will be logged.
-    if (!input.contains("-lstd") && !input.contains("-lfile"))
-    {
-        std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
-    }
-
-    this->file_read_ok = read_from_file();
+// General configuration data.
+namespace arwain
+{
+    int shutdown = 0;
+    arwain::Configuration config;
+    std::string folder_date_string;
+    arwain::Status status;
+    arwain::Logger error_log;
 }
 
-float arwain::getCPUTemp()
+// Shared data buffers; mutex locks must be used when accessing.
+namespace arwain::Buffers
 {
-    float ret;
-    std::array<char, 32> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("vcgencmd measure_temp", "r"), pclose);
-    if (!pipe)
-    {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
-    {
-        result += buffer.data();
-    }
-    std::stringstream{result.substr(5, 4)} >> ret;
-    return ret;
+    std::deque<vector6> IMU_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
+    std::deque<vector6> IMU_WORLD_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
+    std::deque<vector3> VELOCITY_BUFFER{arwain::BufferSizes::VELOCITY_BUFFER_LEN};
+    std::deque<vector3> POSITION_BUFFER{arwain::BufferSizes::POSITION_BUFFER_LEN};
+    std::deque<vector3> MAG_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
+    std::deque<vector3> MAG_WORLD_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
+    std::deque<vector3> IPS_BUFFER{arwain::BufferSizes::IPS_BUFFER_LEN};
+    std::deque<vector3> PRESSURE_BUFFER{arwain::BufferSizes::PRESSURE_BUFFER_LEN};
+    std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
+    std::deque<quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
 }
 
-/** \brief Get the current system datetime as a string.
- * \return Datetime as string.
- */
-std::string arwain::datetimestring()
+// Mutex locks for use when accessing shared buffers.
+namespace arwain::Locks
 {
-    std::time_t now = std::time(0);
-    std::tm *ltm = localtime(&now);
-    std::stringstream ss;
+    std::mutex IMU_BUFFER_LOCK;
+    std::mutex MAG_BUFFER_LOCK;
+    std::mutex VELOCITY_BUFFER_LOCK;
+    std::mutex STATUS_FLAG_LOCK;
+    std::mutex POSITION_BUFFER_LOCK;
+    std::mutex ORIENTATION_BUFFER_LOCK;
+    std::mutex PRESSURE_BUFFER_LOCK;
+}
 
-    // Year
-    ss << ltm->tm_year+1900;
-    ss << "_";
-
-    // Month
-    if (ltm->tm_mon+1 < 10)
-    {
-        ss << '0' << ltm->tm_mon+1;
+/** \brief Start a Python script which opens a socket and does inference on data we send it. */
+static void py_inference()
+{
+    if (!arwain::config.no_inference)
+    {   
+        std::string command = "python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
+        system(command.c_str());
     }
-    else
-    {
-        ss << ltm->tm_mon+1;
-    }
-    ss << "_";
-
-    // Date
-    if (ltm->tm_mday < 10)
-    {
-        ss << '0' << ltm->tm_mday;
-    }
-    else
-    {
-        ss << ltm->tm_mday;
-    }
-    ss << "_";
-    
-    // Hour
-    if (ltm->tm_hour < 10)
-    {
-        ss << '0' << ltm->tm_hour;
-    }
-    else
-    {
-        ss << ltm->tm_hour;
-    }
-    ss << "_";
-
-    // Minute
-    if (ltm->tm_min < 10)
-    {
-        ss << '0' << ltm->tm_min;
-    }
-    else
-    {
-        ss << ltm->tm_min;
-    }
-    ss << "_";
-
-    // Second
-    if (ltm->tm_sec < 10)
-    {
-        ss << '0' << ltm->tm_sec;
-    }
-    else
-    {
-        ss << ltm->tm_sec;
-    }
-
-    return ss.str();
 }
 
 /** \brief Utility functional for checking that the IMU is operational.
  */
-void arwain::test_imu()
+int arwain::test_imu()
 {
     // Initialize the IMU.
-    // IMU_IIM42652 imu{0x68, "/dev/i2c-4"};
+    IMU_IIM42652 imu{0x68, "/dev/i2c-1"};
     // BMI270 imu{0x69, "/dev/i2c-1"};
-    Multi_IIM42652 imu;
+    // Multi_IIM42652 imu;
 
     // Local buffers for IMU data
     vector3 accel_data;
@@ -198,6 +100,29 @@ void arwain::test_imu()
         time = time + interval;
         std::this_thread::sleep_until(time);
 
+    }
+
+    return arwain::ExitCodes::Success;
+}
+
+void arwain::setup(const InputParser& input)
+{
+    // Create output directory and write copy of current configuration.
+    if (arwain::config.log_to_file)
+    {
+        arwain::folder_date_string = "./data_" + arwain::datetimestring();
+        if (!std::experimental::filesystem::is_directory(arwain::folder_date_string))
+        {
+            std::experimental::filesystem::create_directory(arwain::folder_date_string);
+        }
+        std::experimental::filesystem::copy(arwain::config.config_file, arwain::folder_date_string + "/config.conf");
+    }
+
+    // Open error log file (globally accessible)
+    if (arwain::config.log_to_file)
+    {
+        arwain::error_log.open(arwain::folder_date_string + "/ERRORS.txt");
+        arwain::error_log << "# time event" << "\n";
     }
 }
 
@@ -368,7 +293,177 @@ int arwain::Configuration::read_from_file()
     return 1;
 }
 
-int calibrate_gyroscopes()
+arwain::Configuration::Configuration(const InputParser& input)
+{    
+    // Enable/disable stdout logging.
+    if (input.contains("-lstd"))
+    {
+        this->log_to_stdout = 1;
+    }
+
+    // Disable/enable velocity inference.
+    if (input.contains("-noinf"))
+    {
+        this->no_inference = 1;
+    }
+
+    // Disable/enable LoRa transmission.
+    if (input.contains("-nolora"))
+    {
+        this->no_lora = 1;
+    }
+
+    if (input.contains("-nopressure"))
+    {
+        this->no_pressure = 1;
+    }
+
+    // Disable/enable IMU.
+    if (input.contains("-noimu"))
+    {
+        this->no_imu = 1;
+    }
+
+    // Enable/disable logging to file.
+    if (input.contains("-lfile"))
+    {
+        std::cout << "Logging to file" << "\n";
+        this->log_to_file = 1;
+    }
+
+    // If alternate configuration file supplied, read it instead of default.
+    if (input.contains("-conf"))
+    {
+        this->config_file = input.getCmdOption("-conf");
+    }
+
+    // If neither file nor std logging are enabled, warn the user that no data will be logged.
+    if (!input.contains("-lstd") && !input.contains("-lfile"))
+    {
+        std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
+    }
+
+    this->file_read_ok = read_from_file();
+}
+
+int arwain::execute_inference()
+{
+    // Start worker threads.
+    std::thread imu_reader_thread(imu_reader);                   // Reading IMU data, updating orientation filters.
+    std::thread predict_velocity_thread(predict_velocity);       // Velocity and position inference.
+    std::thread stance_detector_thread(stance_detector);         // Stance, freefall, entanglement detection.
+    std::thread transmit_lora_thread(transmit_lora);             // LoRa packet transmissions.
+    std::thread std_output_thread(std_output);                   // Prints useful output to std out.
+    std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
+    std::thread altimeter_thread(altimeter);                     // Uses the BMP280 sensor to determine altitude.
+    std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
+    // std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
+    // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
+
+    // Wait for all threads to terminate.
+    imu_reader_thread.join();
+    predict_velocity_thread.join();
+    stance_detector_thread.join();
+    transmit_lora_thread.join();
+    std_output_thread.join();
+    indoor_positioning_thread.join();
+    py_inference_thread.join();
+    altimeter_thread.join();
+    // py_transmitter_thread.join();
+    // kalman_filter.join();
+
+    return arwain::ExitCodes::Success;
+}
+
+float arwain::getPiCPUTemp()
+{
+    float ret;
+    std::array<char, 32> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("vcgencmd measure_temp", "r"), pclose);
+    if (!pipe)
+    {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+    {
+        result += buffer.data();
+    }
+    std::stringstream{result.substr(5, 4)} >> ret;
+    return ret;
+}
+
+/** \brief Get the current system datetime as a string.
+ * \return Datetime as string.
+ */
+std::string arwain::datetimestring()
+{
+    std::time_t now = std::time(0);
+    std::tm *ltm = localtime(&now);
+    std::stringstream ss;
+
+    // Year
+    ss << ltm->tm_year+1900;
+    ss << "_";
+
+    // Month
+    if (ltm->tm_mon+1 < 10)
+    {
+        ss << '0' << ltm->tm_mon+1;
+    }
+    else
+    {
+        ss << ltm->tm_mon+1;
+    }
+    ss << "_";
+
+    // Date
+    if (ltm->tm_mday < 10)
+    {
+        ss << '0' << ltm->tm_mday;
+    }
+    else
+    {
+        ss << ltm->tm_mday;
+    }
+    ss << "_";
+    
+    // Hour
+    if (ltm->tm_hour < 10)
+    {
+        ss << '0' << ltm->tm_hour;
+    }
+    else
+    {
+        ss << ltm->tm_hour;
+    }
+    ss << "_";
+
+    // Minute
+    if (ltm->tm_min < 10)
+    {
+        ss << '0' << ltm->tm_min;
+    }
+    else
+    {
+        ss << ltm->tm_min;
+    }
+    ss << "_";
+
+    // Second
+    if (ltm->tm_sec < 10)
+    {
+        ss << '0' << ltm->tm_sec;
+    }
+    else
+    {
+        ss << ltm->tm_sec;
+    }
+
+    return ss.str();
+}
+
+int arwain::calibrate_gyroscopes()
 {
     vector3 results;
 
@@ -401,7 +496,7 @@ int calibrate_gyroscopes()
     return arwain::ExitCodes::Success;
 }
 
-int calibrate_accelerometers()
+int arwain::calibrate_accelerometers()
 {
     vector3 results;
 

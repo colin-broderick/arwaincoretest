@@ -1,13 +1,13 @@
 #include <sstream>
 #include <chrono>
+#include <thread>
 #include <mutex>
 #include <deque>
 
-#include "utils.hpp"
+#include "arwain.hpp"
 #include "vector3.hpp"
 #include "quaternion.hpp"
 #include "filter.hpp"
-#include "shared_resource.hpp"
 
 /** \brief Periodically logs status messages to stdout.
  * Useful for debugging or testing, but probably not wanted at runtime.

@@ -1,55 +1,75 @@
-#ifndef GREEVE_ARWAIN_UTILS_HPP
-#define GREEVE_ARWAIN_UTILS_HPP
+#ifndef _ARWAIN_HPP
+#define _ARWAIN_HPP
 
-#include <string>
-#include <sstream>
-#include <ctime>
-#include <fstream>
-#include <vector>
-#include <algorithm>
-#include <iostream>
-#include <chrono>
-#include <string>
 #include <map>
-#include <thread>
-#include <pthread.h>
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
 
-#include "vector3.hpp"
 #include "stance.hpp"
 #include "lora.hpp"
-#include "input_parser.hpp"
-#include "IMU_IIM42652_driver.hpp"
+
+class vector3;
+class vector6;
+class quaternion;
+class InputParser;
+
+struct euler_orientation_t
+{
+    double roll;
+    double pitch;
+    double yaw;
+};
 
 namespace arwain
 {
-    const std::string help_text = "Run without arguments for no logging\n"
-        "\n"
-        "Arguments:\n"
-        "    -lstd          Log friendly output to stdout\n"
-        "    -lfile         Record sensor data to file - files are stored in ./data_<datetime>\n"
-        "    -conf          Specify alternate configuration file\n"
-        "    -calib         Perform online calibration - make sure the device is totally stationary\n"
-        "    -noinf         Do not do velocity inference\n"
-        "    -noimu         Do not turn on the IMU - for testing\n"
-        "    -nolora        Do not attempt to enable LoRa chip or send transmissions\n"
-        "    -nopressure    Do not use the pressure sensor to assist altitude tracking\n"
-        "    -h             Show this help text\n"
-        "  (The following arguments are exclusive)\n"
-        "    -testimu       Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n"
-        "    -calibg        Calibrate the gyroscope for a give IMU. Must specify -bus and -address.\n"
-        "    -caliba        Calibrate the acceleration for a given IMU. Must specify -bus and -address.\n"
-        "                   If a configuration file is specified, the result of the calibrations will be written there.\n"
-        "        -bus       The bus on which to find the IMU, e.g. /dev/i2c-1\n"
-        "        -address   The address of the IMU in hexadecimal, e.g. 0x68\n"
-        "\n"
-        "Example usages:\n"
-        "    ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile\n"
-        "    ./arwain -calibg -bus /dev/i2c-1 -address 0x68 -conf /etc/arwain.conf\n"
-        "\n"
-        "Return codes:\n"
-        "     1               Successfully executed\n"
-        "    -1               IMU failed to start\n"
-        "    -2               Problem reading configuration file";
+    class Configuration;
+    class Status;
+    class Logger;
+}
+
+namespace arwain
+{
+    extern int shutdown;
+    extern std::string folder_date_string;
+    extern arwain::Configuration config;
+    extern arwain::Status status;
+    extern arwain::Logger error_log;
+}
+
+/** \brief Contains mutex locks for thread coordination. */
+namespace arwain::Locks
+{
+    extern std::mutex PRESSURE_BUFFER_LOCK;
+    extern std::mutex IMU_BUFFER_LOCK;
+    extern std::mutex MAG_BUFFER_LOCK;
+    extern std::mutex VELOCITY_BUFFER_LOCK;
+    extern std::mutex STATUS_FLAG_LOCK;
+    extern std::mutex POSITION_BUFFER_LOCK;
+    extern std::mutex ORIENTATION_BUFFER_LOCK;
+    extern std::mutex PRESSURE_BUFFER_LOCK;
+}
+
+namespace arwain::Buffers
+{
+    extern std::deque<vector6> IMU_BUFFER;
+    extern std::deque<vector6> IMU_WORLD_BUFFER;
+    extern std::deque<vector3> VELOCITY_BUFFER;
+    extern std::deque<vector3> POSITION_BUFFER;
+    extern std::deque<vector3> MAG_BUFFER;
+    extern std::deque<vector3> MAG_WORLD_BUFFER;
+    extern std::deque<vector3> IPS_BUFFER;
+    extern std::deque<vector3> PRESSURE_BUFFER;
+    extern std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER;
+    extern std::deque<quaternion> QUAT_ORIENTATION_BUFFER;
+}
+
+namespace arwain
+{
+    void setup(const InputParser& input);
+    int test_imu();
+    int execute_inference();
 }
 
 namespace arwain::ExitCodes
@@ -82,6 +102,17 @@ namespace arwain::BufferSizes
     static const unsigned int PRESSURE_BUFFER_LEN = 100;
 }
 
+namespace arwain::SystemStates
+{
+    enum _SystemStates
+    {
+        Inference,
+        GyroscopeCalibration,
+        AccelerometerCalibration,
+        HelpText
+    };
+}
+
 namespace arwain::Errors
 {
     enum class ErrorCondition
@@ -94,6 +125,25 @@ namespace arwain::Errors
 
 namespace arwain
 {
+    struct Status
+    {
+        arwain::StanceDetector::Stance current_stance;
+        arwain::StanceDetector::Attitude attitude;
+        arwain::StanceDetector::EntangleState entangled;
+        arwain::StanceDetector::FallState falling;
+        arwain::Errors::ErrorCondition errors;
+        int IMUTemperature;
+    };
+}
+
+namespace arwain
+{
+    std::string datetimestring();
+    float getPiCPUTemp();
+
+    int calibrate_gyroscopes();
+    int calibrate_accelerometers();
+
     /** \brief Configuration struct for whole programme. */
     class Configuration
     {
@@ -165,7 +215,7 @@ namespace arwain
                 std::stringstream outstring;
 
                 std::string line;
-                while (getline(infile, line))
+                while (std::getline(infile, line))
                 {
                     auto delimiter = line.find("=");
                     std::string name = line.substr(0, delimiter);
@@ -197,30 +247,38 @@ namespace arwain
                 return arwain::ExitCodes::Success;
             }
     };
-
-    std::string datetimestring();
-
-    struct Status {
-        arwain::StanceDetector::Stance current_stance;
-        arwain::StanceDetector::Attitude attitude;
-        arwain::StanceDetector::EntangleState entangled;
-        arwain::StanceDetector::FallState falling;
-        arwain::Errors::ErrorCondition errors;
-        int IMUTemperature;
-    };
-    
-    void test_imu();
-    float getCPUTemp();
 }
 
-typedef struct euler_orientation_t
+namespace arwain
 {
-    double roll;
-    double pitch;
-    double yaw;
-} euler_orientation_t;
-
-int calibrate_gyroscopes();
-int calibrate_accelerometers();
+    const std::string help_text = "Run without arguments for no logging\n"
+        "\n"
+        "Arguments:\n"
+        "    -lstd          Log friendly output to stdout\n"
+        "    -lfile         Record sensor data to file - files are stored in ./data_<datetime>\n"
+        "    -conf          Specify alternate configuration file\n"
+        "    -calib         Perform online calibration - make sure the device is totally stationary\n"
+        "    -noinf         Do not do velocity inference\n"
+        "    -noimu         Do not turn on the IMU - for testing\n"
+        "    -nolora        Do not attempt to enable LoRa chip or send transmissions\n"
+        "    -nopressure    Do not use the pressure sensor to assist altitude tracking\n"
+        "    -h             Show this help text\n"
+        "  (The following arguments are exclusive)\n"
+        "    -testimu       Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n"
+        "    -calibg        Calibrate the gyroscope for a give IMU. Must specify -bus and -address.\n"
+        "    -caliba        Calibrate the acceleration for a given IMU. Must specify -bus and -address.\n"
+        "                   If a configuration file is specified, the result of the calibrations will be written there.\n"
+        "        -bus       The bus on which to find the IMU, e.g. /dev/i2c-1\n"
+        "        -address   The address of the IMU in hexadecimal, e.g. 0x68\n"
+        "\n"
+        "Example usages:\n"
+        "    ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile\n"
+        "    ./arwain -calibg -bus /dev/i2c-1 -address 0x68 -conf /etc/arwain.conf\n"
+        "\n"
+        "Return codes:\n"
+        "     1             Successfully executed\n"
+        "    -1             IMU failed to start\n"
+        "    -2             Problem reading configuration file";
+}
 
 #endif
