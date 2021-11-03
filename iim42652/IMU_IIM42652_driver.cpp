@@ -15,7 +15,7 @@
 static double rn()
 {
     static std::default_random_engine gen;
-    static std::uniform_real_distribution dist{-1.0, 1.0};
+    static std::uniform_real_distribution<double> dist{-1.0, 1.0};
     return dist(gen);
 }
 
