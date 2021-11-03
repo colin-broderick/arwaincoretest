@@ -21,21 +21,21 @@ int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr);
 void delay_us(uint32_t period);
 void delay_ms(uint32_t period);
 
-vector3 mag_calib_offset, mag_calib_scale;
+static vector3 mag_calib_offset, mag_calib_scale;
 
 void read_calib_data(const std::string& path);
 
-int bmi_file_i2c = -1;
+static int bmi_file_i2c = -1;
 
-double acc_scale;
-double gyr_scale;
+static double acc_scale;
+static double gyr_scale;
 
-struct bmi2_dev bmi270;
-struct bmm150_dev bmm150;
+static struct bmi2_dev bmi270;
+static struct bmm150_dev bmm150;
 
-struct bmi2_sensor_data acce;
-struct bmi2_sensor_data gyro;
-struct bmi2_sensor_data magn;
+static struct bmi2_sensor_data acce;
+static struct bmi2_sensor_data gyro;
+static struct bmi2_sensor_data magn;
 
 class BMI270
 {
@@ -43,6 +43,7 @@ class BMI270
         BMI270(const int i2c_address, const std::string& i2c_bus);
         double read_temperature();
         void read_IMU();
+        vector3 calibrate_gyroscope();
 
     public:
         vector3 acce, gyro;
