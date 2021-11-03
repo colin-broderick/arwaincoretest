@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #include "stance.hpp"
 #include "lora.hpp"
@@ -69,6 +70,7 @@ namespace arwain
 {
     void setup(const InputParser& input);
     int test_imu();
+    int test_ori(int rate);
     int execute_inference();
 }
 
@@ -221,7 +223,7 @@ namespace arwain
                     std::string name = line.substr(0, delimiter);
                     if (name == option)
                     {
-                        outstring << name << "=" << new_value << "\n";
+                        outstring << name << "=" << std::setprecision(15) << new_value << "\n";
                     }
                     else
                     {
@@ -265,6 +267,7 @@ namespace arwain
         "    -h             Show this help text\n"
         "  (The following arguments are exclusive)\n"
         "    -testimu       Sends IMU data (a,g) to stdout - other flags are ignored if this is set\n"
+        "    -testori       Runs an orientation filter against IMU 1 and prints results as quaternion and euler triplet\n"
         "    -calibg        Calibrate the gyroscope for a give IMU. Must specify -bus and -address.\n"
         "    -caliba        Calibrate the acceleration for a given IMU. Must specify -bus and -address.\n"
         "                   If a configuration file is specified, the result of the calibrations will be written there.\n"
