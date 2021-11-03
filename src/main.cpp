@@ -24,6 +24,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <thread>
 #include <mutex>
 #include <fstream>
+#include <cstdlib>
 #include <experimental/filesystem>
 
 #include "arwain.hpp"
@@ -85,6 +86,14 @@ int main(int argc, char **argv)
     if (input.contains("-testimu"))
     {
         return arwain::test_imu();
+    }
+
+    if (input.contains("-testori"))
+    {
+        int rate;
+        const char *rate_str = input.getCmdOption("-testori").c_str();
+        rate = std::atoi(rate_str);
+        return arwain::test_ori(rate);
     }
 
     // Perform quick calibration of gyroscopes and write to config file.

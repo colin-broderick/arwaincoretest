@@ -13,6 +13,8 @@
 #include "altimeter.hpp"
 #include "logger.hpp"
 #include "IMU_IIM42652_driver.hpp"
+#include "madgwick.hpp"
+#include "efaroe.hpp"
 
 // General configuration data.
 namespace arwain
@@ -461,6 +463,58 @@ std::string arwain::datetimestring()
     }
 
     return ss.str();
+}
+
+static euler_orientation_t compute_euler(quaternion& q)
+{
+    euler_orientation_t euler;
+    euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y)  * 180.0 / 3.14159;
+	euler.pitch = std::asin(-2.0 * (q.x*q.z - q.w*q.y))  * 180.0 / 3.14159;
+	euler.yaw = std::atan2(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z)  * 180.0 / 3.14159;
+    return euler;
+}
+
+int arwain::test_ori(int frequency)
+{
+    IMU_IIM42652 imu{config.imu1_address, config.imu1_bus};
+    arwain::Madgwick filter{frequency, config.madgwick_beta};
+    // arwain::eFaroe filter{{1, 0, 0, 0}, config.gyro1_bias, 0, config.efaroe_beta, config.efaroe_zeta};
+
+    auto time = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds interval{1000/frequency};
+    int count = 0;
+    euler_orientation_t euler;
+    quaternion quat;
+
+    vector3 gyro;
+    vector3 accel;
+    std::cout << "Starting orientation filter at " << frequency << " Hz" << std::endl;
+
+    while (!shutdown)
+    {
+        time += interval;
+        auto timeCount = time.time_since_epoch().count();
+        std::this_thread::sleep_until(time);
+
+        imu.read_IMU();
+        gyro = {imu.gyroscope_x, imu.gyroscope_y, imu.gyroscope_z};
+        gyro = gyro - config.gyro1_bias;
+        accel = {imu.accelerometer_x, imu.accelerometer_y, imu.accelerometer_z};
+        accel = accel - config.accel1_bias;
+        
+        filter.update(timeCount, gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
+
+        count++;
+        if (count % frequency == 0)
+        {
+            quat = {filter.getW(), filter.getX(), filter.getY(), filter.getZ()};
+            euler = compute_euler(quat);
+            std::cout << "Quaternion: " << std::fixed << std::showpos << filter.getW() << " " << filter.getX() << " " << filter.getY() << " " << filter.getZ() << "\t\t";
+            std::cout << "Euler: " << std::fixed << std::showpos << euler.roll << " " << euler.pitch << " " << euler.yaw << "\n";
+        }
+    }
+    
+    return arwain::ExitCodes::Success;
 }
 
 int arwain::calibrate_gyroscopes()
