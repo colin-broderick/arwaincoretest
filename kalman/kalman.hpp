@@ -57,17 +57,20 @@ private:
 class kalman_filter_constant_1d
 {
     public:
-        double KG = 0;
         double est = 0;
+        bool converged = false;
+
+    private:
+        double KG = 0;
         double E_est = 0;
         double E_mea = 0;
-        bool converged = false;
-        bool first_iter = true;
-        double convergence_threshold = 0;
 
     public:
-        kalman_filter_constant_1d(double initial_estimate, double initial_estimate_error, double conv_threshold);
+        kalman_filter_constant_1d(double initial_estimate, double initial_estimate_error);
         void update(const double measurement, const double measurement_error);
+        double get_gain() const;
+
+    private:
         void update_gain(const double measurement_error);
         void update_estimate(const double measurement);
         void update_estimate_error();
