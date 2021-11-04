@@ -77,9 +77,9 @@ vector3 IMU_IIM42652::calibrate_accelerometer()
         std::cout << i+1 << ") Place the IMU in a random orientation ..." << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds{5});
 
-        kalman_filter_constant_1d kfx{9.81, 1.0, 0.000001};
-        kalman_filter_constant_1d kfy{9.81, 1.0, 0.000001};
-        kalman_filter_constant_1d kfz{9.81, 1.0, 0.000001};
+        kalman_filter_constant_1d kfx{9.81, 1.0};
+        kalman_filter_constant_1d kfy{9.81, 1.0};
+        kalman_filter_constant_1d kfz{9.81, 1.0};
         
         while (!kfx.converged && !kfy.converged && !kfz.converged)
         {
@@ -173,9 +173,9 @@ vector3 IMU_IIM42652::calibrate_accelerometer()
  */
 vector3 IMU_IIM42652::calibrate_gyroscope()
 {
-    kalman_filter_constant_1d kfx{0, 0.5, 0.0000051};
-    kalman_filter_constant_1d kfy{0, 0.5, 0.0000051};
-    kalman_filter_constant_1d kfz{0, 0.5, 0.0000051};
+    kalman_filter_constant_1d kfx{0, 1};
+    kalman_filter_constant_1d kfy{0, 1};
+    kalman_filter_constant_1d kfz{0, 1};
     while (!kfx.converged && !kfy.converged && !kfz.converged)
     {
         this->read_IMU();
