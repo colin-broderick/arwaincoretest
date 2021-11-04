@@ -31,6 +31,34 @@ namespace arwain::Timers
             std::chrono::system_clock::time_point _start;
             std::chrono::system_clock::time_point _end;
     };
+
+    /** \brief Provides a countdown timer. */
+    class CountdownTimer
+    {
+        private:
+            std::chrono::high_resolution_clock::time_point timer_start;
+            std::chrono::milliseconds timer_duration;
+
+        public:
+            /** \brief Constructor. */
+            CountdownTimer(const int timer_duration_ms)
+            {
+                this->timer_start = std::chrono::high_resolution_clock::now();
+                this->timer_duration = std::chrono::milliseconds{timer_duration_ms};
+            }
+
+            /** \brief Check whether the timer duration has elapsed. */
+            bool finished() const
+            {
+                return (std::chrono::high_resolution_clock::now() - this->timer_duration > timer_start);
+            }
+
+            /** \brief Reset the start time of the timer. */
+            void reset()
+            {
+                this->timer_start = std::chrono::high_resolution_clock::now();
+            }
+    };
 }
 
 #endif
