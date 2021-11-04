@@ -186,9 +186,9 @@ int init_bmi270(int mag_enabled, const std::string& calib_file, const std::strin
  */
 vector3 BMI270::calibrate_gyroscope()
 {
-    kalman_filter_constant_1d kfx{0, 0.5, 0.0000051};
-    kalman_filter_constant_1d kfy{0, 0.5, 0.0000051};
-    kalman_filter_constant_1d kfz{0, 0.5, 0.0000051};
+    kalman_filter_constant_1d kfx{0, 0.5};
+    kalman_filter_constant_1d kfy{0, 0.5};
+    kalman_filter_constant_1d kfz{0, 0.5};
     while (!kfx.converged && !kfy.converged && !kfz.converged)
     {
         this->read_IMU();
