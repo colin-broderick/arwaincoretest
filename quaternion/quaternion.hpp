@@ -23,9 +23,10 @@ class quaternion
         quaternion(const double w, const double x, const double y, const double z);
 
         // Static methods
-        static double dotProduct(const quaternion& quat1, const quaternion& quat2);
+        static double dot(const quaternion& quat1, const quaternion& quat2);
         static quaternion slerp(quaternion quat1, const quaternion& quat2, const double t);
         static quaternion nslerp(quaternion quat1, const quaternion& quat2, const double t);
+        static double angle_between(const quaternion& q1, const quaternion& q2);
 
         // Getters
         double getW() const;
