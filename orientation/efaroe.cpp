@@ -90,7 +90,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
     };
 
     // Calculate gradient.
-    vector3 gradient = cross(jacobian_a, acc);
+    vector3 gradient = vector3::cross(jacobian_a, acc);
 
     // Normalize gradient.
     gradient = gradient/gradient.magnitude();
@@ -165,8 +165,8 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
     acc = acc/acc.magnitude();
     mag = mag/mag.magnitude();
 
-    mag = cross(acc, mag);
-    vector3 r_emf = cross(vector3{0,0,1}, emf);
+    mag = vector3::cross(acc, mag);
+    vector3 r_emf = vector3::cross(vector3{0,0,1}, emf);
 
     // Construct acceleration Jacobian.
     vector3 jacobian_a{
@@ -183,7 +183,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
     };
 
     // Calculate gradient
-    vector3 gradient = cross(jacobian_a, acc) + cross(jacobian_m, mag);
+    vector3 gradient = vector3::cross(jacobian_a, acc) + vector3::cross(jacobian_m, mag);
 
     // Normalize gradient
     gradient = gradient/gradient.magnitude();
@@ -301,9 +301,9 @@ quaternion arwain::eFaroe::getQuat()
 void arwain::eFaroe::computeAngles()
 {
     quaternion& q = m_quaternion;
-    roll = atan2f(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y);
-    pitch = asinf(-2.0f * (q.x*q.z - q.w*q.y));
-    yaw = atan2f(q.x*q.y + q.w*q.z, 0.5f - q.y*q.y - q.z*q.z);
+    roll = atan2f(q.w*q.x + q.y*q.z, 0.5 - q.x*q.x - q.y*q.y);
+    pitch = asinf(-2.0 * (q.x*q.z - q.w*q.y));
+    yaw = atan2f(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z);
 }
 
 /** \brief Retrieve the orientation in the Euler angle representation.

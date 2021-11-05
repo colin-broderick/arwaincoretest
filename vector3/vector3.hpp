@@ -12,6 +12,8 @@ struct vector3
     double y;
     double z;
     double magnitude();
+    vector3 normalized();
+    static vector3 cross(const vector3& v1, const vector3& v2);
 };
 
 /** \brief Find the Euclidean (L2) norm of a 3-vector.
@@ -108,7 +110,7 @@ inline std::ostream& operator<<(std::ostream& stream, const vector3& vector)
     return stream;
 }
 
-inline vector3 cross(const vector3& v1, const vector3& v2)
+inline vector3 vector3::cross(const vector3& v1, const vector3& v2)
 {
     /*
     Computes the cross product using determinant formula:
@@ -125,13 +127,13 @@ inline vector3 cross(const vector3& v1, const vector3& v2)
     };
 }
 
-inline vector3 normalised(vector3& vector)
+inline vector3 vector3::normalized()
 {
-    double invNorm = 1.0/vector.magnitude();
+    double invNorm = 1.0/this->magnitude();
     return vector3{
-        vector.x * invNorm,
-        vector.y * invNorm,
-        vector.z * invNorm
+        this->x * invNorm,
+        this->y * invNorm,
+        this->z * invNorm
     };
 }
 
