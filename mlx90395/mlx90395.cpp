@@ -14,6 +14,33 @@ MLX90395::MLX90395(int bus_address, const std::string &bus_name)
     std::this_thread::sleep_for(std::chrono::milliseconds{2});
 }
 
+/** \brief Measure the current magnetic field vector and compute the rotation required
+ * to rotate that vector onto the expected local magnetic field.
+ * \return A versor which applies the specified rotation.
+ */
+quaternion MLX90395::read_orientation()
+{
+    // static vector3 mag_target{18.895, -0.361, 45.372}; // The local magnetic field vector.
+    static vector3 mag_target{0.38443, -0.0073448, 0.92312}; // The normalized local magnetic field vector.
+    
+    vector3 mag_measurement = this->read().normalized(); // Normalized magnetic field vector.
+
+    double angle = std::acos(mag_measurement.x * mag_target.x 
+                           + mag_measurement.y * mag_target.y
+                           + mag_measurement.z * mag_target.z); // The angle between the measured field and the local field.
+
+    vector3 axis = vector3::cross(mag_measurement, mag_target); // Axis orthogonal to both measured and expected.
+
+    quaternion quat{
+        std::cos(angle/2.0),
+        std::sin(angle/2.0) * axis.x,
+        std::sin(angle/2.0) * axis.y,
+        std::sin(angle/2.0) * axis.z
+    }; // Rotation operator to rotate measured vector onto expected vector.
+
+    return quat;
+}
+
 /** \brief Sets up the I2C file handle and connects to a device on the I2C bus.
  * \param[in] address The address of the device on the I2C bus.
  * \param[in] bus_name The name of the bus to open, e.g. /dev/i2c-1.
