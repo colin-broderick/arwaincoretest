@@ -205,6 +205,8 @@ int arwain::Configuration::read_from_file()
     read_option(options, "imu1_address", this->imu1_address);
     read_option(options, "imu2_address", this->imu2_address);
     read_option(options, "imu3_address", this->imu3_address);
+    read_option(options, "magn_address", this->magn_address);
+    read_option(options, "magn_bus", this->magn_bus);
     
     // Apply LoRa settings
     std::stringstream(options["lora_tx_power"]) >> this->lora_tx_power;
@@ -477,7 +479,7 @@ static euler_orientation_t compute_euler(quaternion& q)
 int arwain::test_ori(int frequency)
 {
     IMU_IIM42652 imu{config.imu1_address, config.imu1_bus};
-    arwain::Madgwick filter{frequency, config.madgwick_beta};
+    arwain::Madgwick filter{static_cast<double>(frequency), config.madgwick_beta};
     // arwain::eFaroe filter{{1, 0, 0, 0}, config.gyro1_bias, 0, config.efaroe_beta, config.efaroe_zeta};
 
     auto time = std::chrono::high_resolution_clock::now();
@@ -524,14 +526,26 @@ int arwain::calibrate_gyroscopes()
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;
     results = imu1.calibrate_gyroscope();
-    std::cout << "Calibration complete" << std::endl;
+    std::cout << "Completed pass 1 on gyro 1" << std::endl;
+    results = results + imu1.calibrate_gyroscope();
+    std::cout << "Completed pass 2 on gyro 1" << std::endl;
+    results = results + imu1.calibrate_gyroscope();
+    std::cout << "Completed pass 3 on gyro 1" << std::endl;
+    results = results / 3.0;
     arwain::config.replace("gyro1_bias_x", results.x);
     arwain::config.replace("gyro1_bias_y", results.y);
     arwain::config.replace("gyro1_bias_z", results.z);
+    std::cout << "Calibration complete" << std::endl;
 
     IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
     std::cout << "Calibrating gyroscope on " << arwain::config.imu2_bus << " at 0x" << std::hex << arwain::config.imu2_address << "; please wait" << std::endl;
     results = imu2.calibrate_gyroscope();
+    std::cout << "Completed pass 1 on gyro 2" << std::endl;
+    results = results + imu2.calibrate_gyroscope();
+    std::cout << "Completed pass 2 on gyro 2" << std::endl;
+    results = results + imu2.calibrate_gyroscope();
+    std::cout << "Completed pass 3 on gyro 2" << std::endl;
+    results = results / 3.0;
     std::cout << "Calibration complete" << std::endl;
     arwain::config.replace("gyro2_bias_x", results.x);
     arwain::config.replace("gyro2_bias_y", results.y);
@@ -540,6 +554,12 @@ int arwain::calibrate_gyroscopes()
     IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
     std::cout << "Calibrating gyroscope on " << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << "; please wait" << std::endl;
     results = imu3.calibrate_gyroscope();
+    std::cout << "Completed pass 1 on gyro 3" << std::endl;
+    results = results + imu3.calibrate_gyroscope();
+    std::cout << "Completed pass 2 on gyro 3" << std::endl;
+    results = results + imu3.calibrate_gyroscope();
+    std::cout << "Completed pass 3 on gyro 3" << std::endl;
+    results = results / 3.0;
     std::cout << "Calibration complete" << std::endl;
     arwain::config.replace("gyro3_bias_x", results.x);
     arwain::config.replace("gyro3_bias_y", results.y);
