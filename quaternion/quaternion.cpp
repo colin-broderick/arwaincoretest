@@ -13,7 +13,7 @@
 quaternion quaternion::slerp(quaternion q1, const quaternion& q2, const double t)
 {
     // TODO Check for valid lengths or other things that should generate errors.
-    double cosHalfAngle = q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z;
+    double cosHalfAngle = quaternion::dot(q1, q2);
 
     // If half angle is zero, return whichever
     if (cosHalfAngle <= -1.0 || cosHalfAngle >= 1.0)
@@ -107,12 +107,23 @@ quaternion::quaternion(const double w, const double x, const double y, const dou
  * \param quat2 The second quaternion.
  * \return Scalar inner product of the two quaternions.
  */
-double quaternion::dotProduct(const quaternion& quat1, const quaternion& quat2)
+double quaternion::dot(const quaternion& quat1, const quaternion& quat2)
 {
     return quat1.getW() * quat2.getW()
          + quat1.getX() * quat2.getX()
          + quat1.getY() * quat2.getY()
          + quat1.getZ() * quat2.getZ();
+}
+
+/** \brief Assuming two versors are supplied, computes the difference in their rotation angles.
+ * \param q1 A versor.
+ * \param q2 Another versor.
+ * \return The difference in angle the versors' rotations.
+ */
+double quaternion::angle_between(const quaternion& q1, const quaternion& q2)
+{
+    double cosHalfAngle = quaternion::dot(q1, q2);
+    return std::acos(cosHalfAngle) * 2;
 }
 
 // Operators ======================================================================================
