@@ -13,6 +13,7 @@ extern "C"
 }
 
 #include "vector3.hpp"
+#include "quaternion.hpp"
 
 // CONSTANTS ===================================================================
 
@@ -53,6 +54,7 @@ class MLX90395
 public:
     MLX90395(int bus_address, const std::string &bus_name);
     vector3 read();
+    quaternion read_orientation();
     vector3 calibrate();
 
 private:
@@ -78,20 +80,5 @@ private:
         0.2, 0.25, 0.3333, 0.4, 0.5, 0.6, 0.75, 1,
         0.1, 0.125, 0.1667, 0.2, 0.25, 0.3, 0.375, 0.5};
 };
-
-/** \brief Compute the mean value of a 1-dimensional ArrayType of doubles.
- * \param[in] data An iterable ArrayType of 1 dimension containing doubles.
- * \return The mean of the double values in the data array.
- */
-template <typename ArrayType>
-static double array_mean_1d(const ArrayType &data)
-{
-    double total = 0;
-    for (const double &element : data)
-    {
-        total += element;
-    }
-    return total / data.size();
-}
 
 #endif
