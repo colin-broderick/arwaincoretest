@@ -61,13 +61,15 @@ static void sigint_handler(int signal)
  */
 int main(int argc, char **argv)
 {
+    int ret;
+
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
 
     // Determine behaviour from command line arguments.
     InputParser input{argc, argv};
 
-    // Output help text.
+    // Output help text if requested.
     if (input.contains("-h") || input.contains("-help"))
     {
         std::cout << arwain::help_text << std::endl;
@@ -79,43 +81,46 @@ int main(int argc, char **argv)
     if (!arwain::config.file_read_ok)
     {
         std::cout << "Problem reading configuration file\n";
-        return arwain::ExitCodes::FailedConfiguration;
+        ret = arwain::ExitCodes::FailedConfiguration;
     }
     
     // Start IMU test mode. This returns so the program will quit when the test is stopped.
-    if (input.contains("-testimu"))
+    else if (input.contains("-testimu"))
     {
-        return arwain::test_imu();
+        ret = arwain::test_imu();
     }
 
-    if (input.contains("-testori"))
+    else if (input.contains("-testori"))
     {
         int rate;
         const char *rate_str = input.getCmdOption("-testori").c_str();
         rate = std::atoi(rate_str);
-        return arwain::test_ori(rate);
+        ret = arwain::test_ori(rate);
     }
 
     // Perform quick calibration of gyroscopes and write to config file.
-    if (input.contains("-calibg"))
+    else if (input.contains("-calibg"))
     {
-        return arwain::calibrate_gyroscopes();
+        ret = arwain::calibrate_gyroscopes();
     }
 
     // Perform quick calibration of gyroscopes and write to config file.
-    if (input.contains("-caliba"))
+    else if (input.contains("-caliba"))
     {
-        return arwain::calibrate_accelerometers();
+        ret = arwain::calibrate_accelerometers();
     }
 
-    // Attempt to calibrate the gyroscope before commencing other activities.
-    if (input.contains("-calib"))
+    else
     {
-        arwain::calibrate_gyroscopes();
-        arwain::config = arwain::Configuration{input}; // Reread the config file as it has now changed.
+        // Attempt to calibrate the gyroscope before commencing other activities.
+        if (input.contains("-calib"))
+        {
+            arwain::calibrate_gyroscopes();
+            arwain::config = arwain::Configuration{input}; // Reread the config file as it has now changed.
+        }
+        arwain::setup(input);
+        ret = arwain::execute_inference();
     }
 
-    arwain::setup(input);
-
-    return arwain::execute_inference();
+    return ret;
 }
