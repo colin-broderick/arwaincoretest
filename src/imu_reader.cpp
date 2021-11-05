@@ -44,6 +44,27 @@ static euler_orientation_t compute_euler(quaternion& q)
     return euler;
 }
 
+/** \brief Compute the relative trust between two sources of orientation, depending on how different
+ * they are.
+ * 
+ * The maximum weighting of the magnetometer is 1%. This drops to approximately 0.2% at a 1 degree
+ * difference. The trust in the magnetometer is effectively zero at a 5 degree difference.
+ * 
+ * \param gyro_orientation The orientation as computed by gyroscope integration.
+ * \param mag_orientation The orientation as directly measured by magnetometer.
+ * \return How much the magnetometer should be trust.
+ */
+static double gyro_mag_co_trust(quaternion gyro_orientation, quaternion mag_orientation)
+{
+    // Note; as written, this formula assumes degrees.
+
+    // Determine angle between current gyro orientation and magnetic orientation, dtheta.
+    double dtheta = std::abs(quaternion::angle_between(gyro_orientation, mag_orientation)) * 180.0 / 3.14159;
+
+    // Compute relative trust of the gyroscope.
+    return 1.0 / ((dtheta + 1) * (dtheta + 1) * (dtheta + 1)) / 100.0;
+}
+
 /** \brief Reads IMU data, runs orientation filter(s), rotates IMU data, and buffers everything.
  * This is the root of the entire tree. Quite a lot goes on here and a lot of buffers
  * are fed. This is also the most time-sensitive thread. A single loop must not take
@@ -90,8 +111,6 @@ void imu_reader()
     vector3 world_accel_data1;
     vector3 world_gyro_data1;
     euler_orientation_t euler_data;
-    quaternion quat_data;
-    quaternion magnetovector;
 
     // File handles for logging.
     arwain::Logger acce_file;
@@ -117,14 +136,13 @@ void imu_reader()
         multi_quat_file << "# time q1w q1x q1y q1z q2w q2x q2y q2z q3w q3x q3y q3z" << "\n";
     }
 
-    quaternion quat1, quat2, quat3;
+    quaternion quat1, quat2, quat3, quat_aggregate, magnetovector;
     int cycle_count = 0;
 
     // Set up timing.
     auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
     auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
     std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
-
 
     while (!arwain::shutdown)
     {
@@ -184,12 +202,17 @@ void imu_reader()
         quat1 = {filter1->getW(), filter1->getX(), filter1->getY(), filter1->getZ()};
         quat2 = {filter2->getW(), filter2->getX(), filter2->getY(), filter2->getZ()};
         quat3 = {filter3->getW(), filter3->getX(), filter3->getY(), filter3->getZ()};
-        quat_data = quaternion::nslerp(quaternion::nslerp(quat1, quat2, 0.5), quat3, 0.6666666);
+        quat_aggregate = quaternion::nslerp(quaternion::nslerp(quat1, quat2, 0.5), quat3, 0.6666666);
+
+        // Compute the SLERP factor based on how 'wrong' the magnetic orientation is compared to the gyro orientation.
+        // double s = gyro_mag_co_trust(quat_aggregate, magnetovector);
+        // SLERP the two orientation vectors using the computed trust factor.
+        // quat_aggregate = quaternion::nslerp(quat_aggregate, magnetovector, 1 - s);
 
         // Back SLERP
-        quat1 = quaternion::slerp(quat1, quat_data, 0.02);
-        quat2 = quaternion::slerp(quat2, quat_data, 0.02);
-        quat3 = quaternion::slerp(quat3, quat_data, 0.02);
+        quat1 = quaternion::slerp(quat1, quat_aggregate, 0.02);
+        quat2 = quaternion::slerp(quat2, quat_aggregate, 0.02);
+        quat3 = quaternion::slerp(quat3, quat_aggregate, 0.02);
         filter1->setQ(quat1.w, quat1.x, quat1.y, quat1.z);
         filter2->setQ(quat2.w, quat2.x, quat2.y, quat2.z);
         filter3->setQ(quat3.w, quat3.x, quat3.y, quat3.z);
@@ -203,19 +226,19 @@ void imu_reader()
         }
 
         // Extract Euler orientation from filter.
-        euler_data = compute_euler(quat_data);
+        euler_data = compute_euler(quat_aggregate);
 
         { // Add orientation information to buffers.
             std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
             arwain::Buffers::EULER_ORIENTATION_BUFFER.pop_front();
             arwain::Buffers::EULER_ORIENTATION_BUFFER.push_back(euler_data);
             arwain::Buffers::QUAT_ORIENTATION_BUFFER.pop_front();
-            arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(quat_data);
+            arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(quat_aggregate);
         }
 
         // Add world-aligned IMU to its own buffer.
-        world_accel_data1 = world_align(accel_data1, quat_data);
-        world_gyro_data1 = world_align(gyro_data1, quat_data);
+        world_accel_data1 = world_align(accel_data1, quat_aggregate);
+        world_gyro_data1 = world_align(gyro_data1, quat_aggregate);
         {
             std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
             arwain::Buffers::IMU_WORLD_BUFFER.pop_front();
@@ -226,8 +249,12 @@ void imu_reader()
         if (arwain::config.log_to_file)
         {
             euler_file << timeCount << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << "\n";
-            quat_file << timeCount << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
+            quat_file << timeCount << " " << quat_aggregate.w << " " << quat_aggregate.x << " " << quat_aggregate.y << " " << quat_aggregate.z << "\n";
         }
+
+        // Wait until the next tick.
+        loopTime = loopTime + interval;
+        std::this_thread::sleep_until(loopTime);
     }
 
     delete filter1;
