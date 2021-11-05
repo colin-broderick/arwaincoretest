@@ -7,6 +7,7 @@
 #include <thread>
 
 #include "imu_reader.hpp"
+#include "mlx90395.hpp"
 #include "multi_imu.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
@@ -37,7 +38,7 @@ static vector3 world_align(const vector3& vec, const quaternion& rotation)
 static euler_orientation_t compute_euler(quaternion& q)
 {
     euler_orientation_t euler;
-    euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y);
+    euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5 - q.x*q.x - q.y*q.y);
 	euler.pitch = std::asin(-2.0 * (q.x*q.z - q.w*q.y));
 	euler.yaw = std::atan2(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z);
     return euler;
@@ -60,6 +61,7 @@ void imu_reader()
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
     IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
     IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
+    MLX90395 magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Filter* filter1;
@@ -89,6 +91,7 @@ void imu_reader()
     vector3 world_gyro_data1;
     euler_orientation_t euler_data;
     quaternion quat_data;
+    quaternion magnetovector;
 
     // File handles for logging.
     arwain::Logger acce_file;
@@ -131,6 +134,7 @@ void imu_reader()
         imu1.read_IMU();
         imu2.read_IMU();
         imu3.read_IMU();
+        magnetovector = magnetometer.read_orientation();
 
         accel_data1 = {imu1.accelerometer_x, imu1.accelerometer_y, imu1.accelerometer_z};
         gyro_data1 = {imu1.gyroscope_x, imu1.gyroscope_y, imu1.gyroscope_z};
@@ -224,10 +228,6 @@ void imu_reader()
             euler_file << timeCount << " " << euler_data.roll << " " << euler_data.pitch << " " << euler_data.yaw << "\n";
             quat_file << timeCount << " " << quat_data.w << " " << quat_data.x << " " << quat_data.y << " " << quat_data.z << "\n";
         }
-
-        // Wait until the next tick.
-        loopTime = loopTime + interval;
-        std::this_thread::sleep_until(loopTime);
     }
 
     delete filter1;
