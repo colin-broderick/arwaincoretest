@@ -1,7 +1,7 @@
 #ifndef VECTOR3_H
 #define VECTOR3_H
 
-#include <math.h>
+#include <cmath>
 #include <iostream>
 
 /** \brief Object for representing a 3-vector of various types, e.g. Eucliden displacement vector.
@@ -11,15 +11,17 @@ struct vector3
     double x;
     double y;
     double z;
-    double magnitude();
+    double magnitude() const;
     vector3 normalized();
     static vector3 cross(const vector3& v1, const vector3& v2);
+    static double angle_between(const vector3& v1, const vector3& v2);
+    static double dot(const vector3& v1, const vector3& v2);
 };
 
 /** \brief Find the Euclidean (L2) norm of a 3-vector.
  * \return A double representing the length of the vector.
  */
-inline double vector3::magnitude()
+inline double vector3::magnitude() const
 {
     return sqrt(x*x+y*y+z*z);
 }
@@ -135,6 +137,16 @@ inline vector3 vector3::normalized()
         this->y * invNorm,
         this->z * invNorm
     };
+}
+
+inline double vector3::dot(const vector3& v1, const vector3& v2)
+{
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.y;
+}
+
+inline double vector3::angle_between(const vector3& v1, const vector3& v2)
+{
+    return std::acos(vector3::dot(v1, v2) / v1.magnitude() / v2.magnitude() );
 }
 
 struct vector6
