@@ -68,7 +68,7 @@ bool arwain::CornerDetector::update(vector3 position)
 
     std::cout << angle << std::endl;
 
-    if (angle > detection_angle)
+    if (angle < detection_angle)
     {
         while (start_index + 2 < end_index) // start and end indices must always be separated by at least 2 to guarantee there is an anchor index in between.
         {
