@@ -3,10 +3,18 @@
 #include "floor_tracker.hpp"
 #include "vector3.hpp"
 
-arwain::FloorTracker::FloorTracker(int window_size_, double min_separation_, double drift_threshold_)
+/** \brief Constructor. Assumes initial position = 0. */
+arwain::FloorTracker::FloorTracker(int window_size_, double drift_threshold_, double min_separation_)
 : window_size(window_size_), min_separation(min_separation_), drift_threshold(drift_threshold_)
 {
     track.push_back({0, 0, 0});
+}
+
+/** \brief Alternate constructor, allowing specification of initial position. */
+arwain::FloorTracker::FloorTracker(int window_size_, double drift_threshold_, double min_separation_, const vector3& initial_position_)
+: window_size(window_size_), min_separation(min_separation_), drift_threshold(drift_threshold_)
+{
+    track.push_back(initial_position_);
 }
 
 /** \brief Computes the climbing gradient between two 3-vectors.
@@ -44,7 +52,7 @@ void arwain::FloorTracker::update(const vector3& position)
     auto& start = track[1];
     auto& end = track.back();
 
-    // TODO if gradient between start and end less than threshold, offset all except anchor by (point - start + anchor).
+    // If gradient between start and end less than threshold, offset all except anchor by (point - start + anchor).
     if (std::abs(vertical_gradient(start, end)) < drift_threshold)
     {
         for (unsigned int i = 1; i < track.size(); i++)
