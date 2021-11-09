@@ -90,6 +90,7 @@ namespace arwain::Intervals
     static const unsigned int STANCE_DETECTION_INTERVAL = 1000;
     static const unsigned int INDOOR_POSITIONING_INTERVAL = 50;
     static const unsigned int STD_OUT_INTERVAL = 1000;
+    static const unsigned int IPS_INTERVAL = 500;
 }
 
 namespace arwain::BufferSizes
