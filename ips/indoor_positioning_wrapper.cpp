@@ -15,8 +15,8 @@
  */
 void indoor_positioning()
 {
-    arwain::CornerDetector corner_detector{11, 70.0, 0.10};
-    arwain::FloorTracker floor_tracker{5, 0.10, 0.1};
+    arwain::CornerDetector corner_detector{11, 115.0, 0.20}; // 11 * 0.2 means a window of 11 points separated by at least 20 cm each, so about 2 m total.
+    arwain::FloorTracker floor_tracker{5, 0.10, 0.20}; // UK stairs are gradient approx. 0.9.
 
     arwain::Logger corner_log;
     arwain::Logger tracked_floor_log;
@@ -30,7 +30,7 @@ void indoor_positioning()
     }
 
     auto time = std::chrono::high_resolution_clock::now();
-    std::chrono::milliseconds interval{500};
+    std::chrono::milliseconds interval{arwain::Intervals::IPS_INTERVAL};
 
     while (!arwain::shutdown)
     {

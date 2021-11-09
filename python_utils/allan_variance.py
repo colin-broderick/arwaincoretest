@@ -2,6 +2,7 @@ import math
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
 def AllanDeviation(data_array, sample_frequency, maxNumM=100):
@@ -33,7 +34,7 @@ def AllanDeviation(data_array, sample_frequency, maxNumM=100):
 
     # Compute Allan variance
     allanVar = np.zeros(len(M))
-    for i, mi in enumerate(M):
+    for i, mi in enumerate(tqdm(M)):
         twoMi = int(2 * mi)
         mi = int(mi)
         allanVar[i] = np.sum(
@@ -64,8 +65,11 @@ if __name__ == "__main__":
     thetay = np.cumsum(gy) * dt
     thetaz = np.cumsum(gz) * dt
 
+    print("Processing x axis")
     taux, adx = AllanDeviation(thetax, sample_frequency, maxNumM=200)
+    print("Processing y axis")
     tauy, ady = AllanDeviation(thetay, sample_frequency, maxNumM=200)
+    print("Processing z axis")
     tauz, adz = AllanDeviation(thetaz, sample_frequency, maxNumM=200)
 
     plt.figure()
