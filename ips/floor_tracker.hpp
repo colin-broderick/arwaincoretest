@@ -20,7 +20,8 @@ namespace arwain
     class FloorTracker
     {
         public:
-            FloorTracker(int window_size_, double min_separation_, double drift_threshold_);
+            FloorTracker(int window_size_, double drift_threshold_, double min_separation_);
+            FloorTracker(int window_size_, double drift_threshold_, double min_separation_, const vector3& initial_position_);
             void update(const vector3& position);
             vector3 tracked_position;
 
