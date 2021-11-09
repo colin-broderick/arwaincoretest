@@ -7,6 +7,8 @@
 
 namespace arwain
 {
+    /** \brief Attempts to identify and mark sharp corners in a 2D path. Does not use orientation
+     * directly. Uses a subsample of the plotted path. */
     class CornerDetector
     {
         public:
