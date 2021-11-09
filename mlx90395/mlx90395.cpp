@@ -3,6 +3,10 @@
 
 #include "mlx90395.hpp"
 
+static const std::array<float, 16> gain_multipliers = {
+        0.2, 0.25, 0.3333, 0.4, 0.5, 0.6, 0.75, 1,
+        0.1, 0.125, 0.1667, 0.2, 0.25, 0.3, 0.375, 0.5};
+
 /** \brief Constructor.
  * \param[in] bus_address The I2C address of the device.
  * \param[in] bus_name The bus on which the device is found, e.g. "/dev/i2c-1".
@@ -39,6 +43,28 @@ quaternion MLX90395::read_orientation()
     }; // Rotation operator to rotate measured vector onto expected vector.
 
     return quat;
+}
+
+/** \brief Rate can be between 1 and 50 (ish). 
+ * The time between reads will be floor(1000 / rate) ms.
+*/
+bool MLX90395::set_data_rate(uint8_t rate)
+{
+    if (rate < 1 || rate > 50)
+    {
+        return false;
+    }
+ 
+    int ms_per_step = 20;
+    
+    uint8_t step = 1000 / rate / ms_per_step;
+    
+    uint8_t bf[2];
+    i2c_read(REGISTER_1, 2, bf);
+    bf[1] |= step;
+    i2c_write(REGISTER_1, 2, bf);
+    
+    return true;
 }
 
 /** \brief Sets up the I2C file handle and connects to a device on the I2C bus.
@@ -86,14 +112,24 @@ int MLX90395::i2c_write(int reg_addr, int bytes, uint8_t *buffer)
 void MLX90395::send_read_command()
 {
     // TODO Is this really right? 0x80 is also the exit command ...
-    uint8_t data = 0x80;
+    uint8_t data = CMD_READ;
     i2c_write(CMD_TARGET, 1, &data);
+}
+
+uint8_t MLX90395::command(uint8_t cmd)
+{
+    // TEST
+    uint8_t status;
+    i2c_write(CMD_TARGET, 1, &cmd);
+    i2c_read(CMD_TARGET, 1, &status);
+    return status;
 }
 
 /** \brief Read magnetometer data. */
 vector3 MLX90395::read()
 {
-    // TODO
+    // TEST
+
     // TEST send read command
     send_read_command();
 
@@ -104,7 +140,6 @@ vector3 MLX90395::read()
     // TODO check buf[0] contains data rdy flag
 
     // convert buffer into doubles
-    // TEST Check if these can be doubles instead.
     mag_x = (buffer[2] << 8) | buffer[3];
     mag_y = (buffer[4] << 8) | buffer[5];
     mag_z = (buffer[6] << 8) | buffer[7];
@@ -116,18 +151,16 @@ vector3 MLX90395::read()
     return {mag_x, mag_y, mag_z};
 }
 
-/** \brief Read in current config, then write back with reset bit set. Wait 2 ms after reset. */
 bool MLX90395::reset()
 {
     // TEST
-    uint8_t data = CMD_RESET;
-    int ret = i2c_write(CMD_TARGET, 1, &data);
-    return ret;
+    return command(CMD_RESET) == STATUS_RESET;
 }
 
 /** \brief Set magnetometer to default configuraion. */
 bool MLX90395::configure()
 {
+    // TEST 
     if (!exit_mode())
     {
         return false;
@@ -155,43 +188,69 @@ bool MLX90395::configure()
     return true;
 }
 
+uint8_t MLX90395::burst_mode()
+{
+    // TEST
+    return command(CMD_BURST);
+}
+
 bool MLX90395::exit_mode()
 {
     // TEST
-    uint8_t data = CMD_EXIT;
-    i2c_write(CMD_TARGET, 1, &data);
-    // i2c_write(CMD_TARGET, 1, &data); // Might need to be done twice.
-    return true;
+    command(CMD_EXIT);
+    return command(CMD_EXIT) == 0;
 }
 
 uint8_t MLX90395::get_gain()
 {
-    // TEST Read two bytes from register 0x00, shift right 4, keep 4
+    // TEST
     uint8_t data[2];
-    i2c_read(0x00, 2, data);
-    return (data[1] >> 4) & 0b00001111;
+    i2c_read(REGISTER_0, 2, data);
+    return (data[1] >> 4) & 0x0F;
 }
 
 uint8_t MLX90395::get_resolution()
 {
-    // TEST read two bytes from 0x04, shift right by 5, take 2 smallest bits
+    // TEST
     uint8_t data[2];
-    i2c_read(0x04, 2, data);
-    return (data[1] >> 5) & 0b00000011;
+    i2c_read(REGISTER_2, 2, data);
+    return (data[1] >> 5) & 0x03;
 }
 
-void MLX90395::set_osr(uint8_t osr_val)
+/** \brief Gain occupies bits 7:4 of register 0. */
+void MLX90395::set_gain(uint8_t gain_)
 {
-    // TODO
-    // Read current register.
-    // Or with chosen OSR.
-    // Write register.
+    // TEST
+    uint8_t bf[2];
+    i2c_read(REGISTER_0, 2, bf);
+    bf[1] |= (gain_ << 4);
+    i2c_write(REGISTER_0, 2, bf);
 }
 
-void MLX90395::set_resolution(uint8_t res)
+/** \brief OSR occupies bits 1:0 of register 2. */
+void MLX90395::set_osr(OSR osr_val)
 {
-    // TODO
-    // Read current register.
-    // Or with chosen OSR.
-    // Write register.
+    // TEST
+    uint8_t bf[2];
+    i2c_read(REGISTER_2, 2, bf);
+    bf[1] |= osr_val;
+    i2c_write(REGISTER_2, 2, bf);
+}
+
+/** \brief Resolution occupies bits 10:5 of register 2. */
+void MLX90395::set_resolution(Resolution res)
+{
+    // TEST
+    uint8_t bf[2];
+    i2c_read(REGISTER_2, 2, bf);
+
+    // ResX is in bits 6:5
+    bf[1] |= (res << 5);
+
+    // ResY is in bits 8:7
+    bf[1] |= (res << 7);
+    bf[0] |= (res >> 1);
+
+    // ResZ is in bits 10:9
+    bf[0] |= (res << 1);
 }
