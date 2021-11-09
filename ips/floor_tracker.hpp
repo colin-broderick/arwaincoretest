@@ -8,6 +8,15 @@
 
 namespace arwain
 {
+    /** \brief Attempts to smooth out drift and minor elevation changes in a 3D path, while
+     * preserving true elevation changes such as those from stairs, ladders, etc.
+     * 
+     * We apply a sliding window to a subsample of the 3D path. If the spatial gradient
+     * (importantly NOT the temporal gradient) between the start and end of the segment
+     * is below a given threshold, we adjust all points in the path segment to be at the
+     * same height as the first. This way true elevation changes are retained, while those
+     * from drift and minor vertical motions are discarded.
+     */
     class FloorTracker
     {
         public:
