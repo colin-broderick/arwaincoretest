@@ -6,3 +6,6 @@ adafruit-gpio
 tornado<5.0
 RPi.GPIO
 vpython
+tqdm
+numpy
+matplotlib
