@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "floor_tracker.hpp"
 #include "vector3.hpp"
 
@@ -43,7 +45,7 @@ void arwain::FloorTracker::update(const vector3& position)
     auto& end = track.back();
 
     // TODO if gradient between start and end less than threshold, offset all except anchor by (point - start + anchor).
-    if (vertical_gradient(start, end) < drift_threshold)
+    if (std::abs(vertical_gradient(start, end)) < drift_threshold)
     {
         for (unsigned int i = 1; i < track.size(); i++)
         {
