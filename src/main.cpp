@@ -78,10 +78,9 @@ int main(int argc, char **argv)
 
     // Attempt to read the config file and quit if failed.
     arwain::config = arwain::Configuration{input};
-    if (!arwain::config.file_read_ok)
+    if ((ret = arwain::config.read_from_file()) != arwain::ExitCodes::Success)
     {
-        std::cout << "Problem reading configuration file\n";
-        ret = arwain::ExitCodes::FailedConfiguration;
+        std::cout << arwain::ErrorMessages[ret] << std::endl;
     }
     
     // Start IMU test mode. This returns so the program will quit when the test is stopped.
