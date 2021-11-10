@@ -1,5 +1,5 @@
 #include <iostream>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <iomanip>
 #include <thread>
 
@@ -113,11 +113,11 @@ void arwain::setup(const InputParser& input)
     if (arwain::config.log_to_file)
     {
         arwain::folder_date_string = "./data_" + arwain::datetimestring();
-        if (!std::experimental::filesystem::is_directory(arwain::folder_date_string))
+        if (!std::filesystem::is_directory(arwain::folder_date_string))
         {
-            std::experimental::filesystem::create_directory(arwain::folder_date_string);
+            std::filesystem::create_directory(arwain::folder_date_string);
         }
-        std::experimental::filesystem::copy(arwain::config.config_file, arwain::folder_date_string + "/config.conf");
+        std::filesystem::copy(arwain::config.config_file, arwain::folder_date_string + "/config.conf");
     }
 
     // Open error log file (globally accessible)
@@ -138,7 +138,7 @@ int arwain::Configuration::read_from_file()
     std::ifstream file(this->config_file);
     if (!file.is_open())
     {
-        return 0;
+        return arwain::ExitCodes::FailedConfiguration;
     }
 
     // A map to store key value pairs from the configuration file.
@@ -197,7 +197,14 @@ int arwain::Configuration::read_from_file()
     read_option(options, "madgwick_beta", this->madgwick_beta);
     read_option(options, "use_indoor_positioning_system", this->use_indoor_positioning_system);
     read_option(options, "orientation_filter", this->orientation_filter);
+
+    // We want to fail out if the model XML file cannot be found.
     read_option(options, "inference_model_xml", this->inference_model_xml);
+    if (!std::filesystem::exists(this->inference_model_xml))
+    {
+        return arwain::ExitCodes::InferenceXMLMissing;
+    }
+
     read_option(options, "sea_level_pressure", this->sea_level_pressure);
     read_option(options, "imu1_bus", this->imu1_bus);
     read_option(options, "imu2_bus", this->imu2_bus);
@@ -294,7 +301,7 @@ int arwain::Configuration::read_from_file()
         std::cout << "Configuration file read successfully\n";
     }
 
-    return 1;
+    return arwain::ExitCodes::Success;
 }
 
 arwain::Configuration::Configuration(const InputParser& input)
@@ -346,8 +353,6 @@ arwain::Configuration::Configuration(const InputParser& input)
     {
         std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
     }
-
-    this->file_read_ok = read_from_file();
 }
 
 int arwain::execute_inference()

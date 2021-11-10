@@ -76,33 +76,34 @@ namespace arwain
 
 namespace arwain::ExitCodes
 {
-    static const int Success = 1;
-    static const int FailedIMU = -1;
-    static const int FailedConfiguration = -2;
+    inline const int Success = 1;
+    inline const int FailedIMU = -1;
+    inline const int FailedConfiguration = -2;
+    inline const int InferenceXMLMissing = -3;
 }
 
 namespace arwain::Intervals
 {
     // Time intervals, all in milliseconds.
-    static const unsigned int IMU_READING_INTERVAL = 5;
-    static const unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
-    static const unsigned int LORA_TRANSMISSION_INTERVAL = 500;
-    static const unsigned int STANCE_DETECTION_INTERVAL = 1000;
-    static const unsigned int INDOOR_POSITIONING_INTERVAL = 50;
-    static const unsigned int STD_OUT_INTERVAL = 1000;
-    static const unsigned int IPS_INTERVAL = 500;
+    inline const unsigned int IMU_READING_INTERVAL = 5;
+    inline const unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
+    inline const unsigned int LORA_TRANSMISSION_INTERVAL = 500;
+    inline const unsigned int STANCE_DETECTION_INTERVAL = 1000;
+    inline const unsigned int INDOOR_POSITIONING_INTERVAL = 50;
+    inline const unsigned int STD_OUT_INTERVAL = 1000;
+    inline const unsigned int IPS_INTERVAL = 500;
 }
 
 namespace arwain::BufferSizes
 {
-    static const unsigned int POSITION_BUFFER_LEN = 200;
-    static const unsigned int MAG_BUFFER_LEN = 200;
-    static const unsigned int VELOCITY_BUFFER_LEN = 200;
-    static const unsigned int ORIENTATION_BUFFER_LEN = 200;
-    static const unsigned int IMU_BUFFER_LEN = 200;
-    static const unsigned int IPS_BUFFER_LEN = 50;
-    static const unsigned int LORA_MESSAGE_LENGTH = 8;
-    static const unsigned int PRESSURE_BUFFER_LEN = 100;
+    inline const unsigned int POSITION_BUFFER_LEN = 200;
+    inline const unsigned int MAG_BUFFER_LEN = 200;
+    inline const unsigned int VELOCITY_BUFFER_LEN = 200;
+    inline const unsigned int ORIENTATION_BUFFER_LEN = 200;
+    inline const unsigned int IMU_BUFFER_LEN = 200;
+    inline const unsigned int IPS_BUFFER_LEN = 50;
+    inline const unsigned int LORA_MESSAGE_LENGTH = 8;
+    inline const unsigned int PRESSURE_BUFFER_LEN = 100;
 }
 
 namespace arwain::SystemStates
@@ -123,6 +124,15 @@ namespace arwain::Errors
         AllOk,
         IMUReadError,
         OtherError
+    };
+}
+
+namespace arwain
+{
+    inline std::map<int, std::string> ErrorMessages = {
+        {arwain::ExitCodes::InferenceXMLMissing, "Inference model XML file not found."},
+        {arwain::ExitCodes::FailedIMU, "Could not communicate with IMU."},
+        {arwain::ExitCodes::FailedConfiguration, "Configuration file not found."},
     };
 }
 
@@ -153,8 +163,6 @@ namespace arwain
         public:
             Configuration(){};
             Configuration(const InputParser& input);
-
-        private:
             int read_from_file();
 
         public:
@@ -200,7 +208,6 @@ namespace arwain
             int no_lora = 0; // Disables LoRa radio.
             int no_pressure = 0; // Disables pressure sensor.
             std::string config_file = "/etc/arwain.conf"; // Location of configuration file.
-            int file_read_ok; // Whether the configuration file was read successfully.
             std::string imu1_bus; // The I2C bus on which to find IMU1.
             std::string imu2_bus; // The I2C bus on which to find IMU2.
             std::string imu3_bus; // The I2C bus on which to find IMU3.
@@ -284,7 +291,8 @@ namespace arwain
         "Return codes:\n"
         "     1             Successfully executed\n"
         "    -1             IMU failed to start\n"
-        "    -2             Problem reading configuration file";
+        "    -2             Problem reading configuration file\n"
+        "    -3             Inference model XML not found";
 }
 
 #endif
