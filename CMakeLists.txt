@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 
 ## Set include and library source directories
-include_directories(lora orientation bmp280 src iim42652 bmi270 orientation_fusion quaternion vector3 logger kalman input_parser timers mlx90395 minitrace ips)
+include_directories(lora orientation bmp280 src iim42652 bmi270 orientation_fusion quaternion vector3 logger kalman input_parser timers mlx90395 minitrace ips bmp384)
 # include_directories(/home/colin/imx-yocto-bsp/build-full2/tmp/work/cortexa53-crypto-poky-linux/onnxruntime/1.5.3-r0/package/usr/include/onnxruntime/core/session )
 # include_directories(/home/colin/imx-yocto-bsp/build-full2/tmp/work/cortexa53-crypto-poky-linux/onnxruntime/1.5.3-r0/package/usr/include/onnxruntime/core/providers/vsi_npu)
 
@@ -29,6 +29,7 @@ add_subdirectory(timers)
 add_subdirectory(mlx90395)
 add_subdirectory(minitrace)
 add_subdirectory(ips)
+add_subdirectory(bmp384)
 
 ## Executables to build
 add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
@@ -37,7 +38,7 @@ add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver bmi270_driver bmp280_driver quaternion logger input_parser kalman timers mlx90395 minitrace ips)
+target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver bmi270_driver bmp280_driver quaternion logger input_parser kalman timers mlx90395 minitrace ips bmp384)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/arwain.conf DESTINATION /etc)
