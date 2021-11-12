@@ -216,6 +216,8 @@ namespace arwain
             int imu3_address; // The I2C address of IMU3.
             std::string magn_bus; // The I2C bus on which to find the magnetometer.
             int magn_address; // The I2C address of the magnetometer.
+            std::string pressure_bus;
+            int pressure_address;
 
             /** \brief Overwrite the content of the configuration file associated with this struct.
              * \param option The configuration option to overwrite.

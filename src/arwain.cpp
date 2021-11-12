@@ -214,6 +214,8 @@ int arwain::Configuration::read_from_file()
     read_option(options, "imu3_address", this->imu3_address);
     read_option(options, "magn_address", this->magn_address);
     read_option(options, "magn_bus", this->magn_bus);
+    read_option(options, "pressure_address", this->pressure_address);
+    read_option(options, "pressure_bus", this->pressure_bus);
     
     // Apply LoRa settings
     std::stringstream(options["lora_tx_power"]) >> this->lora_tx_power;
