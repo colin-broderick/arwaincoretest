@@ -196,6 +196,7 @@ namespace arwain
             LoRa::sf_t lora_spread_factor; // LoRa spread factor.
             LoRa::bw_t lora_bandwidth; // LoRa bandwidth.
             LoRa::cr_t lora_coding_rate; // LoRa coding rate.
+            std::string lora_address; // spidev address of SX1276.
             int lora_sync_word; // LoRa sync word.
             LoRa::hm_t lora_header_mode; // LoRa header mode, implicit or explicit.
             int lora_enable_crc; //  Whether to add CRC to LoRa messages.
@@ -216,8 +217,8 @@ namespace arwain
             int imu3_address; // The I2C address of IMU3.
             std::string magn_bus; // The I2C bus on which to find the magnetometer.
             int magn_address; // The I2C address of the magnetometer.
-            std::string pressure_bus;
-            int pressure_address;
+            std::string pressure_bus; // The I2C bus of the pressure sensor.
+            int pressure_address; // The I2C address of the pressure sensor.
 
             /** \brief Overwrite the content of the configuration file associated with this struct.
              * \param option The configuration option to overwrite.
