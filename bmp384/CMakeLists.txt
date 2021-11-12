@@ -1,0 +1,1 @@
+add_library(bmp384 bmp384.cpp)
