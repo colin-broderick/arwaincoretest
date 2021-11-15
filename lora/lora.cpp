@@ -7,7 +7,8 @@
 
 #include "lora.hpp"
 
-LoRa::LoRa(const std::string &address, const bool as_receiver)
+LoRa::LoRa(const std::string &address, const bool as_receiver, const int frequency_mhz_, const int bandwidth_khz_, const int spread_factor_)
+: frequency_mhz(frequency_mhz_), bandwidth_khz(bandwidth_khz_), spread_factor(spread_factor_)
 {
     // Create SPI device
     spi_config = spi_config_t{0, 8, 1000000, 0};
@@ -16,7 +17,13 @@ LoRa::LoRa(const std::string &address, const bool as_receiver)
     {
         throw std::runtime_error("Error starting SPI device - incorrecct device path?");
     };
-    this->configure(868, as_receiver);
+    this->configure();
+}
+
+LoRa::LoRa(const std::string &address, const bool as_receiver)
+: LoRa(address, as_receiver, 868, 500, 12)
+{
+
 }
 
 LoRa::~LoRa()
@@ -25,13 +32,13 @@ LoRa::~LoRa()
 }
 
 /** \brief Sets radio frequency, bandwidth, spread factor, LNA, PA. */
-void LoRa::configure(const int frequency_mhz, const bool rx_only)
+void LoRa::configure()
 {
     uint8_t op_mode = OPMODE_LONGRANGE | OPMODE_SLEEP;
 
     // Set radio frequency.
     uint32_t FRF_val;
-    switch (frequency_mhz)
+    switch (this->frequency_mhz)
     {
     case 433:
         FRF_val = 7109363;
@@ -60,6 +67,7 @@ void LoRa::configure(const int frequency_mhz, const bool rx_only)
     modem_conf &= ~(MODEMCONFIG1_BW_7_8K | MODEMCONFIG1_BW_10_4K | MODEMCONFIG1_BW_15_6K |
                     MODEMCONFIG1_BW_20_8K | MODEMCONFIG1_BW_31_25K | MODEMCONFIG1_BW_41_7K |
                     MODEMCONFIG1_BW_62_5K | MODEMCONFIG1_BW_125K | MODEMCONFIG1_BW_250K | MODEMCONFIG1_BW_500K);
+    // TODO Respect the specified bandwidth.
     modem_conf |= MODEMCONFIG1_BW_500K;
     modem_conf &= ~MODEMCONFIG1_IMPLHDR;
     this->write_register(MODEMCONFIG1_ADDRESS, modem_conf);
@@ -67,18 +75,19 @@ void LoRa::configure(const int frequency_mhz, const bool rx_only)
     // Set spread factor to 12.
     modem_conf = this->read_register(MODEMCONFIG2_ADDRESS);
     modem_conf &= ~(MODEMCONFIG2_SF(6) | MODEMCONFIG2_SF(7) | MODEMCONFIG2_SF(8) | MODEMCONFIG2_SF(9) | MODEMCONFIG2_SF(10) | MODEMCONFIG2_SF(11) | MODEMCONFIG2_SF(12));
+    // TODO Respect the specified spread factor.
     modem_conf |= MODEMCONFIG2_SF(12);
     this->write_register(MODEMCONFIG2_ADDRESS, modem_conf);
 
-    if (rx_only)
+    if (this->is_receiver)
     {
-        //goto continuous RX
+        // Enter continuous RX mode.
         op_mode &= ~OPMODE_SLEEP;
         op_mode |= OPMODE_RXCONTINUOUS;
     }
     else
     {
-        //goto standby mode
+        // Enter standby mode.
         op_mode &= ~OPMODE_SLEEP;
         op_mode |= OPMODE_STDBY;
     }

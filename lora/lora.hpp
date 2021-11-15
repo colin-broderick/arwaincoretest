@@ -143,6 +143,7 @@ class LoRa
 {
     public:
         LoRa(const std::string& address, const bool as_receiver);
+		LoRa(const std::string &address, const bool as_receiver, const int frequency_mhz_, const int bandwidth_khz_, const int spread_factor_);
         ~LoRa();
         uint8_t test_chip();
 		void send_message(const std::string& message);
@@ -150,15 +151,19 @@ class LoRa
 		std::tuple<bool, std::string> receive();
 
     private:
-		static const int max_message_size = 63;
         uint8_t read_register(uint8_t address);
         void write_register(uint8_t address, uint8_t val);
-		void configure(const int frequency_mhz, const bool rxOnly);
+		void configure();
 		void read_FIFO(uint8_t num_bytes, uint8_t* out_buffer);
 		void write_FIFO(const char* str, uint8_t num_bytes);
 		bool rx(uint8_t* out_buffer);
 
     private:
+		static const int max_message_size = 63;
+		int frequency_mhz;
+		int bandwidth_khz;
+		int spread_factor;
+		bool is_receiver;
         SPI *spi = nullptr;
         spi_config_t spi_config;
 
@@ -184,5 +189,16 @@ class LoRa
 			LNA_AGC
 		};
 };
+
+namespace arwain
+{
+	struct LoraPacket
+	{
+		int16_t x = 0;
+		int16_t y = 0;
+		int16_t z = 0;
+		uint16_t alerts = 0;
+	};
+}
 
 #endif
