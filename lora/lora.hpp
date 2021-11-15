@@ -1,6 +1,7 @@
 #ifndef _ARWAIN_LORA_HPP
 #define _ARWAIN_LORA_HPP
 
+#include <tuple>
 #include <string>
 
 #include "spi.hpp"
@@ -141,16 +142,21 @@
 class LoRa
 {
     public:
-        LoRa(const std::string& address);
+        LoRa(const std::string& address, const bool as_receiver);
         ~LoRa();
         uint8_t test_chip();
 		void send_message(const std::string& message);
+		void send_message(uint8_t* message, size_t num_bytes);
+		std::tuple<bool, std::string> receive();
 
     private:
+		static const int max_message_size = 63;
         uint8_t read_register(uint8_t address);
         void write_register(uint8_t address, uint8_t val);
 		void configure(const int frequency_mhz, const bool rxOnly);
+		void read_FIFO(uint8_t num_bytes, uint8_t* out_buffer);
 		void write_FIFO(const char* str, uint8_t num_bytes);
+		bool rx(uint8_t* out_buffer);
 
     private:
         SPI *spi = nullptr;

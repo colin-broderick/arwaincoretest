@@ -89,9 +89,13 @@ int main(int argc, char **argv)
         ret = arwain::test_imu();
     }
 
-    else if (input.contains("-testlora"))
+    else if (input.contains("-testlorarx"))
     {
-        ret = arwain::test_lora();
+        ret = arwain::test_lora_rx();
+    }
+    else if (input.contains("-testloratx"))
+    {
+        ret = arwain::test_lora_tx();
     }
 
     else if (input.contains("-testori"))
