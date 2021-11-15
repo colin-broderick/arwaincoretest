@@ -107,9 +107,9 @@ int arwain::test_imu()
     return arwain::ExitCodes::Success;
 }
 
-int arwain::test_lora()
+int arwain::test_lora_tx()
 {
-    LoRa lora{arwain::config.lora_address};
+    LoRa lora{arwain::config.lora_address, false};
 
     if (lora.test_chip() == 0x1A)
     {
@@ -122,6 +122,29 @@ int arwain::test_lora()
     {
         lora.send_message("ARWAIN.LoRa");
         std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+    }
+
+    return arwain::ExitCodes::Success;
+}
+
+int arwain::test_lora_rx()
+{
+    LoRa lora{arwain::config.lora_address, true};
+
+    if (lora.test_chip() == 0x1A)
+    {
+        std::cout << "Found chip" << std::endl;
+    };
+
+    std::cout << "Receiving LoRa messages ..." << std::endl;
+
+    while (!arwain::shutdown)
+    {
+        auto [rx, message] = lora.receive();
+        if (rx)
+        {
+            std::cout << message << std::endl;
+        }
     }
 
     return arwain::ExitCodes::Success;
