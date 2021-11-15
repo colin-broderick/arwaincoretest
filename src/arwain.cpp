@@ -107,6 +107,26 @@ int arwain::test_imu()
     return arwain::ExitCodes::Success;
 }
 
+int arwain::test_lora()
+{
+    LoRa lora{arwain::config.lora_address};
+
+    if (lora.test_chip() == 0x1A)
+    {
+        std::cout << "Found chip" << std::endl;
+    };
+
+    std::cout << "Transmitting message \"ARWAIN.LoRa\" at 1 Hz ..." << std::endl;
+
+    while (!arwain::shutdown)
+    {
+        lora.send_message("ARWAIN.LoRa");
+        std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+    }
+
+    return arwain::ExitCodes::Success;
+}
+
 void arwain::setup(const InputParser& input)
 {
     // Create output directory and write copy of current configuration.
