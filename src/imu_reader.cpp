@@ -82,7 +82,7 @@ void imu_reader()
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
     IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
     IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
-    MLX90395 magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
+    // MLX90395 magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Filter* filter1;
@@ -152,7 +152,7 @@ void imu_reader()
         imu1.read_IMU();
         imu2.read_IMU();
         imu3.read_IMU();
-        magnetovector = magnetometer.read_orientation();
+        // magnetovector = magnetometer.read_orientation();
 
         accel_data1 = {imu1.accelerometer_x, imu1.accelerometer_y, imu1.accelerometer_z};
         gyro_data1 = {imu1.gyroscope_x, imu1.gyroscope_y, imu1.gyroscope_z};

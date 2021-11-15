@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <thread>
+#include <cstring>
 
 #include "velocity_prediction.hpp"
 #include "logger.hpp"

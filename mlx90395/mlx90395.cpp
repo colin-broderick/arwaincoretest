@@ -14,7 +14,10 @@ static const std::array<float, 16> gain_multipliers = {
 MLX90395::MLX90395(int bus_address, const std::string &bus_name)
 {
     i2c_init(bus_address, bus_name);
-    configure();
+    if (!configure())
+    {
+        std::cout << "Failed to configure magnetometer" << std::endl;
+    };
     std::this_thread::sleep_for(std::chrono::milliseconds{2});
 }
 
@@ -109,12 +112,13 @@ int MLX90395::i2c_write(int reg_addr, int bytes, uint8_t *buffer)
     return i2c_smbus_write_i2c_block_data(this->handle, reg_addr, bytes, buffer);
 }
 
-void MLX90395::send_read_command()
-{
-    // TODO Is this really right? 0x80 is also the exit command ...
-    uint8_t data = CMD_READ;
-    i2c_write(CMD_TARGET, 1, &data);
-}
+// uint8_ MLX90395::send_read_command()
+// {
+//     // TODO Is this really right? 0x80 is also the exit command ...
+//     // uint8_t data = CMD_READ;
+//     // i2c_write(CMD_TARGET, 1, &data);
+//     command(CMD_READ);
+// }
 
 uint8_t MLX90395::command(uint8_t cmd)
 {
@@ -122,31 +126,38 @@ uint8_t MLX90395::command(uint8_t cmd)
     uint8_t status;
     i2c_write(CMD_TARGET, 1, &cmd);
     i2c_read(CMD_TARGET, 1, &status);
+    // std::cout << (int)status << std::endl;
+
     return status;
 }
 
 /** \brief Read magnetometer data. */
 vector3 MLX90395::read()
 {
-    // TEST
-
     // TEST send read command
-    send_read_command();
+    std::cout << (int)command(CMD_READ) << std::endl;
 
     // reader 12 bytes
-    uint8_t buffer[12];
+    uint8_t buffer[12] = {0};
     i2c_read(READ_TARGET, 12, buffer);
 
     // TODO check buf[0] contains data rdy flag
+    // if (buffer[0] != 0x01)
+    // {
+    //     return {0,0,0};
+    // }
 
     // convert buffer into doubles
-    mag_x = (buffer[2] << 8) | buffer[3];
-    mag_y = (buffer[4] << 8) | buffer[5];
-    mag_z = (buffer[6] << 8) | buffer[7];
+    int16_t x = (buffer[2] << 8) | buffer[3];
+    int16_t y = (buffer[4] << 8) | buffer[5];
+    int16_t z = (buffer[6] << 8) | buffer[7];
+    mag_x = x;
+    mag_y = y;
+    mag_z = z;
 
-    mag_x = gain_multipliers[mag_gain] * uTLSB;
-    mag_y = gain_multipliers[mag_gain] * uTLSB;
-    mag_z = gain_multipliers[mag_gain] * uTLSB;
+    // mag_x *= gain_multipliers[mag_gain] * uTLSB;
+    // mag_y *= gain_multipliers[mag_gain] * uTLSB;
+    // mag_z *= gain_multipliers[mag_gain] * uTLSB;
 
     return {mag_x, mag_y, mag_z};
 }
@@ -161,6 +172,11 @@ bool MLX90395::reset()
 bool MLX90395::configure()
 {
     // TEST 
+    if (!reset())
+    {
+        return false;
+    }
+
     if (!exit_mode())
     {
         return false;
@@ -184,6 +200,8 @@ bool MLX90395::configure()
     }
 
     mag_resolution = get_resolution();
+
+    command(CMD_BURST);
 
     return true;
 }
