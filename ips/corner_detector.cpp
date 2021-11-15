@@ -44,7 +44,7 @@ bool arwain::CornerDetector::update(vector3 position)
     // We require meaningful spatial separation to detect corners using this method.
     if ((track.back() - position).magnitude() < min_separation)
     {
-        std::cout << "Skipped; insufficient motion" << std::endl;
+        // std::cout << "Skipped; insufficient motion" << std::endl;
         return false;
     }
 
@@ -52,7 +52,7 @@ bool arwain::CornerDetector::update(vector3 position)
 
     if (track.size() < window_size)
     {
-        std::cout << "Skipped; insufficient information" << std::endl;
+        // std::cout << "Skipped; insufficient information" << std::endl;
         return false;
     }
 

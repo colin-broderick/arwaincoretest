@@ -44,7 +44,7 @@ void arwain::FloorTracker::update(const vector3& position)
 
     if (track.size() < window_size)
     {
-        std::cout << "Skipped; insufficient information" << std::endl;
+        // std::cout << "Skipped; insufficient information" << std::endl;
         return;
     }
 

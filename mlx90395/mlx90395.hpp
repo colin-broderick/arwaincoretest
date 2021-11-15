@@ -98,10 +98,12 @@ private:
     int i2c_write(int reg_addr, int bytes, uint8_t *buffer);
 
 private:
-    float mag_x, mag_y, mag_z;
+    float mag_x = 0;
+    float mag_y = 0;
+    float mag_z = 0;
     int handle = 0;
-    double mag_gain;       // todo check data type
-    double mag_resolution; // todo check data type
+    uint8_t mag_gain;       // todo check data type
+    uint8_t mag_resolution; // todo check data type
     double uTLSB;          // todo check data type
     
 };
