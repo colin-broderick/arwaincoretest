@@ -169,8 +169,9 @@ void LoRa::write_FIFO(const char *str, uint8_t num_bytes)
 
 void LoRa::read_FIFO(uint8_t num_bytes, uint8_t* out_buffer)
 {
-    uint8_t addr = FIFO_ADDRESS | ~(0x80);
-    this->spi->xfer(&addr, 1, out_buffer, num_bytes);
+    // TODO Fix this indexing; FIFO read ptr not incrementing on first byte, so I am reading an extra one.
+    uint8_t addr = FIFO_ADDRESS | 0x7F;
+    this->spi->read(out_buffer, num_bytes + 1);
 }
 
 bool LoRa::rx(uint8_t* out_buffer)
@@ -192,11 +193,12 @@ std::tuple<bool, std::string> LoRa::receive()
 {
     uint8_t rx_buffer[LoRa::max_message_size] = {0};
 
+    // TODO Fix this indexing; FIFO read ptr not incrementing on first byte, so I am reading an extra byte and skipping it in the string conversion.
     for (int i = 0; i < 100; i++)
     {
         if (rx(rx_buffer))
         {
-            return {true, std::string{(char*)rx_buffer}};
+            return {true, std::string{(char*)(&(rx_buffer[1]))}};
         }
         std::this_thread::sleep_for(std::chrono::milliseconds{10});
     }
