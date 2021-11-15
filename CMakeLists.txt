@@ -38,7 +38,7 @@ add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver bmi270_driver bmp280_driver quaternion logger input_parser kalman timers mlx90395 minitrace ips bmp384)
+target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver bmi270_driver bmp280_driver quaternion logger input_parser kalman timers mlx90395 minitrace ips bmp384 lora)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/arwain.conf DESTINATION /etc)
