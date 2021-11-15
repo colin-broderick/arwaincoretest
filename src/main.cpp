@@ -89,6 +89,11 @@ int main(int argc, char **argv)
         ret = arwain::test_imu();
     }
 
+    else if (input.contains("-testlora"))
+    {
+        ret = arwain::test_lora();
+    }
+
     else if (input.contains("-testori"))
     {
         int rate;
