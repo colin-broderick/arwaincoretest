@@ -7,8 +7,8 @@
 
 #include "lora.hpp"
 
-LoRa::LoRa(const std::string &address, const bool as_receiver, const int frequency_mhz_, const int bandwidth_khz_, const int spread_factor_)
-: frequency_mhz(frequency_mhz_), bandwidth_khz(bandwidth_khz_), spread_factor(spread_factor_)
+LoRa::LoRa(const std::string &address, const bool as_receiver, const LoRa::Frequency frequency_mhz_, const LoRa::Bandwidth bandwidth_khz_, const LoRa::SpreadFactor spread_factor_)
+: is_receiver(as_receiver), frequency_mhz(frequency_mhz_), bandwidth_khz(bandwidth_khz_), spread_factor(spread_factor_)
 {
     // Create SPI device
     spi_config = spi_config_t{0, 8, 1000000, 0};
@@ -21,9 +21,8 @@ LoRa::LoRa(const std::string &address, const bool as_receiver, const int frequen
 }
 
 LoRa::LoRa(const std::string &address, const bool as_receiver)
-: LoRa(address, as_receiver, 868, 500, 12)
+: LoRa(address, as_receiver, LoRa::Frequency::FREQ_868, LoRa::Bandwidth::BW_500K, LoRa::SpreadFactor::SF_12)
 {
-
 }
 
 LoRa::~LoRa()
@@ -40,17 +39,17 @@ void LoRa::configure()
     uint32_t FRF_val;
     switch (this->frequency_mhz)
     {
-    case 433:
+    case Frequency::FREQ_433:
         FRF_val = 7109363;
         op_mode |= OPMODE_LOWFREQMODEON;
         break;
-    case 868:
+    case Frequency::FREQ_868:
         FRF_val = 14221348;
         break;
-    case 915:
+    case Frequency::FREQ_915:
         FRF_val = 14991398;
         break;
-    case 923:
+    case Frequency::FREQ_923:
         FRF_val = 15122470;
         break;
     }
@@ -62,13 +61,14 @@ void LoRa::configure()
     this->write_register(FRFMIB_ADDRESS, FRFMIB);
     this->write_register(FRFLSB_ADDRESS, FRFLSB);
 
-    // Set bandwidth to 500 KHz.
+    // Set bandwidth to specified option.
     uint8_t modem_conf = this->read_register(MODEMCONFIG1_ADDRESS);
-    modem_conf &= ~(MODEMCONFIG1_BW_7_8K | MODEMCONFIG1_BW_10_4K | MODEMCONFIG1_BW_15_6K |
-                    MODEMCONFIG1_BW_20_8K | MODEMCONFIG1_BW_31_25K | MODEMCONFIG1_BW_41_7K |
-                    MODEMCONFIG1_BW_62_5K | MODEMCONFIG1_BW_125K | MODEMCONFIG1_BW_250K | MODEMCONFIG1_BW_500K);
-    // TODO Respect the specified bandwidth.
-    modem_conf |= MODEMCONFIG1_BW_500K;
+    modem_conf &= ~((uint8_t)(LoRa::Bandwidth::BW_7_8K) | (uint8_t)(LoRa::Bandwidth::BW_10_4K) |
+                    (uint8_t)(LoRa::Bandwidth::BW_15_6K) | (uint8_t)(LoRa::Bandwidth::BW_20_8K) |
+                    (uint8_t)(LoRa::Bandwidth::BW_31_25K) | (uint8_t)(LoRa::Bandwidth::BW_41_7K) |
+                    (uint8_t)(LoRa::Bandwidth::BW_62_5K) | (uint8_t)(LoRa::Bandwidth::BW_125K) |
+                    (uint8_t)(LoRa::Bandwidth::BW_250K) | (uint8_t)(LoRa::Bandwidth::BW_500K));
+    modem_conf |= (uint8_t)(this->bandwidth_khz);
     modem_conf &= ~MODEMCONFIG1_IMPLHDR;
     this->write_register(MODEMCONFIG1_ADDRESS, modem_conf);
 
@@ -76,7 +76,7 @@ void LoRa::configure()
     modem_conf = this->read_register(MODEMCONFIG2_ADDRESS);
     modem_conf &= ~(MODEMCONFIG2_SF(6) | MODEMCONFIG2_SF(7) | MODEMCONFIG2_SF(8) | MODEMCONFIG2_SF(9) | MODEMCONFIG2_SF(10) | MODEMCONFIG2_SF(11) | MODEMCONFIG2_SF(12));
     // TODO Respect the specified spread factor.
-    modem_conf |= MODEMCONFIG2_SF(12);
+    modem_conf |= (uint8_t)(this->spread_factor);
     this->write_register(MODEMCONFIG2_ADDRESS, modem_conf);
 
     if (this->is_receiver)
@@ -101,7 +101,7 @@ void LoRa::configure()
 
     // Enable low noise amplified for high frequencies.
     uint8_t LNA = LNA_GAIN_G1;
-    if (frequency_mhz > 525)
+    if (frequency_mhz != Frequency::FREQ_433)
     {
         LNA |= LNA_BOOST_HF;
     }
@@ -213,4 +213,10 @@ std::tuple<bool, std::string> LoRa::receive()
     }
 
     return {false, ""};
+}
+
+std::ostream& operator<<(std::ostream& stream, arwain::LoraPacket packet)
+{
+    stream << packet.x << " " << packet.y << " " << packet.z << " " << packet.alerts;
+    return stream;
 }

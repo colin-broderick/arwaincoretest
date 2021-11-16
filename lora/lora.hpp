@@ -142,15 +142,47 @@
 class LoRa
 {
     public:
-        LoRa(const std::string& address, const bool as_receiver);
-		LoRa(const std::string &address, const bool as_receiver, const int frequency_mhz_, const int bandwidth_khz_, const int spread_factor_);
+		enum class Bandwidth
+		{
+			BW_7_8K = MODEMCONFIG1_BW_7_8K,
+			BW_10_4K = MODEMCONFIG1_BW_10_4K,
+			BW_15_6K = MODEMCONFIG1_BW_15_6K,
+			BW_20_8K = MODEMCONFIG1_BW_20_8K,
+			BW_31_25K = MODEMCONFIG1_BW_31_25K,
+			BW_41_7K = MODEMCONFIG1_BW_41_7K,
+			BW_62_5K = MODEMCONFIG1_BW_62_5K,
+			BW_125K = MODEMCONFIG1_BW_125K,
+			BW_250K = MODEMCONFIG1_BW_250K,
+			BW_500K = MODEMCONFIG1_BW_500K
+		};
+		enum class Frequency
+		{
+			FREQ_433,
+			FREQ_868,
+			FREQ_915,
+			FREQ_923
+		};
+		enum class SpreadFactor
+		{
+			SF_6 = (6 << 4),
+			SF_7 = (7 << 4),
+			SF_8 = (8 << 4),
+			SF_9 = (9 << 4),
+			SF_10 = (10 << 4),
+			SF_11 = (11 << 4),
+			SF_12 = (12 << 4)
+		};
+
+		LoRa(const std::string& address, const bool as_receiver);
+		LoRa(const std::string &address, const bool as_receiver, const LoRa::Frequency frequency_mhz_, const LoRa::Bandwidth bandwidth_khz_, const LoRa::SpreadFactor spread_factor_);
         ~LoRa();
         uint8_t test_chip();
 		void send_message(const std::string& message);
 		void send_message(uint8_t* message, size_t num_bytes);
 		std::tuple<bool, std::string> receive();
 
-    private:
+
+	private:
         uint8_t read_register(uint8_t address);
         void write_register(uint8_t address, uint8_t val);
 		void configure();
@@ -160,27 +192,17 @@ class LoRa
 
     private:
 		static const int max_message_size = 63;
-		int frequency_mhz;
-		int bandwidth_khz;
-		int spread_factor;
+		Frequency frequency_mhz;
+		Bandwidth bandwidth_khz;
+		SpreadFactor spread_factor;
 		bool is_receiver;
         SPI *spi = nullptr;
         spi_config_t spi_config;
 
     public: // Types
-        enum Frequency {
-			FREQ_433 = 433003300,
-			FREQ_868 = 868100000,
-			FREQ_915 = 915000000
-		};
-		static const uint32_t bw[10];
-		enum Bandwidth {
-			BW_7k8,  BW_10k4,  BW_15k6,
-			BW_20k8, BW_31k25, BW_41k7,
-			BW_62k5, BW_125k,  BW_250k,
-			BW_500k
-		};
-		enum SpreadFactor { SF_6 = 6, SF_7, SF_8, SF_9, SF_10, SF_11, SF_12 };
+		// static const uint32_t bw[10];
+		
+		// TODO Convert to enum classes like the ones above.
 		enum HeaderMode { HM_EXPLICIT, HM_IMPLICIT };
 		enum CodingRate { CR_45 = 1, CR_46, CR_47, CR_48 };
 		enum LNAGain {
@@ -200,5 +222,7 @@ namespace arwain
 		uint16_t alerts = 0;
 	};
 }
+
+std::ostream& operator<<(std::ostream& stream, arwain::LoraPacket packet);
 
 #endif

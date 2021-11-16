@@ -268,57 +268,57 @@ int arwain::Configuration::read_from_file()
     // Apply LoRa radio frequency setting with default 868 MHz.
     std::string rf = options["lora_rf_frequency"];
     if (rf == "433")
-        this->lora_rf_frequency = LoRa::FREQ_433;
+        this->lora_rf_frequency = LoRa::Frequency::FREQ_433;
     else if (rf == "868")
-        this->lora_rf_frequency = LoRa::FREQ_868;
+        this->lora_rf_frequency = LoRa::Frequency::FREQ_868;
     else if (rf == "915")
-        this->lora_rf_frequency = LoRa::FREQ_915;
+        this->lora_rf_frequency = LoRa::Frequency::FREQ_915;
     else
-        this->lora_rf_frequency = LoRa::FREQ_868;
+        this->lora_rf_frequency = LoRa::Frequency::FREQ_868;
 
     // Apply LoRa spread factor setting with default 12.
     std::string spreadfactor = options["lora_spread_factor"];
     if (spreadfactor == "6")
-        this->lora_spread_factor = LoRa::SF_6;
+        this->lora_spread_factor = LoRa::SpreadFactor::SF_6;
     else if (spreadfactor == "7")
-        this->lora_spread_factor = LoRa::SF_7;
+        this->lora_spread_factor = LoRa::SpreadFactor::SF_7;
     else if (spreadfactor == "8")
-        this->lora_spread_factor = LoRa::SF_8;
+        this->lora_spread_factor = LoRa::SpreadFactor::SF_8;
     else if (spreadfactor == "9")
-        this->lora_spread_factor = LoRa::SF_9;
+        this->lora_spread_factor = LoRa::SpreadFactor::SF_9;
     else if (spreadfactor == "10")
-        this->lora_spread_factor = LoRa::SF_10;
+        this->lora_spread_factor = LoRa::SpreadFactor::SF_10;
     else if (spreadfactor == "11")
-        this->lora_spread_factor = LoRa::SF_11;
+        this->lora_spread_factor = LoRa::SpreadFactor::SF_11;
     else if (spreadfactor == "12")
-        this->lora_spread_factor = LoRa::SF_12;
+        this->lora_spread_factor = LoRa::SpreadFactor::SF_12;
     else
-        this->lora_spread_factor = LoRa::SF_12;    
+        this->lora_spread_factor = LoRa::SpreadFactor::SF_12;    
 
     // Apply LoRa bandwidth setting with default 125k.
     std::string bandwidth = options["lora_bandwidth"];
     if (bandwidth == "7.8")
-        this->lora_bandwidth = LoRa::BW_7k8;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_7_8K;
     else if (bandwidth == "10.4")
-        this->lora_bandwidth = LoRa::BW_10k4;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_10_4K;
     else if (bandwidth == "15.6")
-        this->lora_bandwidth = LoRa::BW_15k6;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_15_6K;
     else if (bandwidth == "20.8")
-        this->lora_bandwidth = LoRa::BW_20k8;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_20_8K;
     else if (bandwidth == "31.25")
-        this->lora_bandwidth = LoRa::BW_31k25;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_31_25K;
     else if (bandwidth == "41.7")
-        this->lora_bandwidth = LoRa::BW_41k7;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_41_7K;
     else if (bandwidth == "62.5")
-        this->lora_bandwidth = LoRa::BW_62k5;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_62_5K;
     else if (bandwidth == "125")
-        this->lora_bandwidth = LoRa::BW_125k;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_125K;
     else if (bandwidth == "250")
-        this->lora_bandwidth = LoRa::BW_250k;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_250K;
     else if (bandwidth == "500")
-        this->lora_bandwidth = LoRa::BW_500k;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_500K;
     else
-        this->lora_bandwidth = LoRa::BW_125k;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_125K;
 
     // Apply LoRa coding rate with default 48.
     std::string codingrate = options["lora_coding_rate"];
