@@ -22,6 +22,7 @@ class LIS3MDL
         LIS3MDL();
         int test_chip();
         vector3 read();
+        double read_temp();
 
     private: // Methods
         void soft_reset();
