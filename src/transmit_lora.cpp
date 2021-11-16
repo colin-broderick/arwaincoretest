@@ -14,24 +14,27 @@ void transmit_lora()
         return;
     }
 
-    // Turn on the LoRa radio and quit if it fails.
-    LoRa lora{arwain::config.lora_address, false};
+    LoRa lora{
+        arwain::config.lora_address,
+        false,
+        arwain::config.lora_rf_frequency,
+        arwain::config.lora_bandwidth,
+        arwain::config.lora_spread_factor
+    };
 
-    // Configura LoRa radio.
     // TODO Put these configruations in the LORa constructor and init.
-    lora.setTXPower(CONFIG.lora_tx_power);
-    lora.setCodingRate(CONFIG.lora_coding_rate);
-    lora.setHeaderMode(CONFIG.lora_header_mode);
-    if (CONFIG.lora_enable_crc)
-    {
-        lora.enableCRC();
-    }
+    // lora.setTXPower(CONFIG.lora_tx_power);
+    // lora.setCodingRate(CONFIG.lora_coding_rate);
+    // lora.setHeaderMode(CONFIG.lora_header_mode);
+    // if (CONFIG.lora_enable_crc)
+    // {
+        // lora.enableCRC();
+    // }
     // lora.setSyncWord(0x12);
 
     // Local buffers.
     arwain::Logger lora_file;
     vector3 position;
-    uint16_t alerts;
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
@@ -41,10 +44,9 @@ void transmit_lora()
     if (arwain::config.log_to_file)
     {
         lora_file.open(arwain::folder_date_string + "/lora_log.txt");
-        lora_file << "# time packet" << "\n";
+        lora_file << "# time x y z alerts" << "\n";
     }
 
-    uint64_t testval = 12345678910;
     while (!arwain::shutdown)
     {
         arwain::LoraPacket message;
@@ -69,7 +71,6 @@ void transmit_lora()
         lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
 
         // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
-        // TODO: Currently logging binary nonsense. Fix.
         if (arwain::config.log_to_file)
         {
             lora_file << time.time_since_epoch().count() << " " << message << "\n";
