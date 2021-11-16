@@ -125,6 +125,14 @@ int LIS3MDL::i2c_write(int reg_addr, int bytes, uint8_t *buffer)
     return i2c_smbus_write_i2c_block_data(this->handle, reg_addr, bytes, buffer);
 }
 
+double LIS3MDL::read_temp()
+{
+    uint8_t read_buffer[2];
+    i2c_read(ADDR_TEMP_OUT_L, 2, read_buffer);
+    int8_t temp_int = (read_buffer[1] << 8) | read_buffer[0];
+    return (double)temp_int / 8.0;
+}
+
 vector3 LIS3MDL::read()
 {
     uint8_t read_buffer[6];
