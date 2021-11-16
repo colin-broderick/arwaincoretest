@@ -192,10 +192,10 @@ class LoRa
 
     private:
 		static const int max_message_size = 63;
+		bool is_receiver;
 		Frequency frequency_mhz;
 		Bandwidth bandwidth_khz;
 		SpreadFactor spread_factor;
-		bool is_receiver;
         SPI *spi = nullptr;
         spi_config_t spi_config;
 

@@ -153,14 +153,14 @@ uint8_t LoRa::test_chip()
 
 uint8_t LoRa::read_register(uint8_t address)
 {
-    uint8_t bf[2] = {address & 0x7F, 0x00};
+    uint8_t bf[2] = {(uint8_t)(address & 0x7F), 0x00};
     spi->xfer(bf, 2, bf, 2);
     return bf[1];
 }
 
 void LoRa::write_register(uint8_t address, uint8_t value)
 {
-    uint8_t bf[2] = {address | 0x80, value};
+    uint8_t bf[2] = {(uint8_t)(address | 0x80), value};
     spi->write(bf, 2);
 }
 
@@ -180,6 +180,7 @@ void LoRa::read_FIFO(uint8_t num_bytes, uint8_t* out_buffer)
 {
     // TODO Fix this indexing; FIFO read ptr not incrementing on first byte, so I am reading an extra one.
     uint8_t addr = FIFO_ADDRESS | 0x7F;
+    this->spi->write(&addr, 1);
     this->spi->read(out_buffer, num_bytes + 1);
 }
 
