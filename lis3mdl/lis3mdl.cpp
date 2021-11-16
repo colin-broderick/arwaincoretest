@@ -16,6 +16,14 @@ LIS3MDL::LIS3MDL()
     set_odr(ODR::ODR_40_Hz);
 }
 
+/** \brief Check chip commication, should return 0x3D. */
+int LIS3MDL::test_chip()
+{
+    uint8_t val;
+    i2c_read(ADDR_WHO_AM_I, 1, &val);
+    return val;
+}
+
 void LIS3MDL::set_odr(LIS3MDL::ODR odr_selection)
 {
     uint8_t config;
