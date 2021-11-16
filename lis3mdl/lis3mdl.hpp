@@ -20,6 +20,7 @@ class LIS3MDL
     
     public: // Methods
         LIS3MDL();
+        int test_chip();
         vector3 read();
 
     private: // Methods
