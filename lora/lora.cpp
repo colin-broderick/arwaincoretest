@@ -75,8 +75,9 @@ void LoRa::configure()
     // Set spread factor to 12.
     modem_conf = this->read_register(MODEMCONFIG2_ADDRESS);
     modem_conf &= ~(MODEMCONFIG2_SF(6) | MODEMCONFIG2_SF(7) | MODEMCONFIG2_SF(8) | MODEMCONFIG2_SF(9) | MODEMCONFIG2_SF(10) | MODEMCONFIG2_SF(11) | MODEMCONFIG2_SF(12));
-    // TODO Respect the specified spread factor.
     modem_conf |= (uint8_t)(this->spread_factor);
+    // Always enable CRC
+    modem_conf |= MODEMCONFIG2_RXCRCON;
     this->write_register(MODEMCONFIG2_ADDRESS, modem_conf);
 
     if (this->is_receiver)
@@ -189,6 +190,7 @@ bool LoRa::rx(uint8_t* out_buffer)
 
     if (IRQFlags & IRQMASK_RXDONE)
     {
+        // this->write_register(FIFOPTR_ADDRESS, 0); //set FIFO pointer to write position
         this->write_register(IRQFLAGS_ADDRESS, IRQMASK_RXDONE);
         uint8_t num_bytes = this->read_register(RXNBBYTES_ADDRESS);
         this->read_FIFO(num_bytes, out_buffer);
@@ -200,11 +202,10 @@ bool LoRa::rx(uint8_t* out_buffer)
 
 std::tuple<bool, std::string> LoRa::receive()
 {
-    uint8_t rx_buffer[LoRa::max_message_size] = {0};
-
     // TODO Fix this indexing; FIFO read ptr not incrementing on first byte, so I am reading an extra byte and skipping it in the string conversion.
     for (int i = 0; i < 100; i++)
     {
+        uint8_t rx_buffer[LoRa::max_message_size] = {0};
         if (rx(rx_buffer))
         {
             return {true, std::string{(char*)(&(rx_buffer[1]))}};
