@@ -7,7 +7,6 @@
 #include <thread>
 
 #include "imu_reader.hpp"
-#include "mlx90395.hpp"
 #include "multi_imu.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
