@@ -15,6 +15,7 @@
 #include "IMU_IIM42652_driver.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
+#include "lis3mdl.hpp"
 
 // General configuration data.
 namespace arwain
@@ -106,6 +107,32 @@ int arwain::test_imu()
 
     return arwain::ExitCodes::Success;
 }
+
+int arwain::test_mag()
+{
+    LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
+
+    std::cout << magn.test_chip() << std::endl;
+
+    vector3 res = magn.read();
+    std::this_thread::sleep_for(std::chrono::milliseconds{100});
+
+    arwain::Logger log{"mag_test.csv"};
+
+    double gain = 0.05;
+
+    while (!arwain::shutdown)
+    {
+        res = magn.read() * gain + res * (1.0 - gain);
+        log << res.x << "," << res.y << "," << res.z << "\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds{100});
+    }
+
+    log.close(); 
+
+    return arwain::ExitCodes::Success;
+}
+
 
 int arwain::test_lora_tx()
 {

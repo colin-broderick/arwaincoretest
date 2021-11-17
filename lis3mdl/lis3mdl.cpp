@@ -9,9 +9,32 @@ static void sleep_ms(int ms)
     std::this_thread::sleep_for(std::chrono::milliseconds{ms});
 }
 
-LIS3MDL::LIS3MDL()
+void LIS3MDL::power_up()
 {
+    uint8_t config;
+    i2c_read(ADDR_CTRL_REG3, 1, &config);
+    config &= ~(0b00000011);
+    i2c_write(ADDR_CTRL_REG3, 1, &config);
+    sleep_ms(2);
+
+    // Switch x, y axes to performance mode.
+    i2c_read(ADDR_CTRL_REG1, 1, &config);
+    config &= ~(3 << 5);
+    config |= (3 << 5);
+    sleep_ms(2);
+
+    // Switch z axis to performance mode.
+    i2c_read(ADDR_CTRL_REG4, 1, &config);
+    config &= ~(3 << 2);
+    config |= (3 << 2);
+    sleep_ms(2);
+}
+
+LIS3MDL::LIS3MDL(const int i2c_address, const std::string& i2c_bus)
+{
+    i2c_init(i2c_address, i2c_bus);
     soft_reset();
+    power_up();
     set_fsr(FSR::FSR_4);
     set_odr(ODR::ODR_40_Hz);
 }
@@ -32,19 +55,19 @@ void LIS3MDL::set_odr(LIS3MDL::ODR odr_selection)
     switch (odr_selection)
     {
         case ODR::ODR_5_Hz:
-            config |= (3 << 7);
+            config |= (3 << 2);
             break;
         case ODR::ODR_10_Hz:
-            config |= (4 << 7);
+            config |= (4 << 2);
             break;
         case ODR::ODR_20_Hz:
-            config |= (5 << 7);
+            config |= (5 << 2);
             break;
         case ODR::ODR_40_Hz:
-            config |= (6 << 7);
+            config |= (6 << 2);
             break;
         case ODR::ODR_80_Hz:
-            config |= (7 << 7);
+            config |= (7 << 2);
             break;
         default:
             break;
@@ -151,7 +174,7 @@ vector3 LIS3MDL::read()
 
 void LIS3MDL::soft_reset()
 {
-    uint8_t val = 1;
+    uint8_t val = 1 << 2;
     this->i2c_write(ADDR_CTRL_REG2, 1, &val);
     sleep_ms(10);
 }
