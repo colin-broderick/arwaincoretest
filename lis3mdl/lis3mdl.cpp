@@ -3,6 +3,8 @@
 #include <chrono>
 
 #include "lis3mdl.hpp"
+#include "arwain.hpp"
+#include "logger.hpp"
 
 static void sleep_ms(int ms)
 {
@@ -84,19 +86,19 @@ void LIS3MDL::set_fsr(LIS3MDL::FSR fsr_selection)
     switch (fsr_selection)
     {
         case FSR::FSR_4:
-            this->fsr_res = 8.0 / 65536.0;
+            this->fsr_res = 4.0 / 27368.0;
             config |= (0 << 5);
             break;
         case FSR::FSR_8:
-            this->fsr_res = 16.0 / 65536.0;
+            this->fsr_res = 8.0 / 27368.0;
             config |= (1 << 5);
             break;
         case FSR::FSR_12:
-            this->fsr_res = 24.0 / 65536.0;
+            this->fsr_res = 12.0 / 27368.0;
             config |= (2 << 5);
             break;
         case FSR::FSR_16:
-            this->fsr_res = 32.0 / 65536.0;
+            this->fsr_res = 16.0 / 27368.0;
             config |= (3 << 5);
             break;
         default:
@@ -161,15 +163,57 @@ vector3 LIS3MDL::read()
     uint8_t read_buffer[6];
     i2c_read(ADDR_OUT_X_L, 6, read_buffer);
 
-    int8_t x_int = (read_buffer[1] << 8) | read_buffer[0];
-    int8_t y_int = (read_buffer[3] << 8) | read_buffer[2];
-    int8_t z_int = (read_buffer[5] << 8) | read_buffer[4];
+    int16_t x_int = (read_buffer[1] << 8) | read_buffer[0];
+    int16_t y_int = (read_buffer[3] << 8) | read_buffer[2];
+    int16_t z_int = (read_buffer[5] << 8) | read_buffer[4];
 
     double mag_x = this->fsr_res * x_int;
     double mag_y = this->fsr_res * y_int;
     double mag_z = this->fsr_res * z_int;
 
     return {mag_x, mag_y, mag_z};
+}
+
+void LIS3MDL::calibrate()
+{
+    arwain::Logger log{"magn_log.csv"};
+    log << "x,y,z" << "\n";
+    
+    while (!arwain::shutdown)
+    {
+        vector3 reading = this->read();
+        log << reading.x << "," << reading.y << "," << reading.z << "\n";
+        sleep_ms(100);
+    }
+
+    log.close();
+}
+
+/** \brief Measure the current magnetic field vector and compute the rotation required
+ * to rotate that vector onto the expected local magnetic field.
+ * \return A versor which applies the specified rotation.
+ */
+quaternion LIS3MDL::read_orientation()
+{
+    // static vector3 mag_target{18.895, -0.361, 45.372}; // The local magnetic field vector.
+    static vector3 mag_target{0.38443, -0.0073448, 0.92312}; // The normalized local magnetic field vector.
+    
+    vector3 mag_measurement = this->read().normalized(); // Normalized magnetic field vector.
+
+    double angle = std::acos(mag_measurement.x * mag_target.x 
+                           + mag_measurement.y * mag_target.y
+                           + mag_measurement.z * mag_target.z); // The angle between the measured field and the local field.
+
+    vector3 axis = vector3::cross(mag_measurement, mag_target); // Axis orthogonal to both measured and expected.
+
+    quaternion quat{
+        std::cos(angle/2.0),
+        std::sin(angle/2.0) * axis.x,
+        std::sin(angle/2.0) * axis.y,
+        std::sin(angle/2.0) * axis.z
+    }; // Rotation operator to rotate measured vector onto expected vector.
+
+    return quat;
 }
 
 void LIS3MDL::soft_reset()
