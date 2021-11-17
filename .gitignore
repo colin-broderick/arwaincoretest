@@ -72,3 +72,4 @@ lib
 libLoRaPi
 test*
 *.png
+mag_test.csv

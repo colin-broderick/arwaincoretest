@@ -19,13 +19,14 @@ class LIS3MDL
         enum class ODR { ODR_5_Hz, ODR_10_Hz, ODR_20_Hz, ODR_40_Hz, ODR_80_Hz };
     
     public: // Methods
-        LIS3MDL();
+        LIS3MDL(const int i2c_address, const std::string& i2c_bus);
         int test_chip();
         vector3 read();
         double read_temp();
 
     private: // Methods
         void soft_reset();
+        void power_up();
         void set_fsr(FSR fsr_selection);
         void set_odr(ODR odr_selection);
 

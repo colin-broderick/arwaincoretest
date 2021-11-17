@@ -117,6 +117,10 @@ int main(int argc, char **argv)
     {
         ret = arwain::calibrate_accelerometers();
     }
+    else if (input.contains("-testmag"))
+    {
+        ret = arwain::test_mag();
+    }
 
     else
     {

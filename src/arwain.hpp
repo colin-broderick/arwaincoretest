@@ -72,6 +72,7 @@ namespace arwain
     int test_imu();
     int test_lora_tx();
     int test_lora_rx();
+    int test_mag();
     int test_ori(int rate);
     int execute_inference();
 }
