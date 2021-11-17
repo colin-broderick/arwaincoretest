@@ -11,6 +11,7 @@ extern "C"
 }
 
 #include "vector3.hpp"
+#include "quaternion.hpp"
 
 class LIS3MDL
 {
@@ -22,7 +23,9 @@ class LIS3MDL
         LIS3MDL(const int i2c_address, const std::string& i2c_bus);
         int test_chip();
         vector3 read();
+        quaternion read_orientation();
         double read_temp();
+        void calibrate();
 
     private: // Methods
         void soft_reset();

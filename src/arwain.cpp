@@ -108,31 +108,27 @@ int arwain::test_imu()
     return arwain::ExitCodes::Success;
 }
 
+/** \brief Checks that the correct chip ID can be read from the magnetometer. If so, reads and prints orientation until interrupted. */
 int arwain::test_mag()
 {
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
 
-    std::cout << magn.test_chip() << std::endl;
-
-    vector3 res = magn.read();
-    std::this_thread::sleep_for(std::chrono::milliseconds{100});
-
-    arwain::Logger log{"mag_test.csv"};
-
-    double gain = 0.05;
+    int id = magn.test_chip();
+    if (id != 0x3D)
+    {
+        std::cout << "Chip ID incorrect: should be 0x3D, got " <<std::hex << std::showbase << id << std::endl;
+        return arwain::ExitCodes::FailedMagnetometer;
+    }
+    std::cout << "Chip ID: " << std::hex << std::showbase << magn.test_chip() << std::dec << std::endl;
 
     while (!arwain::shutdown)
     {
-        res = magn.read() * gain + res * (1.0 - gain);
-        log << res.x << "," << res.y << "," << res.z << "\n";
+        std::cout << magn.read_orientation() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds{100});
     }
 
-    log.close(); 
-
     return arwain::ExitCodes::Success;
 }
-
 
 int arwain::test_lora_tx()
 {
@@ -596,6 +592,16 @@ int arwain::test_ori(int frequency)
     }
     
     return arwain::ExitCodes::Success;
+}
+
+int arwain::calibrate_magnetometers()
+{
+    LIS3MDL magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
+    std::cout << "Move the device through all orientations for 10 seconds" << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+    std::cout << "Calibration log started" << std::endl;
+    magnetometer.calibrate();
+    std::cout << "Calibration log compelte" << std::endl;
 }
 
 int arwain::calibrate_gyroscopes()

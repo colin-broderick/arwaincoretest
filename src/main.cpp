@@ -97,6 +97,10 @@ int main(int argc, char **argv)
     {
         ret = arwain::test_lora_tx();
     }
+    else if (input.contains("-calibm"))
+    {
+        ret = arwain::calibrate_magnetometers();
+    }
 
     else if (input.contains("-testori"))
     {

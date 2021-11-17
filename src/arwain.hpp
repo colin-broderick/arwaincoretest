@@ -79,10 +79,11 @@ namespace arwain
 
 namespace arwain::ExitCodes
 {
-    inline const int Success = 1;
+    inline const int Success = 0;
     inline const int FailedIMU = -1;
     inline const int FailedConfiguration = -2;
     inline const int InferenceXMLMissing = -3;
+    inline const int FailedMagnetometer = -4;
 }
 
 namespace arwain::Intervals
@@ -159,6 +160,7 @@ namespace arwain
 
     int calibrate_gyroscopes();
     int calibrate_accelerometers();
+    int calibrate_magnetometers();
 
     /** \brief Configuration struct for whole programme. */
     class Configuration
