@@ -174,17 +174,65 @@ vector3 LIS3MDL::read()
     return {mag_x, mag_y, mag_z};
 }
 
+void LIS3MDL::set_calibration(double bias_x, double bias_y, double bias_z, double scale_x, double scale_y, double scale_z)
+{
+    this->bias = {bias_x, bias_y, bias_z};
+    this->scale = {scale_x, scale_y, scale_z};
+}
+
 void LIS3MDL::calibrate()
 {
     arwain::Logger log{"magn_log.csv"};
     log << "x,y,z" << "\n";
     
+    std::vector<vector3> readings;
+
+    // Take readings while tumbling device.
     while (!arwain::shutdown)
     {
         vector3 reading = this->read();
         log << reading.x << "," << reading.y << "," << reading.z << "\n";
+        readings.push_back(reading);
         sleep_ms(100);
     }
+    
+    // TODO Detect and remove outliers.
+    
+
+    // TEST Compute biases; this assumes outliers have been successfully removed.
+    double x_min = 1e6;
+    double x_max = -1e6;
+    double y_min = 1e6;
+    double y_max = -1e6;
+    double z_min = 1e6;
+    double z_max = -1e6;
+    for (auto& vec : readings)
+    {
+        x_min = vec.x < x_min ? vec.x : x_min;
+        x_max = vec.x > x_max ? vec.x : x_max;
+        y_min = vec.y < y_min ? vec.y : y_min;
+        y_max = vec.y > y_max ? vec.y : y_max;
+        z_min = vec.z < z_min ? vec.z : z_min;
+        z_max = vec.z > z_max ? vec.z : z_max;
+    }
+
+    std::cout << x_min << " " << x_max << std::endl;
+
+    // Compute correction factors.
+    vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
+    vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
+    double average_delta = (delta.x + delta.y + delta.z)/3.0;
+    double scale_x = average_delta / delta.x;
+    double scale_y = average_delta / delta.y;
+    double scale_z = average_delta / delta.z;
+
+    // TODO Log to config file.
+    arwain::config.replace("mag_bias_x", bias_.x);
+    arwain::config.replace("mag_bias_y", bias_.y);
+    arwain::config.replace("mag_bias_z", bias_.z);
+    arwain::config.replace("mag_scale_z", scale_x);
+    arwain::config.replace("mag_scale_y", scale_y);
+    arwain::config.replace("mag_scale_z", scale_z);
 
     log.close();
 }
