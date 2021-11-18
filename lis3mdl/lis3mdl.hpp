@@ -26,13 +26,13 @@ class LIS3MDL
         quaternion read_orientation();
         double read_temp();
         void calibrate();
+        void set_calibration(double bias_x_, double bias_y_, double bias_z_, double scale_x_, double scale_y_, double scale_z_);
 
     private: // Methods
         void soft_reset();
         void power_up();
         void set_fsr(FSR fsr_selection);
         void set_odr(ODR odr_selection);
-
 
         void i2c_init(const int address, const std::string &bus_name);
         int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
@@ -41,42 +41,44 @@ class LIS3MDL
     private: // Attributes
         int handle = 0;
         double fsr_res;
+        vector3 bias = {0, 0, 0};
+        vector3 scale = {1, 1, 1};
 
     private: // Statics
         // CHIP ADDRESS -----------------------------------------------------
-        static const uint8_t LIS3MDL_I2C_ADDRESS_0 = 0b0011100;
-        static const uint8_t LIS3MDL_I2C_ADDRESS_1 = 0b0011110;
+        const uint8_t LIS3MDL_I2C_ADDRESS_0 = 0b0011100;
+        const uint8_t LIS3MDL_I2C_ADDRESS_1 = 0b0011110;
         // REGISTER ADDRESSES -----------------------------------------------
-        static const uint8_t ADDR_WHO_AM_I    = 0x0F;
-        static const uint8_t ADDR_CTRL_REG1   = 0x20;
-        static const uint8_t ADDR_CTRL_REG2   = 0x21;
-        static const uint8_t ADDR_CTRL_REG3   = 0x22;
-        static const uint8_t ADDR_CTRL_REG4   = 0x23;
-        static const uint8_t ADDR_CTRL_REG5   = 0x24;
-        static const uint8_t ADDR_STATUS_REG  = 0x27;
-        static const uint8_t ADDR_OUT_X_L     = 0x28;
-        static const uint8_t ADDR_OUT_X_H     = 0x29;
-        static const uint8_t ADDR_OUT_Y_L     = 0x2A;
-        static const uint8_t ADDR_OUT_Y_H     = 0x2B;
-        static const uint8_t ADDR_OUT_Z_L     = 0x2C;
-        static const uint8_t ADDR_OUT_Z_H     = 0x2D;
-        static const uint8_t ADDR_TEMP_OUT_L  = 0x2E;
-        static const uint8_t ADDR_TEMPT_OUT_H = 0x2F;
-        static const uint8_t ADDR_INT_CFG     = 0x30;
-        static const uint8_t ADDR_INT_SRC     = 0x31;
-        static const uint8_t ADDR_INT_THS_L   = 0x32;
-        static const uint8_t ADDR_INT_THS_H   = 0x33;
+        const uint8_t ADDR_WHO_AM_I    = 0x0F;
+        const uint8_t ADDR_CTRL_REG1   = 0x20;
+        const uint8_t ADDR_CTRL_REG2   = 0x21;
+        const uint8_t ADDR_CTRL_REG3   = 0x22;
+        const uint8_t ADDR_CTRL_REG4   = 0x23;
+        const uint8_t ADDR_CTRL_REG5   = 0x24;
+        const uint8_t ADDR_STATUS_REG  = 0x27;
+        const uint8_t ADDR_OUT_X_L     = 0x28;
+        const uint8_t ADDR_OUT_X_H     = 0x29;
+        const uint8_t ADDR_OUT_Y_L     = 0x2A;
+        const uint8_t ADDR_OUT_Y_H     = 0x2B;
+        const uint8_t ADDR_OUT_Z_L     = 0x2C;
+        const uint8_t ADDR_OUT_Z_H     = 0x2D;
+        const uint8_t ADDR_TEMP_OUT_L  = 0x2E;
+        const uint8_t ADDR_TEMPT_OUT_H = 0x2F;
+        const uint8_t ADDR_INT_CFG     = 0x30;
+        const uint8_t ADDR_INT_SRC     = 0x31;
+        const uint8_t ADDR_INT_THS_L   = 0x32;
+        const uint8_t ADDR_INT_THS_H   = 0x33;
         // DEFAULT VALUES --------------------------------------------------
-        static const uint8_t DEFAULT_WHO_AM_I  = 0b00111101;
-        static const uint8_t DEFAULT_CTRL_REG1 = 0b00010000;
-        static const uint8_t DEFAULT_CTRL_REG2 = 0b00000000;
-        static const uint8_t DEFAULT_CTRL_REG3 = 0b00000011;
-        static const uint8_t DEFAULT_CTRL_REG4 = 0b00000000;
-        static const uint8_t DEFAULT_CTRL_REG5 = 0b00000000;
-        static const uint8_t DEFAULT_INT_CFG   = 0b11101000;
-        static const uint8_t DEFAULT_INT_SRC   = 0b00000000;
-        static const uint8_t DEFAULT_INT_THS_L = 0b00000000;
-        static const uint8_t DEFAULT_INT_THS_H = 0b00000000;
+        const uint8_t DEFAULT_WHO_AM_I  = 0b00111101;
+        const uint8_t DEFAULT_CTRL_REG1 = 0b00010000;
+        const uint8_t DEFAULT_CTRL_REG2 = 0b00000000;
+        const uint8_t DEFAULT_CTRL_REG3 = 0b00000011;
+        const uint8_t DEFAULT_CTRL_REG4 = 0b00000000;
+        const uint8_t DEFAULT_CTRL_REG5 = 0b00000000;
+        const uint8_t DEFAULT_INT_CFG   = 0b11101000;
+        const uint8_t DEFAULT_INT_SRC   = 0b00000000;
+        const uint8_t DEFAULT_INT_THS_L = 0b00000000;
+        const uint8_t DEFAULT_INT_THS_H = 0b00000000;
 };
 
 #endif
