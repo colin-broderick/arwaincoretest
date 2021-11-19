@@ -191,7 +191,7 @@ void arwain::setup(const InputParser& input)
     if (arwain::config.log_to_file)
     {
         arwain::error_log.open(arwain::folder_date_string + "/ERRORS.txt");
-        arwain::error_log << "# time event" << "\n";
+        arwain::error_log << "time event" << "\n";
     }
 }
 
@@ -602,6 +602,7 @@ int arwain::calibrate_magnetometers()
     std::cout << "Calibration log started" << std::endl;
     magnetometer.calibrate();
     std::cout << "Calibration log compelte" << std::endl;
+    return arwain::ExitCodes::Success;
 }
 
 int arwain::calibrate_gyroscopes()

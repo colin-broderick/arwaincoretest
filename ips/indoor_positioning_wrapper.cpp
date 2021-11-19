@@ -25,9 +25,9 @@ void indoor_positioning()
     if (arwain::config.log_to_file)
     {
         corner_log.open(arwain::folder_date_string + "/corner_log.txt");
-        corner_log << "# time x y z\n";
+        corner_log << "time x y z\n";
         tracked_floor_log.open(arwain::folder_date_string + "/tracked_floors.txt");
-        tracked_floor_log << "# time x, y, z\n" ;
+        tracked_floor_log << "time x, y, z\n" ;
     }
 
     auto time = std::chrono::high_resolution_clock::now();
@@ -83,7 +83,7 @@ void indoor_positioning()
     if (arwain::config.log_to_file)
     {
         ips_position_file.open(arwain::folder_date_string + "/ips_position.txt");
-        ips_position_file << "# time x y z" << "\n";
+        ips_position_file << "time x y z" << "\n";
     }
 
     // Set up timing.

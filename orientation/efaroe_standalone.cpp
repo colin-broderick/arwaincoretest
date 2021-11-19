@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     std::string filename = input_parser.getCmdOption("-file");
     std::ifstream inputfile{filename};
     std::ofstream outputfile{filename+".processed.csv"};
-    outputfile << "# Roll, Pitch, Yaw\n";
+    outputfile << "Roll, Pitch, Yaw\n";
 
     // Vector to store each line of data as doubles.
     std::vector<double> data_line;

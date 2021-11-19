@@ -44,7 +44,7 @@ void transmit_lora()
     if (arwain::config.log_to_file)
     {
         lora_file.open(arwain::folder_date_string + "/lora_log.txt");
-        lora_file << "# time x y z alerts" << "\n";
+        lora_file << "time x y z alerts" << "\n";
     }
 
     while (!arwain::shutdown)

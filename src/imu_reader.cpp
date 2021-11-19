@@ -128,11 +128,11 @@ void imu_reader()
         multi_quat_file.open(arwain::folder_date_string + "/multi_quat.txt");
 
         // File headers
-        acce_file << "# time x y z" << "\n";
-        gyro_file << "# time x y z" << "\n";
-        euler_file << "# time roll pitch yaw" << "\n";
-        quat_file << "# time w x y z" << "\n";
-        multi_quat_file << "# time q1w q1x q1y q1z q2w q2x q2y q2z q3w q3x q3y q3z" << "\n";
+        acce_file << "time x y z" << "\n";
+        gyro_file << "time x y z" << "\n";
+        euler_file << "time roll pitch yaw" << "\n";
+        quat_file << "time w x y z" << "\n";
+        multi_quat_file << "time q1w q1x q1y q1z q2w q2x q2y q2z q3w q3x q3y q3z" << "\n";
     }
 
     quaternion quat1, quat2, quat3, quat_aggregate, magnetovector;

@@ -26,7 +26,7 @@ class LIS3MDL
         quaternion read_orientation();
         double read_temp();
         void calibrate();
-        void set_calibration(double bias_x_, double bias_y_, double bias_z_, double scale_x_, double scale_y_, double scale_z_);
+        void set_calibration(vector3 bias_, vector3 scale_);
 
     private: // Methods
         void soft_reset();

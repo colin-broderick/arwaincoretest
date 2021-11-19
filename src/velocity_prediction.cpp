@@ -52,8 +52,8 @@ void predict_velocity()
     {
         velocity_file.open(arwain::folder_date_string + "/velocity.txt");
         position_file.open(arwain::folder_date_string + "/position.txt");
-        velocity_file << "# time x y z" << "\n";
-        position_file << "# time x y z" << "\n";
+        velocity_file << "time x y z" << "\n";
+        position_file << "time x y z" << "\n";
     }
 
     // Set up timing.
@@ -195,8 +195,8 @@ void predict_velocity()
     //     {
     //         velocity_file.open(arwain::folder_date_string + "/velocity.txt");
     //         position_file.open(arwain::folder_date_string + "/position.txt");
-    //         velocity_file << "# time x y z" << "\n";
-    //         position_file << "# time x y z" << "\n";
+    //         velocity_file << "time x y z" << "\n";
+    //         position_file << "time x y z" << "\n";
     //     }
         
     //     while (!arwain::shutdown)
