@@ -174,10 +174,10 @@ vector3 LIS3MDL::read()
     return {mag_x, mag_y, mag_z};
 }
 
-void LIS3MDL::set_calibration(double bias_x, double bias_y, double bias_z, double scale_x, double scale_y, double scale_z)
+void LIS3MDL::set_calibration(vector3 bias_, vector3 scale_)
 {
-    this->bias = {bias_x, bias_y, bias_z};
-    this->scale = {scale_x, scale_y, scale_z};
+    this->bias = bias_;
+    this->scale = scale_;
 }
 
 void LIS3MDL::calibrate()

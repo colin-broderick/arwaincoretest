@@ -42,7 +42,7 @@ void stance_detector()
     if (arwain::config.log_to_file)
     {
         freefall_file.open(arwain::folder_date_string + "/freefall.txt");
-        freefall_file << "# time freefall entanglement" << "\n";
+        freefall_file << "time freefall entanglement" << "\n";
     }
 
     // File handle for stance logging.
@@ -50,7 +50,7 @@ void stance_detector()
     if (arwain::config.log_to_file)
     {
         stance_file.open(arwain::folder_date_string + "/stance.txt");
-        stance_file << "# time stance" << "\n";
+        stance_file << "time stance" << "\n";
     }
 
     // Set up timing.
