@@ -9,6 +9,7 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+import drift_simulator
 
 
 WD = "/home/pi/arwain_inference_core"
@@ -53,10 +54,15 @@ app.layout = html.Div(children=[
     ),
     html.Div(
         children=[ 
-            html.Div(
-                [dcc.Graph(id='position_scatter', figure=fig, style={"height":"90vh"})],
+            html.Div([
+                    dcc.Slider(id='drift_slider',min=-5,max=5,step=0.05,value=1),
+                    dcc.Graph(id='position_scatter', figure=fig, style={"height":"90vh"})
+                ],
                 style={"width":"49%", "float":"left"}
             ),
+            html.Div([
+                
+            ]),
             html.Div(
                 [dcc.Graph(id='quaternion_orientation_plot', figure=fig)],
                 style={"width":"49%","float":"left"}
@@ -180,21 +186,35 @@ def update_euler_plot(dataset):
 ## Position scatter callback ###################################################
 @app.callback(
     dash.dependencies.Output("position_scatter", "figure"),
-    dash.dependencies.Input("dataset-list", "value")
+    [
+        dash.dependencies.Input("dataset-list", "value"),
+        dash.dependencies.Input("drift_slider", "value")
+    ]
 )
-def update_position_scatter(dataset):
+def update_position_scatter(dataset, drift):
     path = f"{WD}/{dataset}/position.txt"
     df = pd.read_csv(path, delimiter=" ")
-    fig = px.scatter(
-        df,
-        x=df["x"],
-        y=df["y"],
-        title="Position",
-        labels={"x":"position_x [m]", "y":"position_y [m]"}
-    )
+    num_rows = 200
+    df = df.head(num_rows)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df["x"], y=df["y"], mode="lines", name="ARWAIN path"))
+    fig.update_layout(title="Position", title_x=0.5)
+    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+
+    ## Convert to 2D array, apply drift, convert back to dataframe.
+    points_x = list(df["x"])
+    points_y = list(df["y"])
+    points = [ [points_x[i], points_y[i]] for i in range(len(points_x))]
+    points = drift_simulator.simulate_drift(points, drift)
+    df = pd.DataFrame(points)
+    df = df.head(num_rows)
+
+    ## Add the drifted path to the figure.
+    fig.add_trace(go.Scatter(x=df[0], y=df[1], mode="lines", name="Drifted path"))
     fig.update_layout(title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
     fig.update_yaxes(scaleanchor="x", scaleratio=1) # Correct aspect ratio.
+
     return fig
 
 
