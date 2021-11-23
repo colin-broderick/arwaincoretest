@@ -179,9 +179,11 @@ void LoRa::write_FIFO(const char *str, uint8_t num_bytes)
 
 void LoRa::read_FIFO(uint8_t num_bytes, uint8_t* out_buffer)
 {
-    // TODO Fix this indexing; FIFO read ptr not incrementing on first byte, so I am reading an extra one.
-    uint8_t addr = FIFO_ADDRESS | 0x7F;
-    this->spi->write(&addr, 1);
+    uint8_t read_addr = this->read_register(FIFORXBYTEADDR_ADDRESS) - num_bytes;
+    this->write_register(FIFOPTR_ADDRESS, read_addr);
+
+    uint8_t fifo_addr = FIFO_ADDRESS | 0x7F;
+    this->spi->write(&fifo_addr, 1);
     this->spi->read(out_buffer, num_bytes + 1);
 }
 
@@ -191,7 +193,6 @@ bool LoRa::rx(uint8_t* out_buffer)
 
     if (IRQFlags & IRQMASK_RXDONE)
     {
-        // this->write_register(FIFOPTR_ADDRESS, 0); //set FIFO pointer to write position
         this->write_register(IRQFLAGS_ADDRESS, IRQMASK_RXDONE);
         uint8_t num_bytes = this->read_register(RXNBBYTES_ADDRESS);
         this->read_FIFO(num_bytes, out_buffer);

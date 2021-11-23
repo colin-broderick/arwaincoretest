@@ -141,12 +141,15 @@ int arwain::test_lora_tx()
         std::cout << "Found chip" << std::endl;
     };
 
-    std::string message = "IRFS.LoRa";
-    std::cout << "Transmitting message \"" << message << "\" at 1 Hz ..." << std::endl;
+    std::string message = "ARWAIN.LoRa";
+    std::cout << "Transmitting message \"" << message << ".x\" at 1 Hz ..." << std::endl;
 
+    int i = 0;
     while (!arwain::shutdown)
     {
-        lora.send_message(message);
+        i++;
+        std::string msg = message + "." + std::to_string(i);
+        lora.send_message(msg);
         std::this_thread::sleep_for(std::chrono::milliseconds{1000});
     }
 
