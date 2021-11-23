@@ -11,12 +11,14 @@ import plotly.graph_objects as go
 import pandas as pd
 
 
-wd = "/home/pi/arwain_inference_core"
+WD = "/home/pi/arwain_inference_core"
+
+
 def get_datasets():
-    datasets = sorted([folder for folder in  os.listdir(wd) if folder.startswith("data")])
+    datasets = sorted([folder for folder in  os.listdir(WD) if folder.startswith("data")])
     if len(datasets) == 0:
         return ["No data available"], None
-    df = pd.read_csv(f"{wd}/{datasets[0]}/position.txt", delimiter=" ")
+    df = pd.read_csv(f"{WD}/{datasets[0]}/position.txt", delimiter=" ")
     return datasets, df
 
 ## Get the datasets.
@@ -63,11 +65,72 @@ app.layout = html.Div(children=[
                 [dcc.Graph(id='euler_plot', figure=fig)],
                 style={"width":"49%","float":"left"}
             ),
+            html.Div(
+                [dcc.Graph(id='accel_plot', figure=fig)],
+                style={"width":"49%","float":"left"}
+            ),
+            html.Div(
+                [dcc.Graph(id='gyro_plot', figure=fig)],
+                style={"width":"49%","float":"left"}
+            ),
+            html.Div(
+                [dcc.Graph(id='mag_ori_plot', figure=fig)],
+                style={"width":"49%","float":"left"}
+            ),
         ],
         style={"margin":"auto","width":"100%","display":"inline-block"})
     ],
     style={"font-family":"sans-serif"}
 )
+
+
+@app.callback(
+    dash.dependencies.Output("gyro_plot", "figure"),
+    dash.dependencies.Input("dataset-list", "value")
+)
+def update_gyro_plot(dataset):
+    path = f"{WD}/{dataset}/world_gyro.txt"
+    df = pd.read_csv(path, delimiter=" ")
+    fig = go.Figure()
+    fig.update_layout(title="Angular velocity, world frame [rad/s]", title_x=0.5)
+    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["x"], mode="lines", name="x"))
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["y"], mode="lines", name="y"))
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["z"], mode="lines", name="z"))
+    return fig
+
+@app.callback(
+    dash.dependencies.Output("accel_plot", "figure"),
+    dash.dependencies.Input("dataset-list", "value")
+)
+def update_accel_plot(dataset):
+    path = f"{WD}/{dataset}/world_acce.txt"
+    df = pd.read_csv(path, delimiter=" ")
+    fig = go.Figure()
+    fig.update_layout(title="Linear acceleration, world frame [m/s2]", title_x=0.5)
+    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["x"], mode="lines", name="x"))
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["y"], mode="lines", name="y"))
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["z"], mode="lines", name="z"))
+    return fig
+
+
+@app.callback(
+    dash.dependencies.Output("mag_ori_plot", "figure"),
+    dash.dependencies.Input("dataset-list", "value")
+)
+def update_mag_ori_plot(dataset):
+    path = f"{WD}/{dataset}/mag_orientation.txt"
+    df = pd.read_csv(path, delimiter=" ")
+    fig = go.Figure()
+    fig.update_layout(title="Magnetic orientation, quaternion", title_x=0.5)
+    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["w"], mode="lines", name="w"))
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["x"], mode="lines", name="x"))
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["y"], mode="lines", name="y"))
+    fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["z"], mode="lines", name="z"))
+    return fig
+
 
 
 ## Update dataset list from button #############################################
@@ -86,7 +149,7 @@ def update_list(clicks):
     dash.dependencies.Input("dataset-list", "value")
 )
 def update_orientation_plot(dataset):
-    path = f"{wd}/{dataset}/game_rv.txt"
+    path = f"{WD}/{dataset}/game_rv.txt"
     df = pd.read_csv(path, delimiter=" ")
     # fig = px.scatter(df, x=df["x"], y=df["y"], title="Orientation over time")
     fig = go.Figure()
@@ -104,10 +167,10 @@ def update_orientation_plot(dataset):
     dash.dependencies.Input("dataset-list","value")
 )
 def update_euler_plot(dataset):
-    path = f"{wd}/{dataset}/euler_orientation.txt"
+    path = f"{WD}/{dataset}/euler_orientation.txt"
     df = pd.read_csv(path, delimiter=" ")
     fig = go.Figure()
-    fig.update_layout(title="Euler orientation", title_x=0.5)
+    fig.update_layout(title="Euler orientation [rad]", title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
     fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["roll"], mode="lines", name="roll"))
     fig.add_trace(go.Scatter(x=df["time"]/1e17, y=df["pitch"], mode="lines", name="pitch"))
@@ -120,7 +183,7 @@ def update_euler_plot(dataset):
     dash.dependencies.Input("dataset-list", "value")
 )
 def update_position_scatter(dataset):
-    path = f"{wd}/{dataset}/position.txt"
+    path = f"{WD}/{dataset}/position.txt"
     df = pd.read_csv(path, delimiter=" ")
     fig = px.scatter(
         df,

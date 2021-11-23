@@ -87,18 +87,22 @@ void imu_reader()
     arwain::Filter* filter1;
     arwain::Filter* filter2;
     arwain::Filter* filter3;
+    arwain::Filter* filter1_with_mag;
     if (arwain::config.orientation_filter == "efaroe")
     {
         filter1 = new arwain::eFaroe{quaternion{0,0,0,0}, arwain::config.gyro1_bias, 100, arwain::config.efaroe_beta, arwain::config.efaroe_zeta};
         filter2 = new arwain::eFaroe{quaternion{0,0,0,0}, arwain::config.gyro2_bias, 100, arwain::config.efaroe_beta, arwain::config.efaroe_zeta};
         filter3 = new arwain::eFaroe{quaternion{0,0,0,0}, arwain::config.gyro3_bias, 100, arwain::config.efaroe_beta, arwain::config.efaroe_zeta};
+        filter1_with_mag = new arwain::eFaroe{quaternion{0,0,0,0}, arwain::config.gyro3_bias, 100, arwain::config.efaroe_beta, arwain::config.efaroe_zeta};
     }
     else if (arwain::config.orientation_filter == "madgwick")
     {
         filter1 = new arwain::Madgwick{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
         filter2 = new arwain::Madgwick{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
         filter3 = new arwain::Madgwick{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
+        filter1_with_mag = new arwain::Madgwick{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
     }
+
 
     // Local buffers for IMU data.
     vector3 accel_data1;
@@ -113,7 +117,9 @@ void imu_reader()
 
     // File handles for logging.
     arwain::Logger acce_file;
+    arwain::Logger world_acce_file;
     arwain::Logger gyro_file;
+    arwain::Logger world_gyro_file;
     arwain::Logger euler_file;
     arwain::Logger quat_file;
     arwain::Logger multi_quat_file;
@@ -122,14 +128,18 @@ void imu_reader()
     {
         // Open file handles for data logging.
         acce_file.open(arwain::folder_date_string + "/acce.txt");
+        world_acce_file.open(arwain::folder_date_string + "/world_acce.txt");
         gyro_file.open(arwain::folder_date_string + "/gyro.txt");
+        world_gyro_file.open(arwain::folder_date_string + "/world_gyro.txt");
         euler_file.open(arwain::folder_date_string + "/euler_orientation.txt");
         quat_file.open(arwain::folder_date_string + "/game_rv.txt");
         multi_quat_file.open(arwain::folder_date_string + "/multi_quat.txt");
 
         // File headers
         acce_file << "time x y z" << "\n";
+        world_acce_file << "time x y z" << "\n";
         gyro_file << "time x y z" << "\n";
+        world_gyro_file << "time x y z" << "\n";
         euler_file << "time roll pitch yaw" << "\n";
         quat_file << "time w x y z" << "\n";
         multi_quat_file << "time q1w q1x q1y q1z q2w q2x q2y q2z q3w q3x q3y q3z" << "\n";
@@ -209,12 +219,12 @@ void imu_reader()
         // quat_aggregate = quaternion::nslerp(quat_aggregate, magnetovector, 1 - s);
 
         // Back SLERP
-        quat1 = quaternion::slerp(quat1, quat_aggregate, 0.02);
-        quat2 = quaternion::slerp(quat2, quat_aggregate, 0.02);
-        quat3 = quaternion::slerp(quat3, quat_aggregate, 0.02);
-        filter1->setQ(quat1.w, quat1.x, quat1.y, quat1.z);
-        filter2->setQ(quat2.w, quat2.x, quat2.y, quat2.z);
-        filter3->setQ(quat3.w, quat3.x, quat3.y, quat3.z);
+        // quat1 = quaternion::slerp(quat1, quat_aggregate, 0.02);
+        // quat2 = quaternion::slerp(quat2, quat_aggregate, 0.02);
+        // quat3 = quaternion::slerp(quat3, quat_aggregate, 0.02);
+        // filter1->setQ(quat1.w, quat1.x, quat1.y, quat1.z);
+        // filter2->setQ(quat2.w, quat2.x, quat2.y, quat2.z);
+        // filter3->setQ(quat3.w, quat3.x, quat3.y, quat3.z);
 
         if (cycle_count % 100 == 0)
         {
@@ -236,12 +246,17 @@ void imu_reader()
         }
 
         // Add world-aligned IMU to its own buffer.
-        world_accel_data1 = world_align(accel_data1, quat_aggregate);
-        world_gyro_data1 = world_align(gyro_data1, quat_aggregate);
+        world_accel_data1 = world_align(accel_data1, quat1);
+        world_gyro_data1 = world_align(gyro_data1, quat1);
         {
             std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
             arwain::Buffers::IMU_WORLD_BUFFER.pop_front();
             arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
+        }
+        if (arwain::config.log_to_file)
+        {
+            world_acce_file << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
+            world_gyro_file << timeCount << " " << world_gyro_data1.x << " " << world_gyro_data1.y << " " << world_gyro_data1.z << "\n";
         }
 
         // Log orientation information to file.
@@ -264,7 +279,9 @@ void imu_reader()
     if (arwain::config.log_to_file)
     {
         acce_file.close();
+        world_acce_file.close();
         gyro_file.close();
+        world_gyro_file.close();
         euler_file.close();
         quat_file.close();
         multi_quat_file.close();
