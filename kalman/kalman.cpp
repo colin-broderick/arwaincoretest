@@ -96,7 +96,7 @@ void kalman_filter_constant_1d::update_gain(const double measurement_error)
 void kalman_filter_constant_1d::update_estimate(const double measurement)
 {
     est = est + KG * (measurement - est);
-    if (KG < 0.0005)
+    if (KG < 0.005)
     {
         converged = true;
     }

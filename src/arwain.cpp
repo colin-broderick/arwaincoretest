@@ -16,6 +16,7 @@
 #include "madgwick.hpp"
 #include "efaroe.hpp"
 #include "lis3mdl.hpp"
+#include "geomagnetic_orientation.hpp"
 
 // General configuration data.
 namespace arwain
@@ -40,6 +41,7 @@ namespace arwain::Buffers
     std::deque<vector3> PRESSURE_BUFFER{arwain::BufferSizes::PRESSURE_BUFFER_LEN};
     std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
     std::deque<quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
+    std::deque<quaternion> MAG_ORIENTATION_BUFFER{arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN};
 }
 
 // Mutex locks for use when accessing shared buffers.
@@ -179,7 +181,14 @@ void arwain::setup(const InputParser& input)
     // Create output directory and write copy of current configuration.
     if (arwain::config.log_to_file)
     {
-        arwain::folder_date_string = "./data_" + arwain::datetimestring();
+        if (input.contains("-name"))
+        {
+            arwain::folder_date_string = "./data_" + input.getCmdOption("-name");
+        }
+        else
+        {
+            arwain::folder_date_string = "./data_" + arwain::datetimestring();
+        }
         if (!std::filesystem::is_directory(arwain::folder_date_string))
         {
             std::filesystem::create_directory(arwain::folder_date_string);
@@ -436,6 +445,7 @@ int arwain::execute_inference()
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     std::thread altimeter_thread(altimeter);                     // Uses the BMP280 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
+    std::thread magnetometer_thread{mag_reader};                 // Reads the magnetic sensor and computes geomagnetic orientation.
     // std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
@@ -448,6 +458,7 @@ int arwain::execute_inference()
     indoor_positioning_thread.join();
     py_inference_thread.join();
     altimeter_thread.join();
+    magnetometer_thread.join();
     // py_transmitter_thread.join();
     // kalman_filter.join();
 
