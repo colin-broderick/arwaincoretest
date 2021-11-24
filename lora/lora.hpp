@@ -141,38 +141,22 @@
 
 class LoRa
 {
-    public:
-		enum class Bandwidth
-		{
-			BW_7_8K = MODEMCONFIG1_BW_7_8K,
-			BW_10_4K = MODEMCONFIG1_BW_10_4K,
-			BW_15_6K = MODEMCONFIG1_BW_15_6K,
-			BW_20_8K = MODEMCONFIG1_BW_20_8K,
-			BW_31_25K = MODEMCONFIG1_BW_31_25K,
-			BW_41_7K = MODEMCONFIG1_BW_41_7K,
-			BW_62_5K = MODEMCONFIG1_BW_62_5K,
-			BW_125K = MODEMCONFIG1_BW_125K,
-			BW_250K = MODEMCONFIG1_BW_250K,
-			BW_500K = MODEMCONFIG1_BW_500K
+    public: // Types
+		enum class Frequency { FREQ_433, FREQ_868, FREQ_915, FREQ_923 };
+		enum class HeaderMode { HM_EXPLICIT, HM_IMPLICIT };
+		enum class CodingRate { CR_45 = 1, CR_46, CR_47, CR_48 };
+		enum class LNAGain { LNA_G1 = 1, LNA_G2, LNA_G3, LNA_G4, LNA_G5, LNA_G6, LNA_AGC };
+		enum class Bandwidth {
+			BW_7_8K = MODEMCONFIG1_BW_7_8K, BW_10_4K = MODEMCONFIG1_BW_10_4K, BW_15_6K = MODEMCONFIG1_BW_15_6K, BW_20_8K = MODEMCONFIG1_BW_20_8K,
+			BW_31_25K = MODEMCONFIG1_BW_31_25K, BW_41_7K = MODEMCONFIG1_BW_41_7K, BW_62_5K = MODEMCONFIG1_BW_62_5K, BW_125K = MODEMCONFIG1_BW_125K,
+			BW_250K = MODEMCONFIG1_BW_250K, BW_500K = MODEMCONFIG1_BW_500K
 		};
-		enum class Frequency
-		{
-			FREQ_433,
-			FREQ_868,
-			FREQ_915,
-			FREQ_923
-		};
-		enum class SpreadFactor
-		{
-			SF_6 = (6 << 4),
-			SF_7 = (7 << 4),
-			SF_8 = (8 << 4),
-			SF_9 = (9 << 4),
-			SF_10 = (10 << 4),
-			SF_11 = (11 << 4),
-			SF_12 = (12 << 4)
+		enum class SpreadFactor	{
+			SF_6 = (6 << 4), SF_7 = (7 << 4), SF_8 = (8 << 4), SF_9 = (9 << 4),
+			SF_10 = (10 << 4), SF_11 = (11 << 4), SF_12 = (12 << 4)
 		};
 
+	public: // Methods
 		LoRa(const std::string& address, const bool as_receiver);
 		LoRa(const std::string &address, const bool as_receiver, const LoRa::Frequency frequency_mhz_, const LoRa::Bandwidth bandwidth_khz_, const LoRa::SpreadFactor spread_factor_);
         ~LoRa();
@@ -181,8 +165,7 @@ class LoRa
 		void send_message(uint8_t* message, size_t num_bytes);
 		std::tuple<bool, std::string> receive();
 
-
-	private:
+	private: // Methods
         uint8_t read_register(uint8_t address);
         void write_register(uint8_t address, uint8_t val);
 		void configure();
@@ -190,26 +173,14 @@ class LoRa
 		void write_FIFO(const char* str, uint8_t num_bytes);
 		bool rx(uint8_t* out_buffer);
 
-    private:
+    private: // Attributes
 		static const int max_message_size = 63;
 		bool is_receiver;
 		Frequency frequency_mhz;
 		Bandwidth bandwidth_khz;
 		SpreadFactor spread_factor;
         SPI *spi = nullptr;
-        spi_config_t spi_config;
-
-    public: // Types
-		// static const uint32_t bw[10];
-		
-		// TODO Convert to enum classes like the ones above.
-		enum HeaderMode { HM_EXPLICIT, HM_IMPLICIT };
-		enum CodingRate { CR_45 = 1, CR_46, CR_47, CR_48 };
-		enum LNAGain {
-			LNA_G1 = 1, LNA_G2, LNA_G3,
-			LNA_G4,     LNA_G5, LNA_G6,
-			LNA_AGC
-		};
+        spi_config_t spi_config;		
 };
 
 namespace arwain

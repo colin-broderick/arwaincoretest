@@ -31,7 +31,7 @@ void mag_reader()
     while (!arwain::shutdown)
     {
         auto timeCount = time.time_since_epoch().count();
-        // TODO the task
+
         vector3 reading = magnetometer.read();
         quaternion orientation = magnetometer.read_orientation();
 

@@ -359,21 +359,21 @@ int arwain::Configuration::read_from_file()
     // Apply LoRa coding rate with default 48.
     std::string codingrate = options["lora_coding_rate"];
     if (codingrate == "45")
-        this->lora_coding_rate = LoRa::CR_45;
+        this->lora_coding_rate = LoRa::CodingRate::CR_45;
     else if (codingrate == "46")
-        this->lora_coding_rate = LoRa::CR_46;
+        this->lora_coding_rate = LoRa::CodingRate::CR_46;
     else if (codingrate == "47")
-        this->lora_coding_rate = LoRa::CR_47;
+        this->lora_coding_rate = LoRa::CodingRate::CR_47;
     else if (codingrate == "48")
-        this->lora_coding_rate = LoRa::CR_48;
+        this->lora_coding_rate = LoRa::CodingRate::CR_48;
     else
-        this->lora_coding_rate = LoRa::CR_48;
+        this->lora_coding_rate = LoRa::CodingRate::CR_48;
 
     // Apply LoRa header mode with implicit as default.
     if (options["lora_header_mode"] == "explicit")
-        this->lora_header_mode = LoRa::HM_EXPLICIT;
+        this->lora_header_mode = LoRa::HeaderMode::HM_EXPLICIT;
     else
-        this->lora_header_mode = LoRa::HM_IMPLICIT;
+        this->lora_header_mode = LoRa::HeaderMode::HM_IMPLICIT;
 
     std::stringstream(options["lora_sync_word"]) >> this->lora_sync_word;
     std::stringstream(options["lora_enable_crc"]) >> this->lora_enable_crc;

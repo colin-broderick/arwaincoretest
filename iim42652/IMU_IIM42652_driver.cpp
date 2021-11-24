@@ -11,6 +11,11 @@
 #include "kalman.hpp"
 #include "vector3.hpp"
 
+static void sleep_ms(int milliseconds)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds{milliseconds});
+}
+
 /** \brief Produces a random number from a uniform distribution [-1, 1]. */
 static double rn()
 {
@@ -75,7 +80,7 @@ vector3 IMU_IIM42652::calibrate_accelerometer()
     for (int i = 0; i < 12; i++)
     {
         std::cout << i+1 << ") Place the IMU in a random orientation ..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds{5});
+        sleep_ms(5000);
 
         kalman_filter_constant_1d kfx{9.81, 1.0};
         kalman_filter_constant_1d kfy{9.81, 1.0};
@@ -91,7 +96,6 @@ vector3 IMU_IIM42652::calibrate_accelerometer()
         }
 
         samples.push_back({kfx.est, kfy.est, kfz.est});
-        // TODO Add delay and instruction to reorient.
     }    
 
     // Initial parameter estimates assuming perfect measurements.
