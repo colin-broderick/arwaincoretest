@@ -70,7 +70,7 @@ void transmit_lora()
         // Send transmission.
         lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
 
-        // TODO: Log LoRa transmission to file, including any success/signal criteria that might be available.
+        // TODO: Check the log format is as expected and usable.
         if (arwain::config.log_to_file)
         {
             lora_file << time.time_since_epoch().count() << " " << message << "\n";

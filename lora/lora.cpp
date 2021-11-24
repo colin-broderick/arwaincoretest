@@ -204,7 +204,6 @@ bool LoRa::rx(uint8_t* out_buffer)
 
 std::tuple<bool, std::string> LoRa::receive()
 {
-    // TODO Fix this indexing; FIFO read ptr not incrementing on first byte, so I am reading an extra byte and skipping it in the string conversion.
     for (int i = 0; i < 100; i++)
     {
         uint8_t rx_buffer[LoRa::max_message_size] = {0};
