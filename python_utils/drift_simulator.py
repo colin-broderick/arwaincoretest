@@ -1,4 +1,11 @@
 # import matplotlib.pyplot as plt
+
+
+## TODO This procedure is currently a quadratic time algorithm. It can be made into a linear time algorithm.
+## In addition, when rotating a point, it is currently being rotated around the origin. It should be
+## rotated around the position of the previous point.
+
+
 import cmath as math
 
 
