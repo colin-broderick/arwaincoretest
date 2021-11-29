@@ -448,7 +448,7 @@ int arwain::execute_inference()
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     std::thread altimeter_thread(altimeter);                     // Uses the BMP280 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
-    std::thread magnetometer_thread{mag_reader};                 // Reads the magnetic sensor and computes geomagnetic orientation.
+    // std::thread magnetometer_thread{mag_reader};                 // Reads the magnetic sensor and computes geomagnetic orientation.
     // std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
@@ -461,7 +461,7 @@ int arwain::execute_inference()
     indoor_positioning_thread.join();
     py_inference_thread.join();
     altimeter_thread.join();
-    magnetometer_thread.join();
+    // magnetometer_thread.join();
     // py_transmitter_thread.join();
     // kalman_filter.join();
 

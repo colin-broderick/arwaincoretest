@@ -1,12 +1,12 @@
 #include <iomanip>
 #include <thread>
 #include <cstring>
-#include <zmq.h>
 
 #include "velocity_prediction.hpp"
 #include "logger.hpp"
 #include "arwain.hpp"
 
+#include <zmq.h>
 
 static std::string inference_tcp_socket = "tcp://*:5555";
 
@@ -63,7 +63,7 @@ void predict_velocity()
     {
         { // Grab latest IMU packet
             std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-            imu = arwain::Buffers::IMU_BUFFER;
+            imu = arwain::Buffers::IMU_WORLD_BUFFER;
         }
 
         // Check what the time really is since it might not be accurate.
@@ -104,8 +104,6 @@ void predict_velocity()
         delimiter = answer.find(",");
         std::stringstream(answer.substr(0, delimiter)) >> velocity.y;
         std::stringstream(answer.substr(delimiter+1)) >> velocity.z;
-
-        // std::cout << "VL: " << velocity << "\n";
 
         { // Store velocity in global buffer.
             std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};

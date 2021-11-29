@@ -55,7 +55,7 @@ app.layout = html.Div(children=[
     html.Div(
         children=[ 
             html.Div([
-                    dcc.Slider(id='drift_slider',min=-5,max=5,step=0.05,value=1),
+                    dcc.Slider(id='drift_slider',min=-0.5,max=0.5,step=0.001,value=0),
                     dcc.Graph(id='position_scatter', figure=fig, style={"height":"90vh"})
                 ],
                 style={"width":"49%", "float":"left"}
@@ -194,8 +194,6 @@ def update_euler_plot(dataset):
 def update_position_scatter(dataset, drift):
     path = f"{WD}/{dataset}/position.txt"
     df = pd.read_csv(path, delimiter=" ")
-    num_rows = 200
-    df = df.head(num_rows)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df["x"], y=df["y"], mode="lines", name="ARWAIN path"))
     fig.update_layout(title="Position", title_x=0.5)
@@ -204,13 +202,12 @@ def update_position_scatter(dataset, drift):
     ## Convert to 2D array, apply drift, convert back to dataframe.
     points_x = list(df["x"])
     points_y = list(df["y"])
-    points = [ [points_x[i], points_y[i]] for i in range(len(points_x))]
+    points = [ [points_x[i], points_y[i]] for i in range(1, len(points_x))]
     points = drift_simulator.simulate_drift(points, drift)
-    df = pd.DataFrame(points)
-    df = df.head(num_rows)
+    df_drifted = pd.DataFrame(points)
 
     ## Add the drifted path to the figure.
-    fig.add_trace(go.Scatter(x=df[0], y=df[1], mode="lines", name="Drifted path"))
+    fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="lines", name="Drifted path"))
     fig.update_layout(title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
     fig.update_yaxes(scaleanchor="x", scaleratio=1) # Correct aspect ratio.
