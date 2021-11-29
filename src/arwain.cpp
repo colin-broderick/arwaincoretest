@@ -186,7 +186,7 @@ void arwain::setup(const InputParser& input)
     {
         if (input.contains("-name"))
         {
-            arwain::folder_date_string = "./data_" + input.getCmdOption("-name");
+            arwain::folder_date_string = "./data_" + input.getCmdOption("-name") + "_" + arwain::datetimestring();
         }
         else
         {
