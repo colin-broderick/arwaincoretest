@@ -89,4 +89,4 @@ def kill():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=1081)
+    app.run(host="0.0.0.0", port=1081, debug=False)
