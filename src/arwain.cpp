@@ -169,7 +169,7 @@ int arwain::test_lora_rx()
 
     while (!arwain::shutdown)
     {
-        auto [rx, message] = lora.receive();
+        auto [rx, message] = lora.receive_string();
         if (rx)
         {
             std::cout << message << std::endl;

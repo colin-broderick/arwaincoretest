@@ -3,6 +3,7 @@
 
 #include <tuple>
 #include <string>
+#include <vector>
 
 #include "spi.hpp"
 
@@ -163,7 +164,8 @@ class LoRa
         uint8_t test_chip();
 		void send_message(const std::string& message);
 		void send_message(uint8_t* message, size_t num_bytes);
-		std::tuple<bool, std::string> receive();
+		std::tuple<bool, std::string> receive_string();
+		std::tuple<bool, std::vector<uint8_t>> receive_bytes();
 
 	private: // Methods
         uint8_t read_register(uint8_t address);
