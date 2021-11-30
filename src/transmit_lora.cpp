@@ -17,9 +17,9 @@ void transmit_lora()
     LoRa lora{
         arwain::config.lora_address,
         false,
-        arwain::config.lora_rf_frequency,
-        arwain::config.lora_bandwidth,
-        arwain::config.lora_spread_factor
+        // arwain::config.lora_rf_frequency,
+        // arwain::config.lora_bandwidth,
+        // arwain::config.lora_spread_factor
     };
 
     // TODO Put these configruations in the LORa constructor and init.

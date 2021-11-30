@@ -4,6 +4,7 @@
 #include <thread>
 #include <chrono>
 #include <tuple>
+#include <vector>
 
 #include "lora.hpp"
 
@@ -202,7 +203,7 @@ bool LoRa::rx(uint8_t* out_buffer)
     return false;
 }
 
-std::tuple<bool, std::string> LoRa::receive()
+std::tuple<bool, std::string> LoRa::receive_string()
 {
     for (int i = 0; i < 100; i++)
     {
@@ -215,6 +216,26 @@ std::tuple<bool, std::string> LoRa::receive()
     }
 
     return {false, ""};
+}
+
+std::tuple<bool, std::vector<uint8_t>> LoRa::receive_bytes()
+{
+    std::vector<uint8_t> rx_msg;
+    for (int i = 0; i < 100; i++)
+    {
+        uint8_t rx_buffer[LoRa::max_message_size] = {0};
+        if (rx(rx_buffer))
+        {
+            for (int j = 1; j < LoRa::max_message_size; j++)
+            {
+                rx_msg.push_back(rx_buffer[i]);
+            }
+            return {true, rx_msg};
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+
+    return {false, rx_msg};
 }
 
 std::ostream& operator<<(std::ostream& stream, arwain::LoraPacket packet)
