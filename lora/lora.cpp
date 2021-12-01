@@ -192,12 +192,16 @@ bool LoRa::rx(uint8_t* out_buffer)
 {
     uint8_t IRQFlags = this->read_register(IRQFLAGS_ADDRESS);
 
-    if (IRQFlags & IRQMASK_RXDONE)
+    if ((IRQFlags & IRQMASK_RXDONE) && !(IRQFlags & IRQ_PAYLOADCRCERR))
     {
         this->write_register(IRQFLAGS_ADDRESS, IRQMASK_RXDONE);
         uint8_t num_bytes = this->read_register(RXNBBYTES_ADDRESS);
         this->read_FIFO(num_bytes, out_buffer);
         return true;
+    }
+    else if (IRQFlags & (IRQMASK_RXDONE | IRQ_PAYLOADCRCERR))
+    {
+        this->write_register(IRQFLAGS_ADDRESS, IRQMASK_RXDONE | IRQ_PAYLOADCRCERR);
     }
 
     return false;
