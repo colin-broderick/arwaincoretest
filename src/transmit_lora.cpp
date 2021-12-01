@@ -50,6 +50,7 @@ void transmit_lora()
     while (!arwain::shutdown)
     {
         arwain::LoraPacket message;
+        message.metadata = arwain::config.node_id;
 
         { // Get positions as float16.
             std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};

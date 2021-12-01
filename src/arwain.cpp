@@ -301,6 +301,7 @@ int arwain::Configuration::read_from_file()
     read_option(options, "pressure_address", this->pressure_address);
     read_option(options, "pressure_bus", this->pressure_bus);
     read_option(options, "lora_address", this->lora_address);
+    read_option(options, "node_id", this->node_id);
     
     // Apply LoRa settings
     std::stringstream(options["lora_tx_power"]) >> this->lora_tx_power;

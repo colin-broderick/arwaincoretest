@@ -108,7 +108,7 @@ namespace arwain::BufferSizes
     inline const unsigned int ORIENTATION_BUFFER_LEN = 200;
     inline const unsigned int IMU_BUFFER_LEN = 200;
     inline const unsigned int IPS_BUFFER_LEN = 50;
-    inline const unsigned int LORA_MESSAGE_LENGTH = 8;
+    inline const unsigned int LORA_MESSAGE_LENGTH = 9;
     inline const unsigned int PRESSURE_BUFFER_LEN = 100;
     inline const unsigned int MAG_ORIENTATION_BUFFER_LEN = 100;
 }
@@ -227,6 +227,7 @@ namespace arwain
             int magn_address; // The I2C address of the magnetometer.
             std::string pressure_bus; // The I2C bus of the pressure sensor.
             int pressure_address; // The I2C address of the pressure sensor.
+            int node_id; // A unique ID number for the node.
 
             /** \brief Overwrite the content of the configuration file associated with this struct.
              * \param option The configuration option to overwrite.
