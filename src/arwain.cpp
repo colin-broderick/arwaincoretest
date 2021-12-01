@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <thread>
+#include <cmath>
 
 #include "arwain.hpp"
 #include "input_parser.hpp"
@@ -17,6 +18,8 @@
 #include "efaroe.hpp"
 #include "lis3mdl.hpp"
 #include "geomagnetic_orientation.hpp"
+
+static double pi = 3.14159265;
 
 // General configuration data.
 namespace arwain
@@ -114,6 +117,7 @@ int arwain::test_imu()
 int arwain::test_mag()
 {
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
+    magn.set_calibration(arwain::config.mag_bias, arwain::config.mag_scale);
 
     int id = magn.test_chip();
     if (id != 0x3D)
@@ -125,7 +129,8 @@ int arwain::test_mag()
 
     while (!arwain::shutdown)
     {
-        std::cout << magn.read_orientation() << std::endl;
+        vector3 reading = magn.read();
+        std::cout << std::atan2(reading.z, reading.y) * 180.0 / pi << " degrees from North" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds{100});
     }
 
