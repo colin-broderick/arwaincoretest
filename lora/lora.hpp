@@ -193,6 +193,7 @@ namespace arwain
 		int16_t y = 0;
 		int16_t z = 0;
 		uint16_t alerts = 0;
+		uint8_t metadata = 0;
 	};
 }
 
