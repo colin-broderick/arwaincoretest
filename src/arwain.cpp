@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <thread>
 #include <cmath>
+#include <tuple>
 
 #include "arwain.hpp"
 #include "input_parser.hpp"
@@ -57,6 +58,11 @@ namespace arwain::Locks
     std::mutex POSITION_BUFFER_LOCK;
     std::mutex ORIENTATION_BUFFER_LOCK;
     std::mutex PRESSURE_BUFFER_LOCK;
+}
+
+static void sleep_ms(int ms)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds{ms});
 }
 
 /** \brief Start a Python script which opens a socket and does inference on data we send it. */
@@ -676,35 +682,131 @@ int arwain::calibrate_gyroscopes()
     return arwain::ExitCodes::Success;
 }
 
-int arwain::calibrate_accelerometers()
+static std::tuple<vector3, vector3> deduce_calib_params(std::vector<vector3> readings)
 {
-    vector3 results;
+    double x_min = 1e6;
+    double x_max = -1e6;
+    double y_min = 1e6;
+    double y_max = -1e6;
+    double z_min = 1e6;
+    double z_max = -1e6;
+    for (auto& vec : readings)
+    {
+        x_min = vec.x < x_min ? vec.x : x_min;
+        x_max = vec.x > x_max ? vec.x : x_max;
+        y_min = vec.y < y_min ? vec.y : y_min;
+        y_max = vec.y > y_max ? vec.y : y_max;
+        z_min = vec.z < z_min ? vec.z : z_min;
+        z_max = vec.z > z_max ? vec.z : z_max;
+    }
+    vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
+
+    // Compute scale correction factors.
+    vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
+    double average_delta = (delta.x + delta.y + delta.z)/3.0;
+    double scale_x = average_delta / delta.x;
+    double scale_y = average_delta / delta.y;
+    double scale_z = average_delta / delta.z;
+    vector3 scale_ = {scale_x, scale_y, scale_z};
+
+    return {bias_, scale_};
+}
+
+int arwain::calibrate_accelerometers_simple()
+{
+    std::cout << "Calibrating the following accelerometers:" << std::endl;
+    std::cout << "\t" << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << std::endl;
+    std::cout << "\t" << arwain::config.imu2_bus << " at 0x" << std::hex << arwain::config.imu2_address << std::endl;
+    std::cout << "\t" << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << std::endl;
+    std::cout << std::dec << std::endl;
 
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
-    std::cout << "Calibrating accelerometer on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;
-    results = imu1.calibrate_accelerometer();
-    std::cout << "Calibration complete" << std::endl;
-    arwain::config.replace("accel1_bias_x", results.x);
-    arwain::config.replace("accel1_bias_y", results.y);
-    arwain::config.replace("accel1_bias_z", results.z);
-
     IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
-    std::cout << "Calibrating accelerometer on " << arwain::config.imu2_bus << " at 0x" << std::hex << arwain::config.imu2_address << "; please wait" << std::endl;
-    results = imu2.calibrate_accelerometer();
-    std::cout << "Calibration complete" << std::endl;
-    arwain::config.replace("accel2_bias_x", results.x);
-    arwain::config.replace("accel2_bias_y", results.y);
-    arwain::config.replace("accel2_bias_z", results.z);
-
     IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
-    std::cout << "Calibrating accelerometer on " << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << "; please wait" << std::endl;
-    results = imu3.calibrate_accelerometer();
-    std::cout << "Calibration complete" << std::endl;
-    arwain::config.replace("accel3_bias_x", results.x);
-    arwain::config.replace("accel3_bias_y", results.y);
-    arwain::config.replace("accel3_bias_z", results.z);
 
-    std::cout << std::dec;
+    std::vector<vector3> readings_1;
+    std::vector<vector3> readings_2;
+    std::vector<vector3> readings_3;
+
+    // Take readings while tumbling device.
+    for (int i = 0; i < 24; i++)
+    {
+        std::cout << i+1 << ") Place the device in a random orientation ..." << std::endl;
+        sleep_ms(5000);
+
+        vector3 reading_1 = imu1.calibration_accel_sample();
+        vector3 reading_2 = imu2.calibration_accel_sample();
+        vector3 reading_3 = imu3.calibration_accel_sample();
+
+        readings_1.push_back(reading_1);
+        readings_2.push_back(reading_2);
+        readings_3.push_back(reading_3);
+    }
+    
+    // TODO Detect and remove outliers.
+    
+
+    // Compute centre offsets; this assumes outliers have been successfully removed.
+    auto [bias_1, scale_1] = deduce_calib_params(readings_1);
+    auto [bias_2, scale_2] = deduce_calib_params(readings_2);
+    auto [bias_3, scale_3] = deduce_calib_params(readings_3);
+
+    // Log to config file.
+    arwain::config.replace("accel1_bias_x", bias_1.x);
+    arwain::config.replace("accel1_bias_y", bias_1.y);
+    arwain::config.replace("accel1_bias_z", bias_1.z);
+    arwain::config.replace("accel1_scale_x", scale_1.x);
+    arwain::config.replace("accel1_scale_y", scale_1.y);
+    arwain::config.replace("accel1_scale_z", scale_1.z);
+
+    arwain::config.replace("accel2_bias_x", bias_2.x);
+    arwain::config.replace("accel2_bias_y", bias_2.y);
+    arwain::config.replace("accel2_bias_z", bias_2.z);
+    arwain::config.replace("accel2_scale_x", scale_2.x);
+    arwain::config.replace("accel2_scale_y", scale_2.y);
+    arwain::config.replace("accel2_scale_z", scale_2.z);
+
+    arwain::config.replace("accel3_bias_x", bias_3.x);
+    arwain::config.replace("accel3_bias_y", bias_3.y);
+    arwain::config.replace("accel3_bias_z", bias_3.z);
+    arwain::config.replace("accel3_scale_x", scale_3.x);
+    arwain::config.replace("accel3_scale_y", scale_3.y);
+    arwain::config.replace("accel3_scale_z", scale_3.z);
+
+    std::cout << "Calibration complete and logged to config file" << std::endl;
 
     return arwain::ExitCodes::Success;
 }
+
+// int arwain::calibrate_accelerometers()
+// {
+//     vector3 results;
+
+//     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+//     std::cout << "Calibrating accelerometer on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;
+//     results = imu1.calibrate_accelerometer();
+//     std::cout << "Calibration complete" << std::endl;
+//     arwain::config.replace("accel1_bias_x", results.x);
+//     arwain::config.replace("accel1_bias_y", results.y);
+//     arwain::config.replace("accel1_bias_z", results.z);
+
+//     IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
+//     std::cout << "Calibrating accelerometer on " << arwain::config.imu2_bus << " at 0x" << std::hex << arwain::config.imu2_address << "; please wait" << std::endl;
+//     results = imu2.calibrate_accelerometer();
+//     std::cout << "Calibration complete" << std::endl;
+//     arwain::config.replace("accel2_bias_x", results.x);
+//     arwain::config.replace("accel2_bias_y", results.y);
+//     arwain::config.replace("accel2_bias_z", results.z);
+
+//     IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
+//     std::cout << "Calibrating accelerometer on " << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << "; please wait" << std::endl;
+//     results = imu3.calibrate_accelerometer();
+//     std::cout << "Calibration complete" << std::endl;
+//     arwain::config.replace("accel3_bias_x", results.x);
+//     arwain::config.replace("accel3_bias_y", results.y);
+//     arwain::config.replace("accel3_bias_z", results.z);
+
+//     std::cout << std::dec;
+
+//     return arwain::ExitCodes::Success;
+// }

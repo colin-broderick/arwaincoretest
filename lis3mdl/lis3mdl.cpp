@@ -228,7 +228,7 @@ void LIS3MDL::calibrate()
     arwain::config.replace("mag_bias_x", bias_.x);
     arwain::config.replace("mag_bias_y", bias_.y);
     arwain::config.replace("mag_bias_z", bias_.z);
-    arwain::config.replace("mag_scale_z", scale_x);
+    arwain::config.replace("mag_scale_x", scale_x);
     arwain::config.replace("mag_scale_y", scale_y);
     arwain::config.replace("mag_scale_z", scale_z);
 }

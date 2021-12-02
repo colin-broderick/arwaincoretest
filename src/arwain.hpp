@@ -163,6 +163,7 @@ namespace arwain
 
     int calibrate_gyroscopes();
     int calibrate_accelerometers();
+    int calibrate_accelerometers_simple();
     int calibrate_magnetometers();
 
     /** \brief Configuration struct for whole programme. */

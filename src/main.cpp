@@ -119,7 +119,7 @@ int main(int argc, char **argv)
     // Perform quick calibration of gyroscopes and write to config file.
     else if (input.contains("-caliba"))
     {
-        ret = arwain::calibrate_accelerometers();
+        ret = arwain::calibrate_accelerometers_simple();
     }
     else if (input.contains("-testmag"))
     {

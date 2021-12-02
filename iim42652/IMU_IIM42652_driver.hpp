@@ -5,6 +5,7 @@
 #include <map>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+#include <eigen3/Eigen/Dense>
 extern "C"
 {
     #include <linux/i2c-dev.h>
@@ -94,7 +95,8 @@ public:
     void read_IMU();
     double read_temperature();
     vector3 calibrate_gyroscope();
-    vector3 calibrate_accelerometer();
+    // vector3 calibrate_accelerometer();
+    vector3 calibration_accel_sample();
 
 private:
     double accel_resolution = 0;
