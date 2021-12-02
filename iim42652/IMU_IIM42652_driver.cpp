@@ -68,99 +68,104 @@ namespace
     };
 }
 
+vector3 IMU_IIM42652::calibration_accel_sample()
+{
+    kalman_filter_constant_1d kfx{9.81, 1.0};
+    kalman_filter_constant_1d kfy{9.81, 1.0};
+    kalman_filter_constant_1d kfz{9.81, 1.0};
+    
+    while (!kfx.converged && !kfy.converged && !kfz.converged)
+    {
+        this->read_IMU();
+        kfx.update(this->accelerometer_x, 0.1);
+        kfy.update(this->accelerometer_y, 0.1);
+        kfz.update(this->accelerometer_z, 0.1);
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+
+    return {kfx.est, kfy.est, kfz.est};
+}
+
 /** \brief This calibration approach is based on acquistion of accelerometer data at random static orientations.
  * An optimisation step attempts to compute the best combination of misalignment, scale, and bias corrections
  * to fit the provided data and given magnitude of acceleration due to gravity, 9.8607 m/s2.
  */
-vector3 IMU_IIM42652::calibrate_accelerometer()
-{
-    // Collect samples =============================================================
-    std::vector<Eigen::Matrix<double, 3, 1>> samples;
+// vector3 IMU_IIM42652::calibrate_accelerometer()
+// {
+//     // Collect samples =============================================================
+//     std::vector<Eigen::Matrix<double, 3, 1>> samples;
 
-    for (int i = 0; i < 12; i++)
-    {
-        std::cout << i+1 << ") Place the IMU in a random orientation ..." << std::endl;
-        sleep_ms(5000);
+//     for (int i = 0; i < 12; i++)
+//     {
+//         std::cout << i+1 << ") Place the IMU in a random orientation ..." << std::endl;
+//         sleep_ms(5000);
+//         auto sample = calibration_accel_sample();
+//         samples.push_back(sample);
+//     }    
 
-        kalman_filter_constant_1d kfx{9.81, 1.0};
-        kalman_filter_constant_1d kfy{9.81, 1.0};
-        kalman_filter_constant_1d kfz{9.81, 1.0};
-        
-        while (!kfx.converged && !kfy.converged && !kfz.converged)
-        {
-            this->read_IMU();
-            kfx.update(this->accelerometer_x, 0.1);
-            kfy.update(this->accelerometer_y, 0.1);
-            kfz.update(this->accelerometer_z, 0.1);
-            std::this_thread::sleep_for(std::chrono::milliseconds{10});
-        }
+//     // Initial parameter estimates assuming perfect measurements.
+//     Eigen::Matrix<double, 3, 3> alignment_correction{
+//         {1, 0, 0},
+//         {0, 1, 0},
+//         {0, 0, 1}
+//     };
+//     Eigen::Matrix<double, 3, 3> scale_correction{
+//         {1, 0, 0},
+//         {0, 1, 0},
+//         {0, 0, 1}
+//     };
+//     Eigen::Matrix<double, 3, 1> bias_correction{
+//         {0}, {0}, {0}
+//     };
 
-        samples.push_back({kfx.est, kfy.est, kfz.est});
-    }    
+//     double alignment_variance = 0.1;
+//     double scale_variance = 0.1;
+//     double bias_variance = 0.1;
 
-    // Initial parameter estimates assuming perfect measurements.
-    Eigen::Matrix<double, 3, 3> alignment_correction{
-        {1, 0, 0},
-        {0, 1, 0},
-        {0, 0, 1}
-    };
-    Eigen::Matrix<double, 3, 3> scale_correction{
-        {1, 0, 0},
-        {0, 1, 0},
-        {0, 0, 1}
-    };
-    Eigen::Matrix<double, 3, 1> bias_correction{
-        {0}, {0}, {0}
-    };
+//     // Generate random correction candidates.
+//     std::vector<AccelerometerCalibrationCandidate> candidates;
+//     for (int i = 0; i < 1000; i++)
+//     {
+//         AccelerometerCalibrationCandidate candidate;
+//         candidate.alignment = alignment_correction + alignment_variance * Eigen::Matrix<double, 3, 3>{{0, rn(), rn()}, {0, 0, rn()}, {0, 0, 0}};
+//         candidate.scale = scale_correction + scale_variance * Eigen::Matrix<double, 3, 3>{{rn(), 0, 0}, {0, rn(), 0}, {0, 0, rn()}};
+//         candidate.bias = bias_correction + bias_variance * Eigen::Matrix<double, 3, 1>{{rn()}, {rn()}, {rn()}};
+//         candidate.update_loss(9.81, samples);
+//         candidates.push_back(candidate);
+//     }
 
-    double alignment_variance = 0.1;
-    double scale_variance = 0.1;
-    double bias_variance = 0.1;
+//     // Sort the candidates from best to worst.
+//     std::sort(candidates.begin(), candidates.end(), [](AccelerometerCalibrationCandidate a, AccelerometerCalibrationCandidate b){ return a.loss < b.loss; });
 
-    // Generate random correction candidates.
-    std::vector<AccelerometerCalibrationCandidate> candidates;
-    for (int i = 0; i < 1000; i++)
-    {
-        AccelerometerCalibrationCandidate candidate;
-        candidate.alignment = alignment_correction + alignment_variance * Eigen::Matrix<double, 3, 3>{{0, rn(), rn()}, {0, 0, rn()}, {0, 0, 0}};
-        candidate.scale = scale_correction + scale_variance * Eigen::Matrix<double, 3, 3>{{rn(), 0, 0}, {0, rn(), 0}, {0, 0, rn()}};
-        candidate.bias = bias_correction + bias_variance * Eigen::Matrix<double, 3, 1>{{rn()}, {rn()}, {rn()}};
-        candidate.update_loss(9.81, samples);
-        candidates.push_back(candidate);
-    }
+//     // Drop the worst 90% of candidates and reduce future variances.
+//     candidates.resize(100);
+//     alignment_variance *= 0.1;
+//     scale_variance *= 0.1;
+//     bias_variance *= 0.1;
 
-    // Sort the candidates from best to worst.
-    std::sort(candidates.begin(), candidates.end(), [](AccelerometerCalibrationCandidate a, AccelerometerCalibrationCandidate b){ return a.loss < b.loss; });
+//     // For n iterations
+//     for (int i = 0; i < 100; i++)
+//     {
+//         // Generate 9 new candidates by mutating each remaining candidate.
+//         for (int j = 0; j < 9; j++)
+//         {
+//             AccelerometerCalibrationCandidate candidate;
+//             candidate.alignment = candidates[j].alignment + alignment_variance * Eigen::Matrix<double, 3, 3>{{0, rn(), rn()}, {0, 0, rn()}, {0, 0, 0}};
+//             candidate.scale = candidates[j].scale + scale_variance * Eigen::Matrix<double, 3, 3>{{rn(), 0, 0}, {0, rn(), 0}, {0, 0, rn()}};
+//             candidate.bias = candidates[j].bias + bias_variance * Eigen::Matrix<double, 3, 1>{{rn()}, {rn()}, {rn()}};
+//             candidate.update_loss(9.81, samples);
+//             candidates.push_back(candidate);
+//         }
 
-    // Drop the worst 90% of candidates and reduce future variances.
-    candidates.resize(100);
-    alignment_variance *= 0.1;
-    scale_variance *= 0.1;
-    bias_variance *= 0.1;
+//         // Sort the candidates.
+//         std::sort(candidates.begin(), candidates.end(), [](AccelerometerCalibrationCandidate a, AccelerometerCalibrationCandidate b){ return a.loss < b.loss; });
 
-    // For n iterations
-    for (int i = 0; i < 100; i++)
-    {
-        // Generate 9 new candidates by mutating each remaining candidate.
-        for (int j = 0; j < 9; j++)
-        {
-            AccelerometerCalibrationCandidate candidate;
-            candidate.alignment = candidates[j].alignment + alignment_variance * Eigen::Matrix<double, 3, 3>{{0, rn(), rn()}, {0, 0, rn()}, {0, 0, 0}};
-            candidate.scale = candidates[j].scale + scale_variance * Eigen::Matrix<double, 3, 3>{{rn(), 0, 0}, {0, rn(), 0}, {0, 0, rn()}};
-            candidate.bias = candidates[j].bias + bias_variance * Eigen::Matrix<double, 3, 1>{{rn()}, {rn()}, {rn()}};
-            candidate.update_loss(9.81, samples);
-            candidates.push_back(candidate);
-        }
+//         // Prune the weakest 90%.
+//         candidates.resize(100);
+//     }
 
-        // Sort the candidates.
-        std::sort(candidates.begin(), candidates.end(), [](AccelerometerCalibrationCandidate a, AccelerometerCalibrationCandidate b){ return a.loss < b.loss; });
-
-        // Prune the weakest 90%.
-        candidates.resize(100);
-    }
-
-    return {candidates[0].bias(0, 0), candidates[0].bias(1, 0), candidates[0].bias(2, 0)};
-}
+//     return {candidates[0].bias(0, 0), candidates[0].bias(1, 0), candidates[0].bias(2, 0)};
+// }
 
 /** \brief Defines a procedure for calculating calibration offsets
  * for the gyroscope, then records those values in the appropriate
