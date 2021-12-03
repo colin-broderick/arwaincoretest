@@ -53,7 +53,7 @@ def read_dataset(dataset, facet):
             data_load["euler_orientation"] = data
         except: pass        
         all_data[dataset] = data_load
-    return all_data[dataset][facet]
+    return all_data[dataset].get(facet)
 
 
 def get_datasets():
