@@ -9,6 +9,48 @@ app = Flask(__name__)
 process = None
 
 
+env = {
+    "SHELL":"/bin/bash",
+    "ROS_VERSION":"1",
+    "COLORTERM":"truecolor",
+    "TERM_PROGRAM_VERSION":"1.62.3",
+    "PKG_CONFIG_PATH":"/opt/ros/melodic/lib/pkgconfig",
+    "ROS_PYTHON_VERSION":"2",
+    "NO_AT_BRIDGE":"1",
+    "ROS_PACKAGE_PATH":"/opt/ros/melodic/share",
+    "ROSLISP_PACKAGE_DIRECTORIES":"",
+    "PWD":"/home/pi/arwain_inference_core",
+    "LOGNAME":"pi",
+    "XDG_SESSION_TYPE":"tty",
+    "InferenceEngine_DIR":"/opt/intel/openvino/deployment_tools/inference_engine/share",
+    "HOME":"/home/pi",
+    "LANG":"en_GB.UTF-8",
+    "ROS_ETC_DIR":"/opt/ros/melodic/etc/ros",
+    "INTEL_OPENVINO_DIR":"/opt/intel/openvino",
+    "CMAKE_PREFIX_PATH":"/opt/ros/melodic",
+    "OpenCV_DIR":"/opt/intel/openvino/opencv/cmake",
+    "XDG_SESSION_CLASS":"user",
+    "PYTHONPATH":"/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer",
+    "TERM":"xterm-256color",
+    "USER":"pi",
+    "SHLVL":"1",
+    "ROS_MASTER_URI":"http://localhost:11311",
+    "XDG_SESSION_ID":"c2",
+    "LD_LIBRARY_PATH":"/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l",
+    "XDG_RUNTIME_DIR":"/run/user/1000",
+    "SSH_CLIENT":"192.168.2.101 52633 22",
+    "PATH":"/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games",
+    "DBUS_SESSION_BUS_ADDRESS":"unix:path=/run/user/1000/bus",
+    "MAIL":"/var/mail/pi",
+    "HDDL_INSTALL_DIR":"/opt/intel/openvino/deployment_tools/inference_engine/external/hddl",
+    "ROS_ROOT":"/opt/ros/melodic/share/ros",
+    "ROS_DISTRO":"melodic",
+    "INTEL_CVSDK_DIR":"/opt/intel/openvino",
+    "TEXTDOMAIN":"Linux-PAM",
+    "_":"/usr/bin/env",
+}
+
+
 @app.route("/info")
 def info():
     if process is None:
@@ -37,7 +79,14 @@ def start():
             cmd.append(fname)
         print(cmd)
         
-        process = subprocess.Popen(cmd, shell=False)
+        process = subprocess.Popen(cmd, shell=False, env={
+            "PYTHONPATH":"/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer",
+            "InferenceEngine_DIR":"/opt/intel/openvino/deployment_tools/inference_engine/share",
+            "INTEL_OPENVINO_DIR":"/opt/intel/openvino",
+            "OpenCV_DIR":"/opt/intel/openvino/opencv/cmake",
+            "LD_LIBRARY_PATH":"/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l",
+            "PATH":"/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games",
+        })
 
         response_dict["result"] = f"Started with pid {process.pid}"
 
@@ -61,7 +110,7 @@ def stop():
                 time.sleep(1.0)
 
         subprocess.Popen(["pkill", "-f", "arwain"])
-        subprocess.Popen(["pkill", "-f", "ncs2"])
+        subprocess.Popen(["pkill", "-f", "ncs2_interface.py"])
 
     process = None
 
@@ -89,4 +138,4 @@ def kill():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=1081, debug=False)
+    app.run(host="0.0.0.0", port=8051, debug=False)

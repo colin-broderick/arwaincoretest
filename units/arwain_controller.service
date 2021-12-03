@@ -1,0 +1,15 @@
+[Unit]
+Description=ARWAIN Controller
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+WorkingDirectory=/home/pi/arwain_inference_core
+User=pi
+ExecStart=/usr/bin/env python3 /home/pi/arwain_inference_core/python_utils/controller.py
+
+[Install]
+WantedBy=multi-user.target
