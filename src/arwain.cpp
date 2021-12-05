@@ -18,6 +18,7 @@
 #include "madgwick.hpp"
 #include "efaroe.hpp"
 #include "lis3mdl.hpp"
+#include "bmp384.hpp"
 #include "geomagnetic_orientation.hpp"
 
 static double pi = 3.14159265;
@@ -167,6 +168,37 @@ int arwain::test_lora_tx()
     return arwain::ExitCodes::Success;
 }
 
+int arwain::test_pressure()
+{
+    BMP384 bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
+
+    // Set up timing.
+    auto loopTime = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{50};
+
+    double altitude = 100;
+    double factor = arwain::config.altitude_filter_weight;
+
+    while (!arwain::shutdown)
+    {
+        auto [pressure, temperature] = bmp384.read();
+        pressure = pressure - arwain::config.pressure_offset;
+        double new_alt = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+        altitude = factor * altitude + (1.0 - factor) * new_alt;
+
+        std::cout << "Pressure:    " << pressure / 100.0 << " hPa" << std::endl;
+        std::cout << "Temperature: " << temperature << " \u00B0C" << std::endl;
+        std::cout << "Altitude:    " << altitude << " m; " << new_alt << " m" << std::endl;
+        std::cout << std::endl;
+
+        // Wait until next tick.
+        loopTime = loopTime + interval;
+        std::this_thread::sleep_until(loopTime);
+    }
+
+    return arwain::ExitCodes::Success;
+}
+
 int arwain::test_lora_rx()
 {
     LoRa lora{arwain::config.lora_address, true};
@@ -308,6 +340,8 @@ int arwain::Configuration::read_from_file()
     read_option(options, "pressure_bus", this->pressure_bus);
     read_option(options, "lora_address", this->lora_address);
     read_option(options, "node_id", this->node_id);
+    read_option(options, "altitude_filter_weight", this->altitude_filter_weight);
+    read_option(options, "pressure_offset", this->pressure_offset);
     
     // Apply LoRa settings
     std::stringstream(options["lora_tx_power"]) >> this->lora_tx_power;
@@ -461,7 +495,6 @@ int arwain::execute_inference()
     std::thread altimeter_thread(altimeter);                     // Uses the BMP280 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     // std::thread magnetometer_thread{mag_reader};                 // Reads the magnetic sensor and computes geomagnetic orientation.
-    // std::thread py_transmitter_thread{py_transmitter};           // Temporary: Run Python script to handle LoRa transmission.
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
     // Wait for all threads to terminate.
@@ -474,7 +507,6 @@ int arwain::execute_inference()
     py_inference_thread.join();
     altimeter_thread.join();
     // magnetometer_thread.join();
-    // py_transmitter_thread.join();
     // kalman_filter.join();
 
     return arwain::ExitCodes::Success;

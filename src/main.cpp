@@ -101,7 +101,10 @@ int main(int argc, char **argv)
     {
         ret = arwain::calibrate_magnetometers();
     }
-
+    else if (input.contains("-testpressure"))
+    {
+        ret = arwain::test_pressure();
+    }
     else if (input.contains("-testori"))
     {
         int rate;
