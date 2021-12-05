@@ -74,6 +74,7 @@ namespace arwain
     int test_lora_tx();
     int test_lora_rx();
     int test_mag();
+    int test_pressure();
     int test_ori(int rate);
     int execute_inference();
 }
@@ -229,6 +230,8 @@ namespace arwain
             std::string pressure_bus; // The I2C bus of the pressure sensor.
             int pressure_address; // The I2C address of the pressure sensor.
             int node_id; // A unique ID number for the node.
+            double altitude_filter_weight;
+            double pressure_offset;
 
             /** \brief Overwrite the content of the configuration file associated with this struct.
              * \param option The configuration option to overwrite.
