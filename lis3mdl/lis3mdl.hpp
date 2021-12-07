@@ -17,7 +17,7 @@ class LIS3MDL
 {
     public: // Types
         enum class FSR { FSR_4, FSR_8, FSR_12, FSR_16 };
-        enum class ODR { ODR_5_Hz, ODR_10_Hz, ODR_20_Hz, ODR_40_Hz, ODR_80_Hz };
+        enum class ODR { ODR_5_Hz, ODR_10_Hz, ODR_20_Hz, ODR_40_Hz, ODR_80_Hz, ODR_155_Hz, ODR_300_Hz, ODR_500_Hz, ODR_1000_Hz };
     
     public: // Methods
         LIS3MDL(const int i2c_address, const std::string& i2c_bus);

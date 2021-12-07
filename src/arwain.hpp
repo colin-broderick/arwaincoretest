@@ -65,6 +65,7 @@ namespace arwain::Buffers
     extern std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER;
     extern std::deque<quaternion> QUAT_ORIENTATION_BUFFER;
     extern std::deque<quaternion> MAG_ORIENTATION_BUFFER;
+    extern std::deque<double> MAG_EULER_BUFFER;
 }
 
 namespace arwain
@@ -112,6 +113,7 @@ namespace arwain::BufferSizes
     inline const unsigned int LORA_MESSAGE_LENGTH = 9;
     inline const unsigned int PRESSURE_BUFFER_LEN = 100;
     inline const unsigned int MAG_ORIENTATION_BUFFER_LEN = 100;
+    inline const unsigned int MAG_EULER_BUFFER_LEN = 100;
 }
 
 namespace arwain::SystemStates
