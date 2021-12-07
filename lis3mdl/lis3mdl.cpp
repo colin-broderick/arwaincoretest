@@ -38,7 +38,7 @@ LIS3MDL::LIS3MDL(const int i2c_address, const std::string& i2c_bus)
     soft_reset();
     power_up();
     set_fsr(FSR::FSR_4);
-    set_odr(ODR::ODR_40_Hz);
+    set_odr(ODR::ODR_300_Hz);
 }
 
 /** \brief Check chip commication, should return 0x3D. */
@@ -71,7 +71,25 @@ void LIS3MDL::set_odr(LIS3MDL::ODR odr_selection)
         case ODR::ODR_80_Hz:
             config |= (7 << 2);
             break;
+        case ODR::ODR_155_Hz:
+            config |= (0 << 5);
+            config |= (1 << 1);
+            break;
+        case ODR::ODR_300_Hz:
+            config |= (1 << 5);
+            config |= (1 << 1);
+            break;
+        case ODR::ODR_500_Hz:
+            config |= (2 << 5);
+            config |= (1 << 1);
+            break;
+        case ODR::ODR_1000_Hz:
+            config |= (3 << 5);
+            config |= (1 << 1);
+            break;
         default:
+            // Default 80 Hz.
+            config |= (7 << 2);
             break;
     }
     i2c_write(ADDR_CTRL_REG1, 1, &config);

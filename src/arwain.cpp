@@ -47,6 +47,7 @@ namespace arwain::Buffers
     std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
     std::deque<quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
     std::deque<quaternion> MAG_ORIENTATION_BUFFER{arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN};
+    std::deque<double> MAG_EULER_BUFFER{arwain::BufferSizes::MAG_EULER_BUFFER_LEN};
 }
 
 // Mutex locks for use when accessing shared buffers.

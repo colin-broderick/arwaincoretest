@@ -38,20 +38,30 @@ def read_dataset(dataset, facet):
             data_load["world_gyro"] = data
         except: pass
         try:
-            data = pd.read_csv(f"{WD}/{dataset}/game_rv.txt", delimiter=" ").iloc[::10]
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_game_rv.txt", delimiter=" ").iloc[::10]
             data["time"] = (data["time"] - data["time"][0])/1e9
-            data_load["game_rv"] = data
+            data_load["madgwick_game_rv"] = data
+        except: pass
+        # try:
+        #     data = pd.read_csv(f"{WD}/{dataset}/mag_euler_orientation.txt", delimiter=" ").iloc[::10]
+        #     data["time"] = (data["time"] - data["time"][0])/1e9
+        #     data_load["mag_euler_orientation"] = data
+        # except: pass
+        try:
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation.txt", delimiter=" ").iloc[::10]
+            data["time"] = (data["time"] - data["time"][0])/1e9
+            data_load["madgwick_euler_orientation"] = data
         except: pass
         try:
-            data = pd.read_csv(f"{WD}/{dataset}/mag_orientation.txt", delimiter=" ").iloc[::10]
+            data = pd.read_csv(f"{WD}/{dataset}/ori_diff.txt", delimiter=" ").iloc[::10]
             data["time"] = (data["time"] - data["time"][0])/1e9
-            data_load["mag_orientation"] = data
+            data_load["ori_diff"] = data
         except: pass
         try:
-            data = pd.read_csv(f"{WD}/{dataset}/euler_orientation.txt", delimiter=" ").iloc[::10]
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_mag_euler_orientation.txt", delimiter=" ").iloc[::10]
             data["time"] = (data["time"] - data["time"][0])/1e9
-            data_load["euler_orientation"] = data
-        except: pass        
+            data_load["madgwick_mag_euler_orientation"] = data
+        except: pass
         all_data[dataset] = data_load
     return all_data[dataset].get(facet)
 
@@ -83,7 +93,7 @@ app.layout = html.Div(children=[
                 html.H1(children='ARWAIN Tracking', style={"float":"left", "margin":"5px"}),
                 html.Div(
                     dcc.Dropdown(
-                        id="dataset-list",
+                        id="dataset_list",
                         options=[{"label":i,"value":i} for i in datasets],
                         value=datasets[0],
                         clearable=False,
@@ -122,10 +132,6 @@ app.layout = html.Div(children=[
                 [dcc.Graph(id='gyro_plot', figure=fig)],
                 style={"width":"49%","float":"left"}
             ),
-            html.Div(
-                [dcc.Graph(id='mag_ori_plot', figure=fig)],
-                style={"width":"49%","float":"left"}
-            ),
         ],
         style={"margin":"auto","width":"100%","display":"inline-block"})
     ],
@@ -135,7 +141,7 @@ app.layout = html.Div(children=[
 
 @app.callback(
     dash.dependencies.Output("gyro_plot", "figure"),
-    dash.dependencies.Input("dataset-list", "value")
+    dash.dependencies.Input("dataset_list", "value")
 )
 def update_gyro_plot(dataset):
     df = read_dataset(dataset, "world_gyro")
@@ -149,7 +155,7 @@ def update_gyro_plot(dataset):
 
 @app.callback(
     dash.dependencies.Output("accel_plot", "figure"),
-    dash.dependencies.Input("dataset-list", "value")
+    dash.dependencies.Input("dataset_list", "value")
 )
 def update_accel_plot(dataset):
     df = read_dataset(dataset, "world_acce")
@@ -163,27 +169,9 @@ def update_accel_plot(dataset):
 
 
 
-
-@app.callback(
-    dash.dependencies.Output("mag_ori_plot", "figure"),
-    dash.dependencies.Input("dataset-list", "value")
-)
-def update_mag_ori_plot(dataset):
-    df = read_dataset(dataset, "mag_orientation")
-    fig = go.Figure()
-    fig.update_layout(title="Magnetic orientation, quaternion", title_x=0.5)
-    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
-    fig.add_trace(go.Scatter(x=df["time"], y=df["w"], mode="lines", name="w"))
-    fig.add_trace(go.Scatter(x=df["time"], y=df["x"], mode="lines", name="x"))
-    fig.add_trace(go.Scatter(x=df["time"], y=df["y"], mode="lines", name="y"))
-    fig.add_trace(go.Scatter(x=df["time"], y=df["z"], mode="lines", name="z"))
-    return fig
-
-
-
 ## Update dataset list from button #############################################
 @app.callback(
-    dash.dependencies.Output("dataset-list", "options"),
+    dash.dependencies.Output("dataset_list", "options"),
     dash.dependencies.Input("refresh_button", "n_clicks")
 )
 def update_list(clicks):
@@ -194,10 +182,10 @@ def update_list(clicks):
 ## Orientation plot callback ###################################################
 @app.callback(
     dash.dependencies.Output("quaternion_orientation_plot", "figure"),
-    dash.dependencies.Input("dataset-list", "value")
+    dash.dependencies.Input("dataset_list", "value")
 )
 def update_orientation_plot(dataset):
-    df = read_dataset(dataset, "game_rv")
+    df = read_dataset(dataset, "madgwick_game_rv")
     # fig = px.scatter(df, x=df["x"], y=df["y"], title="Orientation over time")
     fig = go.Figure()
     fig.update_layout(title="Rotation quaternion", title_x=0.5)
@@ -211,28 +199,57 @@ def update_orientation_plot(dataset):
 ## Euler orientation callback ##################################################
 @app.callback(
     dash.dependencies.Output("euler_plot", "figure"),
-    dash.dependencies.Input("dataset-list","value")
+    dash.dependencies.Input("dataset_list","value")
 )
 def update_euler_plot(dataset):
-    df = read_dataset(dataset, "euler_orientation")
+    df_madgwick = read_dataset(dataset, "madgwick_euler_orientation")
+    # df_magn = read_dataset(dataset, "mag_euler_orientation")
+    df_diff = read_dataset(dataset, "ori_diff")
+    df_madgwick_mag = read_dataset(dataset, "madgwick_mag_euler_orientation")
+
     fig = go.Figure()
-    fig.update_layout(title="Euler orientation [rad]", title_x=0.5)
+    fig.update_layout(title="Euler yaw [deg]", title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
-    fig.add_trace(go.Scatter(x=df["time"], y=np.unwrap(df["roll"], discont=np.pi)*180/np.pi, mode="lines", name="roll"))
-    fig.add_trace(go.Scatter(x=df["time"], y=np.unwrap(df["pitch"], discont=np.pi)*180/np.pi, mode="lines", name="pitch"))
-    fig.add_trace(go.Scatter(x=df["time"], y=np.unwrap(df["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="yaw"))
+    # fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["roll"], discont=np.pi)*180/np.pi, mode="lines", name="roll"))
+    # fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["pitch"], discont=np.pi)*180/np.pi, mode="lines", name="pitch"))
+    fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["pitch"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick pitch"))
+    fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["roll"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Roll"))
+    fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw"))
+    # fig.add_trace(go.Scatter(x=df_magn["time"], y=np.unwrap(df_magn["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Mag yaw"))
+    # fig.add_trace(go.Scatter(x=df_diff["time"], y=np.unwrap(df_diff["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Yaw diff"))
+    fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["pitch"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-pitch"))
+    fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["roll"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-roll"))
+    fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-yaw"))
+
     return fig
+
+
+
+# @app.callback(
+#     dash.dependencies.Output("mag_ori_plot", "figure"),
+#     dash.dependencies.Input("dataset_list", "value")
+# )
+# def update_mag_ori_plot(dataset):
+    # df = read_dataset(dataset, "mag_euler_orientation")
+    # fig = go.Figure()
+    # fig.update_layout(title="Magnetic orientation, yaw", title_x=0.5)
+    # fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+    # fig.add_trace(go.Scatter(x=df["time"], y=df["yaw"], mode="lines", name="mag yaw"))
+    # return fig
+
+
+
 
 ## Position scatter callback ###################################################
 @app.callback(
     dash.dependencies.Output("position_scatter", "figure"),
     [
-        dash.dependencies.Input("dataset-list", "value"),
+        dash.dependencies.Input("dataset_list", "value"),
         dash.dependencies.Input("drift_slider", "value")
     ]
 )
 def update_position_scatter(dataset, drift):
-    drift = drift / 60 / 20
+    drift = drift / 60.0 / 20.0
     df = read_dataset(dataset, "position")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df["x"], y=df["y"], mode="lines", name="ARWAIN path"))
@@ -247,7 +264,7 @@ def update_position_scatter(dataset, drift):
     df_drifted = pd.DataFrame(points)
 
     ## Add the drifted path to the figure.
-    fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="lines", name="Drifted path"))
+    fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="markers+lines", name="Drifted path"))
     fig.update_layout(title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
     fig.update_yaxes(scaleanchor="x", scaleratio=1) # Correct aspect ratio.
