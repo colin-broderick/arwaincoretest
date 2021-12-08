@@ -216,7 +216,7 @@ def update_euler_plot(dataset):
     fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["roll"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Roll"))
     fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw"))
     # fig.add_trace(go.Scatter(x=df_magn["time"], y=np.unwrap(df_magn["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Mag yaw"))
-    # fig.add_trace(go.Scatter(x=df_diff["time"], y=np.unwrap(df_diff["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Yaw diff"))
+    fig.add_trace(go.Scatter(x=df_diff["time"], y=np.unwrap(df_diff["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Yaw diff"))
     fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["pitch"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-pitch"))
     fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["roll"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-roll"))
     fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-yaw"))
