@@ -255,7 +255,7 @@ void LIS3MDL::calibrate()
  * to rotate that vector onto the expected local magnetic field.
  * \return A versor which applies the specified rotation.
  */
-quaternion LIS3MDL::read_orientation()
+Quaternion LIS3MDL::read_orientation()
 {
     // static Vector3 mag_target{18.895, -0.361, 45.372}; // The local magnetic field vector.
     static Vector3 mag_target{0.38443, -0.0073448, 0.92312}; // The normalized local magnetic field vector.
@@ -268,7 +268,7 @@ quaternion LIS3MDL::read_orientation()
 
     Vector3 axis = Vector3::cross(mag_measurement, mag_target); // Axis orthogonal to both measured and expected.
 
-    quaternion quat{
+    Quaternion quat{
         std::cos(angle/2.0),
         std::sin(angle/2.0) * axis.x,
         std::sin(angle/2.0) * axis.y,

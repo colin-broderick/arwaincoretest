@@ -35,7 +35,7 @@ void stance_detector()
     // Local buffers.
     std::deque<Vector6> imu_data;
     std::deque<Vector3> vel_data;
-    quaternion rotation_quaternion;
+    Quaternion rotation_quaternion;
 
     // Open file for freefall/entanglement logging
     arwain::Logger freefall_file;
@@ -143,9 +143,9 @@ arwain::StanceDetector::StanceDetector(double freefall_sensitivity, double crawl
  * 
  * \param rotation_quaternion The current rotation quaternion of the device, as determined by some orientation filter.
  */
-void arwain::StanceDetector::update_attitude(quaternion rotation_quaternion)
+void arwain::StanceDetector::update_attitude(Quaternion rotation_quaternion)
 {
-    auto rotated_device_z_component = (rotation_quaternion * quaternion{0, 0, 0, 1} * rotation_quaternion.conjugate()).z;
+    auto rotated_device_z_component = (rotation_quaternion * Quaternion{0, 0, 0, 1} * rotation_quaternion.conjugate()).z;
 
     if (abs(rotated_device_z_component) < 0.707)
     {

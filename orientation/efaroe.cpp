@@ -7,7 +7,7 @@
  * \param gyro_error TODO not sure what this is for.
  * TODO Make use of beta being passed in.
  */
-arwain::eFaroe::eFaroe(quaternion initial_quaternion, Vector3 gyro_bias, double gyro_error, double beta, double zeta)
+arwain::eFaroe::eFaroe(Quaternion initial_quaternion, Vector3 gyro_bias, double gyro_error, double beta, double zeta)
 {
     m_zeta = zeta;
     m_gyro_bias = gyro_bias;
@@ -17,7 +17,7 @@ arwain::eFaroe::eFaroe(quaternion initial_quaternion, Vector3 gyro_bias, double 
     last_read = 0;
     m_true_error = gyro_error;
     
-    if (initial_quaternion == quaternion{0, 0, 0, 0})
+    if (initial_quaternion == Quaternion{0, 0, 0, 0})
     {
         m_quaternion = {1, 0, 0, 0};
         m_gyro_error = 100;
@@ -46,7 +46,7 @@ arwain::eFaroe::eFaroe(quaternion initial_quaternion, Vector3 gyro_bias, double 
 void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az)
 {
     // Alias m_quaternion for readability.
-    quaternion& q = m_quaternion;
+    Quaternion& q = m_quaternion;
     
     if (conv_count > 0)
     {
@@ -106,10 +106,10 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
 
     // TODO What is this?
     Vector3 a_v = (gyro - gradient * m_beta) * dt;
-    quaternion qav{{a_v.x, a_v.y, a_v.z}};
+    Quaternion qav{{a_v.x, a_v.y, a_v.z}};
 
     // Calculate delta orientation quaternion.
-    quaternion dq = q*qav*0.5;
+    Quaternion dq = q*qav*0.5;
     q = (q + dq).unit();
 
     computed_angles = 0;
@@ -128,7 +128,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
 void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az, double mx, double my, double mz)
 {
     // Alias m_quaternion for readability.
-    quaternion& q = m_quaternion;
+    Quaternion& q = m_quaternion;
 
     if (conv_count > 0)
     {
@@ -199,10 +199,10 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
 
     // TODO What is this?
     Vector3 a_v = (gyro - gradient * m_beta) * dt;
-    quaternion qav{{a_v.x, a_v.y, a_v.z}};
+    Quaternion qav{{a_v.x, a_v.y, a_v.z}};
 
     // Calculate delta orientation quaternion.
-    quaternion dq = q*qav*0.5;
+    Quaternion dq = q*qav*0.5;
     q = (q + dq).unit();
 
     // TODO I have basically no idea what this block is doing
@@ -289,7 +289,7 @@ double arwain::eFaroe::getRoll()
 /** \brief Get the full orientation quaternion.
  * \return Full orientation quaternion.
  */
-quaternion arwain::eFaroe::getQuat()
+Quaternion arwain::eFaroe::getQuat()
 {
     return m_quaternion;
 }
@@ -300,7 +300,7 @@ quaternion arwain::eFaroe::getQuat()
  */
 void arwain::eFaroe::computeAngles()
 {
-    quaternion& q = m_quaternion;
+    Quaternion& q = m_quaternion;
     roll = atan2f(q.w*q.x + q.y*q.z, 0.5 - q.x*q.x - q.y*q.y);
     pitch = asinf(-2.0 * (q.x*q.z - q.w*q.y));
     yaw = atan2f(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z);
@@ -321,5 +321,5 @@ std::array<double, 3> arwain::eFaroe::getEuler()
 
 void arwain::eFaroe::setQ(double w, double x, double y, double z)
 {	
-	m_quaternion = quaternion{w, x, y, z};
+	m_quaternion = Quaternion{w, x, y, z};
 }

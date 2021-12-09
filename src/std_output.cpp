@@ -32,8 +32,8 @@ void std_output()
                 ss << "Position:          " << arwain::Buffers::POSITION_BUFFER.back() << "\n";
             }
 
-            // Add Euler and quaternion orientations to the string stream.
-            quaternion quat;
+            // Add Euler and Quaternion orientations to the string stream.
+            Quaternion quat;
             {
                 std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
                 quat = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();

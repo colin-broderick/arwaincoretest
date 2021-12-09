@@ -23,7 +23,7 @@ class LIS3MDL
         LIS3MDL(const int i2c_address, const std::string& i2c_bus);
         int test_chip();
         Vector3 read();
-        quaternion read_orientation();
+        Quaternion read_orientation();
         double read_temp();
         void calibrate();
         void set_calibration(Vector3 bias_, Vector3 scale_);

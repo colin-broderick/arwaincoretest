@@ -35,7 +35,7 @@ void mag_reader()
         auto timeCount = time.time_since_epoch().count();
 
         Vector3 reading = magnetometer.read();
-        quaternion orientation = magnetometer.read_orientation();
+        Quaternion orientation = magnetometer.read_orientation();
         double yaw = std::atan2(reading.y, reading.z);
 
         {
