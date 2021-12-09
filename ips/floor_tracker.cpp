@@ -11,7 +11,7 @@ arwain::FloorTracker::FloorTracker(int window_size_, double drift_threshold_, do
 }
 
 /** \brief Alternate constructor, allowing specification of initial position. */
-arwain::FloorTracker::FloorTracker(int window_size_, double drift_threshold_, double min_separation_, const vector3& initial_position_)
+arwain::FloorTracker::FloorTracker(int window_size_, double drift_threshold_, double min_separation_, const Vector3& initial_position_)
 : window_size(window_size_), min_separation(min_separation_), drift_threshold(drift_threshold_)
 {
     track.push_back(initial_position_);
@@ -22,16 +22,16 @@ arwain::FloorTracker::FloorTracker(int window_size_, double drift_threshold_, do
  * \param v2 Vector 2.
  * \return Gradient.
  */
-static double vertical_gradient(const vector3& v1, const vector3& v2)
+static double vertical_gradient(const Vector3& v1, const Vector3& v2)
 {
-    vector3 delta_vec = v2 - v1;
+    Vector3 delta_vec = v2 - v1;
     double vertical_change = v2.z - v1.z;
     delta_vec.z = 0;
     double horizontal_change = delta_vec.magnitude();
     return vertical_change / horizontal_change;
 }
 
-void arwain::FloorTracker::update(const vector3& position)
+void arwain::FloorTracker::update(const Vector3& position)
 {
     // If the new position is very close to the old one, do not add it to the track.
     // We require meaningful spatial separation to detect corners using this method.

@@ -29,7 +29,7 @@ namespace arwain
             // Constructors.
             eFaroe(
                 quaternion initial_quaternion,
-                vector3 gyro_bias,
+                Vector3 gyro_bias,
                 double gyro_error,
                 double beta,
                 double zeta
@@ -80,15 +80,15 @@ namespace arwain
             quaternion m_quaternion;
 
             // Gyroscope properties.
-            vector3 m_gyro_bias;
+            Vector3 m_gyro_bias;
             double m_gyro_error;
             double m_true_error;
 
             // Magnetic field properties.
             double uk_dip;
             double emf_x_test;
-            vector3 local_emf_test;
-            vector3 emf;
+            Vector3 local_emf_test;
+            Vector3 emf;
             
             // Filter parameters.
             double m_zeta;

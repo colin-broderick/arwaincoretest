@@ -27,16 +27,16 @@ MLX90395::MLX90395(int bus_address, const std::string &bus_name)
  */
 quaternion MLX90395::read_orientation()
 {
-    // static vector3 mag_target{18.895, -0.361, 45.372}; // The local magnetic field vector.
-    static vector3 mag_target{0.38443, -0.0073448, 0.92312}; // The normalized local magnetic field vector.
+    // static Vector3 mag_target{18.895, -0.361, 45.372}; // The local magnetic field vector.
+    static Vector3 mag_target{0.38443, -0.0073448, 0.92312}; // The normalized local magnetic field vector.
     
-    vector3 mag_measurement = this->read().normalized(); // Normalized magnetic field vector.
+    Vector3 mag_measurement = this->read().normalized(); // Normalized magnetic field vector.
 
     double angle = std::acos(mag_measurement.x * mag_target.x 
                            + mag_measurement.y * mag_target.y
                            + mag_measurement.z * mag_target.z); // The angle between the measured field and the local field.
 
-    vector3 axis = vector3::cross(mag_measurement, mag_target); // Axis orthogonal to both measured and expected.
+    Vector3 axis = Vector3::cross(mag_measurement, mag_target); // Axis orthogonal to both measured and expected.
 
     quaternion quat{
         std::cos(angle/2.0),
@@ -132,7 +132,7 @@ uint8_t MLX90395::command(uint8_t cmd)
 }
 
 /** \brief Read magnetometer data. */
-vector3 MLX90395::read()
+Vector3 MLX90395::read()
 {
     // TEST send read command
     std::cout << (int)command(CMD_READ) << std::endl;
