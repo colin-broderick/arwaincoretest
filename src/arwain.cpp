@@ -53,8 +53,8 @@ namespace arwain::Buffers
     std::deque<Vector3> IPS_BUFFER{arwain::BufferSizes::IPS_BUFFER_LEN};
     std::deque<Vector3> PRESSURE_BUFFER{arwain::BufferSizes::PRESSURE_BUFFER_LEN};
     std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
-    std::deque<quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
-    std::deque<quaternion> MAG_ORIENTATION_BUFFER{arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN};
+    std::deque<Quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
+    std::deque<Quaternion> MAG_ORIENTATION_BUFFER{arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN};
     std::deque<double> MAG_EULER_BUFFER{arwain::BufferSizes::MAG_EULER_BUFFER_LEN};
 }
 
@@ -637,7 +637,7 @@ std::string arwain::datetimestring()
     return ss.str();
 }
 
-static euler_orientation_t compute_euler(quaternion& q)
+static euler_orientation_t compute_euler(Quaternion& q)
 {
     euler_orientation_t euler;
     euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y)  * 180.0 / 3.14159;
@@ -656,7 +656,7 @@ int arwain::test_ori(int frequency)
     std::chrono::milliseconds interval{1000/frequency};
     int count = 0;
     euler_orientation_t euler;
-    quaternion quat;
+    Quaternion quat;
 
     Vector3 gyro;
     Vector3 accel;

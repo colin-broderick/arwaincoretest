@@ -13,7 +13,7 @@
 
 class Vector3;
 class Vector6;
-class quaternion;
+class Quaternion;
 class InputParser;
 
 struct euler_orientation_t
@@ -64,8 +64,8 @@ namespace arwain::Buffers
     extern std::deque<Vector3> IPS_BUFFER;
     extern std::deque<Vector3> PRESSURE_BUFFER;
     extern std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER;
-    extern std::deque<quaternion> QUAT_ORIENTATION_BUFFER;
-    extern std::deque<quaternion> MAG_ORIENTATION_BUFFER;
+    extern std::deque<Quaternion> QUAT_ORIENTATION_BUFFER;
+    extern std::deque<Quaternion> MAG_ORIENTATION_BUFFER;
     extern std::deque<double> MAG_EULER_BUFFER;
 }
 

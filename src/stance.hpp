@@ -101,7 +101,7 @@ namespace arwain
             StanceDetector(double freefall_sensitivity, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
 
             // General methods.
-            void update_attitude(quaternion rotation_quaternion);
+            void update_attitude(Quaternion rotation_quaternion);
             void run(const std::deque<Vector6> &imu_data, const std::deque<Vector3> &vel_data);
 
             // Getters.

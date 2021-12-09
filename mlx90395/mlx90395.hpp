@@ -60,7 +60,7 @@ class MLX90395
 public:
     MLX90395(int bus_address, const std::string &bus_name);
     Vector3 read();
-    quaternion read_orientation();
+    Quaternion read_orientation();
     Vector3 calibrate();
 
     enum OSR

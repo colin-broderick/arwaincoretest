@@ -28,7 +28,7 @@ namespace arwain
         public:
             // Constructors.
             eFaroe(
-                quaternion initial_quaternion,
+                Quaternion initial_quaternion,
                 Vector3 gyro_bias,
                 double gyro_error,
                 double beta,
@@ -66,7 +66,7 @@ namespace arwain
             double getPitch() ;
             double getRoll() ;
             double getYaw() ;
-            quaternion getQuat();
+            Quaternion getQuat();
             std::array<double, 3> getEuler();
 
             // Setters
@@ -77,7 +77,7 @@ namespace arwain
             const double radians_per_degree = 0.01745329251994329576923690768489;
 
             // Current orientation quaternion.
-            quaternion m_quaternion;
+            Quaternion m_quaternion;
 
             // Gyroscope properties.
             Vector3 m_gyro_bias;

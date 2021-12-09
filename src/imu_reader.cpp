@@ -19,14 +19,14 @@
  * \param vec The 3-vector to rotate.
  * \param orientation The rotation to apply to the 3-vector.
  */
-static Vector3 world_align(const Vector3& vec, const quaternion& rotation)
+static Vector3 world_align(const Vector3& vec, const Quaternion& rotation)
 {
     // Convert the 3-vector into a quaternion.
-    quaternion quat_vec{0, vec.x, vec.y, vec.z};
-    quaternion quat_ori{rotation.w, rotation.x, rotation.y, rotation.z};
+    Quaternion quat_vec{0, vec.x, vec.y, vec.z};
+    Quaternion quat_ori{rotation.w, rotation.x, rotation.y, rotation.z};
 
     // Compute the rotated vector as a quaternion.
-    quaternion rotated_quaternion_vector = quat_ori * quat_vec * quat_ori.conjugate();
+    Quaternion rotated_quaternion_vector = quat_ori * quat_vec * quat_ori.conjugate();
 
     // Cast the rotated quaternion back into a 3-vector.
     return Vector3{
@@ -36,7 +36,7 @@ static Vector3 world_align(const Vector3& vec, const quaternion& rotation)
     };
 }
 
-static euler_orientation_t compute_euler(quaternion& q)
+static euler_orientation_t compute_euler(Quaternion& q)
 {
     euler_orientation_t euler;
     euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5 - q.x*q.x - q.y*q.y);
@@ -55,12 +55,12 @@ static euler_orientation_t compute_euler(quaternion& q)
  * \param mag_orientation The orientation as directly measured by magnetometer.
  * \return How much the magnetometer should be trust.
  */
-static double gyro_mag_co_trust(quaternion gyro_orientation, quaternion mag_orientation)
+static double gyro_mag_co_trust(Quaternion gyro_orientation, Quaternion mag_orientation)
 {
     // Note; as written, this formula assumes degrees.
 
     // Determine angle between current gyro orientation and magnetic orientation, dtheta.
-    double dtheta = std::abs(quaternion::angle_between(gyro_orientation, mag_orientation)) * 180.0 / 3.14159;
+    double dtheta = std::abs(Quaternion::angle_between(gyro_orientation, mag_orientation)) * 180.0 / 3.14159;
 
     // Compute relative trust of the gyroscope.
     return 1.0 / ((dtheta + 1) * (dtheta + 1) * (dtheta + 1)) / 100.0;
@@ -97,8 +97,8 @@ void imu_reader()
     Vector3 world_accel_data1;
     Vector3 world_gyro_data1;
     Vector3 magnet;
-    quaternion madgwick_quaternion_data1;
-    quaternion madgwick_quaternion_mag_data1;
+    Quaternion madgwick_quaternion_data1;
+    Quaternion madgwick_quaternion_mag_data1;
     euler_orientation_t madgwick_euler_data1;
     euler_orientation_t madgwick_euler_mag_data1;
 
