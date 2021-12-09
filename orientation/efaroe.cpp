@@ -7,7 +7,7 @@
  * \param gyro_error TODO not sure what this is for.
  * TODO Make use of beta being passed in.
  */
-arwain::eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double gyro_error, double beta, double zeta)
+arwain::eFaroe::eFaroe(Quaternion initial_quaternion, Vector3 gyro_bias, double gyro_error, double beta, double zeta)
 {
     m_zeta = zeta;
     m_gyro_bias = gyro_bias;
@@ -17,7 +17,7 @@ arwain::eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double 
     last_read = 0;
     m_true_error = gyro_error;
     
-    if (initial_quaternion == quaternion{0, 0, 0, 0})
+    if (initial_quaternion == Quaternion{0, 0, 0, 0})
     {
         m_quaternion = {1, 0, 0, 0};
         m_gyro_error = 100;
@@ -46,7 +46,7 @@ arwain::eFaroe::eFaroe(quaternion initial_quaternion, vector3 gyro_bias, double 
 void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az)
 {
     // Alias m_quaternion for readability.
-    quaternion& q = m_quaternion;
+    Quaternion& q = m_quaternion;
     
     if (conv_count > 0)
     {
@@ -59,8 +59,8 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
         }
     }
 
-    vector3 acc{ax, ay, az};
-    vector3 gyr{gx, gy, gz};
+    Vector3 acc{ax, ay, az};
+    Vector3 gyr{gx, gy, gz};
 
     // Convert timestamp to seconds.
     timestamp = timestamp/1e9;
@@ -83,33 +83,33 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
     acc = acc/acc.magnitude();
     
     // Construct Jacobian.
-    vector3 jacobian_a{
+    Vector3 jacobian_a{
         q.x*2*q.z - q.w*2*q.y,
         q.w*2*q.x + q.y*2*q.z,
         1 - 2*q.x*q.x - 2*q.y*q.y
     };
 
     // Calculate gradient.
-    vector3 gradient = vector3::cross(jacobian_a, acc);
+    Vector3 gradient = Vector3::cross(jacobian_a, acc);
 
     // Normalize gradient.
     gradient = gradient/gradient.magnitude();
 
     // Calculate new gyro_bias?
-    vector3 g_b = m_gyro_bias + gradient * dt * m_zeta;
+    Vector3 g_b = m_gyro_bias + gradient * dt * m_zeta;
 
     // Subtract gyro bias.
-    vector3 gyro = gyr - g_b;
+    Vector3 gyro = gyr - g_b;
 
     // EXPERIMENTAL Gyro bias filter.
     // gyro_bias = gyro_bias + gyro*0.0001;
 
     // TODO What is this?
-    vector3 a_v = (gyro - gradient * m_beta) * dt;
-    quaternion qav{{a_v.x, a_v.y, a_v.z}};
+    Vector3 a_v = (gyro - gradient * m_beta) * dt;
+    Quaternion qav{{a_v.x, a_v.y, a_v.z}};
 
     // Calculate delta orientation quaternion.
-    quaternion dq = q*qav*0.5;
+    Quaternion dq = q*qav*0.5;
     q = (q + dq).unit();
 
     computed_angles = 0;
@@ -128,7 +128,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
 void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  double ax, double ay, double az, double mx, double my, double mz)
 {
     // Alias m_quaternion for readability.
-    quaternion& q = m_quaternion;
+    Quaternion& q = m_quaternion;
 
     if (conv_count > 0)
     {
@@ -141,9 +141,9 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
         }
     }
 
-    vector3 acc{ax, ay, az};
-    vector3 gyr{gx, gy, gz};
-    vector3 mag{mx, my, mz};
+    Vector3 acc{ax, ay, az};
+    Vector3 gyr{gx, gy, gz};
+    Vector3 mag{mx, my, mz};
 
     // Convert timestamp to seconds.
     timestamp = timestamp/1e9;
@@ -165,44 +165,44 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
     acc = acc/acc.magnitude();
     mag = mag/mag.magnitude();
 
-    mag = vector3::cross(acc, mag);
-    vector3 r_emf = vector3::cross(vector3{0,0,1}, emf);
+    mag = Vector3::cross(acc, mag);
+    Vector3 r_emf = Vector3::cross(Vector3{0,0,1}, emf);
 
     // Construct acceleration Jacobian.
-    vector3 jacobian_a{
+    Vector3 jacobian_a{
         q.x*2*q.z - q.w*2*q.y,
         q.w*2*q.x + q.y*2*q.z,
         1 - 2*q.x*q.x - 2*q.y*q.y
     };
 
     // Construct magnetic Jacobian.
-    vector3 jacobian_m{
+    Vector3 jacobian_m{
         2 * ((r_emf.x * (0.5 - q.y*q.y - q.z*q.z))   + (r_emf.z * q.x * q.z)),
         2 * ((r_emf.x * ((q.x * q.y) - (q.w * q.z))) + (r_emf.z * ((q.w * q.z) + (q.x * q.y)))),
         2 * (r_emf.x * ((q.w * q.y) + (q.x * q.z))   + (r_emf.z * (0.5 - q.x*q.x - q.y*q.y)))
     };
 
     // Calculate gradient
-    vector3 gradient = vector3::cross(jacobian_a, acc) + vector3::cross(jacobian_m, mag);
+    Vector3 gradient = Vector3::cross(jacobian_a, acc) + Vector3::cross(jacobian_m, mag);
 
     // Normalize gradient
     gradient = gradient/gradient.magnitude();
 
     // Calculate new gyro_bias?
-    vector3 g_b = m_gyro_bias + gradient * dt * m_zeta;
+    Vector3 g_b = m_gyro_bias + gradient * dt * m_zeta;
 
     // Subtract gyro bias.
-    vector3 gyro = gyr - g_b;
+    Vector3 gyro = gyr - g_b;
 
     // EXPERIMENTAL Gyro bias filter.
     // gyro_bias = gyro_bias + gyro*0.0001;
 
     // TODO What is this?
-    vector3 a_v = (gyro - gradient * m_beta) * dt;
-    quaternion qav{{a_v.x, a_v.y, a_v.z}};
+    Vector3 a_v = (gyro - gradient * m_beta) * dt;
+    Quaternion qav{{a_v.x, a_v.y, a_v.z}};
 
     // Calculate delta orientation quaternion.
-    quaternion dq = q*qav*0.5;
+    Quaternion dq = q*qav*0.5;
     q = (q + dq).unit();
 
     // TODO I have basically no idea what this block is doing
@@ -213,7 +213,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
             mag.x * ((q.y * q.z) - (q.w * q.y)) + mag.y * ((q.y * q.z) + (q.w * q.x)) + mag.z * (0.5 - q.x*q.x - q.y*q.y)
         };
 
-        emf_x_test = vector3{local_emf_test.x, local_emf_test.y, 0}.magnitude();
+        emf_x_test = Vector3{local_emf_test.x, local_emf_test.y, 0}.magnitude();
         emf = {emf_x_test, 0, local_emf_test.z};
     }
 }
@@ -289,7 +289,7 @@ double arwain::eFaroe::getRoll()
 /** \brief Get the full orientation quaternion.
  * \return Full orientation quaternion.
  */
-quaternion arwain::eFaroe::getQuat()
+Quaternion arwain::eFaroe::getQuat()
 {
     return m_quaternion;
 }
@@ -300,7 +300,7 @@ quaternion arwain::eFaroe::getQuat()
  */
 void arwain::eFaroe::computeAngles()
 {
-    quaternion& q = m_quaternion;
+    Quaternion& q = m_quaternion;
     roll = atan2f(q.w*q.x + q.y*q.z, 0.5 - q.x*q.x - q.y*q.y);
     pitch = asinf(-2.0 * (q.x*q.z - q.w*q.y));
     yaw = atan2f(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z);
@@ -321,5 +321,5 @@ std::array<double, 3> arwain::eFaroe::getEuler()
 
 void arwain::eFaroe::setQ(double w, double x, double y, double z)
 {	
-	m_quaternion = quaternion{w, x, y, z};
+	m_quaternion = Quaternion{w, x, y, z};
 }

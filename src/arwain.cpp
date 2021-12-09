@@ -5,6 +5,13 @@
 #include <cmath>
 #include <tuple>
 
+#ifdef USEROS
+#include <ros/ros.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/MagneticField.h>
+#include <geometry_msgs/Vector3Stamped.h>
+#endif
+
 #include "arwain.hpp"
 #include "input_parser.hpp"
 #include "imu_reader.hpp"
@@ -21,12 +28,11 @@
 #include "bmp384.hpp"
 #include "geomagnetic_orientation.hpp"
 
-static double pi = 3.14159265;
-
 // General configuration data.
 namespace arwain
 {
     int shutdown = 0;
+    double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
     arwain::Status status;
@@ -36,17 +42,17 @@ namespace arwain
 // Shared data buffers; mutex locks must be used when accessing.
 namespace arwain::Buffers
 {
-    std::deque<vector6> IMU_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
-    std::deque<vector6> IMU_WORLD_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
-    std::deque<vector3> VELOCITY_BUFFER{arwain::BufferSizes::VELOCITY_BUFFER_LEN};
-    std::deque<vector3> POSITION_BUFFER{arwain::BufferSizes::POSITION_BUFFER_LEN};
-    std::deque<vector3> MAG_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
-    std::deque<vector3> MAG_WORLD_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
-    std::deque<vector3> IPS_BUFFER{arwain::BufferSizes::IPS_BUFFER_LEN};
-    std::deque<vector3> PRESSURE_BUFFER{arwain::BufferSizes::PRESSURE_BUFFER_LEN};
+    std::deque<Vector6> IMU_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
+    std::deque<Vector6> IMU_WORLD_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
+    std::deque<Vector3> VELOCITY_BUFFER{arwain::BufferSizes::VELOCITY_BUFFER_LEN};
+    std::deque<Vector3> POSITION_BUFFER{arwain::BufferSizes::POSITION_BUFFER_LEN};
+    std::deque<Vector3> MAG_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
+    std::deque<Vector3> MAG_WORLD_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
+    std::deque<Vector3> IPS_BUFFER{arwain::BufferSizes::IPS_BUFFER_LEN};
+    std::deque<Vector3> PRESSURE_BUFFER{arwain::BufferSizes::PRESSURE_BUFFER_LEN};
     std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
-    std::deque<quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
-    std::deque<quaternion> MAG_ORIENTATION_BUFFER{arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN};
+    std::deque<Quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
+    std::deque<Quaternion> MAG_ORIENTATION_BUFFER{arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN};
     std::deque<double> MAG_EULER_BUFFER{arwain::BufferSizes::MAG_EULER_BUFFER_LEN};
 }
 
@@ -77,18 +83,101 @@ static void py_inference()
     }
 }
 
+static double unwrap_phase_degrees(double new_angle, double previous_angle)
+{
+    while (new_angle - previous_angle > 180.0)
+    {
+        new_angle -= 360.0;
+    }
+    while (new_angle - previous_angle < -180.0)
+    {
+        new_angle += 360.0;
+    }
+    return new_angle;
+}
+
+int arwain::rerun_orientation_filter(const std::string& data_location)
+{
+    std::cout << "Reprocessing dataset \"" << data_location << "\"" << std::endl;
+
+    int64_t t;
+    double ax, ay, az, gx, gy, gz;
+
+    std::ifstream acce{data_location + "/acce.txt"};
+    std::ifstream gyro{data_location + "/gyro.txt"};
+
+    std::ofstream slow{"slow.txt"};
+    std::ofstream fast{"fast.txt"};
+
+    // Clear data file headers.
+    std::string acce_line;
+    std::string gyro_line;
+    std::getline(acce, acce_line);
+    std::getline(gyro, gyro_line);
+
+    arwain::Madgwick slow_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
+    arwain::Madgwick fast_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.9};
+    
+    std::vector<double> slow_yaw;
+    std::vector<double> fast_yaw;
+
+    while(std::getline(acce, acce_line) && std::getline(gyro, gyro_line))
+    {
+        // Get IMU data
+        std::istringstream astream(acce_line);
+        std::istringstream gstream(gyro_line);
+        astream >> t >> ax >> ay >> az;
+        gstream >> t >> gx >> gy >> gz;
+
+        slow_filter.update(t, gx, gy, gz, ax, ay, az);
+        fast_filter.update(t, gx, gy, gz, ax, ay, az);
+
+        if (slow_yaw.empty())
+        {
+            slow_yaw.push_back(slow_filter.getYaw());
+        }
+        else
+        {
+            slow_yaw.push_back(unwrap_phase_degrees(slow_filter.getYaw(), slow_yaw.back()));
+        }
+
+        if (fast_yaw.empty())
+        {
+            fast_yaw.push_back(fast_filter.getYaw());
+        }
+        else
+        {
+            fast_yaw.push_back(unwrap_phase_degrees(fast_filter.getYaw(), fast_yaw.back()));
+        }
+    }
+
+    for (auto& elem : slow_yaw)
+    {
+        slow << elem << "\n";
+    }
+    for (auto& elem : fast_yaw)
+    {
+        fast << elem << "\n";
+    }
+
+    slow.close();
+    fast.close();
+
+    std::cout << "Reprocessing complete" << std::endl;
+
+    return arwain::ExitCodes::Success;
+}
+
 /** \brief Utility functional for checking that the IMU is operational.
  */
 int arwain::test_imu()
 {
     // Initialize the IMU.
     IMU_IIM42652 imu{0x68, "/dev/i2c-1"};
-    // BMI270 imu{0x69, "/dev/i2c-1"};
-    // Multi_IIM42652 imu;
 
     // Local buffers for IMU data
-    vector3 accel_data;
-    vector3 gyro_data;
+    Vector3 accel_data;
+    Vector3 gyro_data;
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
@@ -121,6 +210,29 @@ int arwain::test_imu()
     return arwain::ExitCodes::Success;
 }
 
+#ifdef USEROS
+int arwain::test_mag(int argc, char **argv)
+{
+    ros::NodeHandle nh;
+    auto pub = nh.advertise<geometry_msgs::Vector3Stamped>("/imu/mag", 1000);
+
+    LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
+
+    while (!arwain::shutdown && ros::ok())
+    {
+        Vector3 reading = magn.read();
+        geometry_msgs::Vector3Stamped msg;
+        msg.header.stamp = ros::Time::now();
+        msg.vector.x = reading.x;
+        msg.vector.y = reading.y;
+        msg.vector.z = reading.z;
+        pub.publish(msg);
+        sleep_ms(20);
+    }
+
+    return arwain::ExitCodes::Success;
+}
+#else
 /** \brief Checks that the correct chip ID can be read from the magnetometer. If so, reads and prints orientation until interrupted. */
 int arwain::test_mag()
 {
@@ -137,13 +249,14 @@ int arwain::test_mag()
 
     while (!arwain::shutdown)
     {
-        vector3 reading = magn.read();
-        std::cout << std::atan2(reading.z, reading.y) * 180.0 / pi << " degrees from North" << std::endl;
+        Vector3 reading = magn.read();
+        std::cout << "Magnetometer readings: " << reading << " .... " << reading.magnitude() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds{100});
     }
 
     return arwain::ExitCodes::Success;
 }
+#endif
 
 int arwain::test_lora_tx()
 {
@@ -318,6 +431,7 @@ int arwain::Configuration::read_from_file()
     read_option(options, "log_magnetometer", this->log_magnetometer);
     read_option(options, "npu_vel_weight_confidence", this->npu_vel_weight_confidence);
     read_option(options, "madgwick_beta", this->madgwick_beta);
+    read_option(options, "madgwick_beta_conv", this->madgwick_beta_conv);
     read_option(options, "use_indoor_positioning_system", this->use_indoor_positioning_system);
     read_option(options, "orientation_filter", this->orientation_filter);
 
@@ -343,7 +457,10 @@ int arwain::Configuration::read_from_file()
     read_option(options, "node_id", this->node_id);
     read_option(options, "altitude_filter_weight", this->altitude_filter_weight);
     read_option(options, "pressure_offset", this->pressure_offset);
-    
+    read_option(options, "mag_scale_xy", this->mag_scale_xy);
+    read_option(options, "mag_scale_xz", this->mag_scale_yz);
+    read_option(options, "mag_scale_yz", this->mag_scale_xz);
+
     // Apply LoRa settings
     std::stringstream(options["lora_tx_power"]) >> this->lora_tx_power;
     std::stringstream(options["lora_packet_frequency"]) >> this->lora_packet_frequency;
@@ -601,7 +718,7 @@ std::string arwain::datetimestring()
     return ss.str();
 }
 
-static euler_orientation_t compute_euler(quaternion& q)
+static euler_orientation_t compute_euler(Quaternion& q)
 {
     euler_orientation_t euler;
     euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y)  * 180.0 / 3.14159;
@@ -620,10 +737,10 @@ int arwain::test_ori(int frequency)
     std::chrono::milliseconds interval{1000/frequency};
     int count = 0;
     euler_orientation_t euler;
-    quaternion quat;
+    Quaternion quat;
 
-    vector3 gyro;
-    vector3 accel;
+    Vector3 gyro;
+    Vector3 accel;
     std::cout << "Starting orientation filter at " << frequency << " Hz" << std::endl;
 
     while (!shutdown)
@@ -666,7 +783,7 @@ int arwain::calibrate_magnetometers()
 
 int arwain::calibrate_gyroscopes()
 {
-    vector3 results;
+    Vector3 results;
 
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;
@@ -715,7 +832,7 @@ int arwain::calibrate_gyroscopes()
     return arwain::ExitCodes::Success;
 }
 
-static std::tuple<vector3, vector3> deduce_calib_params(std::vector<vector3> readings)
+static std::tuple<Vector3, Vector3> deduce_calib_params(std::vector<Vector3> readings)
 {
     double x_min = 1e6;
     double x_max = -1e6;
@@ -732,15 +849,15 @@ static std::tuple<vector3, vector3> deduce_calib_params(std::vector<vector3> rea
         z_min = vec.z < z_min ? vec.z : z_min;
         z_max = vec.z > z_max ? vec.z : z_max;
     }
-    vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
+    Vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
 
     // Compute scale correction factors.
-    vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
+    Vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
     double average_delta = (delta.x + delta.y + delta.z)/3.0;
     double scale_x = average_delta / delta.x;
     double scale_y = average_delta / delta.y;
     double scale_z = average_delta / delta.z;
-    vector3 scale_ = {scale_x, scale_y, scale_z};
+    Vector3 scale_ = {scale_x, scale_y, scale_z};
 
     return {bias_, scale_};
 }
@@ -757,9 +874,9 @@ int arwain::calibrate_accelerometers_simple()
     IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
     IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
 
-    std::vector<vector3> readings_1;
-    std::vector<vector3> readings_2;
-    std::vector<vector3> readings_3;
+    std::vector<Vector3> readings_1;
+    std::vector<Vector3> readings_2;
+    std::vector<Vector3> readings_3;
 
     // Take readings while tumbling device.
     for (int i = 0; i < 24; i++)
@@ -767,9 +884,9 @@ int arwain::calibrate_accelerometers_simple()
         std::cout << i+1 << ") Place the device in a random orientation ..." << std::endl;
         sleep_ms(5000);
 
-        vector3 reading_1 = imu1.calibration_accel_sample();
-        vector3 reading_2 = imu2.calibration_accel_sample();
-        vector3 reading_3 = imu3.calibration_accel_sample();
+        Vector3 reading_1 = imu1.calibration_accel_sample();
+        Vector3 reading_2 = imu2.calibration_accel_sample();
+        Vector3 reading_3 = imu3.calibration_accel_sample();
 
         readings_1.push_back(reading_1);
         readings_2.push_back(reading_2);
@@ -813,7 +930,7 @@ int arwain::calibrate_accelerometers_simple()
 
 // int arwain::calibrate_accelerometers()
 // {
-//     vector3 results;
+//     Vector3 results;
 
 //     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
 //     std::cout << "Calibrating accelerometer on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;

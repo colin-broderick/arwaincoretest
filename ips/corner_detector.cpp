@@ -35,7 +35,7 @@ arwain::CornerDetector::CornerDetector(int window_size_, double detection_angle_
  * \param position The most recent known position.
  * \return Boolean flag indiciated whether a corner was detected or not.
  */
-bool arwain::CornerDetector::update(vector3 position)
+bool arwain::CornerDetector::update(Vector3 position)
 {
     // We are only looking for corners in the xy plane.
     position.z = 0;
@@ -61,10 +61,10 @@ bool arwain::CornerDetector::update(vector3 position)
     int halfway_index = (end_index - start_index) / 2;
 
     // Check if a turn of detection_angle degrees or greater is evident in the track.
-    vector3 anchor = track[halfway_index];
-    vector3 start = track[start_index] - anchor;
-    vector3 end = track[end_index] - anchor;
-    double angle = vector3::angle_between(start, end) * 180.0 / 3.14159;
+    Vector3 anchor = track[halfway_index];
+    Vector3 start = track[start_index] - anchor;
+    Vector3 end = track[end_index] - anchor;
+    double angle = Vector3::angle_between(start, end) * 180.0 / 3.14159;
 
     std::cout << angle << std::endl;
 
@@ -77,7 +77,7 @@ bool arwain::CornerDetector::update(vector3 position)
             anchor = track[halfway_index];
             start = track[start_index] - anchor;
             end = track[end_index] - anchor;
-            double new_angle = vector3::angle_between(start, end) * 180.0 / 3.14159;
+            double new_angle = Vector3::angle_between(start, end) * 180.0 / 3.14159;
             if (new_angle > detection_angle) 
             {
                 angle = new_angle;
@@ -94,7 +94,7 @@ bool arwain::CornerDetector::update(vector3 position)
             anchor = track[halfway_index];
             start = track[start_index] - anchor;
             end = track[end_index] - anchor;
-            double new_angle = vector3::angle_between(start, end) * 180.0 / 3.14159;
+            double new_angle = Vector3::angle_between(start, end) * 180.0 / 3.14159;
             if (new_angle > detection_angle) 
             {
                 angle = new_angle;

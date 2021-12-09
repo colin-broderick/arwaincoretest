@@ -39,7 +39,7 @@ void indoor_positioning()
         time = time + interval;
         std::this_thread::sleep_until(time);
 
-        vector3 new_position;
+        Vector3 new_position;
         { // Read most recent position from the global position buffer.
             std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
             new_position = arwain::Buffers::POSITION_BUFFER.back();
@@ -75,8 +75,8 @@ void indoor_positioning()
 
     // TODO Create IPS object
     arwain::IndoorPositioningWrapper ips;
-    vector3 velocity;
-    vector3 position;
+    Vector3 velocity;
+    Vector3 position;
 
     arwain::Logger ips_position_file;
 
@@ -137,9 +137,9 @@ void arwain::IndoorPositioningWrapper::update(const double &time, const double &
     // m_x, m_y, m_z.
 }
 
-vector3 arwain::IndoorPositioningWrapper::getPosition()
+Vector3 arwain::IndoorPositioningWrapper::getPosition()
 {
-    return vector3{
+    return Vector3{
         m_x,
         m_y,
         m_z};

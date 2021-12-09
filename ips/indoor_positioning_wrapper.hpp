@@ -18,7 +18,7 @@ namespace arwain
 
         public:
             void update(const double &time, const double &x, const double &y, const double &z);
-            vector3 getPosition();
+            Vector3 getPosition();
             double getX();
             double getY();
             double getZ();
