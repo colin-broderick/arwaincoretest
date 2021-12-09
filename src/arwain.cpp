@@ -5,6 +5,13 @@
 #include <cmath>
 #include <tuple>
 
+#ifdef USEROS
+#include <ros/ros.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/MagneticField.h>
+#include <geometry_msgs/Vector3Stamped.h>
+#endif
+
 #include "arwain.hpp"
 #include "input_parser.hpp"
 #include "imu_reader.hpp"
@@ -27,6 +34,7 @@ static double pi = 3.14159265;
 namespace arwain
 {
     int shutdown = 0;
+    double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
     arwain::Status status;
@@ -121,6 +129,29 @@ int arwain::test_imu()
     return arwain::ExitCodes::Success;
 }
 
+#ifdef USEROS
+int arwain::test_mag(int argc, char **argv)
+{
+    ros::NodeHandle nh;
+    auto pub = nh.advertise<geometry_msgs::Vector3Stamped>("/imu/mag", 1000);
+
+    LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
+
+    while (!arwain::shutdown && ros::ok())
+    {
+        vector3 reading = magn.read();
+        geometry_msgs::Vector3Stamped msg;
+        msg.header.stamp = ros::Time::now();
+        msg.vector.x = reading.x;
+        msg.vector.y = reading.y;
+        msg.vector.z = reading.z;
+        pub.publish(msg);
+        sleep_ms(20);
+    }
+
+    return arwain::ExitCodes::Success;
+}
+#else
 /** \brief Checks that the correct chip ID can be read from the magnetometer. If so, reads and prints orientation until interrupted. */
 int arwain::test_mag()
 {
@@ -138,12 +169,13 @@ int arwain::test_mag()
     while (!arwain::shutdown)
     {
         vector3 reading = magn.read();
-        std::cout << std::atan2(reading.z, reading.y) * 180.0 / pi << " degrees from North" << std::endl;
+        std::cout << "Magnetometer readings: " << reading << " .... " << reading.magnitude() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds{100});
     }
 
     return arwain::ExitCodes::Success;
 }
+#endif
 
 int arwain::test_lora_tx()
 {
@@ -318,6 +350,7 @@ int arwain::Configuration::read_from_file()
     read_option(options, "log_magnetometer", this->log_magnetometer);
     read_option(options, "npu_vel_weight_confidence", this->npu_vel_weight_confidence);
     read_option(options, "madgwick_beta", this->madgwick_beta);
+    read_option(options, "madgwick_beta_conv", this->madgwick_beta_conv);
     read_option(options, "use_indoor_positioning_system", this->use_indoor_positioning_system);
     read_option(options, "orientation_filter", this->orientation_filter);
 
@@ -343,7 +376,10 @@ int arwain::Configuration::read_from_file()
     read_option(options, "node_id", this->node_id);
     read_option(options, "altitude_filter_weight", this->altitude_filter_weight);
     read_option(options, "pressure_offset", this->pressure_offset);
-    
+    read_option(options, "mag_scale_xy", this->mag_scale_xy);
+    read_option(options, "mag_scale_xz", this->mag_scale_yz);
+    read_option(options, "mag_scale_yz", this->mag_scale_xz);
+
     // Apply LoRa settings
     std::stringstream(options["lora_tx_power"]) >> this->lora_tx_power;
     std::stringstream(options["lora_packet_frequency"]) >> this->lora_packet_frequency;
