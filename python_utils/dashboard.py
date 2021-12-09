@@ -12,6 +12,8 @@ import plotly.graph_objects as go
 import pandas as pd
 import drift_simulator
 import numpy as np
+import subprocess
+import time
 
 
 all_data = dict()
@@ -101,6 +103,8 @@ app.layout = html.Div(children=[
                     style={"float":"left", "width":"20%", "margin":"5px"}
                 ),
                 html.Button("Refresh", id="refresh_button", n_clicks=0, style={"float":"left", "margin":"5px"}),
+                html.Button("Delete", id="delete_button", n_clicks=0, style={"float":"left", "margin":"5px"}),
+                html.Div(id="hidden-div", style={"display":"none"})
             ],
             style={"display":"flex", "width":"100%", "align-items":"center", "justify-content":"left"}
         )
@@ -167,6 +171,20 @@ def update_accel_plot(dataset):
     fig.add_trace(go.Scatter(x=df["time"], y=df["z"], mode="lines", name="z"))
     return fig
 
+
+
+## Update dataset list from button #############################################
+@app.callback(
+    dash.dependencies.Output("hidden-div", "title"),
+    dash.dependencies.Input("delete_button", "n_clicks"),
+    dash.dependencies.State("dataset_list", "value")
+)
+def delete_data(clicks, selected_dataset):
+    if clicks == 0 or clicks is None:
+        return "loaded"
+    subprocess.Popen(["rm", "-rf", "/home/pi/arwain_inference_core/" + selected_dataset])
+    time.sleep(0.5)
+    return "done"
 
 
 ## Update dataset list from button #############################################
@@ -264,7 +282,7 @@ def update_position_scatter(dataset, drift):
     df_drifted = pd.DataFrame(points)
 
     ## Add the drifted path to the figure.
-    fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="markers+lines", name="Drifted path"))
+    fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="lines", name="Drifted path"))
     fig.update_layout(title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
     fig.update_yaxes(scaleanchor="x", scaleratio=1) # Correct aspect ratio.
