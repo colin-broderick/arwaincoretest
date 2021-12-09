@@ -460,6 +460,7 @@ int arwain::Configuration::read_from_file()
     read_option(options, "mag_scale_xy", this->mag_scale_xy);
     read_option(options, "mag_scale_xz", this->mag_scale_yz);
     read_option(options, "mag_scale_yz", this->mag_scale_xz);
+    read_option(options, "correct_with_yaw_diff", this->correct_with_yaw_diff);
 
     // Apply LoRa settings
     std::stringstream(options["lora_tx_power"]) >> this->lora_tx_power;
