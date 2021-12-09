@@ -362,7 +362,7 @@ double arwain::Madgwick::getYaw()
 	{
 		computeAngles();
 	}
-	return yaw * 57.29578 + 180.0;
+	return yaw * 57.29578;
 }
 
 double arwain::Madgwick::getRollRadians()

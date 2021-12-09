@@ -28,8 +28,6 @@
 #include "bmp384.hpp"
 #include "geomagnetic_orientation.hpp"
 
-static double pi = 3.14159265;
-
 // General configuration data.
 namespace arwain
 {
@@ -85,14 +83,97 @@ static void py_inference()
     }
 }
 
+static double unwrap_phase_degrees(double new_angle, double previous_angle)
+{
+    while (new_angle - previous_angle > 180.0)
+    {
+        new_angle -= 360.0;
+    }
+    while (new_angle - previous_angle < -180.0)
+    {
+        new_angle += 360.0;
+    }
+    return new_angle;
+}
+
+int arwain::rerun_orientation_filter(const std::string& data_location)
+{
+    std::cout << "Reprocessing dataset \"" << data_location << "\"" << std::endl;
+
+    int64_t t;
+    double ax, ay, az, gx, gy, gz;
+
+    std::ifstream acce{data_location + "/acce.txt"};
+    std::ifstream gyro{data_location + "/gyro.txt"};
+
+    std::ofstream slow{"slow.txt"};
+    std::ofstream fast{"fast.txt"};
+
+    // Clear data file headers.
+    std::string acce_line;
+    std::string gyro_line;
+    std::getline(acce, acce_line);
+    std::getline(gyro, gyro_line);
+
+    arwain::Madgwick slow_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
+    arwain::Madgwick fast_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.9};
+    
+    std::vector<double> slow_yaw;
+    std::vector<double> fast_yaw;
+
+    while(std::getline(acce, acce_line) && std::getline(gyro, gyro_line))
+    {
+        // Get IMU data
+        std::istringstream astream(acce_line);
+        std::istringstream gstream(gyro_line);
+        astream >> t >> ax >> ay >> az;
+        gstream >> t >> gx >> gy >> gz;
+
+        slow_filter.update(t, gx, gy, gz, ax, ay, az);
+        fast_filter.update(t, gx, gy, gz, ax, ay, az);
+
+        if (slow_yaw.empty())
+        {
+            slow_yaw.push_back(slow_filter.getYaw());
+        }
+        else
+        {
+            slow_yaw.push_back(unwrap_phase_degrees(slow_filter.getYaw(), slow_yaw.back()));
+        }
+
+        if (fast_yaw.empty())
+        {
+            fast_yaw.push_back(fast_filter.getYaw());
+        }
+        else
+        {
+            fast_yaw.push_back(unwrap_phase_degrees(fast_filter.getYaw(), fast_yaw.back()));
+        }
+    }
+
+    for (auto& elem : slow_yaw)
+    {
+        slow << elem << "\n";
+    }
+    for (auto& elem : fast_yaw)
+    {
+        fast << elem << "\n";
+    }
+
+    slow.close();
+    fast.close();
+
+    std::cout << "Reprocessing complete" << std::endl;
+
+    return arwain::ExitCodes::Success;
+}
+
 /** \brief Utility functional for checking that the IMU is operational.
  */
 int arwain::test_imu()
 {
     // Initialize the IMU.
     IMU_IIM42652 imu{0x68, "/dev/i2c-1"};
-    // BMI270 imu{0x69, "/dev/i2c-1"};
-    // Multi_IIM42652 imu;
 
     // Local buffers for IMU data
     Vector3 accel_data;

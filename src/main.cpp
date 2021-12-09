@@ -121,6 +121,10 @@ int main(int argc, char **argv)
         rate = std::atoi(rate_str);
         ret = arwain::test_ori(rate);
     }
+    else if (input.contains("-rerunori"))
+    {
+        ret = arwain::rerun_orientation_filter(input.getCmdOption("-rerunori"));
+    }
 
     // Perform quick calibration of gyroscopes and write to config file.
     else if (input.contains("-calibg"))
