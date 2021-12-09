@@ -114,11 +114,14 @@ void predict_velocity()
         }
 
         // Compute new position.
-       velocity = {
-           std::cos(-arwain::yaw_offset)*velocity.x - std::sin(-arwain::yaw_offset)*velocity.y,
-           std::sin(-arwain::yaw_offset)*velocity.x + std::cos(-arwain::yaw_offset)*velocity.y,
-           velocity.z
-       };
+        if (arwain::config.correct_with_yaw_diff)
+        {
+            velocity = {
+                std::cos(-arwain::yaw_offset)*velocity.x - std::sin(-arwain::yaw_offset)*velocity.y,
+                std::sin(-arwain::yaw_offset)*velocity.x + std::cos(-arwain::yaw_offset)*velocity.y,
+                velocity.z
+            };
+        }
         position = position + dt * velocity;
 
         { // Add new position to global buffer.
