@@ -83,6 +83,7 @@ namespace arwain
     int test_pressure();
     int test_ori(int rate);
     int execute_inference();
+    int rerun_orientation_filter(const std::string& data_location);
 }
 
 namespace arwain::ExitCodes
