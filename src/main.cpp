@@ -27,6 +27,10 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <cstdlib>
 #include <experimental/filesystem>
 
+#ifdef USEROS
+#include <ros/ros.h>
+#endif
+
 #include "arwain.hpp"
 #include "quaternion.hpp"
 #include "stance.hpp"
@@ -41,6 +45,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "velocity_prediction.hpp"
 #include "timers.hpp"
 #include "arwain.hpp"
+#include "calibration.hpp"
 
 /** \brief Capture the SIGINT signal for clean exit.
  * Sets the global SHUTDOWN flag informing all threads to clean up and exit.
@@ -61,6 +66,10 @@ static void sigint_handler(int signal)
  */
 int main(int argc, char **argv)
 {
+    #ifdef USEROS
+    ros::init(argc, argv, "mag_calib_source");
+    #endif
+
     int ret;
 
     // Prepare keyboard interrupt signal handler to enable graceful exit.
@@ -126,7 +135,11 @@ int main(int argc, char **argv)
     }
     else if (input.contains("-testmag"))
     {
+        #ifdef USEROS
+        ret = arwain::test_mag(argc, argv);
+        #else
         ret = arwain::test_mag();
+        #endif
     }
 
     else

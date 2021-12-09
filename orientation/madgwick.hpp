@@ -63,12 +63,14 @@ namespace arwain
             double getRoll();
             double getPitch();
             double getYaw();
+            double get_beta() const;
             double getRollRadians();
             double getPitchRadians();
             double getYawRadians();
 
             // Setters
             void setQ(double, double, double, double);
+            void set_beta(double beta);
     };
 }
 

@@ -392,10 +392,20 @@ double arwain::Madgwick::getYawRadians()
 	return yaw;
 }
 
+double arwain::Madgwick::get_beta() const
+{
+	return m_beta;
+}
+
 void arwain::Madgwick::setQ(double w, double x, double y, double z)
 {	
 	q0 = w;
 	q1 = x;
 	q2 = y;
 	q3 = z;
+}
+
+void arwain::Madgwick::set_beta(double beta)
+{
+	m_beta = beta;
 }
