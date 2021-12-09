@@ -11,8 +11,8 @@
 #include "stance.hpp"
 #include "lora.hpp"
 
-class vector3;
-class vector6;
+class Vector3;
+class Vector6;
 class quaternion;
 class InputParser;
 
@@ -55,14 +55,14 @@ namespace arwain::Locks
 
 namespace arwain::Buffers
 {
-    extern std::deque<vector6> IMU_BUFFER;
-    extern std::deque<vector6> IMU_WORLD_BUFFER;
-    extern std::deque<vector3> VELOCITY_BUFFER;
-    extern std::deque<vector3> POSITION_BUFFER;
-    extern std::deque<vector3> MAG_BUFFER;
-    extern std::deque<vector3> MAG_WORLD_BUFFER;
-    extern std::deque<vector3> IPS_BUFFER;
-    extern std::deque<vector3> PRESSURE_BUFFER;
+    extern std::deque<Vector6> IMU_BUFFER;
+    extern std::deque<Vector6> IMU_WORLD_BUFFER;
+    extern std::deque<Vector3> VELOCITY_BUFFER;
+    extern std::deque<Vector3> POSITION_BUFFER;
+    extern std::deque<Vector3> MAG_BUFFER;
+    extern std::deque<Vector3> MAG_WORLD_BUFFER;
+    extern std::deque<Vector3> IPS_BUFFER;
+    extern std::deque<Vector3> PRESSURE_BUFFER;
     extern std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER;
     extern std::deque<quaternion> QUAT_ORIENTATION_BUFFER;
     extern std::deque<quaternion> MAG_ORIENTATION_BUFFER;
@@ -198,14 +198,14 @@ namespace arwain
             double gravity; // Magnitude of local gravity, e.g. 9.81.
             double struggle_threshold; // Heuristic parameter used to determine when a subject may be in distress. NOT YET WELL DEFINED.
             double freefall_sensitivity; // The sensitivity to freefall detection.
-            vector3 accel1_bias; // The systematic bias in measurements from accelerometer 1.
-            vector3 accel2_bias; // The systematic bias in measurements from accelerometer 2.
-            vector3 accel3_bias; // The systematic bias in measurements from accelerometer 3.
-            vector3 gyro1_bias; // The systematic bias in measurements from gyroscope 1.
-            vector3 gyro2_bias; // The systematic bias in measurements from gyroscope 2.
-            vector3 gyro3_bias; // The systematic bias in measurements from gyroscope 3.
-            vector3 mag_bias; // Biases in magnetometer measurements, subtracted from readings before processing.
-            vector3 mag_scale; // Magnetometer scale factor, multipled by readings before processing.
+            Vector3 accel1_bias; // The systematic bias in measurements from accelerometer 1.
+            Vector3 accel2_bias; // The systematic bias in measurements from accelerometer 2.
+            Vector3 accel3_bias; // The systematic bias in measurements from accelerometer 3.
+            Vector3 gyro1_bias; // The systematic bias in measurements from gyroscope 1.
+            Vector3 gyro2_bias; // The systematic bias in measurements from gyroscope 2.
+            Vector3 gyro3_bias; // The systematic bias in measurements from gyroscope 3.
+            Vector3 mag_bias; // Biases in magnetometer measurements, subtracted from readings before processing.
+            Vector3 mag_scale; // Magnetometer scale factor, multipled by readings before processing.
             double mag_scale_xy;
             double mag_scale_xz;
             double mag_scale_yz;

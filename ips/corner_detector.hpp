@@ -13,15 +13,15 @@ namespace arwain
     {
         public:
             CornerDetector(int window_size_, double detection_angle_, double min_separation_);
-            bool update(vector3 position);
+            bool update(Vector3 position);
             
-            vector3 detection_location;
+            Vector3 detection_location;
 
         private:
             int window_size;
             double detection_angle;
             double min_separation;
-            std::deque<vector3> track;
+            std::deque<Vector3> track;
     };
 }
 

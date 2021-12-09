@@ -19,7 +19,7 @@
  * \param vec The 3-vector to rotate.
  * \param orientation The rotation to apply to the 3-vector.
  */
-static vector3 world_align(const vector3& vec, const quaternion& rotation)
+static Vector3 world_align(const Vector3& vec, const quaternion& rotation)
 {
     // Convert the 3-vector into a quaternion.
     quaternion quat_vec{0, vec.x, vec.y, vec.z};
@@ -29,7 +29,7 @@ static vector3 world_align(const vector3& vec, const quaternion& rotation)
     quaternion rotated_quaternion_vector = quat_ori * quat_vec * quat_ori.conjugate();
 
     // Cast the rotated quaternion back into a 3-vector.
-    return vector3{
+    return Vector3{
         (double)rotated_quaternion_vector.x,
         (double)rotated_quaternion_vector.y,
         (double)rotated_quaternion_vector.z
@@ -92,11 +92,11 @@ void imu_reader()
     arwain::Madgwick madgwick_filter_mag{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
 
     // Local buffers for IMU data.
-    vector3 accel_data1;
-    vector3 gyro_data1;
-    vector3 world_accel_data1;
-    vector3 world_gyro_data1;
-    vector3 magnet;
+    Vector3 accel_data1;
+    Vector3 gyro_data1;
+    Vector3 world_accel_data1;
+    Vector3 world_gyro_data1;
+    Vector3 magnet;
     quaternion madgwick_quaternion_data1;
     quaternion madgwick_quaternion_mag_data1;
     euler_orientation_t madgwick_euler_data1;

@@ -22,11 +22,11 @@ class LIS3MDL
     public: // Methods
         LIS3MDL(const int i2c_address, const std::string& i2c_bus);
         int test_chip();
-        vector3 read();
+        Vector3 read();
         quaternion read_orientation();
         double read_temp();
         void calibrate();
-        void set_calibration(vector3 bias_, vector3 scale_);
+        void set_calibration(Vector3 bias_, Vector3 scale_);
 
     private: // Methods
         void soft_reset();
@@ -41,8 +41,8 @@ class LIS3MDL
     private: // Attributes
         int handle = 0;
         double fsr_res;
-        vector3 bias = {0, 0, 0};
-        vector3 scale = {1, 1, 1};
+        Vector3 bias = {0, 0, 0};
+        Vector3 scale = {1, 1, 1};
 
     private: // Statics
         // CHIP ADDRESS -----------------------------------------------------

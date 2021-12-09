@@ -4,7 +4,7 @@
 #include <string>
 #include <deque>
 
-#include <vector3.hpp>
+#include "vector3.hpp"
 
 namespace arwain
 {
@@ -21,12 +21,12 @@ namespace arwain
     {
         public:
             FloorTracker(int window_size_, double drift_threshold_, double min_separation_);
-            FloorTracker(int window_size_, double drift_threshold_, double min_separation_, const vector3& initial_position_);
-            void update(const vector3& position);
-            vector3 tracked_position;
+            FloorTracker(int window_size_, double drift_threshold_, double min_separation_, const Vector3& initial_position_);
+            void update(const Vector3& position);
+            Vector3 tracked_position;
 
         private:
-            std::deque<vector3> track;
+            std::deque<Vector3> track;
             int window_size;
             double min_separation;
             double drift_threshold;

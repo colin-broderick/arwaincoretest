@@ -34,7 +34,7 @@ void transmit_lora()
 
     // Local buffers.
     arwain::Logger lora_file;
-    vector3 position;
+    Vector3 position;
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();

@@ -184,7 +184,7 @@ int init_bmi270(int mag_enabled, const std::string& calib_file, const std::strin
  * This procedure does not consider the change in offset as a
  * function of temperature.
  */
-vector3 BMI270::calibrate_gyroscope()
+Vector3 BMI270::calibrate_gyroscope()
 {
     kalman_filter_constant_1d kfx{0, 0.5};
     kalman_filter_constant_1d kfy{0, 0.5};
@@ -350,7 +350,7 @@ void read_calib_data(const std::string& path)
     source.close();
 }
 
-int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr)
+int get_bmi270_data(struct Vector3 *acc, struct Vector3 *gyr)
 {
     int rslt;
     rslt = bmi2_get_sensor_data(&acce, 1, &bmi270);

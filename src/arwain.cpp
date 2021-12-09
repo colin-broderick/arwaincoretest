@@ -44,14 +44,14 @@ namespace arwain
 // Shared data buffers; mutex locks must be used when accessing.
 namespace arwain::Buffers
 {
-    std::deque<vector6> IMU_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
-    std::deque<vector6> IMU_WORLD_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
-    std::deque<vector3> VELOCITY_BUFFER{arwain::BufferSizes::VELOCITY_BUFFER_LEN};
-    std::deque<vector3> POSITION_BUFFER{arwain::BufferSizes::POSITION_BUFFER_LEN};
-    std::deque<vector3> MAG_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
-    std::deque<vector3> MAG_WORLD_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
-    std::deque<vector3> IPS_BUFFER{arwain::BufferSizes::IPS_BUFFER_LEN};
-    std::deque<vector3> PRESSURE_BUFFER{arwain::BufferSizes::PRESSURE_BUFFER_LEN};
+    std::deque<Vector6> IMU_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
+    std::deque<Vector6> IMU_WORLD_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
+    std::deque<Vector3> VELOCITY_BUFFER{arwain::BufferSizes::VELOCITY_BUFFER_LEN};
+    std::deque<Vector3> POSITION_BUFFER{arwain::BufferSizes::POSITION_BUFFER_LEN};
+    std::deque<Vector3> MAG_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
+    std::deque<Vector3> MAG_WORLD_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
+    std::deque<Vector3> IPS_BUFFER{arwain::BufferSizes::IPS_BUFFER_LEN};
+    std::deque<Vector3> PRESSURE_BUFFER{arwain::BufferSizes::PRESSURE_BUFFER_LEN};
     std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
     std::deque<quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
     std::deque<quaternion> MAG_ORIENTATION_BUFFER{arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN};
@@ -95,8 +95,8 @@ int arwain::test_imu()
     // Multi_IIM42652 imu;
 
     // Local buffers for IMU data
-    vector3 accel_data;
-    vector3 gyro_data;
+    Vector3 accel_data;
+    Vector3 gyro_data;
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
@@ -139,7 +139,7 @@ int arwain::test_mag(int argc, char **argv)
 
     while (!arwain::shutdown && ros::ok())
     {
-        vector3 reading = magn.read();
+        Vector3 reading = magn.read();
         geometry_msgs::Vector3Stamped msg;
         msg.header.stamp = ros::Time::now();
         msg.vector.x = reading.x;
@@ -168,7 +168,7 @@ int arwain::test_mag()
 
     while (!arwain::shutdown)
     {
-        vector3 reading = magn.read();
+        Vector3 reading = magn.read();
         std::cout << "Magnetometer readings: " << reading << " .... " << reading.magnitude() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds{100});
     }
@@ -658,8 +658,8 @@ int arwain::test_ori(int frequency)
     euler_orientation_t euler;
     quaternion quat;
 
-    vector3 gyro;
-    vector3 accel;
+    Vector3 gyro;
+    Vector3 accel;
     std::cout << "Starting orientation filter at " << frequency << " Hz" << std::endl;
 
     while (!shutdown)
@@ -702,7 +702,7 @@ int arwain::calibrate_magnetometers()
 
 int arwain::calibrate_gyroscopes()
 {
-    vector3 results;
+    Vector3 results;
 
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;
@@ -751,7 +751,7 @@ int arwain::calibrate_gyroscopes()
     return arwain::ExitCodes::Success;
 }
 
-static std::tuple<vector3, vector3> deduce_calib_params(std::vector<vector3> readings)
+static std::tuple<Vector3, Vector3> deduce_calib_params(std::vector<Vector3> readings)
 {
     double x_min = 1e6;
     double x_max = -1e6;
@@ -768,15 +768,15 @@ static std::tuple<vector3, vector3> deduce_calib_params(std::vector<vector3> rea
         z_min = vec.z < z_min ? vec.z : z_min;
         z_max = vec.z > z_max ? vec.z : z_max;
     }
-    vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
+    Vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
 
     // Compute scale correction factors.
-    vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
+    Vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
     double average_delta = (delta.x + delta.y + delta.z)/3.0;
     double scale_x = average_delta / delta.x;
     double scale_y = average_delta / delta.y;
     double scale_z = average_delta / delta.z;
-    vector3 scale_ = {scale_x, scale_y, scale_z};
+    Vector3 scale_ = {scale_x, scale_y, scale_z};
 
     return {bias_, scale_};
 }
@@ -793,9 +793,9 @@ int arwain::calibrate_accelerometers_simple()
     IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
     IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
 
-    std::vector<vector3> readings_1;
-    std::vector<vector3> readings_2;
-    std::vector<vector3> readings_3;
+    std::vector<Vector3> readings_1;
+    std::vector<Vector3> readings_2;
+    std::vector<Vector3> readings_3;
 
     // Take readings while tumbling device.
     for (int i = 0; i < 24; i++)
@@ -803,9 +803,9 @@ int arwain::calibrate_accelerometers_simple()
         std::cout << i+1 << ") Place the device in a random orientation ..." << std::endl;
         sleep_ms(5000);
 
-        vector3 reading_1 = imu1.calibration_accel_sample();
-        vector3 reading_2 = imu2.calibration_accel_sample();
-        vector3 reading_3 = imu3.calibration_accel_sample();
+        Vector3 reading_1 = imu1.calibration_accel_sample();
+        Vector3 reading_2 = imu2.calibration_accel_sample();
+        Vector3 reading_3 = imu3.calibration_accel_sample();
 
         readings_1.push_back(reading_1);
         readings_2.push_back(reading_2);
@@ -849,7 +849,7 @@ int arwain::calibrate_accelerometers_simple()
 
 // int arwain::calibrate_accelerometers()
 // {
-//     vector3 results;
+//     Vector3 results;
 
 //     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
 //     std::cout << "Calibrating accelerometer on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;

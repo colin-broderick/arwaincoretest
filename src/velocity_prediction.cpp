@@ -33,10 +33,10 @@ void predict_velocity()
     zmq_bind(responder, inference_tcp_socket.c_str());
 
     // Buffer to contain local copy of IMU data.
-    std::deque<vector6> imu;
+    std::deque<Vector6> imu;
 
-    vector3 position{0, 0, 0};
-    vector3 velocity{0, 0, 0};
+    Vector3 position{0, 0, 0};
+    Vector3 velocity{0, 0, 0};
 
     // Request and response buffers.
     std::stringstream request;
