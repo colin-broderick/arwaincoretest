@@ -33,10 +33,10 @@ void predict_velocity()
     zmq_bind(responder, inference_tcp_socket.c_str());
 
     // Buffer to contain local copy of IMU data.
-    std::deque<vector6> imu;
+    std::deque<Vector6> imu;
 
-    vector3 position{0, 0, 0};
-    vector3 velocity{0, 0, 0};
+    Vector3 position{0, 0, 0};
+    Vector3 velocity{0, 0, 0};
 
     // Request and response buffers.
     std::stringstream request;
@@ -58,6 +58,8 @@ void predict_velocity()
     std::chrono::time_point<std::chrono::system_clock> lastTime = std::chrono::system_clock::now();
     std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
+
+    std::cout << "Inference started" << std::endl;
 
     while (!arwain::shutdown)
     {
@@ -112,6 +114,11 @@ void predict_velocity()
         }
 
         // Compute new position.
+       velocity = {
+           std::cos(-arwain::yaw_offset)*velocity.x - std::sin(-arwain::yaw_offset)*velocity.y,
+           std::sin(-arwain::yaw_offset)*velocity.x + std::cos(-arwain::yaw_offset)*velocity.y,
+           velocity.z
+       };
         position = position + dt * velocity;
 
         { // Add new position to global buffer.

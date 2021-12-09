@@ -176,7 +176,7 @@ double LIS3MDL::read_temp()
     return (double)temp_int / 8.0;
 }
 
-vector3 LIS3MDL::read()
+Vector3 LIS3MDL::read()
 {
     uint8_t read_buffer[6];
     i2c_read(ADDR_OUT_X_L, 6, read_buffer);
@@ -196,7 +196,7 @@ vector3 LIS3MDL::read()
     };
 }
 
-void LIS3MDL::set_calibration(vector3 bias_, vector3 scale_)
+void LIS3MDL::set_calibration(Vector3 bias_, Vector3 scale_)
 {
     this->bias = bias_;
     this->scale = scale_;
@@ -204,12 +204,12 @@ void LIS3MDL::set_calibration(vector3 bias_, vector3 scale_)
 
 void LIS3MDL::calibrate()
 {
-    std::vector<vector3> readings;
+    std::vector<Vector3> readings;
 
     // Take readings while tumbling device.
     while (!arwain::shutdown)
     {
-        vector3 reading = this->read();
+        Vector3 reading = this->read();
         readings.push_back(reading);
         sleep_ms(100);
     }
@@ -233,10 +233,10 @@ void LIS3MDL::calibrate()
         z_min = vec.z < z_min ? vec.z : z_min;
         z_max = vec.z > z_max ? vec.z : z_max;
     }
-    vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
+    Vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
 
     // Compute scale correction factors.
-    vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
+    Vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
     double average_delta = (delta.x + delta.y + delta.z)/3.0;
     double scale_x = average_delta / delta.x;
     double scale_y = average_delta / delta.y;
@@ -255,20 +255,20 @@ void LIS3MDL::calibrate()
  * to rotate that vector onto the expected local magnetic field.
  * \return A versor which applies the specified rotation.
  */
-quaternion LIS3MDL::read_orientation()
+Quaternion LIS3MDL::read_orientation()
 {
-    // static vector3 mag_target{18.895, -0.361, 45.372}; // The local magnetic field vector.
-    static vector3 mag_target{0.38443, -0.0073448, 0.92312}; // The normalized local magnetic field vector.
+    // static Vector3 mag_target{18.895, -0.361, 45.372}; // The local magnetic field vector.
+    static Vector3 mag_target{0.38443, -0.0073448, 0.92312}; // The normalized local magnetic field vector.
     
-    vector3 mag_measurement = this->read().normalized(); // Normalized magnetic field vector.
+    Vector3 mag_measurement = this->read().normalized(); // Normalized magnetic field vector.
 
     double angle = std::acos(mag_measurement.x * mag_target.x 
                            + mag_measurement.y * mag_target.y
                            + mag_measurement.z * mag_target.z); // The angle between the measured field and the local field.
 
-    vector3 axis = vector3::cross(mag_measurement, mag_target); // Axis orthogonal to both measured and expected.
+    Vector3 axis = Vector3::cross(mag_measurement, mag_target); // Axis orthogonal to both measured and expected.
 
-    quaternion quat{
+    Quaternion quat{
         std::cos(angle/2.0),
         std::sin(angle/2.0) * axis.x,
         std::sin(angle/2.0) * axis.y,

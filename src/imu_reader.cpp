@@ -19,24 +19,24 @@
  * \param vec The 3-vector to rotate.
  * \param orientation The rotation to apply to the 3-vector.
  */
-static vector3 world_align(const vector3& vec, const quaternion& rotation)
+static Vector3 world_align(const Vector3& vec, const Quaternion& rotation)
 {
     // Convert the 3-vector into a quaternion.
-    quaternion quat_vec{0, vec.x, vec.y, vec.z};
-    quaternion quat_ori{rotation.w, rotation.x, rotation.y, rotation.z};
+    Quaternion quat_vec{0, vec.x, vec.y, vec.z};
+    Quaternion quat_ori{rotation.w, rotation.x, rotation.y, rotation.z};
 
     // Compute the rotated vector as a quaternion.
-    quaternion rotated_quaternion_vector = quat_ori * quat_vec * quat_ori.conjugate();
+    Quaternion rotated_quaternion_vector = quat_ori * quat_vec * quat_ori.conjugate();
 
     // Cast the rotated quaternion back into a 3-vector.
-    return vector3{
+    return Vector3{
         (double)rotated_quaternion_vector.x,
         (double)rotated_quaternion_vector.y,
         (double)rotated_quaternion_vector.z
     };
 }
 
-static euler_orientation_t compute_euler(quaternion& q)
+static euler_orientation_t compute_euler(Quaternion& q)
 {
     euler_orientation_t euler;
     euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5 - q.x*q.x - q.y*q.y);
@@ -55,12 +55,12 @@ static euler_orientation_t compute_euler(quaternion& q)
  * \param mag_orientation The orientation as directly measured by magnetometer.
  * \return How much the magnetometer should be trust.
  */
-static double gyro_mag_co_trust(quaternion gyro_orientation, quaternion mag_orientation)
+static double gyro_mag_co_trust(Quaternion gyro_orientation, Quaternion mag_orientation)
 {
     // Note; as written, this formula assumes degrees.
 
     // Determine angle between current gyro orientation and magnetic orientation, dtheta.
-    double dtheta = std::abs(quaternion::angle_between(gyro_orientation, mag_orientation)) * 180.0 / 3.14159;
+    double dtheta = std::abs(Quaternion::angle_between(gyro_orientation, mag_orientation)) * 180.0 / 3.14159;
 
     // Compute relative trust of the gyroscope.
     return 1.0 / ((dtheta + 1) * (dtheta + 1) * (dtheta + 1)) / 100.0;
@@ -80,23 +80,25 @@ void imu_reader()
         return;
     }
 
+    // Prepare sensors.
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
     IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
     IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
+    magn.set_calibration(arwain::config.mag_bias, arwain::config.mag_scale);
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Madgwick madgwick_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
-    arwain::Madgwick madgwick_filter_mag{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
-    // filter1_with_mag = new arwain::Madgwick{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
+    arwain::Madgwick madgwick_filter_mag{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
 
     // Local buffers for IMU data.
-    vector3 accel_data1;
-    vector3 gyro_data1;
-    vector3 world_accel_data1;
-    vector3 world_gyro_data1;
-    quaternion madgwick_quaternion_data1;
-    quaternion madgwick_quaternion_mag_data1;
+    Vector3 accel_data1;
+    Vector3 gyro_data1;
+    Vector3 world_accel_data1;
+    Vector3 world_gyro_data1;
+    Vector3 magnet;
+    Quaternion madgwick_quaternion_data1;
+    Quaternion madgwick_quaternion_mag_data1;
     euler_orientation_t madgwick_euler_data1;
     euler_orientation_t madgwick_euler_mag_data1;
 
@@ -109,7 +111,6 @@ void imu_reader()
     arwain::Logger madgwick_euler_file;
     arwain::Logger madgwick_euler_mag_file;
     arwain::Logger madgwick_quat_file;
-    // arwain::Logger multi_quat_file;
 
     if (arwain::config.log_to_file)
     {
@@ -122,7 +123,6 @@ void imu_reader()
         madgwick_euler_file.open(arwain::folder_date_string + "/madgwick_euler_orientation.txt");
         madgwick_quat_file.open(arwain::folder_date_string + "/madgwick_game_rv.txt");
         madgwick_euler_mag_file.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation.txt");
-        // multi_quat_file.open(arwain::folder_date_string + "/multi_quat.txt");
 
         // File headers
         ori_diff_file << "time yaw" << "\n";
@@ -133,16 +133,24 @@ void imu_reader()
         madgwick_euler_file << "time roll pitch yaw" << "\n";
         madgwick_quat_file << "time w x y z" << "\n";
         madgwick_euler_mag_file << "time roll pitch yaw" << "\n";
-        // multi_quat_file << "time q1w q1x q1y q1z q2w q2x q2y q2z q3w q3x q3y q3z" << "\n";
     }
 
     // quaternion quat1;//, quat2, quat3, quat_aggregate, magnetovector;
-    int cycle_count = 0;
+    long cycle_count = 0;
 
     // Set up timing.
     auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
     auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
     std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
+
+    // After the specificed period has passed, set the filter gain to the standard value.
+    std::thread quick_convergence{
+        [&madgwick_filter_mag]()
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{5000});
+            madgwick_filter_mag.set_beta(arwain::config.madgwick_beta);
+        }
+    };
 
     while (!arwain::shutdown)
     {
@@ -152,8 +160,11 @@ void imu_reader()
         imu1.read_IMU();
         imu2.read_IMU();
         imu3.read_IMU();
-        auto magnet = magn.read();
-        magnet = {magnet.y, magnet.x, magnet.z};
+
+        magnet = magn.read();
+        magnet.x = magnet.x + magnet.y*arwain::config.mag_scale_xy + magnet.z*arwain::config.mag_scale_xz; // scale/axis correction
+        magnet.y = magnet.y + magnet.z*arwain::config.mag_scale_yz; // scale/axis correction
+        magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
         accel_data1 = {imu1.accelerometer_x, imu1.accelerometer_y, imu1.accelerometer_z};
         gyro_data1 = {imu1.gyroscope_x, imu1.gyroscope_y, imu1.gyroscope_z};
@@ -206,6 +217,9 @@ void imu_reader()
         madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
         madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
 
+        auto quat_diff = madgwick_quaternion_data1 * madgwick_quaternion_mag_data1.conjugate();
+        arwain::yaw_offset = compute_euler(quat_diff).yaw;
+
         { // Add orientation information to buffers.
             std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
             arwain::Buffers::EULER_ORIENTATION_BUFFER.pop_front();
@@ -225,7 +239,7 @@ void imu_reader()
 
         if (arwain::config.log_to_file)
         {
-            ori_diff_file << timeCount << " " << madgwick_euler_mag_data1.yaw - madgwick_euler_data1.yaw << "\n";
+            ori_diff_file << timeCount << " " << arwain::yaw_offset << "\n";
             acce_file << timeCount << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
             gyro_file << timeCount << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
             world_acce_file << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
@@ -235,10 +249,21 @@ void imu_reader()
             madgwick_quat_file << timeCount << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
         }
 
+        // arwain::yaw_offset = arwain::yaw_offset == 0 ?
+        //                         madgwick_filter_mag.getYawRadians() - madgwick_filter.getYawRadians() :
+        //                         (madgwick_filter_mag.getYawRadians() - madgwick_filter.getYawRadians())*0.001 + 0.999*arwain::yaw_offset;
+
+        // if (cycle_count % 50 == 0)
+        // {
+        //     std::cout << madgwick_filter.getYawRadians() << " " << madgwick_filter_mag.getYawRadians() << " " << arwain::yaw_offset << std::endl;
+        // }
+
         // Wait until the next tick.
         loopTime = loopTime + interval;
         std::this_thread::sleep_until(loopTime);
     }
+
+    quick_convergence.join();
 
     // Close all file handles.
     if (arwain::config.log_to_file)
@@ -251,6 +276,5 @@ void imu_reader()
         madgwick_euler_file.close();
         madgwick_quat_file.close();
         madgwick_euler_mag_file.close();
-        // multi_quat_file.close();
     }
 }

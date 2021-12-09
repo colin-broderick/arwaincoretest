@@ -68,7 +68,7 @@ namespace
     };
 }
 
-vector3 IMU_IIM42652::calibration_accel_sample()
+Vector3 IMU_IIM42652::calibration_accel_sample()
 {
     kalman_filter_constant_1d kfx{9.81, 1.0};
     kalman_filter_constant_1d kfy{9.81, 1.0};
@@ -90,7 +90,7 @@ vector3 IMU_IIM42652::calibration_accel_sample()
  * An optimisation step attempts to compute the best combination of misalignment, scale, and bias corrections
  * to fit the provided data and given magnitude of acceleration due to gravity, 9.8607 m/s2.
  */
-// vector3 IMU_IIM42652::calibrate_accelerometer()
+// Vector3 IMU_IIM42652::calibrate_accelerometer()
 // {
 //     // Collect samples =============================================================
 //     std::vector<Eigen::Matrix<double, 3, 1>> samples;
@@ -180,7 +180,7 @@ vector3 IMU_IIM42652::calibration_accel_sample()
  * This procedure does not consider the change in offset as a
  * function of temperature.
  */
-vector3 IMU_IIM42652::calibrate_gyroscope()
+Vector3 IMU_IIM42652::calibrate_gyroscope()
 {
     kalman_filter_constant_1d kfx{0, 1};
     kalman_filter_constant_1d kfy{0, 1};

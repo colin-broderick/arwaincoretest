@@ -17,11 +17,11 @@ int8_t bmi270_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, ui
 int8_t bmi270_reg_write(uint8_t i2c_addr, uint8_t reg_addr, const uint8_t *reg_data, uint16_t length);
 int8_t bmm150_reg_read(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
 int8_t bmm150_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t *reg_data, uint16_t length);
-int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr);
+int get_bmi270_data(struct Vector3 *acc, struct Vector3 *gyr);
 void delay_us(uint32_t period);
 void delay_ms(uint32_t period);
 
-static vector3 mag_calib_offset, mag_calib_scale;
+static Vector3 mag_calib_offset, mag_calib_scale;
 
 void read_calib_data(const std::string& path);
 
@@ -43,10 +43,10 @@ class BMI270
         BMI270(const int i2c_address, const std::string& i2c_bus);
         double read_temperature();
         void read_IMU();
-        vector3 calibrate_gyroscope();
+        Vector3 calibrate_gyroscope();
 
     public:
-        vector3 acce, gyro;
+        Vector3 acce, gyro;
         double accelerometer_x;
         double accelerometer_y;
         double accelerometer_z;
