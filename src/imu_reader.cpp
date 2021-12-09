@@ -217,6 +217,9 @@ void imu_reader()
         madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
         madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
 
+        auto quat_diff = madgwick_quaternion_data1 * madgwick_quaternion_mag_data1.conjugate();
+        arwain::yaw_offset = compute_euler(quat_diff).yaw;
+
         { // Add orientation information to buffers.
             std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
             arwain::Buffers::EULER_ORIENTATION_BUFFER.pop_front();
@@ -236,7 +239,7 @@ void imu_reader()
 
         if (arwain::config.log_to_file)
         {
-            ori_diff_file << timeCount << " " << madgwick_euler_mag_data1.yaw - madgwick_euler_data1.yaw << "\n";
+            ori_diff_file << timeCount << " " << arwain::yaw_offset << "\n";
             acce_file << timeCount << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
             gyro_file << timeCount << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
             world_acce_file << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
@@ -246,14 +249,14 @@ void imu_reader()
             madgwick_quat_file << timeCount << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
         }
 
-        arwain::yaw_offset = arwain::yaw_offset == 0 ?
-                                madgwick_filter_mag.getYawRadians() - madgwick_filter.getYawRadians() :
-                                (madgwick_filter_mag.getYawRadians() - madgwick_filter.getYawRadians())*0.001 + 0.999*arwain::yaw_offset;
+        // arwain::yaw_offset = arwain::yaw_offset == 0 ?
+        //                         madgwick_filter_mag.getYawRadians() - madgwick_filter.getYawRadians() :
+        //                         (madgwick_filter_mag.getYawRadians() - madgwick_filter.getYawRadians())*0.001 + 0.999*arwain::yaw_offset;
 
-        if (cycle_count % 50 == 0)
-        {
-            std::cout << madgwick_filter.getYawRadians() << " " << madgwick_filter_mag.getYawRadians() << " " << arwain::yaw_offset << std::endl;
-        }
+        // if (cycle_count % 50 == 0)
+        // {
+        //     std::cout << madgwick_filter.getYawRadians() << " " << madgwick_filter_mag.getYawRadians() << " " << arwain::yaw_offset << std::endl;
+        // }
 
         // Wait until the next tick.
         loopTime = loopTime + interval;
