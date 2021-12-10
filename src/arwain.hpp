@@ -16,6 +16,8 @@ class Vector6;
 class Quaternion;
 class InputParser;
 
+double unwrap_phase_degrees(double new_angle, double previous_angle);
+
 struct euler_orientation_t
 {
     double roll;
