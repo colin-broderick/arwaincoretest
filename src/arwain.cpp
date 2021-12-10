@@ -83,6 +83,19 @@ static void py_inference()
     }
 }
 
+double unwrap_phase_radians(double new_angle, double previous_angle)
+{
+    while (new_angle - previous_angle > 3.14159)
+    {
+        new_angle -= 2.0*3.14159;
+    }
+    while (new_angle - previous_angle < -3.14159)
+    {
+        new_angle += 2.0*3.14159;
+    }
+    return new_angle;
+}
+
 double unwrap_phase_degrees(double new_angle, double previous_angle)
 {
     while (new_angle - previous_angle > 180.0)

@@ -238,7 +238,7 @@ void imu_reader()
         }
 
         // Compute the new correction based on magn/gyro filter diffs.
-        double new_yaw_offset = unwrap_phase_degrees(madgwick_filter_mag.getYawRadians() - madgwick_filter.getYawRadians(), arwain::yaw_offset);
+        double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag.getYawRadians() - madgwick_filter.getYawRadians(), arwain::yaw_offset);
         if (arwain::yaw_offset == 0)
         {
             arwain::yaw_offset = new_yaw_offset;
