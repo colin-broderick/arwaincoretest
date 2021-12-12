@@ -1,5 +1,6 @@
 #include <vector>
 #include <sstream>
+#include <thread>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -12,6 +13,7 @@ extern "C"
 #include <sys/ioctl.h>
 
 #include "bmi270.hpp"
+#include "kalman.hpp"
 
 BMI270::BMI270(const int i2c_address, const std::string& i2c_bus)
 {
@@ -169,6 +171,35 @@ int init_bmi270(int mag_enabled, const std::string& calib_file, const std::strin
     return 0;
 }
 
+/** \brief Defines a procedure for calculating calibration offsets
+ * for the gyroscope, then records those values in the appropriate
+ * registers on the device.
+ * 
+ * We leave the device undistrubed for a set period of time, and
+ * then compute the average value from each gyroscope axis during
+ * that time. This number is zero in the ideal case. The actual
+ * calculated value is the offset that should be applied to the
+ * gyroscope readings.
+ * 
+ * This procedure does not consider the change in offset as a
+ * function of temperature.
+ */
+Vector3 BMI270::calibrate_gyroscope()
+{
+    kalman_filter_constant_1d kfx{0, 0.5};
+    kalman_filter_constant_1d kfy{0, 0.5};
+    kalman_filter_constant_1d kfz{0, 0.5};
+    while (!kfx.converged && !kfy.converged && !kfz.converged)
+    {
+        this->read_IMU();
+        kfx.update(this->gyroscope_x, 0.02);
+        kfy.update(this->gyroscope_y, 0.02);
+        kfz.update(this->gyroscope_z, 0.02);
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+    return {kfx.est, kfy.est, kfz.est};
+}
+
 /*!
  *  @brief Function for reading the IMU's registers through I2C bus.
  *
@@ -319,7 +350,7 @@ void read_calib_data(const std::string& path)
     source.close();
 }
 
-int get_bmi270_data(struct vector3 *acc, struct vector3 *gyr)
+int get_bmi270_data(struct Vector3 *acc, struct Vector3 *gyr)
 {
     int rslt;
     rslt = bmi2_get_sensor_data(&acce, 1, &bmi270);

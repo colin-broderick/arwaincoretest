@@ -10,10 +10,10 @@
  * \param t The interpolation factor. Between 0 and 1. Low numbers favour quat1, high numbers favour quat2.
  * \return A new quaternion.
  */
-quaternion quaternion::slerp(quaternion q1, const quaternion& q2, const double t)
+Quaternion Quaternion::slerp(Quaternion q1, const Quaternion& q2, const double t)
 {
     // TODO Check for valid lengths or other things that should generate errors.
-    double cosHalfAngle = q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z;
+    double cosHalfAngle = Quaternion::dot(q1, q2);
 
     // If half angle is zero, return whichever
     if (cosHalfAngle <= -1.0 || cosHalfAngle >= 1.0)
@@ -52,18 +52,18 @@ quaternion quaternion::slerp(quaternion q1, const quaternion& q2, const double t
  * \param t The interpolation factor. Between 0 and 1. Low numbers favour quat1, high numbers favour quat2.
  * \return A new unit quaternion.
  */
-quaternion quaternion::nslerp(quaternion q1, const quaternion& q2, const double t)
+Quaternion Quaternion::nslerp(Quaternion q1, const Quaternion& q2, const double t)
 {
-    return quaternion::slerp(q1, q2, t).unit();
+    return Quaternion::slerp(q1, q2, t).unit();
 }
 
 // Constructors ===================================================================================
 
-quaternion::quaternion() : quaternion(1, 0, 0, 0)
+Quaternion::Quaternion() : Quaternion(1, 0, 0, 0)
 {
 }
 
-quaternion::quaternion(const std::array<double, 3>& vec) : quaternion(0, vec[0], vec[1], vec[2])
+Quaternion::Quaternion(const std::array<double, 3>& vec) : Quaternion(0, vec[0], vec[1], vec[2])
 {
 }
 
@@ -71,7 +71,7 @@ quaternion::quaternion(const std::array<double, 3>& vec) : quaternion(0, vec[0],
  * \param angle The angle in radians by which to rotate the frame.
  * \param axis The axis around which to rotate the frame.
  */
-quaternion::quaternion(const double angle, const std::array<double, 3>& axis)
+Quaternion::Quaternion(const double angle, const std::array<double, 3>& axis)
 {
     double axisInvNorm = 1.0/std::sqrt(axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2]);
     this->angle = angle;
@@ -88,7 +88,7 @@ quaternion::quaternion(const double angle, const std::array<double, 3>& axis)
  * \param y The j component of the quaternion.
  * \param z The k component of the quaternion.
  */
-quaternion::quaternion(const double w, const double x, const double y, const double z)
+Quaternion::Quaternion(const double w, const double x, const double y, const double z)
 {
     this->w = w;
     this->x = x;
@@ -107,12 +107,23 @@ quaternion::quaternion(const double w, const double x, const double y, const dou
  * \param quat2 The second quaternion.
  * \return Scalar inner product of the two quaternions.
  */
-double quaternion::dotProduct(const quaternion& quat1, const quaternion& quat2)
+double Quaternion::dot(const Quaternion& quat1, const Quaternion& quat2)
 {
     return quat1.getW() * quat2.getW()
          + quat1.getX() * quat2.getX()
          + quat1.getY() * quat2.getY()
          + quat1.getZ() * quat2.getZ();
+}
+
+/** \brief Assuming two versors are supplied, computes the difference in their rotation angles.
+ * \param q1 A versor.
+ * \param q2 Another versor.
+ * \return The difference in angle the versors' rotations.
+ */
+double Quaternion::angle_between(const Quaternion& q1, const Quaternion& q2)
+{
+    double cosHalfAngle = Quaternion::dot(q1, q2);
+    return std::acos(cosHalfAngle) * 2;
 }
 
 // Operators ======================================================================================
@@ -122,9 +133,9 @@ double quaternion::dotProduct(const quaternion& quat1, const quaternion& quat2)
  * \param quat2 The quaternion to subtract.
  * \return The new quaternion after computing the difference.
  */
-quaternion operator+(const quaternion& quat1, const quaternion& quat2)
+Quaternion operator+(const Quaternion& quat1, const Quaternion& quat2)
 {
-    return quaternion{
+    return Quaternion{
         quat1.getW() + quat2.getW(),
         quat1.getX() + quat2.getX(),
         quat1.getY() + quat2.getY(),
@@ -137,9 +148,9 @@ quaternion operator+(const quaternion& quat1, const quaternion& quat2)
  * \param quat2 The second quaternion in the sum.
  * \return The new quaternion after computing the sum.
  */
-quaternion operator-(const quaternion& quat1, const quaternion& quat2)
+Quaternion operator-(const Quaternion& quat1, const Quaternion& quat2)
 {
-    return quaternion{
+    return Quaternion{
         quat1.getW() - quat2.getW(),
         quat1.getX() - quat2.getX(),
         quat1.getY() - quat2.getY(),
@@ -152,7 +163,7 @@ quaternion operator-(const quaternion& quat1, const quaternion& quat2)
  * \param quat2 The second quaternion in the product.
  * \return The new quaternion after computing the product.
  */
-quaternion operator*(const quaternion& quat1, const quaternion& quat2)
+Quaternion operator*(const Quaternion& quat1, const Quaternion& quat2)
 {
     double p1 = quat1.getW();
     double p2 = quat1.getX();
@@ -164,7 +175,7 @@ quaternion operator*(const quaternion& quat1, const quaternion& quat2)
     double q3 = quat2.getY();
     double q4 = quat2.getZ();
 
-    return quaternion{
+    return Quaternion{
         p1*q1 - p2*q2 - p3*q3 - p4*q4,
         p1*q2 + p2*q1 + p3*q4 - p4*q3,
         p1*q3 - p2*q4 + p3*q1 + p4*q2,
@@ -173,7 +184,7 @@ quaternion operator*(const quaternion& quat1, const quaternion& quat2)
 }
 
 /** \brief Negate a quaternion, i.e. multiply by -1. */
-quaternion operator-(const quaternion& quaternion)
+Quaternion operator-(const Quaternion& quaternion)
 {
     return -1 * quaternion;
 }
@@ -183,7 +194,7 @@ quaternion operator-(const quaternion& quaternion)
  * \param quat2 The second quaternion.
  * \return Bool indicating equality.
  */
-bool operator==(const quaternion& quat1, const quaternion& quat2)
+bool operator==(const Quaternion& quat1, const Quaternion& quat2)
 {
     if (quat1.getW() != quat2.getW())
     {
@@ -209,7 +220,7 @@ bool operator==(const quaternion& quat1, const quaternion& quat2)
  * \param quaternion A quaternion to print or write to file.
  * \return A reference to the output stream.
  */
-std::ostream& operator<<(std::ostream& stream, const quaternion& quaternion)
+std::ostream& operator<<(std::ostream& stream, const Quaternion& quaternion)
 {
     stream << "quaternion(" << quaternion.getW() << ", " << quaternion.getX()
                     << ", " << quaternion.getY() << ", " << quaternion.getZ() << ")";
@@ -218,68 +229,68 @@ std::ostream& operator<<(std::ostream& stream, const quaternion& quaternion)
 
 // Getters ========================================================================================
 
-double quaternion::getW() const
+double Quaternion::getW() const
 {
     return w;
 }
 
-double quaternion::getX() const
+double Quaternion::getX() const
 {
     return x;
 }
 
-double quaternion::getY() const
+double Quaternion::getY() const
 {
     return y;
 }
 
-double quaternion::getZ() const
+double Quaternion::getZ() const
 {
     return z;
 }
 
-double quaternion::getAngle() const
+double Quaternion::getAngle() const
 {
     return angle;
 }
 
-std::array<double, 3> quaternion::getAxis() const
+std::array<double, 3> Quaternion::getAxis() const
 {
     return axis;
 }
 
 /** \brief Compute the magnitude of the quaternion. */
-double quaternion::norm() const
+double Quaternion::norm() const
 {
     static double n = std::sqrt(w*w + x*x + y*y + z*z);
     return n;
 }
 
 /** \brief Whether the quaternion has unit magnitude. */
-bool quaternion::isNormal() const
+bool Quaternion::isNormal() const
 {
     return norm() == 1;
 }
 
 /** \brief Create a new quaternion by normalizing this one. */
-quaternion quaternion::normalized() const
+Quaternion Quaternion::normalized() const
 {
     return *this / norm();
 }
 
-quaternion quaternion::unit() const
+Quaternion Quaternion::unit() const
 {
     return this->normalized();
 }
 
 /** \brief The conjugate is formed by negating all imaginary components. */
-quaternion quaternion::conjugate() const
+Quaternion Quaternion::conjugate() const
 {
-    return quaternion{w, -x, -y, -z};
+    return Quaternion{w, -x, -y, -z};
 }
 
 /** \brief The inverse of a quaternion is its conjugate over the square of its magnitude. */
-quaternion quaternion::inverse() const
+Quaternion Quaternion::inverse() const
 {
     double n = norm();
     return conjugate()/(n*n);

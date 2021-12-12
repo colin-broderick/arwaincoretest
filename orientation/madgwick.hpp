@@ -24,8 +24,6 @@
 #ifndef MadgwickAHRS_h
 #define MadgwickAHRS_h
 
-#include <math.h>
-
 #include "filter.hpp"
 
 namespace arwain
@@ -33,7 +31,7 @@ namespace arwain
     class Madgwick : public Filter
     {
         private:
-            static float invSqrt(float x);
+            static double invSqrt(double x);
             double m_beta;	// algorithm gain
             double q0;
             double q1;
@@ -65,9 +63,14 @@ namespace arwain
             double getRoll();
             double getPitch();
             double getYaw();
+            double get_beta() const;
             double getRollRadians();
             double getPitchRadians();
             double getYawRadians();
+
+            // Setters
+            void setQ(double, double, double, double);
+            void set_beta(double beta);
     };
 }
 

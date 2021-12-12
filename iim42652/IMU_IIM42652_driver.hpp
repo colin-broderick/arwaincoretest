@@ -5,11 +5,14 @@
 #include <map>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+#include <eigen3/Eigen/Dense>
 extern "C"
 {
     #include <linux/i2c-dev.h>
     #include <i2c/smbus.h>
 }
+
+#include "vector3.hpp"
 
 // CONSTANTS ===================================================================
 
@@ -28,8 +31,17 @@ extern "C"
 #define ACCEL_FSR_2G 0b01100000
 #define ACCEL_FSR_16G 0b00000000
 
-#define GYRO_200HZ    0b00000111
-#define GYRO_FSR_2000 0b00000000
+#define GYRO_200HZ      0b00000111
+#define GYRO_FSR_2000   0b00000000
+#define GYRO_FSR_1000   0b00100000
+#define GYRO_FSR_500    0b01000000
+#define GYRO_FSR_250    0b01100000
+#define GYRO_FSR_125    0b10000000
+#define GYRO_FSR_62_5   0b10100000
+#define GYRO_FSR_31_25  0b11000000
+#define GYRO_FSR_15_625 0b11100000
+
+#define GYRO_UI_FILTER_ORD_3RD 0b00001000
 
 // DATA REGISTERS ================================================================
 
@@ -38,6 +50,7 @@ extern "C"
 
 #define ADDR_ACCEL_CONFIG0 0x50
 #define ADDR_GYRO_CONFIG0 0x4F
+#define ADDR_GYRO_CONFIG1 0x51
 
 #define ADDR_TMPRTR 0x1D
 
@@ -81,8 +94,9 @@ public:
     void set_resolutions(double accel, double gyro);
     void read_IMU();
     double read_temperature();
-    void calibrate_accelerometer();
-    void calibrate_gyroscope();
+    Vector3 calibrate_gyroscope();
+    // Vector3 calibrate_accelerometer();
+    Vector3 calibration_accel_sample();
 
 private:
     double accel_resolution = 0;

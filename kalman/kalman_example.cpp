@@ -7,8 +7,8 @@
 #include "../vector3/vector3.hpp"
 
 extern std::mutex PRESSURE_BUFFER_LOCK;
-extern std::deque<vector3> PRESSURE_BUFFER;
-extern std::deque<vector6> IMU_WORLD_BUFFER;
+extern std::deque<Vector3> PRESSURE_BUFFER;
+extern std::deque<Vector6> IMU_WORLD_BUFFER;
 
 /** \brief runs a kalman filter to determine the altiude*/ //errors to be determined
 void kalman()

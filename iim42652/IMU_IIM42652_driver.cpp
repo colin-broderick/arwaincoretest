@@ -5,15 +5,23 @@
 #include <eigen3/Eigen/Dense>
 #include <stdlib.h>
 #include <algorithm>
+#include <random>
 
 #include "IMU_IIM42652_driver.hpp"
+#include "kalman.hpp"
+#include "vector3.hpp"
 
-#define V2_CALIB
-
-/** \brief Generate a random number between -size and size, centred on zero. */
-static double rn(double size)
+static void sleep_ms(int milliseconds)
 {
-    return ((double)RAND_MAX / (double)rand() - 0.5) * 2 * size;
+    std::this_thread::sleep_for(std::chrono::milliseconds{milliseconds});
+}
+
+/** \brief Produces a random number from a uniform distribution [-1, 1]. */
+static double rn()
+{
+    static std::default_random_engine gen;
+    static std::uniform_real_distribution<double> dist{-1.0, 1.0};
+    return dist(gen);
 }
 
 /** \brief Constructor.
@@ -24,223 +32,28 @@ IMU_IIM42652::IMU_IIM42652(int bus_address, const std::string &bus_name)
 {
     // Default configuration.
     unsigned char accel_config = ACCEL_200HZ | ACCEL_FSR_16G;
-    unsigned char gyro_config = GYRO_200HZ | GYRO_FSR_2000;
+    unsigned char gyro_config = GYRO_200HZ | GYRO_FSR_1000;
 
     i2c_init(bus_address, bus_name);
     soft_reset();
     std::this_thread::sleep_for(std::chrono::milliseconds{2});
     IMU_config(gyro_config, accel_config);
-    set_resolutions(ACCEL_RES_16G, GYRO_RES_2000);
+    set_resolutions(ACCEL_RES_16G, GYRO_RES_1000);
     enable();
     std::this_thread::sleep_for(std::chrono::milliseconds{25});
 }
 
-#ifdef V1_CALIB
-/** \brief Defines a procedure for calculating calibration offsets
- * for the accelerometer, then records those values in the appropriate
- * registers on the device.
- * 
- * We position the device with the x axis pointing up, and log ten seconds
- * worth of data. We then position the device with the x axis pointing down
- * and log ten more seconds of data. All of this data goes into the same array.
- * The mean value of this array should be zero. The actual mean is the offset
- * that should be applied to accelerometer readings on the x axis.
- * 
- * Repeat this procedure for the y and z axis.
- */
-void IMU_IIM42652::calibrate_accelerometer()
+namespace
 {
-    // Set up timing and create data storage.
-    const int frequency = 100;
-    const int logging_seconds = 2;
-    const int maneuvering_seconds = 1;
-    const std::chrono::milliseconds reading_interval{1000 / frequency};
-    const std::chrono::seconds maneuvering_time{maneuvering_seconds};
-    const std::chrono::seconds logging_time{logging_seconds};
-    const int num_samples_per_round = frequency * logging_seconds;
-
-    uint8_t bf;
-    i2c_read(0x7B, 1, &bf);
-    std::cout << (int)bf << std::endl;
-
-    std::array<double, num_samples_per_round * 2> x_data;
-    std::array<double, num_samples_per_round * 2> y_data;
-    std::array<double, num_samples_per_round * 2> z_data;
-
-    // Log x-up data.
-    std::cout << "Place the device with the accelerometer x axis pointing up" << std::endl;
-    std::cout << "Starting calibration log in " << maneuvering_time.count() << " seconds; ensure the device is undisturbed" << std::endl;
-    std::this_thread::sleep_for(maneuvering_time);
-    std::cout << "Logging data for " << logging_time.count() << " seconds; do not move or vibrate the device" << std::endl;
-
-    for (int i = 0; i < num_samples_per_round; i++)
-    {
-        this->read_IMU();
-        x_data[i] = this->accelerometer_x;
-        std::this_thread::sleep_for(reading_interval);
-    }
-
-    // Log x-down data.
-    std::cout << "Place the device with the accelerometer x axis pointing down" << std::endl;
-    std::cout << "Starting calibration log in " << maneuvering_time.count() << " seconds; ensure the device is undisturbed" << std::endl;
-    std::this_thread::sleep_for(maneuvering_time);
-    std::cout << "Logging data for " << logging_time.count() << " seconds; do not move or vibrate the device" << std::endl;
-
-    for (int i = 0; i < num_samples_per_round; i++)
-    {
-        this->read_IMU();
-        x_data[i + num_samples_per_round] = this->accelerometer_x;
-        std::this_thread::sleep_for(reading_interval);
-    }
-
-    // Log y-up data.
-    std::cout << "Place the device with the accelerometer y axis pointing up" << std::endl;
-    std::cout << "Starting calibration log in " << maneuvering_time.count() << " seconds; ensure the device is undisturbed" << std::endl;
-    std::this_thread::sleep_for(maneuvering_time);
-    std::cout << "Logging data for " << logging_time.count() << " seconds; do not move or vibrate the device" << std::endl;
-
-    for (int i = 0; i < num_samples_per_round; i++)
-    {
-        this->read_IMU();
-        y_data[i] = this->accelerometer_y;
-        std::this_thread::sleep_for(reading_interval);
-    }
-
-    // Log y-down data.
-    std::cout << "Place the device with the accelerometer y axis pointing down" << std::endl;
-    std::cout << "Starting calibration log in " << maneuvering_time.count() << " seconds; ensure the device is undisturbed" << std::endl;
-    std::this_thread::sleep_for(maneuvering_time);
-    std::cout << "Logging data for " << logging_time.count() << " seconds; do not move or vibrate the device" << std::endl;
-
-    for (int i = 0; i < num_samples_per_round; i++)
-    {
-        this->read_IMU();
-        y_data[i + num_samples_per_round] = this->accelerometer_y;
-        std::this_thread::sleep_for(reading_interval);
-    }
-
-    // Log z-up data.
-    std::cout << "Place the device with the accelerometer z axis pointing up" << std::endl;
-    std::cout << "Starting calibration log in " << maneuvering_time.count() << " seconds; ensure the device is undisturbed" << std::endl;
-    std::this_thread::sleep_for(maneuvering_time);
-    std::cout << "Logging data for " << logging_time.count() << " seconds; do not move or vibrate the device" << std::endl;
-
-    for (int i = 0; i < num_samples_per_round; i++)
-    {
-        this->read_IMU();
-        z_data[i] = this->accelerometer_z;
-        std::this_thread::sleep_for(reading_interval);
-    }
-
-    // Log z-down data.
-    std::cout << "Place the device with the accelerometer z axis pointing down" << std::endl;
-    std::cout << "Starting calibration log in " << maneuvering_time.count() << " seconds; ensure the device is undisturbed" << std::endl;
-    std::this_thread::sleep_for(maneuvering_time);
-    std::cout << "Logging data for " << logging_time.count() << " seconds; do not move or vibrate the device" << std::endl;
-
-    for (int i = 0; i < num_samples_per_round; i++)
-    {
-        this->read_IMU();
-        z_data[i + num_samples_per_round] = this->accelerometer_z;
-        std::this_thread::sleep_for(reading_interval);
-    }
-
-    // Compute the accelerometer offsets based on the log data.
-    double x_offset = array_mean_1d(x_data);
-    double y_offset = array_mean_1d(y_data);
-    double z_offset = array_mean_1d(z_data);
-
-    // Set the appropriate register values
-    std::cout << "ax: " << x_offset << std::endl;
-    std::cout << "ay: " << y_offset << std::endl;
-    std::cout << "az: " << z_offset << std::endl;
-}
-#else
-/** \brief This calibration approach is based on acquistion of accelerometer data at random static orientations.
- * An optimisation step attempts to compute the best combination of misalignment, scale, and bias corrections
- * to fit the provided data and given magnitude of acceleration due to gravity, 9.8607 m/s2.
- */
-void IMU_IIM42652::calibrate_accelerometer()
-{
-    IMU_IIM42652 imu{0x68, "/dev/i2c-1"};
-    std::vector<Eigen::Matrix<double, 3, 1>> samples;
-
-    double gravity = 9.8607;
-
-    double alignment_variance = 0.1;
-    double a_yz = 0, a_zy = 0, a_zx = 0; // Axis alignment correction factors.
-
-    double scale_variance = 0.1;
-    double s_ax = 1, s_ay = 1, s_az = 1; // Scale correction factors.
-
-    double bias_variance = 0.1;
-    double b_ax = 0, b_ay = 0, b_az = 0; // Bias correction offsets.
-
-    std::cout << "Randomly orient the sensor. First of 20 sample sets will be logged in ten seconds ..." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds{10});
-
-    // Record accelerometer samples.
-    for (int i = 0; i < 10; i++)
-    {
-        for (int j = 0; j < 20; j++)
-        {
-            imu.read_IMU();
-            samples.emplace_back(Eigen::Matrix<double, 3, 1>{
-                {imu.accelerometer_x},
-                {imu.accelerometer_y},
-                {imu.accelerometer_z}});
-            std::this_thread::sleep_for(std::chrono::milliseconds{10});
-        }
-        std::cout << "Sample set " << i + 1 << " logged. Randomly reorient the sensor within five seconds ..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds{2});
-    }
-
-    // Axis misalignment matrix.
-    Eigen::Matrix<double, 3, 3> alignment{
-        {1, -a_yz, a_zy},
-        {0, 1, -a_zx},
-        {0, 0, 1}};
-    Eigen::Matrix<double, 3, 3> alignment_ones{
-        {0, 1, 1},
-        {0, 0, 1},
-        {0, 0, 0}};
-
-    // Scale factor matrix.
-    Eigen::Matrix<double, 3, 3> scale{
-        {s_ax, 0, 0},
-        {0, s_ay, 0},
-        {0, 0, s_az}};
-    Eigen::Matrix<double, 3, 3> scale_ones{
-        {1, 0, 0},
-        {0, 1, 0},
-        {0, 0, 1}};
-
-    // Bias matrix.
-    Eigen::Matrix<double, 3, 1> bias{
-        {b_ax},
-        {b_ay},
-        {b_az}};
-    Eigen::Matrix<double, 3, 1> bias_ones{
-        {1},
-        {1},
-        {1}};
-
-    // Compute the initial loss
-    double loss = 0;
-    for (Eigen::Matrix<double, 3, 1> &sample : samples)
-    {
-        auto h = alignment * scale * (sample - bias);
-        loss = loss + (gravity * gravity - h.dot(h)) * (gravity * gravity - h.dot(h));
-    }
-
-    // Perform iterative optimisation steps, modifying the correcting factors to minimise loss.
-
-    struct Candidate
+    struct AccelerometerCalibrationCandidate
     {
         Eigen::Matrix<double, 3, 3> alignment;
         Eigen::Matrix<double, 3, 3> scale;
         Eigen::Matrix<double, 3, 1> bias;
         double loss = 0;
+        AccelerometerCalibrationCandidate()
+        {
+        }
         void update_loss(double gravity, std::vector<Eigen::Matrix<double, 3, 1>>& samples)
         {
             this->loss = 0;
@@ -250,73 +63,109 @@ void IMU_IIM42652::calibrate_accelerometer()
                 auto hdoth = h.dot(h);
                 auto x = gravity * gravity - hdoth;
                 this->loss = this->loss + x * x;
-                // std::cout << "hdoth: " << hdoth << std::endl;
-                // std::cout << "x:     " << x << std::endl;
-                // std::cout << "loss:  " << this->loss << std::endl;
             }
         }
     };
-
-    std::vector<Candidate> candidates;
-    for (int i = 0; i < 1000; i++)
-    {
-        // Generate first generation of guesses
-        Candidate cnd;
-        cnd.alignment = alignment + alignment_variance * Eigen::Matrix<double, 3, 3>{{0, rn(1), rn(1)}, {0, 0, rn(1)}, {0, 0, 0}};
-        cnd.scale = scale + scale_variance * Eigen::Matrix<double, 3, 3>{{rn(1), 0, 0}, {0, rn(1), 0}, {0, 0, rn(1)}};
-        cnd.bias = bias + bias_variance * Eigen::Matrix<double, 3, 1>{{rn(1)}, {rn(1)}, {rn(1)}};
-        candidates.push_back(cnd);
-    }
-
-    // Compute the loss for each candidiate and sort. Reduce to best 10%.
-    for (Candidate &candidate : candidates)
-    {
-        candidate.update_loss(gravity, samples);
-    }
-    std::sort(candidates.begin(), candidates.end(), [](Candidate a, Candidate b){ return a.loss < b.loss; });
-    candidates.resize(100);
-
-    // Reduce perturbation size and iterate until convergence.
-    alignment_variance *= 0.1;
-    scale_variance *= 0.1;
-    bias_variance *= 0.1;
-
-    // Regenerate the population and repeatedly prune weaker candidates.
-    for (int i = 0; i < 100; i++)
-    {
-        // Generate 9 new candidates from each remaining candidate.
-        for (int j = 0; j < 100; j++)
-        {
-            for (int k = 0; k < 9; k++)
-            {
-                Candidate new_candidate;
-                new_candidate.alignment = candidates[j].alignment + alignment_variance * Eigen::Matrix<double, 3, 3>{{0, rn(1), rn(1)}, {0, 0, rn(1)}, {0, 0, 0}};
-                new_candidate.scale = candidates[j].scale + scale_variance * Eigen::Matrix<double, 3, 3>{{rn(1), 0, 0}, {0, rn(1), 0}, {0, 0, rn(1)}};
-                new_candidate.bias = candidates[j].bias + bias_variance * Eigen::Matrix<double, 3, 1>{{rn(1)}, {rn(1)}, {rn(1)}};
-                candidates.push_back(new_candidate);
-            }
-        }
-
-        for (Candidate& candidate : candidates)
-        {
-            candidate.update_loss(gravity, samples);
-        }
-
-        // Sort all candidates.
-        std::sort(candidates.begin(), candidates.end(), [](Candidate a, Candidate b){ return a.loss < b.loss; });
-
-        // Prune weakest 90%.
-        candidates.resize(100);
-
-        std::cout << candidates[0].loss << ", " << candidates[99].loss << std::endl;
-    }
-
-    // Display or store the final values.
-    std::cout << "algt: " << candidates[0].alignment << std::endl;
-    std::cout << "scle: " << candidates[0].scale << std::endl;
-    std::cout << "bias: " << candidates[0].bias << std::endl;
 }
-#endif
+
+Vector3 IMU_IIM42652::calibration_accel_sample()
+{
+    kalman_filter_constant_1d kfx{9.81, 1.0};
+    kalman_filter_constant_1d kfy{9.81, 1.0};
+    kalman_filter_constant_1d kfz{9.81, 1.0};
+    
+    while (!kfx.converged && !kfy.converged && !kfz.converged)
+    {
+        this->read_IMU();
+        kfx.update(this->accelerometer_x, 0.1);
+        kfy.update(this->accelerometer_y, 0.1);
+        kfz.update(this->accelerometer_z, 0.1);
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+
+    return {kfx.est, kfy.est, kfz.est};
+}
+
+/** \brief This calibration approach is based on acquistion of accelerometer data at random static orientations.
+ * An optimisation step attempts to compute the best combination of misalignment, scale, and bias corrections
+ * to fit the provided data and given magnitude of acceleration due to gravity, 9.8607 m/s2.
+ */
+// Vector3 IMU_IIM42652::calibrate_accelerometer()
+// {
+//     // Collect samples =============================================================
+//     std::vector<Eigen::Matrix<double, 3, 1>> samples;
+
+//     for (int i = 0; i < 12; i++)
+//     {
+//         std::cout << i+1 << ") Place the IMU in a random orientation ..." << std::endl;
+//         sleep_ms(5000);
+//         auto sample = calibration_accel_sample();
+//         samples.push_back(sample);
+//     }    
+
+//     // Initial parameter estimates assuming perfect measurements.
+//     Eigen::Matrix<double, 3, 3> alignment_correction{
+//         {1, 0, 0},
+//         {0, 1, 0},
+//         {0, 0, 1}
+//     };
+//     Eigen::Matrix<double, 3, 3> scale_correction{
+//         {1, 0, 0},
+//         {0, 1, 0},
+//         {0, 0, 1}
+//     };
+//     Eigen::Matrix<double, 3, 1> bias_correction{
+//         {0}, {0}, {0}
+//     };
+
+//     double alignment_variance = 0.1;
+//     double scale_variance = 0.1;
+//     double bias_variance = 0.1;
+
+//     // Generate random correction candidates.
+//     std::vector<AccelerometerCalibrationCandidate> candidates;
+//     for (int i = 0; i < 1000; i++)
+//     {
+//         AccelerometerCalibrationCandidate candidate;
+//         candidate.alignment = alignment_correction + alignment_variance * Eigen::Matrix<double, 3, 3>{{0, rn(), rn()}, {0, 0, rn()}, {0, 0, 0}};
+//         candidate.scale = scale_correction + scale_variance * Eigen::Matrix<double, 3, 3>{{rn(), 0, 0}, {0, rn(), 0}, {0, 0, rn()}};
+//         candidate.bias = bias_correction + bias_variance * Eigen::Matrix<double, 3, 1>{{rn()}, {rn()}, {rn()}};
+//         candidate.update_loss(9.81, samples);
+//         candidates.push_back(candidate);
+//     }
+
+//     // Sort the candidates from best to worst.
+//     std::sort(candidates.begin(), candidates.end(), [](AccelerometerCalibrationCandidate a, AccelerometerCalibrationCandidate b){ return a.loss < b.loss; });
+
+//     // Drop the worst 90% of candidates and reduce future variances.
+//     candidates.resize(100);
+//     alignment_variance *= 0.1;
+//     scale_variance *= 0.1;
+//     bias_variance *= 0.1;
+
+//     // For n iterations
+//     for (int i = 0; i < 100; i++)
+//     {
+//         // Generate 9 new candidates by mutating each remaining candidate.
+//         for (int j = 0; j < 9; j++)
+//         {
+//             AccelerometerCalibrationCandidate candidate;
+//             candidate.alignment = candidates[j].alignment + alignment_variance * Eigen::Matrix<double, 3, 3>{{0, rn(), rn()}, {0, 0, rn()}, {0, 0, 0}};
+//             candidate.scale = candidates[j].scale + scale_variance * Eigen::Matrix<double, 3, 3>{{rn(), 0, 0}, {0, rn(), 0}, {0, 0, rn()}};
+//             candidate.bias = candidates[j].bias + bias_variance * Eigen::Matrix<double, 3, 1>{{rn()}, {rn()}, {rn()}};
+//             candidate.update_loss(9.81, samples);
+//             candidates.push_back(candidate);
+//         }
+
+//         // Sort the candidates.
+//         std::sort(candidates.begin(), candidates.end(), [](AccelerometerCalibrationCandidate a, AccelerometerCalibrationCandidate b){ return a.loss < b.loss; });
+
+//         // Prune the weakest 90%.
+//         candidates.resize(100);
+//     }
+
+//     return {candidates[0].bias(0, 0), candidates[0].bias(1, 0), candidates[0].bias(2, 0)};
+// }
 
 /** \brief Defines a procedure for calculating calibration offsets
  * for the gyroscope, then records those values in the appropriate
@@ -331,31 +180,20 @@ void IMU_IIM42652::calibrate_accelerometer()
  * This procedure does not consider the change in offset as a
  * function of temperature.
  */
-void IMU_IIM42652::calibrate_gyroscope()
+Vector3 IMU_IIM42652::calibrate_gyroscope()
 {
-    const int num_samples = 1000;
-    std::array<std::array<double, num_samples>, 3> data;
-    std::chrono::milliseconds reading_interval{10};
-    std::cout << "Gyroscope calibration will begin in 5 seconds; do not move the device." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds{5});
-    std::cout << "Calibration has started. Do not move the device for 10 seconds." << std::endl;
-
-    for (int i = 0; i < num_samples; i++)
+    kalman_filter_constant_1d kfx{0, 1};
+    kalman_filter_constant_1d kfy{0, 1};
+    kalman_filter_constant_1d kfz{0, 1};
+    while (!kfx.converged && !kfy.converged && !kfz.converged)
     {
         this->read_IMU();
-        data[0][i] = this->gyroscope_x;
-        data[1][i] = this->gyroscope_y;
-        data[2][i] = this->gyroscope_z;
-        std::this_thread::sleep_for(reading_interval);
+        kfx.update(this->gyroscope_x, 0.02);
+        kfy.update(this->gyroscope_y, 0.02);
+        kfz.update(this->gyroscope_z, 0.02);
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
     }
-    double gx = array_mean_1d(data[0]);
-    double gy = array_mean_1d(data[1]);
-    double gz = array_mean_1d(data[2]);
-
-    // Store offsets in appropriate registers.
-    std::cout << "gx: " << gx << std::endl;
-    std::cout << "gy: " << gy << std::endl;
-    std::cout << "gz: " << gz << std::endl;
+    return {kfx.est, kfy.est, kfz.est};
 }
 
 /** \brief Sets up the I2C file handle and connects to a device on the I2C bus.
@@ -449,6 +287,15 @@ int IMU_IIM42652::IMU_config(uint8_t gyro_config, uint8_t accel_config)
     {
         return ret_code;
     }
+
+    // Set internal gyro filter order.
+    uint8_t val = GYRO_UI_FILTER_ORD_3RD | 0b00000010;
+    ret_code = i2c_write(ADDR_GYRO_CONFIG1, 1, &val);
+    if (ret_code > 0)
+    {
+        return ret_code;
+    }
+
     return ret_code;
 }
 

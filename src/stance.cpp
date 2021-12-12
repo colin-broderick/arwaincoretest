@@ -10,10 +10,9 @@
 #include <string>
 
 #include "stance.hpp"
-#include "utils.hpp"
 #include "logger.hpp"
 #include "vector3.hpp"
-#include "shared_resource.hpp"
+#include "arwain.hpp"
 
 /** \brief Stance detection thread, periodically assesses mode of motion based in IMU and velocity data.
  * Runs as a thread.
@@ -34,16 +33,16 @@ void stance_detector()
     };
 
     // Local buffers.
-    std::deque<vector6> imu_data;
-    std::deque<vector3> vel_data;
-    quaternion rotation_quaternion;
+    std::deque<Vector6> imu_data;
+    std::deque<Vector3> vel_data;
+    Quaternion rotation_quaternion;
 
     // Open file for freefall/entanglement logging
     arwain::Logger freefall_file;
     if (arwain::config.log_to_file)
     {
         freefall_file.open(arwain::folder_date_string + "/freefall.txt");
-        freefall_file << "# time freefall entanglement" << "\n";
+        freefall_file << "time freefall entanglement" << "\n";
     }
 
     // File handle for stance logging.
@@ -51,7 +50,7 @@ void stance_detector()
     if (arwain::config.log_to_file)
     {
         stance_file.open(arwain::folder_date_string + "/stance.txt");
-        stance_file << "# time stance" << "\n";
+        stance_file << "time stance" << "\n";
     }
 
     // Set up timing.
@@ -144,9 +143,9 @@ arwain::StanceDetector::StanceDetector(double freefall_sensitivity, double crawl
  * 
  * \param rotation_quaternion The current rotation quaternion of the device, as determined by some orientation filter.
  */
-void arwain::StanceDetector::update_attitude(quaternion rotation_quaternion)
+void arwain::StanceDetector::update_attitude(Quaternion rotation_quaternion)
 {
-    auto rotated_device_z_component = (rotation_quaternion * quaternion{0, 0, 0, 1} * rotation_quaternion.conjugate()).z;
+    auto rotated_device_z_component = (rotation_quaternion * Quaternion{0, 0, 0, 1} * rotation_quaternion.conjugate()).z;
 
     if (abs(rotated_device_z_component) < 0.707)
     {
@@ -162,17 +161,17 @@ void arwain::StanceDetector::update_attitude(quaternion rotation_quaternion)
  * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
  * \param vel_data Pointer to deq<arr<double>> containing velocity data.
  */
-void arwain::StanceDetector::run(const std::deque<vector6> &imu_data, const std::deque<vector3> &vel_data)
+void arwain::StanceDetector::run(const std::deque<Vector6> &imu_data, const std::deque<Vector3> &vel_data)
 {
     // Crunch the numbers ...
-    std::vector<vector3> accel_data;
-    std::vector<vector3> gyro_data;
+    std::vector<Vector3> accel_data;
+    std::vector<Vector3> gyro_data;
     for (int i = 0; i < 20; i++)
     {
-        accel_data.push_back(vector3{
+        accel_data.push_back(Vector3{
             imu_data[i].acce.x, imu_data[i].acce.y, imu_data[i].acce.z
         });
-        gyro_data.push_back(vector3{
+        gyro_data.push_back(Vector3{
             imu_data[i].gyro.x, imu_data[i].gyro.y, imu_data[i].gyro.z
         });
     }
@@ -269,7 +268,7 @@ void arwain::StanceDetector::run(const std::deque<vector6> &imu_data, const std:
  * \param arr Vector of e.g. 3-velocity, 3-acceleration, etc.
  * \return The index of the element with largest value.
  */
-arwain::StanceDetector::Axis arwain::StanceDetector::biggest_axis(const vector3 &arr)
+arwain::StanceDetector::Axis arwain::StanceDetector::biggest_axis(const Vector3 &arr)
 {
     // This should be using absolute value, since large negative values are 'bigger' than small positive values.
     Axis axis;
@@ -328,7 +327,7 @@ double arwain::StanceDetector::vector_mean(const std::vector<double> &values)
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double arwain::StanceDetector::buffer_mean_magnitude(const std::vector<vector3> &buffer)
+double arwain::StanceDetector::buffer_mean_magnitude(const std::vector<Vector3> &buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -350,7 +349,7 @@ double arwain::StanceDetector::buffer_mean_magnitude(const std::vector<vector3> 
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double arwain::StanceDetector::buffer_mean_magnitude(const std::deque<vector3> &buffer)
+double arwain::StanceDetector::buffer_mean_magnitude(const std::deque<Vector3> &buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -370,9 +369,9 @@ double arwain::StanceDetector::buffer_mean_magnitude(const std::deque<vector3> &
 /** \brief Return the column-wise means of a size (x, 3) vector.
  * \param source_vector Pointer to source array.
  */
-vector3 arwain::StanceDetector::get_means(const std::vector<vector3> &source_vector)
+Vector3 arwain::StanceDetector::get_means(const std::vector<Vector3> &source_vector)
 {
-    vector3 ret;
+    Vector3 ret;
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
@@ -391,9 +390,9 @@ vector3 arwain::StanceDetector::get_means(const std::vector<vector3> &source_vec
  * \param source_vector Pointer to source array.
  * \return A 3-array containing the means.
  */
-vector3 arwain::StanceDetector::get_means(const std::deque<vector3> &source_vector)
+Vector3 arwain::StanceDetector::get_means(const std::deque<Vector3> &source_vector)
 {
-    vector3 ret;
+    Vector3 ret;
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {

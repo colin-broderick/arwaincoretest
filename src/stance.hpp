@@ -48,8 +48,8 @@ namespace arwain
             double m_g_mean_magnitude;
             double m_v_mean_magnitude;
 
-            vector3 m_accel_means;
-            vector3 m_speed_means;
+            Vector3 m_accel_means;
+            Vector3 m_speed_means;
 
             int m_vertical_axis = 1;
             int m_primary_axis;
@@ -87,13 +87,13 @@ namespace arwain
             std::mutex m_stance_lock;
 
             // Utility methods.
-            Axis biggest_axis(const vector3 &arr);
+            Axis biggest_axis(const Vector3 &arr);
             double activity(double a, double g, double v);
             double vector_mean(const std::vector<double> &values);
-            double buffer_mean_magnitude(const std::vector<vector3> &buffer);
-            double buffer_mean_magnitude(const std::deque<vector3> &buffer);
-            vector3 get_means(const std::vector<vector3> &source_vector);
-            vector3 get_means(const std::deque<vector3> &source_vector);
+            double buffer_mean_magnitude(const std::vector<Vector3> &buffer);
+            double buffer_mean_magnitude(const std::deque<Vector3> &buffer);
+            Vector3 get_means(const std::vector<Vector3> &source_vector);
+            Vector3 get_means(const std::deque<Vector3> &source_vector);
             std::array<double, 6> get_means(const std::deque<std::array<double, 6>> &source_vector);
         
         public:
@@ -101,8 +101,8 @@ namespace arwain
             StanceDetector(double freefall_sensitivity, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold);
 
             // General methods.
-            void update_attitude(quaternion rotation_quaternion);
-            void run(const std::deque<vector6> &imu_data, const std::deque<vector3> &vel_data);
+            void update_attitude(Quaternion rotation_quaternion);
+            void run(const std::deque<Vector6> &imu_data, const std::deque<Vector3> &vel_data);
 
             // Getters.
             Stance getStance();
