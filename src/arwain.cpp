@@ -26,7 +26,6 @@
 #include "efaroe.hpp"
 #include "lis3mdl.hpp"
 #include "bmp384.hpp"
-#include "geomagnetic_orientation.hpp"
 
 #include "new_madgwick_FusionAhrs.h"
 #include "new_madgwick_FusionBias.h"
