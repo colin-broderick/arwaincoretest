@@ -28,6 +28,9 @@
 #include "bmp384.hpp"
 #include "geomagnetic_orientation.hpp"
 
+#include "new_madgwick_FusionAhrs.h"
+#include "new_madgwick_FusionBias.h"
+
 // General configuration data.
 namespace arwain
 {
@@ -119,8 +122,9 @@ int arwain::rerun_orientation_filter(const std::string& data_location)
     std::ifstream acce{data_location + "/acce.txt"};
     std::ifstream gyro{data_location + "/gyro.txt"};
 
-    std::ofstream slow{"slow.txt"};
-    std::ofstream fast{"fast.txt"};
+    std::ofstream slow_file{"slow_file.txt"};
+    std::ofstream fast_file{"fast_file.txt"};
+    std::ofstream fusion_file{"fusion_file.txt"};
 
     // Clear data file headers.
     std::string acce_line;
@@ -130,9 +134,14 @@ int arwain::rerun_orientation_filter(const std::string& data_location)
 
     arwain::Madgwick slow_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
     arwain::Madgwick fast_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.9};
-    
+    FusionBias fusionBias;
+    FusionAhrs fusionAhrs;
+    FusionBiasInitialise(&fusionBias, 0.5, 0.005);
+    FusionAhrsInitialise(&fusionAhrs, 0.5);
+
     std::vector<double> slow_yaw;
     std::vector<double> fast_yaw;
+    std::vector<double> fusion_yaw;
 
     while(std::getline(acce, acce_line) && std::getline(gyro, gyro_line))
     {
@@ -144,6 +153,13 @@ int arwain::rerun_orientation_filter(const std::string& data_location)
 
         slow_filter.update(t, gx, gy, gz, ax, ay, az);
         fast_filter.update(t, gx, gy, gz, ax, ay, az);
+        FusionAhrsUpdateWithoutMagnetometer(
+            &fusionAhrs, 
+            {(float)(gx*180.0/3.14159), (float)(gy*180.0/3.14159), (float)(gz*180.0/3.14159)},
+            {(float)(ax/9.81), (float)(ay/9.81), (float)(az/9.81)},
+            0.005
+        );
+
 
         if (slow_yaw.empty())
         {
@@ -162,19 +178,35 @@ int arwain::rerun_orientation_filter(const std::string& data_location)
         {
             fast_yaw.push_back(unwrap_phase_degrees(fast_filter.getYaw(), fast_yaw.back()));
         }
+
+        if (fusion_yaw.empty())
+        {
+            double yaw = FusionQuaternionToEulerAngles(FusionAhrsGetQuaternion(&fusionAhrs)).angle.yaw;
+            fusion_yaw.push_back(yaw);
+        }
+        else
+        {
+            double yaw = FusionQuaternionToEulerAngles(FusionAhrsGetQuaternion(&fusionAhrs)).angle.yaw;
+            fusion_yaw.push_back(unwrap_phase_degrees(yaw, fusion_yaw.back()));
+        }
     }
 
     for (auto& elem : slow_yaw)
     {
-        slow << elem << "\n";
+        slow_file << elem << "\n";
     }
     for (auto& elem : fast_yaw)
     {
-        fast << elem << "\n";
+        fast_file << elem << "\n";
+    }
+    for (auto& elem : fusion_yaw)
+    {
+        fusion_file << elem << "\n";
     }
 
-    slow.close();
-    fast.close();
+    slow_file.close();
+    fast_file.close();
+    fusion_file.close();
 
     std::cout << "Reprocessing complete" << std::endl;
 
@@ -626,7 +658,6 @@ int arwain::execute_inference()
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     std::thread altimeter_thread(altimeter);                     // Uses the BMP280 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
-    // std::thread magnetometer_thread{mag_reader};                 // Reads the magnetic sensor and computes geomagnetic orientation.
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
     // Wait for all threads to terminate.
@@ -638,7 +669,6 @@ int arwain::execute_inference()
     indoor_positioning_thread.join();
     py_inference_thread.join();
     altimeter_thread.join();
-    // magnetometer_thread.join();
     // kalman_filter.join();
 
     return arwain::ExitCodes::Success;
