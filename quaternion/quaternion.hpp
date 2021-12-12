@@ -7,7 +7,7 @@
 
 // Class layout ===================================================================================
 
-class quaternion
+class Quaternion
 {
     private:
         double angle;
@@ -17,15 +17,16 @@ class quaternion
         double w, x, y, z;
 
         // Constructors
-        quaternion();
-        quaternion(const std::array<double, 3>& vec);
-        quaternion(const double angle, const std::array<double, 3>& axis);
-        quaternion(const double w, const double x, const double y, const double z);
+        Quaternion();
+        Quaternion(const std::array<double, 3>& vec);
+        Quaternion(const double angle, const std::array<double, 3>& axis);
+        Quaternion(const double w, const double x, const double y, const double z);
 
         // Static methods
-        static double dotProduct(const quaternion& quat1, const quaternion& quat2);
-        static quaternion slerp(quaternion quat1, const quaternion& quat2, const double t);
-        static quaternion nslerp(quaternion quat1, const quaternion& quat2, const double t);
+        static double dot(const Quaternion& quat1, const Quaternion& quat2);
+        static Quaternion slerp(Quaternion quat1, const Quaternion& quat2, const double t);
+        static Quaternion nslerp(Quaternion quat1, const Quaternion& quat2, const double t);
+        static double angle_between(const Quaternion& q1, const Quaternion& q2);
 
         // Getters
         double getW() const;
@@ -36,19 +37,19 @@ class quaternion
         std::array<double, 3> getAxis() const;
         double norm() const;
         bool isNormal() const;
-        quaternion unit() const;
-        quaternion normalized() const;
-        quaternion conjugate() const;
-        quaternion inverse() const;
+        Quaternion unit() const;
+        Quaternion normalized() const;
+        Quaternion conjugate() const;
+        Quaternion inverse() const;
 };
 
-bool operator==(const quaternion& quat1, const quaternion& quat2);
-quaternion operator+(const quaternion& quat1, const quaternion& quat2);
-quaternion operator-(const quaternion& quat1, const quaternion& quat2);
-quaternion operator*(const quaternion& quat1, const quaternion& quat2);
-quaternion operator-(const quaternion& quat);
-bool operator==(const quaternion& quat1, const quaternion& quat2);
-std::ostream& operator<<(std::ostream& stream, const quaternion& quat);
+bool operator==(const Quaternion& quat1, const Quaternion& quat2);
+Quaternion operator+(const Quaternion& quat1, const Quaternion& quat2);
+Quaternion operator-(const Quaternion& quat1, const Quaternion& quat2);
+Quaternion operator*(const Quaternion& quat1, const Quaternion& quat2);
+Quaternion operator-(const Quaternion& quat);
+bool operator==(const Quaternion& quat1, const Quaternion& quat2);
+std::ostream& operator<<(std::ostream& stream, const Quaternion& quat);
 
 /** \brief Multiply a quaternion by a scalar value.
  * \param scalar The scalar value by which to multiply.
@@ -56,9 +57,9 @@ std::ostream& operator<<(std::ostream& stream, const quaternion& quat);
  * \return The new quaternion after multiplication.
  */
 template<typename Scalar>
-quaternion operator*(const Scalar scalar, const quaternion& quat)
+Quaternion operator*(const Scalar scalar, const Quaternion& quat)
 {
-    return quaternion{
+    return Quaternion{
         scalar * quat.getW(),
         scalar * quat.getX(),
         scalar * quat.getY(),
@@ -72,7 +73,7 @@ quaternion operator*(const Scalar scalar, const quaternion& quat)
  * \return The new quaternion after multiplication.
  */
 template<typename Scalar>
-quaternion operator*(const quaternion& quat, const Scalar scalar)
+Quaternion operator*(const Quaternion& quat, const Scalar scalar)
 {
     return scalar * quat;
 }
@@ -83,7 +84,7 @@ quaternion operator*(const quaternion& quat, const Scalar scalar)
  * \return The new quaternion after division.
  */
 template<typename Divisor>
-quaternion operator/(const quaternion& quat, const Divisor divisor)
+Quaternion operator/(const Quaternion& quat, const Divisor divisor)
 {
     return (1.0/divisor) * quat;
 }

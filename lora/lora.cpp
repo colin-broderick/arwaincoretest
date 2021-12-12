@@ -1,385 +1,249 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-#include <memory>
-#include <unistd.h>
-#include <wiringPi.h>
-#include <wiringPiSPI.h>
+#include <string>
+#include <stdexcept>
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <tuple>
+#include <vector>
 
-#include "lora.h"
-#include "packet.h"
+#include "lora.hpp"
 
-const uint32_t LoRa::bw[10] = {
-	7800,  10400,  15600,
-	20800, 31250,  41700,
-	62500, 125000, 250000,
-	500000
-};
-
-LoRa::LoRa(uint8_t spi, uint8_t ss, uint8_t dio0, uint8_t rst) : _spi_channel(spi),
-																 _ss_pin(ss),
-																 _dio0_pin(dio0),
-																 _rst_pin(rst) {}
-
-LoRa *LoRa::setSpreadFactor(LoRa::sf_t sf)
+LoRa::LoRa(const std::string &address, const bool as_receiver, const LoRa::Frequency frequency_mhz_, const LoRa::Bandwidth bandwidth_khz_, const LoRa::SpreadFactor spread_factor_)
+: is_receiver(as_receiver), frequency_mhz(frequency_mhz_), bandwidth_khz(bandwidth_khz_), spread_factor(spread_factor_)
 {
-	sleep();
-	sf = sf < SF_6
-			 ? SF_6
-			 : sf > SF_12
-				   ? SF_12
-				   : sf;
-	if (sf == SF_6)
-	{
-		setHeaderMode(HM_IMPLICIT);
-		writeRegister(REG_DETECT_OPTIMIZE, 0x05);
-		writeRegister(REG_DETECT_THRESH, 0x0C);
-	}
-	else
-	{
-		writeRegister(REG_DETECT_OPTIMIZE, 0x03);
-		writeRegister(REG_DETECT_THRESH, 0x0A);
-	}
-	writeRegister(REG_MODEM_CONFIG2, (readRegister(REG_MODEM_CONFIG2) & 0x0F) | (sf << 4));
-	return this;
+    // Create SPI device
+    spi_config = spi_config_t{0, 8, 1000000, 0};
+    spi = new SPI(address.c_str(), &spi_config);
+    if (!spi->begin())
+    {
+        throw std::runtime_error("Error starting SPI device - incorrecct device path?");
+    };
+    this->configure();
 }
 
-LoRa::sf_t LoRa::getSpreadFactor()
+LoRa::LoRa(const std::string &address, const bool as_receiver)
+: LoRa(address, as_receiver, LoRa::Frequency::FREQ_868, LoRa::Bandwidth::BW_500K, LoRa::SpreadFactor::SF_12)
 {
-	return (LoRa::sf_t)(readRegister(REG_MODEM_CONFIG2) >> 4);
 }
 
-LoRa *LoRa::setFrequency(uint32_t freq)
+LoRa::~LoRa()
 {
-	uint64_t frf = ((uint64_t)freq << 19) / OSC_FREQ;
-	writeRegister(REG_FRF_MSB, (uint8_t)(frf >> 16));
-	writeRegister(REG_FRF_MID, (uint8_t)(frf >> 8));
-	writeRegister(REG_FRF_LSB, (uint8_t)(frf >> 0));
-	if (freq < FREQ_868)
-	{
-		// set LowFrequencyMode
-		writeRegister(REG_OPMODE, readRegister(REG_OPMODE & 0xC7) | 0x08);
-	}
-	return this;
+    delete spi;
 }
 
-uint32_t LoRa::getFrequency()
+/** \brief Sets radio frequency, bandwidth, spread factor, LNA, PA. */
+void LoRa::configure()
 {
-	uint64_t frf = (readRegister(REG_FRF_MSB) << 16 |
-					readRegister(REG_FRF_MID) << 8 |
-					readRegister(REG_FRF_LSB) << 0);
-	LoRa::freq_t freq = (LoRa::freq_t)((uint64_t)(OSC_FREQ * frf) >> 19);
-	return freq;
+    uint8_t op_mode = OPMODE_LONGRANGE | OPMODE_SLEEP;
+
+    // Set radio frequency.
+    uint32_t FRF_val;
+    switch (this->frequency_mhz)
+    {
+    case Frequency::FREQ_433:
+        FRF_val = 7109363;
+        op_mode |= OPMODE_LOWFREQMODEON;
+        break;
+    case Frequency::FREQ_868:
+        FRF_val = 14221348;
+        break;
+    case Frequency::FREQ_915:
+        FRF_val = 14991398;
+        break;
+    case Frequency::FREQ_923:
+        FRF_val = 15122470;
+        break;
+    }
+    uint8_t FRFMSB = ((FRF_val & 0x00FF0000) >> 16);
+    int8_t FRFMIB = ((FRF_val & 0x0000FF00) >> 8);
+    uint8_t FRFLSB = (FRF_val & 0x000000FF);
+    this->write_register(OPMODE_ADDRESS, op_mode);
+    this->write_register(FRFMSB_ADDRESS, FRFMSB);
+    this->write_register(FRFMIB_ADDRESS, FRFMIB);
+    this->write_register(FRFLSB_ADDRESS, FRFLSB);
+
+    // Set bandwidth to specified option.
+    uint8_t modem_conf = this->read_register(MODEMCONFIG1_ADDRESS);
+    modem_conf &= ~((uint8_t)(LoRa::Bandwidth::BW_7_8K) | (uint8_t)(LoRa::Bandwidth::BW_10_4K) |
+                    (uint8_t)(LoRa::Bandwidth::BW_15_6K) | (uint8_t)(LoRa::Bandwidth::BW_20_8K) |
+                    (uint8_t)(LoRa::Bandwidth::BW_31_25K) | (uint8_t)(LoRa::Bandwidth::BW_41_7K) |
+                    (uint8_t)(LoRa::Bandwidth::BW_62_5K) | (uint8_t)(LoRa::Bandwidth::BW_125K) |
+                    (uint8_t)(LoRa::Bandwidth::BW_250K) | (uint8_t)(LoRa::Bandwidth::BW_500K));
+    modem_conf |= (uint8_t)(this->bandwidth_khz);
+    modem_conf &= ~MODEMCONFIG1_IMPLHDR;
+    this->write_register(MODEMCONFIG1_ADDRESS, modem_conf);
+
+    // Set spread factor to 12.
+    modem_conf = this->read_register(MODEMCONFIG2_ADDRESS);
+    modem_conf &= ~(MODEMCONFIG2_SF(6) | MODEMCONFIG2_SF(7) | MODEMCONFIG2_SF(8) | MODEMCONFIG2_SF(9) | MODEMCONFIG2_SF(10) | MODEMCONFIG2_SF(11) | MODEMCONFIG2_SF(12));
+    modem_conf |= (uint8_t)(this->spread_factor);
+    // Always enable CRC
+    modem_conf |= MODEMCONFIG2_RXCRCON;
+    this->write_register(MODEMCONFIG2_ADDRESS, modem_conf);
+
+    if (this->is_receiver)
+    {
+        // Enter continuous RX mode.
+        op_mode &= ~OPMODE_SLEEP;
+        op_mode |= OPMODE_RXCONTINUOUS;
+    }
+    else
+    {
+        // Enter standby mode.
+        op_mode &= ~OPMODE_SLEEP;
+        op_mode |= OPMODE_STDBY;
+    }
+
+    // Configure power amplifier.
+    uint8_t PA_config = this->read_register(PACONFIG_ADDRESS);
+    PA_config |= PACONFIG_PABOOST;
+    PA_config |= PACONFIG_MAXPWR(7);
+    PA_config |= PACONFIG_OUTPWR(0xf);
+    this->write_register(PACONFIG_ADDRESS, PA_config);
+
+    // Enable low noise amplified for high frequencies.
+    uint8_t LNA = LNA_GAIN_G1;
+    if (frequency_mhz != Frequency::FREQ_433)
+    {
+        LNA |= LNA_BOOST_HF;
+    }
+    this->write_register(LNA_ADDRESS, LNA);
+
+    this->write_register(OPMODE_ADDRESS, op_mode);
+    this->write_register(IRQFLAGS_ADDRESS, 0xff); //clear flags
 }
 
-LoRa *LoRa::setBandwidth(bw_t bandwidth)
+void LoRa::send_message(uint8_t* message, size_t num_bytes)
 {
-	writeRegister(REG_MODEM_CONFIG1, (readRegister(REG_MODEM_CONFIG1) & 0x0F) | (bandwidth << 4));
-	long symDuration = 1000 / (bw[getBandwidth()] / (1L << getSpreadFactor()));
-	// Set LowDataRateOptimize if symbol duration > 16ms
-	writeRegister(REG_MODEM_CONFIG3, (readRegister(REG_MODEM_CONFIG3) & 0x07) | (symDuration > 16 ? 0x08 : 0x00));
-	return this;
+    uint8_t FIFOTxBase = this->read_register(FIFOTXBASE_ADDRESS); //get FIFO write position
+
+    this->write_register(FIFOPTR_ADDRESS, FIFOTxBase); //set FIFO pointer to write position
+    this->write_register(PAYLOADLEN_ADDRESS, num_bytes); //payload is this long
+    this->write_FIFO((char*)message, num_bytes); //write data into FIFO
+    this->write_register(IRQFLAGS_ADDRESS, 0xff); //clear flags
+
+    // enter TX mode
+    uint8_t op_mode = this->read_register(OPMODE_ADDRESS);
+    op_mode &= ~(OPMODE_CAD | OPMODE_RXSINGLE | OPMODE_RXCONTINUOUS | OPMODE_FSRX | OPMODE_FSTX | OPMODE_STDBY | OPMODE_SLEEP);
+    op_mode |= OPMODE_TX | OPMODE_LONGRANGE;
+    this->write_register(OPMODE_ADDRESS, op_mode);
+
+    // Wait until the TX flag is set on.
+    uint8_t IRQFlag;
+    do
+    {
+        IRQFlag = this->read_register(IRQFLAGS_ADDRESS);
+    } while ((IRQFlag & IRQ_TXDONE) == 0);
+
+    // Clear TX flag.
+    this->write_register(IRQFLAGS_ADDRESS, IRQ_TXDONE);
 }
 
-LoRa::bw_t LoRa::getBandwidth()
+/** \brief Transmits arbitrary message encoded as a string. */
+void LoRa::send_message(const std::string &message)
 {
-	return (LoRa::bw_t)(readRegister(REG_MODEM_CONFIG1) >> 4);
+    send_message((uint8_t*)(message.c_str()), message.size());
 }
 
-LoRa *LoRa::setTXPower(uint8_t p)
+/** \brief Reads a register which should contain a known value to ensure the chip is detected.
+ * Should return 0x1A.
+*/
+uint8_t LoRa::test_chip()
 {
-	p = p < 2
-			? 2
-			: p > 17
-				  ? 17
-				  : p;
-	writeRegister(REG_PA_CONFIG, (uint8_t)(PA_BOOST | (p - 2)));
-	return this;
+    return read_register(0x02);
 }
 
-uint8_t LoRa::getTXPower()
+uint8_t LoRa::read_register(uint8_t address)
 {
-	uint8_t pa_config = readRegister(REG_PA_CONFIG);
-	double pmax = pa_config & PA_BOOST
-					  ? 17.0
-					  : 10.8 + 0.6 * (pa_config & 0x38);
-	return pmax - (15 - (pa_config & 0x0F));
+    uint8_t bf[2] = {(uint8_t)(address & 0x7F), 0x00};
+    spi->xfer(bf, 2, bf, 2);
+    return bf[1];
 }
 
-LoRa *LoRa::setHeaderMode(hm_t hm)
+void LoRa::write_register(uint8_t address, uint8_t value)
 {
-	writeRegister(REG_MODEM_CONFIG1, (readRegister(REG_MODEM_CONFIG1) & 0xFE) | hm);
-	return this;
+    uint8_t bf[2] = {(uint8_t)(address | 0x80), value};
+    spi->write(bf, 2);
 }
 
-LoRa::hm_t LoRa::getHeaderMode()
+/** \brief Writes a message to the FIFO. Does not transmit. */
+void LoRa::write_FIFO(const char *str, uint8_t num_bytes)
 {
-	return (LoRa::hm_t)(readRegister(REG_MODEM_CONFIG1) & 0x01);
+    uint8_t bf[LoRa::max_message_size + 1] = {0};
+    bf[0] = FIFO_ADDRESS | 0x80;
+    for (int i = 0; i < num_bytes && i < max_message_size; i++)
+    {
+        bf[i + 1] = str[i];
+    }
+    this->spi->write(bf, num_bytes + 1);
 }
 
-LoRa *LoRa::setCodingRate(cr_t cr)
+void LoRa::read_FIFO(uint8_t num_bytes, uint8_t* out_buffer)
 {
-	writeRegister(REG_MODEM_CONFIG1, (readRegister(REG_MODEM_CONFIG1) & 0xF1) | (cr << 1));
-	return this;
+    uint8_t read_addr = this->read_register(FIFORXBYTEADDR_ADDRESS) - num_bytes;
+    this->write_register(FIFOPTR_ADDRESS, read_addr);
+
+    uint8_t fifo_addr = FIFO_ADDRESS | 0x7F;
+    this->spi->write(&fifo_addr, 1);
+    this->spi->read(out_buffer, num_bytes + 1);
 }
 
-LoRa::cr_t LoRa::getCodingRate()
+bool LoRa::rx(uint8_t* out_buffer)
 {
-	return (LoRa::cr_t)((readRegister(REG_MODEM_CONFIG1) & 0x0E) >> 1);
+    uint8_t IRQFlags = this->read_register(IRQFLAGS_ADDRESS);
+
+    if ((IRQFlags & IRQMASK_RXDONE) && !(IRQFlags & IRQ_PAYLOADCRCERR))
+    {
+        this->write_register(IRQFLAGS_ADDRESS, IRQMASK_RXDONE);
+        uint8_t num_bytes = this->read_register(RXNBBYTES_ADDRESS);
+        this->read_FIFO(num_bytes, out_buffer);
+        return true;
+    }
+    else if (IRQFlags & (IRQMASK_RXDONE | IRQ_PAYLOADCRCERR))
+    {
+        this->write_register(IRQFLAGS_ADDRESS, IRQMASK_RXDONE | IRQ_PAYLOADCRCERR);
+    }
+
+    return false;
 }
 
-LoRa *LoRa::setSyncWord(uint8_t sw)
+std::tuple<bool, std::string> LoRa::receive_string()
 {
-	writeRegister(REG_SYNC_WORD, sw);
-	return this;
+    for (int i = 0; i < 100; i++)
+    {
+        uint8_t rx_buffer[LoRa::max_message_size] = {0};
+        if (rx(rx_buffer))
+        {
+            return {true, std::string{(char*)(&(rx_buffer[1]))}};
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+
+    return {false, ""};
 }
 
-uint8_t LoRa::getSyncWord()
+std::tuple<bool, std::vector<uint8_t>> LoRa::receive_bytes()
 {
-	return readRegister(REG_SYNC_WORD);
+    std::vector<uint8_t> rx_msg;
+    for (int i = 0; i < 100; i++)
+    {
+        uint8_t rx_buffer[LoRa::max_message_size] = {0};
+        if (rx(rx_buffer))
+        {
+            for (int j = 1; j < LoRa::max_message_size; j++)
+            {
+                rx_msg.push_back(rx_buffer[i]);
+            }
+            return {true, rx_msg};
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+
+    return {false, rx_msg};
 }
 
-LoRa *LoRa::enableCRC()
+std::ostream& operator<<(std::ostream& stream, arwain::LoraPacket packet)
 {
-	writeRegister(REG_MODEM_CONFIG2, readRegister(REG_MODEM_CONFIG2) | 0x04);
-	return this;
-}
-
-LoRa *LoRa::disableCRC()
-{
-	writeRegister(REG_MODEM_CONFIG2, readRegister(REG_MODEM_CONFIG2) & 0xFB);
-	return this;
-}
-
-LoRa *LoRa::setLNAGain(lna_gain_t gain)
-{
-	if (gain == LNA_AGC)
-	{
-		writeRegister(REG_MODEM_CONFIG3, readRegister(REG_MODEM_CONFIG3) | 0x04);
-	}
-	else
-	{
-		writeRegister(REG_MODEM_CONFIG3, readRegister(REG_MODEM_CONFIG3) & 0xFB);
-		writeRegister(REG_LNA, (readRegister(REG_LNA) & 0x1F) | gain);
-	}
-	return this;
-}
-
-LoRa::lna_gain_t LoRa::getLNAGain()
-{
-	if (readRegister(REG_MODEM_CONFIG3) & 0x04)
-	{
-		return LNA_AGC;
-	}
-	return (LoRa::lna_gain_t)(readRegister(REG_LNA) >> 5);
-}
-
-LoRa *LoRa::setLNABoost(bool boost)
-{
-	writeRegister(REG_LNA, (readRegister(REG_LNA) & 0xFA) | (boost ? 0x03 : 0x00));
-	return this;
-}
-
-bool LoRa::getLNABoost()
-{
-	return (readRegister(REG_LNA) & 0x03) == 0x03;
-}
-
-int LoRa::getFrequencyError()
-{
-	uint32_t fei =
-		(readRegister(REG_FEI_MSB) & 0x0F) << 16 |
-		readRegister(REG_FEI_MID) << 8 |
-		readRegister(REG_FEI_LSB);
-	return (uint32_t)((double)((uint64_t)(fei << 24) / OSC_FREQ) * (double)(bw[getBandwidth()] / 500.0));
-}
-
-void LoRa::selectReceiver() { digitalWrite(_ss_pin, LOW); }
-void LoRa::deselectReceiver() { digitalWrite(_ss_pin, HIGH); }
-
-uint8_t LoRa::readRegister(uint8_t addr)
-{
-	_spibuf[0] = addr & 0x7f;
-	_spibuf[1] = 0x00;
-	selectReceiver();
-	wiringPiSPIDataRW(_spi_channel, _spibuf, 2);
-	deselectReceiver();
-	return _spibuf[1];
-}
-
-void LoRa::writeRegister(uint8_t addr, uint8_t val)
-{
-	_spibuf[0] = addr | 0x80;
-	_spibuf[1] = val;
-	selectReceiver();
-	wiringPiSPIDataRW(_spi_channel, _spibuf, 2);
-	deselectReceiver();
-}
-
-void LoRa::setOpMode(uint8_t mode)
-{
-	// Preserve AccessSharedReg and LowFrequencyModeOn
-	writeRegister(REG_OPMODE, (readRegister(REG_OPMODE) & 0xC8) | OPMODE_LORA | mode);
-}
-
-uint8_t LoRa::getOpMode()
-{
-	return readRegister(REG_OPMODE) & OPMODE_MASK;
-}
-
-void LoRa::sleep()
-{
-	if (getOpMode() != OPMODE_SLEEP)
-	{
-		setOpMode(OPMODE_SLEEP);
-	}
-}
-
-void LoRa::standby()
-{
-	if (getOpMode() != OPMODE_STANDBY)
-	{
-		setOpMode(OPMODE_STANDBY);
-	}
-}
-
-uint8_t LoRa::version()
-{
-	digitalWrite(_rst_pin, LOW);
-	delay(100);
-	digitalWrite(_rst_pin, HIGH);
-	delay(100);
-	uint8_t version = readRegister(REG_VERSION);
-	return version;
-}
-
-bool LoRa::begin()
-{
-	wiringPiSetup();
-	pinMode(_ss_pin, OUTPUT);
-	pinMode(_dio0_pin, INPUT);
-	pinMode(_rst_pin, OUTPUT);
-	wiringPiSPISetup(_spi_channel, 500000);
-	sleep();
-	if (version() != 0x12)
-	{
-		// Unknown chipset
-		return false;
-	}
-	writeRegister(REG_FIFO_TX_BASE_ADDR, 0);
-	writeRegister(REG_FIFO_RX_BASE_ADDR, 0);
-	setLNABoost(true);
-	setLNAGain(LNA_AGC);
-	writeRegister(REG_PA_RAMP, (readRegister(REG_PA_RAMP) & 0xF0) | 0x08);
-	return true;
-}
-
-size_t LoRa::receive(unsigned char *buf)
-{
-	size_t bytes = 0;
-	uint8_t irq_flags = readRegister(REG_IRQ_FLAGS);
-	writeRegister(REG_IRQ_FLAGS, irq_flags); // clear IRQs
-	if ((irq_flags & IRQ_RXDONE_MASK) && ((irq_flags & IRQ_CRCERR_MASK) == 0)) {
-		// Received a packet
-		bytes = readRegister(REG_RX_NB_BYTES);
-		writeRegister(REG_FIFO_ADDR_PTR, readRegister(REG_FIFO_RX_CURRENT_ADDR));
-		setOpMode(OPMODE_STANDBY);
-		for (size_t i = 0; i < bytes; i++) {
-			*(buf + i) = readRegister(REG_FIFO);
-		}
-	}
-	return bytes;
-}
-
-LoRaPacket LoRa::receivePacket()
-{
-	/*
-	TODO
-
-	In order to enable a received loop we would want a receive method with a timeout, so we can
-	switch back to transmit mode when the schedule demands it. This method would be the logical
-	place to implement that timeout.
-
-	Replace the while loop with
-
-		while ((bytes = receive(buf)) == 0 || time < switch_time);
-
-	where switch_time is the time we want to receive until. This obviously makes it possible to
-	fail to receive messages, so messages will need repeated transmissions for safety. For exa-
-	mple, sea level pressure updates could be transmitted every minute or so.
-	*/
-
-	unsigned char buf[256];
-	setHeaderMode(HM_EXPLICIT);
-	writeRegister(REG_FIFO_ADDR_PTR, 0);
-	setOpMode(OPMODE_RX);
-	size_t bytes = 0;
-	while ((bytes = receive(buf)) == 0) {  //   <--- timeout here
-		usleep(10000);
-	}
-	int packet_rssi = readRegister(REG_PACKET_RSSI) - (getFrequency() < FREQ_868 ? 164 : 157);
-	float snr = ((int8_t)readRegister(REG_PACKET_SNR)) * 0.25;
-	return LoRaPacket(buf, bytes, packet_rssi, getFrequencyError(), snr);
-}
-
-size_t LoRa::write(const uint8_t *data, size_t size)
-{
-	uint8_t currentLength = readRegister(REG_PAYLOAD_LENGTH);
-	if (currentLength + size > MAX_PACKET_LEN)
-	{
-		size = MAX_PACKET_LEN - currentLength;
-	}
-	unsigned char *buf;
-	if (size > 0 && (buf = (unsigned char *)calloc(1, size + 2)))
-	{
-		buf[0] = REG_FIFO | 0x80;
-		for (size_t i = 0; i < size; i++)
-		{
-			buf[i + 1] = data[i];
-		}
-		selectReceiver();
-		int bytes = wiringPiSPIDataRW(_spi_channel, buf, size + 1);
-		deselectReceiver();
-		writeRegister(REG_PAYLOAD_LENGTH, currentLength + size);
-		free(buf);
-		return bytes > 1 ? bytes - 1 : bytes;
-	}
-	return 0;
-}
-
-size_t LoRa::transmitPacket(LoRaPacket *packet)
-{
-	standby();
-	writeRegister(REG_FIFO_ADDR_PTR, 0x80);
-	writeRegister(REG_PAYLOAD_LENGTH, 0);
-	size_t size = packet->payloadLength();
-	unsigned char *payload = packet->getPayload();
-	while (size > 0)
-	{
-		size_t bytes = write(payload, size);
-		if (bytes == 0)
-			break;
-		payload += bytes;
-		size -= bytes;
-	}
-
-	// This test confirmed that the message is correctly placed into the FIFO buffer on the chip.
-	writeRegister(REG_FIFO_ADDR_PTR, 0x80);
-	unsigned char b[257] = {0};
-	for (int i = 0; i < 256; i++)
-	{
-		b[i] = readRegister(REG_FIFO);
-	}
-	printf("FIFO before tx:  %d %d %d %d %d %d %d %d \n", b[0],b[0],b[0],b[0],b[0],b[0],b[0],b[0]);
-	printf("END\n");
-	setOpMode(OPMODE_TX);
-
-	// Spin until transmission complete.
-	while ((readRegister(REG_IRQ_FLAGS) & IRQ_TXDONE_MASK) == 0)
-	{
-		usleep(1000);
-	}
-	writeRegister(REG_IRQ_FLAGS, IRQ_TXDONE_MASK);
-	sleep();
-	return packet->payloadLength() - size;
+    stream << packet.x << " " << packet.y << " " << packet.z << " " << packet.alerts;
+    return stream;
 }

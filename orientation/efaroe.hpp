@@ -28,8 +28,8 @@ namespace arwain
         public:
             // Constructors.
             eFaroe(
-                quaternion initial_quaternion,
-                vector3 gyro_bias,
+                Quaternion initial_quaternion,
+                Vector3 gyro_bias,
                 double gyro_error,
                 double beta,
                 double zeta
@@ -66,26 +66,29 @@ namespace arwain
             double getPitch() ;
             double getRoll() ;
             double getYaw() ;
-            quaternion getQuat();
+            Quaternion getQuat();
             std::array<double, 3> getEuler();
+
+            // Setters
+            void setQ(double, double, double, double);
         
         private:
             const double degrees_per_radian = 57.295779513082320876798154814105;
             const double radians_per_degree = 0.01745329251994329576923690768489;
 
             // Current orientation quaternion.
-            quaternion m_quaternion;
+            Quaternion m_quaternion;
 
             // Gyroscope properties.
-            vector3 m_gyro_bias;
+            Vector3 m_gyro_bias;
             double m_gyro_error;
             double m_true_error;
 
             // Magnetic field properties.
             double uk_dip;
             double emf_x_test;
-            vector3 local_emf_test;
-            vector3 emf;
+            Vector3 local_emf_test;
+            Vector3 emf;
             
             // Filter parameters.
             double m_zeta;
