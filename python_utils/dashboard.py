@@ -64,6 +64,11 @@ def read_dataset(dataset, facet):
             data["time"] = (data["time"] - data["time"][0])/1e9
             data_load["madgwick_mag_euler_orientation"] = data
         except: pass
+        try:
+            data = pd.read_csv(f"{WD}/{dataset}/pressure.txt", delimiter=" ")
+            data["time"] = (data["time"] - data["time"][0])/1e9
+            data_load["pressure"] = data
+        except: pass
         all_data[dataset] = data_load
     return all_data[dataset].get(facet)
 
@@ -100,10 +105,10 @@ app.layout = html.Div(children=[
                         value=datasets[0],
                         clearable=False,
                     ),
-                    style={"float":"left", "width":"20%", "margin":"5px"}
+                    style={"float":"left", "width":"40%", "margin":"5px"}
                 ),
                 html.Button("Refresh", id="refresh_button", n_clicks=0, style={"float":"left", "margin":"5px"}),
-                html.Button("Delete", id="delete_button", n_clicks=0, style={"float":"left", "margin":"5px"}),
+                html.Button("Delete", id="delete_button", n_clicks=0, style={"float":"right", "margin":"5px"}),
                 html.Div(id="hidden-div", style={"display":"none"})
             ],
             style={"display":"flex", "width":"100%", "align-items":"center", "justify-content":"left"}
@@ -120,12 +125,20 @@ app.layout = html.Div(children=[
             html.Div([
                 
             ]),
+            # html.Div(
+            #     [dcc.Graph(id='quaternion_orientation_plot', figure=fig)],
+            #     style={"width":"49%","float":"left"}
+            # ),
             html.Div(
-                [dcc.Graph(id='quaternion_orientation_plot', figure=fig)],
+                [dcc.Graph(id='euler_plot', figure=fig)],
                 style={"width":"49%","float":"left"}
             ),
             html.Div(
-                [dcc.Graph(id='euler_plot', figure=fig)],
+                [dcc.Graph(id='pressure_temperature_plot', figure=fig)],
+                style={"width":"49%","float":"left"}
+            ),
+            html.Div(
+                [dcc.Graph(id='pressure_altitude_plot', figure=fig)],
                 style={"width":"49%","float":"left"}
             ),
             html.Div(
@@ -197,22 +210,22 @@ def update_list(clicks):
     return [{"label":i,"value":i} for i in datasets]
 
 
-## Orientation plot callback ###################################################
-@app.callback(
-    dash.dependencies.Output("quaternion_orientation_plot", "figure"),
-    dash.dependencies.Input("dataset_list", "value")
-)
-def update_orientation_plot(dataset):
-    df = read_dataset(dataset, "madgwick_game_rv")
-    # fig = px.scatter(df, x=df["x"], y=df["y"], title="Orientation over time")
-    fig = go.Figure()
-    fig.update_layout(title="Rotation quaternion", title_x=0.5)
-    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
-    fig.add_trace(go.Scatter(x=df["time"], y=df["w"], mode="lines", name="w"))
-    fig.add_trace(go.Scatter(x=df["time"], y=df["x"], mode="lines", name="x"))
-    fig.add_trace(go.Scatter(x=df["time"], y=df["y"], mode="lines", name="y"))
-    fig.add_trace(go.Scatter(x=df["time"], y=df["z"], mode="lines", name="z"))
-    return fig
+# ## Orientation plot callback ###################################################
+# @app.callback(
+#     dash.dependencies.Output("quaternion_orientation_plot", "figure"),
+#     dash.dependencies.Input("dataset_list", "value")
+# )
+# def update_orientation_plot(dataset):
+#     df = read_dataset(dataset, "madgwick_game_rv")
+#     # fig = px.scatter(df, x=df["x"], y=df["y"], title="Orientation over time")
+#     fig = go.Figure()
+#     fig.update_layout(title="Rotation quaternion", title_x=0.5)
+#     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+#     fig.add_trace(go.Scatter(x=df["time"], y=df["w"], mode="lines", name="w"))
+#     fig.add_trace(go.Scatter(x=df["time"], y=df["x"], mode="lines", name="x"))
+#     fig.add_trace(go.Scatter(x=df["time"], y=df["y"], mode="lines", name="y"))
+#     fig.add_trace(go.Scatter(x=df["time"], y=df["z"], mode="lines", name="z"))
+#     return fig
 
 ## Euler orientation callback ##################################################
 @app.callback(
@@ -240,6 +253,34 @@ def update_euler_plot(dataset):
     fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-yaw"))
 
     return fig
+
+
+@app.callback(
+    dash.dependencies.Output("pressure_altitude_plot", "figure"),
+    dash.dependencies.Input("dataset_list", "value")
+)
+def update_altitude_plot(dataset):
+    df_altitude = read_dataset(dataset, "pressure")
+    fig = go.Figure()
+    fig.update_layout(title="Altitude (from pressure/temperature)", title_x=0.5)
+    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+    fig.add_trace(go.Scatter(x=df_altitude["time"], y=df_altitude["altitude"], mode="lines", name="Altitude [m]"))
+    return fig
+
+## Euler orientation callback ##################################################
+@app.callback(
+    dash.dependencies.Output("pressure_temperature_plot", "figure"),
+    dash.dependencies.Input("dataset_list","value")
+)
+def update_pressure_temperature_plot(dataset):
+    df_pressure = read_dataset(dataset, "pressure")
+    fig = go.Figure()
+    fig.update_layout(title="Pressure/Temperature", title_x=0.5)
+    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+    fig.add_trace(go.Scatter(x=df_pressure["time"], y=df_pressure["pressure"]/1e5, mode="lines", name="Pressure [hPa/1000]"))
+    fig.add_trace(go.Scatter(x=df_pressure["time"], y=df_pressure["temperature"], mode="lines", name="Temperature [C]"))
+    return fig
+
 
 
 
