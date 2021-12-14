@@ -10,16 +10,16 @@ Multi_IIM42652::Multi_IIM42652()
 
 void Multi_IIM42652::read_IMU()
 {
-    imu1.read_IMU();
-    imu2.read_IMU();
-    imu3.read_IMU();
+    auto [accel1, gyro1] = imu1.read_IMU();
+    auto [accel2, gyro2] = imu2.read_IMU();
+    auto [accel3, gyro3] = imu3.read_IMU();
    
-    this->accelerometer_x = (imu1.accelerometer_x + imu2.accelerometer_x + imu3.accelerometer_x) / 3.0;
-    this->accelerometer_y = (imu1.accelerometer_y + imu2.accelerometer_y + imu3.accelerometer_y) / 3.0;
-    this->accelerometer_z = (imu1.accelerometer_z + imu2.accelerometer_z + imu3.accelerometer_z) / 3.0;
-    this->gyroscope_x = (imu1.gyroscope_x + imu2.gyroscope_x + imu3.gyroscope_x) / 3.0;
-    this->gyroscope_y = (imu1.gyroscope_y + imu2.gyroscope_y + imu3.gyroscope_y) / 3.0;
-    this->gyroscope_z = (imu1.gyroscope_z + imu2.gyroscope_z + imu3.gyroscope_z) / 3.0;
+    this->accelerometer_x = (accel1.x + accel2.x + accel3.x) / 3.0;
+    this->accelerometer_y = (accel1.y + accel2.y + accel3.y) / 3.0;
+    this->accelerometer_z = (accel1.z + accel2.z + accel3.z) / 3.0;
+    this->gyroscope_x = (gyro1.x + gyro2.x + gyro3.x) / 3.0;
+    this->gyroscope_y = (gyro1.y + gyro2.y + gyro3.y) / 3.0;
+    this->gyroscope_z = (gyro1.z + gyro2.z + gyro3.z) / 3.0;
 }
 
 double Multi_IIM42652::read_temperature()

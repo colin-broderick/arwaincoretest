@@ -92,7 +92,7 @@ public:
     void soft_reset();
     int IMU_config(uint8_t gyro_config, uint8_t accel_config);
     void set_resolutions(double accel, double gyro);
-    void read_IMU();
+    Vector6 read_IMU();
     double read_temperature();
     Vector3 calibrate_gyroscope();
     // Vector3 calibrate_accelerometer();
@@ -102,15 +102,6 @@ private:
     double accel_resolution = 0;
     double gyro_resolution = 0;
     int handle = 0;
-
-private:
-    void i2c_init(const int address, const std::string& bus_name);
-    void enable();
-    int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
-    int i2c_write(int reg_addr, int bytes, uint8_t *buffer);
-    void read_IMU_raw_data();
-
-public:
     double temperature = 0;
     double gyroscope_x = 0;
     double gyroscope_y = 0;
@@ -118,6 +109,13 @@ public:
     double accelerometer_x = 0;
     double accelerometer_y = 0;
     double accelerometer_z = 0;
+
+private:
+    void i2c_init(const int address, const std::string& bus_name);
+    void enable();
+    int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
+    int i2c_write(int reg_addr, int bytes, uint8_t *buffer);
+    void read_IMU_raw_data();
 };
 
 /** \brief Compute the mean value of a 1-dimensional ArrayType of doubles.

@@ -16,34 +16,34 @@ int main()
 
     while (true)
     {
-        imu1.read_IMU();
+        Vector6 imu1_data = imu1.read_IMU();
         filter1.update(
-            imu1.gyroscope_x,
-            imu1.gyroscope_y,
-            imu1.gyroscope_z,
-            imu1.accelerometer_x,
-            imu1.accelerometer_y,
-            imu1.accelerometer_z
+            imu1_data.gyro.x,
+            imu1_data.gyro.y,
+            imu1_data.gyro.z,
+            imu1_data.acce.x,
+            imu1_data.acce.y,
+            imu1_data.acce.z
         );
 
-        imu2.read_IMU();
+        Vector6 imu2_data = imu2.read_IMU();
         filter2.update(
-            imu2.gyroscope_x,
-            imu2.gyroscope_y,
-            imu2.gyroscope_z,
-            imu2.accelerometer_x,
-            imu2.accelerometer_y,
-            imu2.accelerometer_z
+            imu2_data.gyro.x,
+            imu2_data.gyro.y,
+            imu2_data.gyro.z,
+            imu2_data.acce.x,
+            imu2_data.acce.y,
+            imu2_data.acce.z
         );
 
-        imu3.read_IMU();
+        Vector6 imu3_data = imu3.read_IMU();
         filter3.update(
-            imu3.gyroscope_x,
-            imu3.gyroscope_y,
-            imu3.gyroscope_z,
-            imu3.accelerometer_x,
-            imu3.accelerometer_y,
-            imu3.accelerometer_z
+            imu3_data.gyro.x,
+            imu3_data.gyro.y,
+            imu3_data.gyro.z,
+            imu3_data.acce.x,
+            imu3_data.acce.y,
+            imu3_data.acce.z
         );
 
         std::cout << "FILTER1: " << filter1.getW() << " " << filter1.getX() << " " << filter1.getY() << " " << filter1.getZ() << "\n";
