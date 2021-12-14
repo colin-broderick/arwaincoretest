@@ -489,7 +489,7 @@ int arwain::execute_inference()
     std::thread transmit_lora_thread(transmit_lora);             // LoRa packet transmissions.
     std::thread std_output_thread(std_output);                   // Prints useful output to std out.
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
-    std::thread altimeter_thread(altimeter);                     // Uses the BMP280 sensor to determine altitude.
+    std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
