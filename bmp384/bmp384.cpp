@@ -55,6 +55,15 @@ double BMP384::compensate_temperature(uint32_t temperature_uncompensated)
 
     calib_data.t_lin = partial_data2 + (partial_data1 * partial_data1) * calib_data.par_t3;
 
+    if (calib_data.t_lin < BMP384::min_temp)
+    {
+        calib_data.t_lin = (double)(BMP384::min_temp);
+    }
+    if (calib_data.t_lin > BMP384::max_temp)
+    {
+        calib_data.t_lin = (double)(BMP384::max_temp);
+    }
+
     return calib_data.t_lin;
 }
 
@@ -73,7 +82,7 @@ double BMP384::compensate_pressure(uint32_t pressure_uncompensated)
     partial_data1 = calib_data.par_p2 * calib_data.t_lin;
     partial_data2 = calib_data.par_p3 * calib_data.t_lin * calib_data.t_lin;
     partial_data3 = calib_data.par_p4 * calib_data.t_lin * calib_data.t_lin * calib_data.t_lin;
-    partial_out2 = (double)pressure_uncompensated * calib_data.par_p1 + partial_data1 + partial_data2 + partial_data3;
+    partial_out2 = (double)pressure_uncompensated * (calib_data.par_p1 + partial_data1 + partial_data2 + partial_data3);
 
     partial_data1 = (double)pressure_uncompensated * (double)pressure_uncompensated;
     partial_data2 = calib_data.par_p9 + calib_data.par_p10 * calib_data.t_lin;
