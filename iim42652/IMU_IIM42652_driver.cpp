@@ -11,19 +11,6 @@
 #include "kalman.hpp"
 #include "vector3.hpp"
 
-static void sleep_ms(int milliseconds)
-{
-    std::this_thread::sleep_for(std::chrono::milliseconds{milliseconds});
-}
-
-/** \brief Produces a random number from a uniform distribution [-1, 1]. */
-static double rn()
-{
-    static std::default_random_engine gen;
-    static std::uniform_real_distribution<double> dist{-1.0, 1.0};
-    return dist(gen);
-}
-
 /** \brief Constructor.
  * \param[in] bus_address The I2C address of the device.
  * \param[in] bus_name The bus on which the device is found, e.g. "/dev/i2c-1".
