@@ -66,27 +66,13 @@ int arwain::test_imu()
     // Initialize the IMU.
     IMU_IIM42652 imu{0x68, "/dev/i2c-1"};
 
-    // Local buffers for IMU data
-    Vector3 accel_data;
-    Vector3 gyro_data;
-
     // Set up timing.
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{10};
 
     while (!arwain::shutdown)
     {
-        imu.read_IMU();
-        accel_data = {
-            imu.accelerometer_x,
-            imu.accelerometer_y,
-            imu.accelerometer_z
-        };
-        gyro_data = {
-            imu.gyroscope_x,
-            imu.gyroscope_y,
-            imu.gyroscope_z,
-        };
+        auto [accel_data, gyro_data] = imu.read_IMU();
 
         // Display IMU data.
         std::cout << time.time_since_epoch().count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";
@@ -207,8 +193,6 @@ int arwain::test_ori(int frequency)
     euler_orientation_t euler;
     Quaternion quat;
 
-    Vector3 gyro;
-    Vector3 accel;
     std::cout << "Starting orientation filter at " << frequency << " Hz" << std::endl;
 
     while (!shutdown)
@@ -217,10 +201,8 @@ int arwain::test_ori(int frequency)
         auto timeCount = time.time_since_epoch().count();
         std::this_thread::sleep_until(time);
 
-        imu.read_IMU();
-        gyro = {imu.gyroscope_x, imu.gyroscope_y, imu.gyroscope_z};
+        auto [accel, gyro] = imu.read_IMU();
         gyro = gyro - config.gyro1_bias;
-        accel = {imu.accelerometer_x, imu.accelerometer_y, imu.accelerometer_z};
         accel = accel - config.accel1_bias;
         
         filter.update(timeCount, gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);

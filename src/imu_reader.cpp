@@ -92,8 +92,6 @@ void imu_reader()
     arwain::Madgwick madgwick_filter_mag{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
 
     // Local buffers for IMU data.
-    Vector3 accel_data1;
-    Vector3 gyro_data1;
     Vector3 world_accel_data1;
     Vector3 world_gyro_data1;
     Vector3 magnet;
@@ -157,17 +155,12 @@ void imu_reader()
         cycle_count++;
         timeCount = std::chrono::system_clock::now().time_since_epoch().count();
 
-        imu1.read_IMU();
-        imu2.read_IMU();
-        imu3.read_IMU();
+        auto [accel_data1, gyro_data1] = imu1.read_IMU();
 
         magnet = magn.read();
         magnet.x = magnet.x + magnet.y*arwain::config.mag_scale_xy + magnet.z*arwain::config.mag_scale_xz; // scale/axis correction
         magnet.y = magnet.y + magnet.z*arwain::config.mag_scale_yz; // scale/axis correction
         magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
-
-        accel_data1 = {imu1.accelerometer_x, imu1.accelerometer_y, imu1.accelerometer_z};
-        gyro_data1 = {imu1.gyroscope_x, imu1.gyroscope_y, imu1.gyroscope_z};
 
         // Adjust for biases according to configuration file.
         accel_data1 = accel_data1 - arwain::config.accel1_bias;
