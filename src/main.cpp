@@ -45,6 +45,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "velocity_prediction.hpp"
 #include "timers.hpp"
 #include "arwain.hpp"
+#include "arwain_tests.hpp"
 #include "calibration.hpp"
 
 /** \brief Capture the SIGINT signal for clean exit.

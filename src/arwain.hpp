@@ -75,16 +75,6 @@ namespace arwain::Buffers
 namespace arwain
 {
     void setup(const InputParser& input);
-    int test_imu();
-    int test_lora_tx();
-    int test_lora_rx();
-    #ifdef USEROS
-    int test_mag(int argc, char **argv);
-    #else
-    int test_mag();
-    #endif
-    int test_pressure();
-    int test_ori(int rate);
     int execute_inference();
     int rerun_orientation_filter(const std::string& data_location);
 }
