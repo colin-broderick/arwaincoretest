@@ -24,8 +24,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 set(PROJECT_CPP_FILES src/main.cpp src/stance.cpp src/velocity_prediction.cpp src/altimeter.cpp src/imu_reader.cpp src/std_output.cpp src/transmit_lora.cpp src/multi_imu.cpp src/arwain.cpp src/arwain_tests.cpp)
 
 add_subdirectory(iim42652)
-add_subdirectory(bmi270)
-add_subdirectory(bmp280)
 add_subdirectory(orientation)
 add_subdirectory(lora)
 add_subdirectory(quaternion)
@@ -47,7 +45,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver bmi270_driver bmp280_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter)
+target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/arwain.conf DESTINATION /etc)
