@@ -106,6 +106,7 @@ namespace arwain::Intervals
     inline const unsigned int STD_OUT_INTERVAL = 1000;
     inline const unsigned int IPS_INTERVAL = 500;
     inline const unsigned int MAG_READ_INTERVAL = 100;
+    inline const unsigned int ALTIMETER_INTERVAL = 20;
 }
 
 namespace arwain::BufferSizes
