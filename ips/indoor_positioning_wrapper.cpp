@@ -15,7 +15,6 @@
  */
 void indoor_positioning()
 {
-    return;
     arwain::CornerDetector corner_detector{11, 115.0, 0.20}; // 11 * 0.2 means a window of 11 points separated by at least 20 cm each, so about 2 m total.
     arwain::FloorTracker floor_tracker{5, 0.10, 0.20}; // UK stairs are gradient approx. 0.9.
 
@@ -55,9 +54,9 @@ void indoor_positioning()
 
         floor_tracker.update(new_position);
         std::cout << time.time_since_epoch().count() << " "
-                          << floor_tracker.tracked_position.x << " "
-                          << floor_tracker.tracked_position.y << " "
-                          << floor_tracker.tracked_position.z << "\n";
+                  << floor_tracker.tracked_position.x << " "
+                  << floor_tracker.tracked_position.y << " "
+                  << floor_tracker.tracked_position.z << "\n";
     }
 
     if (arwain::config.log_to_file)
@@ -65,70 +64,6 @@ void indoor_positioning()
         corner_log.close();
         tracked_floor_log.close();
     }
-
-    /*
-    // Quit immediately if IPS disabled by configuration file.
-    if (!arwain::config.use_indoor_positioning_system)
-    {
-        return;
-    }
-
-    // TODO Create IPS object
-    arwain::IndoorPositioningWrapper ips;
-    Vector3 velocity;
-    Vector3 position;
-
-    arwain::Logger ips_position_file;
-
-    if (arwain::config.log_to_file)
-    {
-        ips_position_file.open(arwain::folder_date_string + "/ips_position.txt");
-        ips_position_file << "time x y z" << "\n";
-    }
-
-    // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::INDOOR_POSITIONING_INTERVAL};
-
-    while (!arwain::shutdown)
-    {
-        { // Get most recent velocity data.
-            std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
-            velocity = arwain::Buffers::VELOCITY_BUFFER.back();
-        }
-
-        // Run update and get new position.
-        ips.update(
-            time.time_since_epoch().count(),
-            velocity.x,
-            velocity.y,
-            velocity.z
-        );
-        position = ips.getPosition();
-
-        { // Put IPS position in buffer.
-            std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
-            arwain::Buffers::IPS_BUFFER.pop_front();
-            arwain::Buffers::IPS_BUFFER.push_back(position);
-        }
-
-        // Log result to file.
-        if (arwain::config.log_to_file)
-        {
-            ips_position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y <<  " " << position.z << "\n";
-        }
-
-        // Wait until next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
-    }
-
-    // Close file handle(s);
-    if (arwain::config.log_to_file)
-    {
-        ips_position_file.close();
-    }
-    */
 }
 
 void arwain::IndoorPositioningWrapper::update(const double &time, const double &x, const double &y, const double &z)
@@ -139,10 +74,7 @@ void arwain::IndoorPositioningWrapper::update(const double &time, const double &
 
 Vector3 arwain::IndoorPositioningWrapper::getPosition()
 {
-    return Vector3{
-        m_x,
-        m_y,
-        m_z};
+    return {m_x, m_y, m_z};
 }
 
 double arwain::IndoorPositioningWrapper::getX()
