@@ -129,7 +129,7 @@ arwain::StanceDetector::StanceDetector(double freefall_sensitivity, double crawl
 // General methods --------------------------------------------------------------------------------
 
 /** \brief Updates the attitude of the device, i.e. determines whether the device is horizontal or vertical.
- * For the current hardware configuration (Pi + BMI270), we should expect the z axis of the IMU to be
+ * For the current hardware configuration (Pi + IMU), we should expect the z axis of the IMU to be
  * roughly horizontal when the device is worn and the wearer is standing. Therefore the angle between
  * the device z axis and the world z axis should be about 90 degrees when the device is vertical. If this
  * angle becomes less than 45 degrees, we infer that the z axes are approaching each other and therefore

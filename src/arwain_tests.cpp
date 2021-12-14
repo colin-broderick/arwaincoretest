@@ -76,7 +76,6 @@ int arwain::test_imu()
 
     while (!arwain::shutdown)
     {
-        // bmi270_h.get_bmi270_data(&accel_data, &gyro_data);
         imu.read_IMU();
         accel_data = {
             imu.accelerometer_x,

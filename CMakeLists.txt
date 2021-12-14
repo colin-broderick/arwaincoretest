@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 
 ## Set include and library source directories
-include_directories(lora orientation bmp280 src iim42652 bmi270 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384)
+include_directories(lora orientation src iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384)
 
 option(USEROS "Use ROS topics to publish diagnostic data" OFF)
 if(USEROS)
