@@ -337,15 +337,21 @@ int arwain::test_pressure()
     double altitude = 100;
     double factor = arwain::config.altitude_filter_weight;
 
+    auto [pressure, temperature] = bmp384.read();
+    pressure = pressure - arwain::config.pressure_offset;
+    altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+
+    sleep_ms(50);
+
     while (!arwain::shutdown)
     {
-        auto [pressure, temperature] = bmp384.read();
-        pressure = pressure - arwain::config.pressure_offset;
-        double new_alt = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+        auto [new_pressure, new_temperature] = bmp384.read();
+        new_pressure = new_pressure - arwain::config.pressure_offset;
+        double new_alt = BMP384::calculate_altitude(new_pressure / 100.0, new_temperature, arwain::config.sea_level_pressure);
         altitude = factor * altitude + (1.0 - factor) * new_alt;
 
-        std::cout << "Pressure:    " << pressure / 100.0 << " hPa" << std::endl;
-        std::cout << "Temperature: " << temperature << " \u00B0C" << std::endl;
+        std::cout << "Pressure:    " << new_pressure / 100.0 << " hPa" << std::endl;
+        std::cout << "Temperature: " << new_temperature << " \u00B0C" << std::endl;
         std::cout << "Altitude:    " << altitude << " m; " << new_alt << " m" << std::endl;
         std::cout << std::endl;
 

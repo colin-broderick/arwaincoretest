@@ -125,6 +125,10 @@ struct CalibData
 class BMP384
 {
     public:
+        const static int min_temp = -40;
+        const static int max_temp = 85;
+
+    public:
         BMP384(int bus_address, const std::string &bus_name);
         std::tuple<double, double> read();
         int get_chip_id();
