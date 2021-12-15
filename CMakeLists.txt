@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 
 ## Set include and library source directories
-include_directories(lora orientation src iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384)
+include_directories(/usr/local/include lora orientation src iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384)
 
 option(USEROS "Use ROS topics to publish diagnostic data" OFF)
 if(USEROS)
@@ -21,7 +21,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 ## Locate source files
-set(PROJECT_CPP_FILES src/main.cpp src/stance.cpp src/velocity_prediction.cpp src/altimeter.cpp src/imu_reader.cpp src/std_output.cpp src/transmit_lora.cpp src/multi_imu.cpp src/arwain.cpp src/arwain_tests.cpp)
+set(PROJECT_CPP_FILES src/main.cpp src/calibration.cpp src/stance.cpp src/velocity_prediction.cpp src/altimeter.cpp src/imu_reader.cpp src/std_output.cpp src/transmit_lora.cpp src/multi_imu.cpp src/arwain.cpp src/arwain_tests.cpp)
 
 add_subdirectory(iim42652)
 add_subdirectory(orientation)

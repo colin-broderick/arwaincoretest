@@ -26,6 +26,7 @@
 #include "efaroe.hpp"
 #include "lis3mdl.hpp"
 #include "bmp384.hpp"
+#include "calibration.hpp"
 
 #include "new_madgwick_FusionAhrs.h"
 #include "new_madgwick_FusionBias.h"
@@ -595,14 +596,42 @@ std::string arwain::datetimestring()
     return ss.str();
 }
 
+std::tuple<std::vector<double>, std::vector<std::vector<double>>> magcal(const std::vector<Vector3>& input_data);
+
 int arwain::calibrate_magnetometers()
 {
     LIS3MDL magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
-    std::cout << "Move the device through all orientations for 10 seconds" << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds{1000});
-    std::cout << "Calibration log started" << std::endl;
-    magnetometer.calibrate();
-    std::cout << "Calibration log compelte" << std::endl;
+    arwain::MagnetometerCalibrator clbr;
+    std::cout << "About to start magnetometer calibration." << std::endl;
+    std::cout << "Move the device through all orientations; press Ctrl+C when done." << std::endl;
+    sleep_ms(3000);
+    std::cout << "Calibration started ..." << std::endl;
+
+    while (!arwain::shutdown)
+    {
+        clbr.feed(magnetometer.read());
+        sleep_ms(100);
+    }
+    auto [bias, scale] = clbr.solve();
+
+    std::cout << "Bias: " << bias[0] << " " << bias[1] << " " << bias[2] << "\n";
+    std::cout << "Scale:\n";
+    std::cout << scale[0][0] << " " << scale[0][1] << " " << scale[0][2] << std::endl;
+    std::cout << scale[1][0] << " " << scale[1][1] << " " << scale[1][2] << std::endl;
+    std::cout << scale[2][0] << " " << scale[2][1] << " " << scale[2][2] << std::endl;
+    std::cout << std::endl;
+
+    arwain::config.replace("mag_bias_x", bias[0]);
+    arwain::config.replace("mag_bias_y", bias[1]);
+    arwain::config.replace("mag_bias_z", bias[2]);
+    arwain::config.replace("mag_scale_x", scale[0][0]);
+    arwain::config.replace("mag_scale_y", scale[1][1]);
+    arwain::config.replace("mag_scale_z", scale[2][2]);
+    arwain::config.replace("mag_scale_xy", scale[0][1]);
+    arwain::config.replace("mag_scale_xz", scale[0][2]);
+    arwain::config.replace("mag_scale_yz", scale[1][2]);
+
+    std::cout << "Magnetometer calibration complete" << std::endl;
     return arwain::ExitCodes::Success;
 }
 
