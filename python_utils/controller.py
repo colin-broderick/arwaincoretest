@@ -7,7 +7,16 @@ import signal
 
 app = Flask(__name__)
 process = None
+state = "Idle"
 
+arwain_env = {
+    "PYTHONPATH":"/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer",
+    "InferenceEngine_DIR":"/opt/intel/openvino/deployment_tools/inference_engine/share",
+    "INTEL_OPENVINO_DIR":"/opt/intel/openvino",
+    "OpenCV_DIR":"/opt/intel/openvino/opencv/cmake",
+    "LD_LIBRARY_PATH":"/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l",
+    "PATH":"/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games",
+}
 
 env = {
     "SHELL":"/bin/bash",
@@ -53,18 +62,31 @@ env = {
 
 @app.route("/info")
 def info():
-    if process is None:
-        response = jsonify({'action': "info", "result": "Not running"})
-    else:
-        response = jsonify({'action': "info", "result": "Running"})
+    global process, state
+    if process is None or process.poll() is not None:
+        state = "Idle"
+        process = None
+    response = jsonify({'action': "info", "result": state})
 
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+
+@app.route("/calibrate_gyroscopes")
+def calibrate_gyroscopes():
+    global process, state
+    response_dict = {"action": "start"}
+    process = subprocess.Popen(["./build/arwain", "-conf", "arwain.conf", "-calibg"], shell=False, env=arwain_env)
+    state = "Calibrating gyroscopes"
+    response_dict["result"] = "Started calibration"
+    response = jsonify(response_dict)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
 
 @app.route("/start", methods=["GET"])
 def start():
-    global process
+    global process, state
     response_dict = {"action": "start"}
 
     ## Are we already running?
@@ -78,16 +100,9 @@ def start():
             cmd.append("-name")
             cmd.append(fname)
         print(cmd)
+        state = "Performing inference"
+        process = subprocess.Popen(cmd, shell=False, env=arwain_env)
         
-        process = subprocess.Popen(cmd, shell=False, env={
-            "PYTHONPATH":"/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer",
-            "InferenceEngine_DIR":"/opt/intel/openvino/deployment_tools/inference_engine/share",
-            "INTEL_OPENVINO_DIR":"/opt/intel/openvino",
-            "OpenCV_DIR":"/opt/intel/openvino/opencv/cmake",
-            "LD_LIBRARY_PATH":"/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l",
-            "PATH":"/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games",
-        })
-
         response_dict["result"] = f"Started with pid {process.pid}"
 
     response = jsonify(response_dict)
