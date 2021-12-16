@@ -184,6 +184,8 @@ int arwain::test_lora_tx()
 int arwain::test_ori(int frequency)
 {
     IMU_IIM42652 imu{config.imu1_address, config.imu1_bus};
+    imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
+    imu.enable_auto_calib();
     arwain::Madgwick filter{static_cast<double>(frequency), config.madgwick_beta};
     // arwain::eFaroe filter{{1, 0, 0, 0}, config.gyro1_bias, 0, config.efaroe_beta, config.efaroe_zeta};
 
@@ -202,7 +204,6 @@ int arwain::test_ori(int frequency)
         std::this_thread::sleep_until(time);
 
         auto [accel, gyro] = imu.read_IMU();
-        gyro = gyro - config.gyro1_bias;
         accel = accel - config.accel1_bias;
         
         filter.update(timeCount, gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);

@@ -97,18 +97,28 @@ public:
     Vector3 calibrate_gyroscope();
     // Vector3 calibrate_accelerometer();
     Vector3 calibration_accel_sample();
+    void set_gyro_bias(double x, double y, double z);
+    void enable_auto_calib();
+    void disable_auto_calib();
 
 private:
     double accel_resolution = 0;
     double gyro_resolution = 0;
     int handle = 0;
     double temperature = 0;
+    double gyro_bias_x = 0;
+    double gyro_bias_y = 0;
+    double gyro_bias_z = 0;
     double gyroscope_x = 0;
     double gyroscope_y = 0;
     double gyroscope_z = 0;
     double accelerometer_x = 0;
     double accelerometer_y = 0;
     double accelerometer_z = 0;
+    double auto_calib_timer = 0;
+    int calib_time = 200;
+    double auto_calib_threshold = 0.1;
+    bool auto_calib_enabled = false;
 
 private:
     void i2c_init(const int address, const std::string& bus_name);
@@ -116,6 +126,7 @@ private:
     int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
     int i2c_write(int reg_addr, int bytes, uint8_t *buffer);
     void read_IMU_raw_data();
+    void update_gyro_bias();
 };
 
 /** \brief Compute the mean value of a 1-dimensional ArrayType of doubles.
