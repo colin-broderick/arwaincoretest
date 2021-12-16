@@ -53,10 +53,10 @@ void indoor_positioning()
         }
 
         floor_tracker.update(new_position);
-        std::cout << time.time_since_epoch().count() << " "
-                  << floor_tracker.tracked_position.x << " "
-                  << floor_tracker.tracked_position.y << " "
-                  << floor_tracker.tracked_position.z << "\n";
+        // std::cout << time.time_since_epoch().count() << " "
+        //           << floor_tracker.tracked_position.x << " "
+        //           << floor_tracker.tracked_position.y << " "
+        //           << floor_tracker.tracked_position.z << "\n";
     }
 
     if (arwain::config.log_to_file)

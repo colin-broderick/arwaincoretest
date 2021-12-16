@@ -82,8 +82,9 @@ void imu_reader()
 
     // Prepare sensors.
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
-    IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
-    IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
+    imu1.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
+    imu1.enable_auto_calib();
+    
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
     magn.set_calibration(arwain::config.mag_bias, arwain::config.mag_scale);
 
@@ -164,7 +165,6 @@ void imu_reader()
 
         // Adjust for biases according to configuration file.
         accel_data1 = accel_data1 - arwain::config.accel1_bias;
-        gyro_data1 = gyro_data1 - arwain::config.gyro1_bias;
 
         { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
             std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};

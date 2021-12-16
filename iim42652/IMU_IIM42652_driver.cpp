@@ -226,15 +226,21 @@ Vector6 IMU_IIM42652::read_IMU()
 {
     read_IMU_raw_data();
 
-    //accelerometer values
+    // Store new accelerometer reading.
     accelerometer_x = accelerometer_x * accel_resolution * GRAVITY;
     accelerometer_y = accelerometer_y * accel_resolution * GRAVITY;
     accelerometer_z = accelerometer_z * accel_resolution * GRAVITY;
 
-    //gyroscope values
-    gyroscope_x = gyroscope_x * gyro_resolution * PI_DIVIDED_BY_180;
-    gyroscope_y = gyroscope_y * gyro_resolution * PI_DIVIDED_BY_180;
-    gyroscope_z = gyroscope_z * gyro_resolution * PI_DIVIDED_BY_180;
+    // Store new gyroscope reading.
+    gyroscope_x = gyroscope_x * gyro_resolution * PI_DIVIDED_BY_180 - gyro_bias_x;
+    gyroscope_y = gyroscope_y * gyro_resolution * PI_DIVIDED_BY_180 - gyro_bias_y;
+    gyroscope_z = gyroscope_z * gyro_resolution * PI_DIVIDED_BY_180 - gyro_bias_z;
+
+    // Automatically update gyroscope bias when device static.
+    if (auto_calib_enabled)
+    {
+        this->update_gyro_bias();
+    }
 
     return {
         {accelerometer_x, accelerometer_y, accelerometer_z},
@@ -264,4 +270,50 @@ void IMU_IIM42652::enable()
 {
     uint8_t buffer = CONFIG_ENABLE_ACCEL | CONFIG_ENABLE_GYRO | CONFIG_ENABLE_TMPRTR;
     i2c_write(ADDR_PWR_MGMT0, 1, &buffer);
+}
+
+/** \brief Set the values of the gyroscope bias offsets, subtracted from the gyro readings before returning.
+ */
+void IMU_IIM42652::set_gyro_bias(double x, double y, double z)
+{
+    gyro_bias_x = x;
+    gyro_bias_y = y;
+    gyro_bias_z = z;
+}
+
+/** \brief Automatically update the gyroscope bias when the device is detected to be stationary.
+ */
+void IMU_IIM42652::update_gyro_bias()
+{
+    // If any gyro readings are above the auto calib threshold, reset the timer.
+    if (std::abs(this->gyroscope_x) > auto_calib_threshold || std::abs(this->gyroscope_y) > auto_calib_threshold || std::abs(this->gyroscope_z) > this->auto_calib_threshold)
+    {
+        this->auto_calib_timer = 0;
+        return;
+    }
+
+    // If the minimum static time has not yet elapsed, increment the timer.
+    if (this->auto_calib_timer < this->calib_time)
+    {
+        this->auto_calib_timer++;
+        return;
+    }
+
+    // If not gyro reading breaks the threshold, and the timer has elapsed, use the new reading to update the bias.
+    // And knock the timer back a bit.
+    this->gyro_bias_x = this->gyro_bias_x * 0.9 + (this->gyroscope_x + gyro_bias_x) * 0.1;
+    this->gyro_bias_y = this->gyro_bias_y * 0.9 + (this->gyroscope_y + gyro_bias_y) * 0.1;
+    this->gyro_bias_z = this->gyro_bias_z * 0.9 + (this->gyroscope_z + gyro_bias_z) * 0.1;
+    // Knock the timer back a little so we don't update too frequently.
+    this->auto_calib_timer *= 0.8;
+}
+
+void IMU_IIM42652::enable_auto_calib()
+{
+    auto_calib_enabled = true;
+}
+
+void IMU_IIM42652::disable_auto_calib()
+{
+    auto_calib_enabled = false;
 }
