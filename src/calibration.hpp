@@ -15,6 +15,8 @@ namespace arwain
 
         private:
             nc::NdArray<double> xyz;
+            int region_sample_count[100] = {0};
+            Vector3 region_sample_value[100] = {{0, 0, 0}};
 
     };
 }
