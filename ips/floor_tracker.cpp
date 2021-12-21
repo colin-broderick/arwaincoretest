@@ -62,4 +62,6 @@ void arwain::FloorTracker::update(const Vector3& position)
     }
 
     tracked_position = track[0];
+
+    track.pop_front();
 }
