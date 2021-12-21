@@ -126,6 +126,10 @@ int main(int argc, char **argv)
     {
         ret = arwain::rerun_orientation_filter(input.getCmdOption("-rerunori"));
     }
+    else if (input.contains("-rerunfloor"))
+    {
+        ret = arwain::rerun_floor_tracker(input.getCmdOption("-rerunfloor"));
+    }
 
     // Perform quick calibration of gyroscopes and write to config file.
     else if (input.contains("-calibg"))

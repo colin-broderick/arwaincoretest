@@ -77,6 +77,7 @@ namespace arwain
     void setup(const InputParser& input);
     int execute_inference();
     int rerun_orientation_filter(const std::string& data_location);
+    int rerun_floor_tracker(const std::string& data_location);
 }
 
 namespace arwain::ExitCodes
