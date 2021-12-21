@@ -142,6 +142,10 @@ app.layout = html.Div(children=[
                 style={"width":"49%","float":"left"}
             ),
             html.Div(
+                [dcc.Graph(id='ai_altitude_plot', figure=fig)],
+                style={"width":"49%","float":"left"}
+            ),
+            html.Div(
                 [dcc.Graph(id='accel_plot', figure=fig)],
                 style={"width":"49%","float":"left"}
             ),
@@ -266,6 +270,20 @@ def update_altitude_plot(dataset):
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
     fig.add_trace(go.Scatter(x=df_altitude["time"], y=df_altitude["altitude"], mode="lines", name="Altitude [m]"))
     return fig
+
+
+@app.callback(
+    dash.dependencies.Output("ai_altitude_plot", "figure"),
+    dash.dependencies.Input("dataset_list", "value")
+)
+def update_altitude_plot(dataset):
+    df_altitude = read_dataset(dataset, "position")
+    fig = go.Figure()
+    fig.update_layout(title="Altitude (from NN)", title_x=0.5)
+    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+    fig.add_trace(go.Scatter(x=df_altitude["time"], y=df_altitude["z"], mode="lines", name="Altitude [m]"))
+    return fig
+
 
 ## Euler orientation callback ##################################################
 @app.callback(
