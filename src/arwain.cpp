@@ -28,6 +28,7 @@
 #include "bmp384.hpp"
 #include "calibration.hpp"
 
+#include "floor_tracker.hpp"
 #include "new_madgwick_FusionAhrs.h"
 #include "new_madgwick_FusionBias.h"
 
@@ -112,9 +113,48 @@ double unwrap_phase_degrees(double new_angle, double previous_angle)
     return new_angle;
 }
 
+/** \brief Reads the position.txt file from the given location, and 
+ * runs the floor tracking algorithm against that data.
+ */
+int arwain::rerun_floor_tracker(const std::string& data_location)
+{
+    std::cout << "Reprocessing floor tracker on dataset \"" << data_location << "\"" << std::endl;
+
+    int64_t t;
+    double x, y, z;
+
+    std::ifstream position_input{data_location + "/position.txt"};
+
+    std::ofstream position_output{"pos_out.txt"};
+
+    // Clear data file headers.
+    std::string position_line;
+    std::getline(position_input, position_line);
+
+    arwain::FloorTracker flt{5, 0.10, 0.20};
+
+    while(std::getline(position_input, position_line))
+    {
+        // Get IMU data
+        std::istringstream pstream(position_line);
+        pstream >> t >> x >> y >> z;
+        flt.update({x, y, z});
+        position_output << flt.tracked_position.x << " " << flt.tracked_position.y << " " << flt.tracked_position.z << "\n";
+    }
+
+    position_output.close();
+
+    std::cout << "Reprocessing complete" << std::endl;
+
+    return arwain::ExitCodes::Success;
+}
+
+/** \brief Reads the acce.txt and gyro.txt files from the given location, 
+ * and reruns the selected orientation filter(s) against that data.
+ */
 int arwain::rerun_orientation_filter(const std::string& data_location)
 {
-    std::cout << "Reprocessing dataset \"" << data_location << "\"" << std::endl;
+    std::cout << "Reprocessing orientation filter on dataset \"" << data_location << "\"" << std::endl;
 
     int64_t t;
     double ax, ay, az, gx, gy, gz;
