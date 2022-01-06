@@ -36,6 +36,7 @@
 namespace arwain
 {
     int shutdown = 0;
+    OperatingMode system_mode = OperatingMode::SelfTest;
     double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
