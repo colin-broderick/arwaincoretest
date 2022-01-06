@@ -35,8 +35,21 @@ namespace arwain
 
 namespace arwain
 {
+    enum class OperatingMode
+    {
+        Terminate,
+        Inference,
+        GyroscopeCalibration,
+        AccelerometerCalibration,
+        SelfTest
+    };
+}
+
+namespace arwain
+{
     extern double yaw_offset;
     extern int shutdown;
+    extern OperatingMode system_mode;
     extern std::string folder_date_string;
     extern arwain::Configuration config;
     extern arwain::Status status;
@@ -122,17 +135,6 @@ namespace arwain::BufferSizes
     inline const unsigned int PRESSURE_BUFFER_LEN = 100;
     inline const unsigned int MAG_ORIENTATION_BUFFER_LEN = 100;
     inline const unsigned int MAG_EULER_BUFFER_LEN = 100;
-}
-
-namespace arwain::SystemStates
-{
-    enum _SystemStates
-    {
-        Inference,
-        GyroscopeCalibration,
-        AccelerometerCalibration,
-        HelpText
-    };
 }
 
 namespace arwain::Errors
