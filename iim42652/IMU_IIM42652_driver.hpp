@@ -98,6 +98,7 @@ public:
     // Vector3 calibrate_accelerometer();
     Vector3 calibration_accel_sample();
     void set_gyro_bias(double x, double y, double z);
+    void set_accel_bias(double x, double y, double z);
     void enable_auto_calib();
     void disable_auto_calib();
 
@@ -109,6 +110,9 @@ private:
     double gyro_bias_x = 0;
     double gyro_bias_y = 0;
     double gyro_bias_z = 0;
+    double accel_bias_x = 0;
+    double accel_bias_y = 0;
+    double accel_bias_z = 0;
     double gyroscope_x = 0;
     double gyroscope_y = 0;
     double gyroscope_z = 0;
