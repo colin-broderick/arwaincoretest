@@ -58,6 +58,7 @@ static void sigint_handler(int signal)
     {
         std::cout << "\nReceived SIGINT - closing\n" << "\n";
         arwain::shutdown = 1;
+        arwain::system_mode = arwain::OperatingMode::Terminate;
     }
 }
 
