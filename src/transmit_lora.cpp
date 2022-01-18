@@ -5,6 +5,7 @@
 #include "logger.hpp"
 #include "arwain.hpp"
 #include "lora.hpp"
+#include "timers.hpp"
 
 /** \brief Forms and transmits LoRa messages on a loop.
  */
@@ -17,7 +18,7 @@ void transmit_lora()
 
     LoRa lora{
         arwain::config.lora_address,
-        false,
+        true,
         // arwain::config.lora_rf_frequency,
         // arwain::config.lora_bandwidth,
         // arwain::config.lora_spread_factor
@@ -84,32 +85,29 @@ void transmit_lora()
             time = time + interval;
 
             // Watch for receive until the next scheduled transmission.
-            while (std::chrono::system_clock::now() < time)
+            int timeout_ms = (time - std::chrono::system_clock::now()).count() / 1000000;
+            auto [rxd, rxd_message] = lora.receive_string(timeout_ms);
+            if (rxd)
             {
-                auto [rxd, message] = lora.receive_string(900);
-                if (rxd)
+                std::cout << "RECEIVED: " << rxd_message << std::endl;
+                if (rxd_message == "C.INFERENCE")
                 {
-                    std::string cmd = message.substr(0, 3);
-                    if (cmd == "C.INFERENCE")
-                    {
-                        arwain::system_mode = arwain::OperatingMode::Inference;
-                    }
-                    else if (cmd == "C.AUTOCAL")
-                    {
-                        arwain::system_mode = arwain::OperatingMode::AutoCalibration;
-                    }
-                    else if (cmd == "C.TERMINATE")
-                    {
-                        arwain::system_mode = arwain::OperatingMode::Terminate;
-                        arwain::shutdown = 1;
-                    }
-                    else if (cmd == "C.SELFTEST")
-                    {
-                        arwain::system_mode = arwain::OperatingMode::SelfTest;
-                    }
+                    // arwain::system_mode = arwain::OperatingMode::Inference;
+                }
+                else if (rxd_message == "C.AUTOCAL")
+                {
+                    // arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+                }
+                else if (rxd_message == "C.TERMINATE")
+                {
+                    // arwain::system_mode = arwain::OperatingMode::Terminate;
+                    // arwain::shutdown = 1;
+                }
+                else if (rxd_message == "C.SELFTEST")
+                {
+                    // arwain::system_mode = arwain::OperatingMode::SelfTest;
                 }
             }
-
             std::this_thread::sleep_until(time);
         }
         sleep_ms(10);

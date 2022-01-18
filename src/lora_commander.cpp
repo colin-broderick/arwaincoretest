@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     if (input.contains("-cmd"))
     {
         auto message = "C." + input.getCmdOption("-cmd");
-        transmitter.send_message((uint8_t*)message.c_str(), message.length());
+        transmitter.send_message(message);
         std::cout << "Sent message: " << message << std::endl;
     }
 }

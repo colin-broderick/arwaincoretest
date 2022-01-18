@@ -124,6 +124,8 @@ void LoRa::send_message(uint8_t* message, size_t num_bytes)
 
     // enter TX mode
     uint8_t op_mode = this->read_register(OPMODE_ADDRESS);
+
+    uint8_t previous_op_mode = op_mode;
     op_mode &= ~(OPMODE_CAD | OPMODE_RXSINGLE | OPMODE_RXCONTINUOUS | OPMODE_FSRX | OPMODE_FSTX | OPMODE_STDBY | OPMODE_SLEEP);
     op_mode |= OPMODE_TX | OPMODE_LONGRANGE;
     this->write_register(OPMODE_ADDRESS, op_mode);
@@ -137,6 +139,9 @@ void LoRa::send_message(uint8_t* message, size_t num_bytes)
 
     // Clear TX flag.
     this->write_register(IRQFLAGS_ADDRESS, IRQ_TXDONE);
+
+    // Set the mode back to what it was before.
+    this->write_register(OPMODE_ADDRESS, previous_op_mode);
 }
 
 /** \brief Transmits arbitrary message encoded as a string. */
@@ -214,8 +219,10 @@ bool LoRa::rx(uint8_t* out_buffer)
  */
 std::tuple<bool, std::string> LoRa::receive_string(int timeout_ms)
 {
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto end_time = start_time + std::chrono::milliseconds{timeout_ms - 10};
 
-    for (int i = 0; i < timeout_ms / 10; i++)
+    while (std::chrono::high_resolution_clock::now() < end_time)
     {
         uint8_t rx_buffer[LoRa::max_message_size] = {0};
         if (rx(rx_buffer))

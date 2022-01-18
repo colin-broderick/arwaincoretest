@@ -115,7 +115,7 @@ namespace arwain::Intervals
     // Time intervals, all in milliseconds.
     inline const unsigned int IMU_READING_INTERVAL = 5;
     inline const unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
-    inline const unsigned int LORA_TRANSMISSION_INTERVAL = 500;
+    inline const unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
     inline const unsigned int STANCE_DETECTION_INTERVAL = 1000;
     inline const unsigned int INDOOR_POSITIONING_INTERVAL = 50;
     inline const unsigned int STD_OUT_INTERVAL = 1000;
