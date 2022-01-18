@@ -11,6 +11,8 @@
 #include "stance.hpp"
 #include "lora.hpp"
 
+void sleep_ms(int ms);
+
 class Vector3;
 class Vector6;
 class Quaternion;
@@ -39,8 +41,7 @@ namespace arwain
     {
         Terminate,
         Inference,
-        GyroscopeCalibration,
-        AccelerometerCalibration,
+        AutoCalibration,
         SelfTest
     };
 }

@@ -34,29 +34,34 @@ void indoor_positioning()
 
     while (!arwain::shutdown)
     {
-        // Wait until next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
-
-        Vector3 new_position;
-        { // Read most recent position from the global position buffer.
-            std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
-            new_position = arwain::Buffers::POSITION_BUFFER.back();
-        }
-
-        if (corner_detector.update(new_position))
+        while (arwain::system_mode == arwain::OperatingMode::Inference)
         {
-            corner_log << time.time_since_epoch().count() << " "
-                       << corner_detector.detection_location.x << " "
-                       << corner_detector.detection_location.y << " "
-                       << corner_detector.detection_location.z << "\n";
-        }
 
-        floor_tracker.update(new_position);
-        // std::cout << time.time_since_epoch().count() << " "
-        //           << floor_tracker.tracked_position.x << " "
-        //           << floor_tracker.tracked_position.y << " "
-        //           << floor_tracker.tracked_position.z << "\n";
+            // Wait until next tick.
+            time = time + interval;
+            std::this_thread::sleep_until(time);
+
+            Vector3 new_position;
+            { // Read most recent position from the global position buffer.
+                std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
+                new_position = arwain::Buffers::POSITION_BUFFER.back();
+            }
+
+            if (corner_detector.update(new_position))
+            {
+                corner_log << time.time_since_epoch().count() << " "
+                        << corner_detector.detection_location.x << " "
+                        << corner_detector.detection_location.y << " "
+                        << corner_detector.detection_location.z << "\n";
+            }
+
+            floor_tracker.update(new_position);
+            // std::cout << time.time_since_epoch().count() << " "
+            //           << floor_tracker.tracked_position.x << " "
+            //           << floor_tracker.tracked_position.y << " "
+            //           << floor_tracker.tracked_position.z << "\n";
+        }
+        sleep_ms(10);
     }
 
     if (arwain::config.log_to_file)

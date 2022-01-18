@@ -36,7 +36,7 @@
 namespace arwain
 {
     int shutdown = 0;
-    OperatingMode system_mode = OperatingMode::SelfTest;
+    OperatingMode system_mode = arwain::OperatingMode::Inference;
     double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
@@ -73,7 +73,7 @@ namespace arwain::Locks
     std::mutex PRESSURE_BUFFER_LOCK;
 }
 
-static void sleep_ms(int ms)
+void sleep_ms(int ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds{ms});
 }

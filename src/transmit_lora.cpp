@@ -4,6 +4,7 @@
 #include "vector3.hpp"
 #include "logger.hpp"
 #include "arwain.hpp"
+#include "lora.hpp"
 
 /** \brief Forms and transmits LoRa messages on a loop.
  */
@@ -49,37 +50,69 @@ void transmit_lora()
 
     while (!arwain::shutdown)
     {
-        arwain::LoraPacket message;
-        message.metadata = arwain::config.node_id;
-
-        { // Get positions as float16.
-            std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
-            position = arwain::Buffers::POSITION_BUFFER.back();
-        }
-
-        message.x = position.x * 100;
-        message.y = position.y * 100;
-        message.z = position.z * 100;
-
-        // Create alerts flags.
-        message.alerts = arwain::status.falling | (arwain::status.entangled << 1) | (arwain::status.current_stance << 2);
-
-        // Reset critical status flags now they have been read.
-        arwain::status.falling = arwain::StanceDetector::NotFalling;
-        arwain::status.entangled = arwain::StanceDetector::NotEntangled;
-
-        // Send transmission.
-        lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
-
-        // TODO: Check the log format is as expected and usable.
-        if (arwain::config.log_to_file)
+        while (arwain::system_mode == arwain::OperatingMode::Inference)
         {
-            lora_file << time.time_since_epoch().count() << " " << message << "\n";
-        }
+            arwain::LoraPacket message;
+            message.metadata = arwain::config.node_id;
 
-        // Wait until next tick
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+            { // Get positions as float16.
+                std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
+                position = arwain::Buffers::POSITION_BUFFER.back();
+            }
+
+            message.x = position.x * 100;
+            message.y = position.y * 100;
+            message.z = position.z * 100;
+
+            // Create alerts flags.
+            message.alerts = arwain::status.falling | (arwain::status.entangled << 1) | (arwain::status.current_stance << 2);
+
+            // Reset critical status flags now they have been read.
+            arwain::status.falling = arwain::StanceDetector::NotFalling;
+            arwain::status.entangled = arwain::StanceDetector::NotEntangled;
+
+            // Send transmission.
+            lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
+
+            // TODO: Check the log format is as expected and usable.
+            if (arwain::config.log_to_file)
+            {
+                lora_file << time.time_since_epoch().count() << " " << message << "\n";
+            }
+
+            // Wait until next tick
+            time = time + interval;
+
+            // Watch for receive until the next scheduled transmission.
+            while (std::chrono::system_clock::now() < time)
+            {
+                auto [rxd, message] = lora.receive_string(900);
+                if (rxd)
+                {
+                    std::string cmd = message.substr(0, 3);
+                    if (cmd == "C.INFERENCE")
+                    {
+                        arwain::system_mode = arwain::OperatingMode::Inference;
+                    }
+                    else if (cmd == "C.AUTOCAL")
+                    {
+                        arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+                    }
+                    else if (cmd == "C.TERMINATE")
+                    {
+                        arwain::system_mode = arwain::OperatingMode::Terminate;
+                        arwain::shutdown = 1;
+                    }
+                    else if (cmd == "C.SELFTEST")
+                    {
+                        arwain::system_mode = arwain::OperatingMode::SelfTest;
+                    }
+                }
+            }
+
+            std::this_thread::sleep_until(time);
+        }
+        sleep_ms(10);
     }
 
     // Close log file handle.

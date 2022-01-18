@@ -39,13 +39,15 @@ add_subdirectory(bmp384)
 
 ## Executables to build
 add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
+add_executable(${PROJECT_NAME}_cmdr src/lora_commander.cpp)
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
-
+target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow)
 
 ## Link libraries
 target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter)
+target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/arwain.conf DESTINATION /etc)

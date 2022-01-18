@@ -63,83 +63,87 @@ void predict_velocity()
 
     while (!arwain::shutdown)
     {
-        { // Grab latest IMU packet
-            std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-            imu = arwain::Buffers::IMU_WORLD_BUFFER;
-        }
-
-        // Check what the time really is since it might not be accurate.
-        time = std::chrono::system_clock::now();
-
-        // Get dt in seconds since last udpate, and update lastTime.
-        double dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - lastTime).count()/1000.0;
-        lastTime = time;
-        
-        // Load the IMU data into a string for serial transmission, gyro first.
-        for (unsigned int i = 0; i < imu.size(); i++)
+        while (arwain::system_mode == arwain::OperatingMode::Inference)
         {
-            request << std::setprecision(15) << (float)imu[i].gyro.x << ",";
-            request << std::setprecision(15) << (float)imu[i].gyro.y << ",";
-            request << std::setprecision(15) << (float)imu[i].gyro.z << ",";
-            request << std::setprecision(15) << (float)imu[i].acce.x << ",";
-            request << std::setprecision(15) << (float)imu[i].acce.y << ",";
-            request << std::setprecision(15) << (float)imu[i].acce.z << ",";
+            { // Grab latest IMU packet
+                std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+                imu = arwain::Buffers::IMU_WORLD_BUFFER;
+            }
+
+            // Check what the time really is since it might not be accurate.
+            time = std::chrono::system_clock::now();
+
+            // Get dt in seconds since last udpate, and update lastTime.
+            double dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - lastTime).count()/1000.0;
+            lastTime = time;
+            
+            // Load the IMU data into a string for serial transmission, gyro first.
+            for (unsigned int i = 0; i < imu.size(); i++)
+            {
+                request << std::setprecision(15) << (float)imu[i].gyro.x << ",";
+                request << std::setprecision(15) << (float)imu[i].gyro.y << ",";
+                request << std::setprecision(15) << (float)imu[i].gyro.z << ",";
+                request << std::setprecision(15) << (float)imu[i].acce.x << ",";
+                request << std::setprecision(15) << (float)imu[i].acce.y << ",";
+                request << std::setprecision(15) << (float)imu[i].acce.z << ",";
+            }
+
+            // Send the data and await response.
+            std::string fromStream = request.str();
+            const char *str = fromStream.c_str();
+            zmq_send(responder, str, strlen(str), 0);
+            zmq_recv(responder, response_buffer, 50, 0);
+            request.str("");
+
+            // Process the answer buffer into local velocity buffers.
+            // Assume a comma-separated list of three floats.
+            std::string answer{response_buffer};
+            if (answer == "accept")
+            {
+                continue;
+            }
+            int delimiter = answer.find(",");
+            std::stringstream(answer.substr(0, delimiter)) >> velocity.x;
+            answer = answer.substr(delimiter+1);
+            delimiter = answer.find(",");
+            std::stringstream(answer.substr(0, delimiter)) >> velocity.y;
+            std::stringstream(answer.substr(delimiter+1)) >> velocity.z;
+
+            { // Store velocity in global buffer.
+                std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
+                arwain::Buffers::VELOCITY_BUFFER.pop_front();
+                arwain::Buffers::VELOCITY_BUFFER.push_back(velocity);
+            }
+
+            // Compute new position.
+            if (arwain::config.correct_with_yaw_diff)
+            {
+                velocity = {
+                    std::cos(-arwain::yaw_offset)*velocity.x - std::sin(-arwain::yaw_offset)*velocity.y,
+                    std::sin(-arwain::yaw_offset)*velocity.x + std::cos(-arwain::yaw_offset)*velocity.y,
+                    velocity.z
+                };
+            }
+            position = position + dt * velocity;
+
+            { // Add new position to global buffer.
+                std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
+                arwain::Buffers::POSITION_BUFFER.pop_front();
+                arwain::Buffers::POSITION_BUFFER.push_back(position);
+            }
+
+            // Log results to file.
+            if (arwain::config.log_to_file)
+            {
+                velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
+                position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
+            }
+
+            // Wait until next tick.
+            time = time + interval;
+            std::this_thread::sleep_until(time);
         }
-
-        // Send the data and await response.
-        std::string fromStream = request.str();
-        const char *str = fromStream.c_str();
-        zmq_send(responder, str, strlen(str), 0);
-        zmq_recv(responder, response_buffer, 50, 0);
-        request.str("");
-
-        // Process the answer buffer into local velocity buffers.
-        // Assume a comma-separated list of three floats.
-        std::string answer{response_buffer};
-        if (answer == "accept")
-        {
-            continue;
-        }
-        int delimiter = answer.find(",");
-        std::stringstream(answer.substr(0, delimiter)) >> velocity.x;
-        answer = answer.substr(delimiter+1);
-        delimiter = answer.find(",");
-        std::stringstream(answer.substr(0, delimiter)) >> velocity.y;
-        std::stringstream(answer.substr(delimiter+1)) >> velocity.z;
-
-        { // Store velocity in global buffer.
-            std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
-            arwain::Buffers::VELOCITY_BUFFER.pop_front();
-            arwain::Buffers::VELOCITY_BUFFER.push_back(velocity);
-        }
-
-        // Compute new position.
-        if (arwain::config.correct_with_yaw_diff)
-        {
-            velocity = {
-                std::cos(-arwain::yaw_offset)*velocity.x - std::sin(-arwain::yaw_offset)*velocity.y,
-                std::sin(-arwain::yaw_offset)*velocity.x + std::cos(-arwain::yaw_offset)*velocity.y,
-                velocity.z
-            };
-        }
-        position = position + dt * velocity;
-
-        { // Add new position to global buffer.
-            std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
-            arwain::Buffers::POSITION_BUFFER.pop_front();
-            arwain::Buffers::POSITION_BUFFER.push_back(position);
-        }
-
-        // Log results to file.
-        if (arwain::config.log_to_file)
-        {
-            velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
-            position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
-        }
-
-        // Wait until next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+        sleep_ms(10);
     }
     
     // Instruct the NCS2 interface script to quit.
