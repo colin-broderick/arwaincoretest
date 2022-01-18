@@ -46,6 +46,28 @@ namespace arwain
     };
 }
 
+inline std::ostream& operator<<(std::ostream& stream, arwain::OperatingMode token)
+{
+    switch (token)
+    {
+        case arwain::OperatingMode::Inference:
+            stream << "Inference";
+            break;
+        case arwain::OperatingMode::AutoCalibration:
+            stream << "Idle/autocalibrating";
+            break;
+        case arwain::OperatingMode::SelfTest:
+            stream << "Self test";
+            break;
+        case arwain::OperatingMode::Terminate:
+            stream << "Terminate";
+            break;
+        default:
+            break;
+    }
+    return stream;
+}
+
 namespace arwain
 {
     extern double yaw_offset;

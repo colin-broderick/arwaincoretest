@@ -522,6 +522,39 @@ arwain::Configuration::Configuration(const InputParser& input)
     }
 }
 
+void cin_fn()
+{
+    while (!arwain::shutdown)
+    {
+        std::string input;
+        std::cout << "ARWAIN >> ";
+        std::getline(std::cin, input);
+
+        if (input == "quit" || input == "exit" || input == "shutdown" || input == "stop")
+        {
+            std::cout << "Cleaning up before closing, please wait ..." << std::endl;
+            arwain::shutdown = 1;
+            arwain::system_mode = arwain::OperatingMode::Terminate;
+        }
+        else if (input == "inference" || input == "infer")
+        {
+            std::cout << "Entering inference mode" << std::endl;
+        }
+        else if (input == "autocal" || input == "idle")
+        {
+            std::cout << "Entering autocalibration mode" << std::endl;
+        }
+        else if (input == "mode")
+        {
+            std::cout << "current mode: " << arwain::system_mode << std::endl;
+        }
+        else
+        {
+            std::cout << "error: unrecognised command" << std::endl;
+        }
+    }
+}
+
 int arwain::execute_inference()
 {
     // Start worker threads.
@@ -533,6 +566,7 @@ int arwain::execute_inference()
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
+    std::thread cin_thread(cin_fn);
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
     // Wait for all threads to terminate.
@@ -544,6 +578,7 @@ int arwain::execute_inference()
     indoor_positioning_thread.join();
     py_inference_thread.join();
     altimeter_thread.join();
+    cin_thread.join();
     // kalman_filter.join();
 
     return arwain::ExitCodes::Success;
