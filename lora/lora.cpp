@@ -207,9 +207,15 @@ bool LoRa::rx(uint8_t* out_buffer)
     return false;
 }
 
-std::tuple<bool, std::string> LoRa::receive_string()
+/** \brief Spends 100 iterations of 10 ms checking for a received message.
+ * TODO The current timeout mechanism is very approximate. It takes roughly 10 ms per iteration,
+ * until the appropriate number of iterations is met. But obviously the sleep doesn't account for
+ * all the time spent, so each spin is really 10.something ms. Improve the timing.
+ */
+std::tuple<bool, std::string> LoRa::receive_string(int timeout_ms)
 {
-    for (int i = 0; i < 100; i++)
+
+    for (int i = 0; i < timeout_ms / 10; i++)
     {
         uint8_t rx_buffer[LoRa::max_message_size] = {0};
         if (rx(rx_buffer))

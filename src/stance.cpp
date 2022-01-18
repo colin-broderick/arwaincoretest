@@ -59,38 +59,42 @@ void stance_detector()
 
     while (!arwain::shutdown)
     {
-        // Get all relevant data.
-        { // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
-            std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-            imu_data = arwain::Buffers::IMU_BUFFER;
-        }
+        while (arwain::system_mode == arwain::OperatingMode::Inference)
         {
-            std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
-            vel_data = arwain::Buffers::VELOCITY_BUFFER;
-        }
-        {
-            std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
-            rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
-        }
+            // Get all relevant data.
+            { // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
+                std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+                imu_data = arwain::Buffers::IMU_BUFFER;
+            }
+            {
+                std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
+                vel_data = arwain::Buffers::VELOCITY_BUFFER;
+            }
+            {
+                std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
+                rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
+            }
 
-        // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
-        stance.update_attitude(rotation_quaternion);
-        stance.run(imu_data, vel_data);
-        arwain::status.current_stance = stance.getStance();
-        arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
-        arwain::status.entangled = arwain::status.entangled | stance.getEntangledStatus();
-        arwain::status.attitude = stance.getAttitude();
+            // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
+            stance.update_attitude(rotation_quaternion);
+            stance.run(imu_data, vel_data);
+            arwain::status.current_stance = stance.getStance();
+            arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
+            arwain::status.entangled = arwain::status.entangled | stance.getEntangledStatus();
+            arwain::status.attitude = stance.getAttitude();
 
-        // Log to file.
-        if (arwain::config.log_to_file)
-        {
-            freefall_file << time.time_since_epoch().count() << " " << stance.getFallingStatus() << " " << stance.getEntangledStatus() << "\n";
-            stance_file << time.time_since_epoch().count() << " " << stance.getStance() << "\n";
+            // Log to file.
+            if (arwain::config.log_to_file)
+            {
+                freefall_file << time.time_since_epoch().count() << " " << stance.getFallingStatus() << " " << stance.getEntangledStatus() << "\n";
+                stance_file << time.time_since_epoch().count() << " " << stance.getStance() << "\n";
+            }
+
+            // Wait until the next tick.
+            time = time + interval;
+            std::this_thread::sleep_until(time);
         }
-
-        // Wait until the next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+        sleep_ms(10);
     }
 
     // Close files

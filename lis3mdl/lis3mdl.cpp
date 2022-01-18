@@ -6,11 +6,6 @@
 #include "arwain.hpp"
 #include "logger.hpp"
 
-static void sleep_ms(int ms)
-{
-    std::this_thread::sleep_for(std::chrono::milliseconds{ms});
-}
-
 void LIS3MDL::power_up()
 {
     uint8_t config;

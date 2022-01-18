@@ -8,11 +8,6 @@
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
 
-static void sleep_ms(int ms)
-{
-    std::this_thread::sleep_for(std::chrono::milliseconds{ms});
-}
-
 static euler_orientation_t computer_euler_degrees(Quaternion& q)
 {
     euler_orientation_t euler;
@@ -99,7 +94,7 @@ int arwain::test_lora_rx()
 
     while (!arwain::shutdown)
     {
-        auto [rx, message] = lora.receive_string();
+        auto [rx, message] = lora.receive_string(1000);
         if (rx)
         {
             std::cout << message << std::endl;
