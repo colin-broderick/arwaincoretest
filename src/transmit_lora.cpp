@@ -34,88 +34,93 @@ void transmit_lora()
     // }
     // lora.setSyncWord(0x12);
 
-    // Local buffers.
-    arwain::Logger lora_file;
-    Vector3 position;
-
-    // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::LORA_TRANSMISSION_INTERVAL};
-
-    // Open file handles for data logging.
-    if (arwain::config.log_to_file)
-    {
-        lora_file.open(arwain::folder_date_string + "/lora_log.txt");
-        lora_file << "time x y z alerts" << "\n";
-    }
-
     while (!arwain::shutdown)
     {
-        while (arwain::system_mode == arwain::OperatingMode::Inference)
+        switch (arwain::system_mode)
         {
-            arwain::LoraPacket message;
-            message.metadata = arwain::config.node_id;
-
-            { // Get positions as float16.
-                std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
-                position = arwain::Buffers::POSITION_BUFFER.back();
-            }
-
-            message.x = position.x * 100;
-            message.y = position.y * 100;
-            message.z = position.z * 100;
-
-            // Create alerts flags.
-            message.alerts = arwain::status.falling | (arwain::status.entangled << 1) | (arwain::status.current_stance << 2);
-
-            // Reset critical status flags now they have been read.
-            arwain::status.falling = arwain::StanceDetector::NotFalling;
-            arwain::status.entangled = arwain::StanceDetector::NotEntangled;
-
-            // Send transmission.
-            lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
-
-            // TODO: Check the log format is as expected and usable.
-            if (arwain::config.log_to_file)
+            case arwain::OperatingMode::Inference:
             {
-                lora_file << time.time_since_epoch().count() << " " << message << "\n";
+                // Open file handles for data logging.
+                arwain::Logger lora_file;
+                if (arwain::config.log_to_file)
+                {
+                    lora_file.open(arwain::folder_date_string + "/lora_log.txt");
+                    lora_file << "time x y z alerts" << "\n";
+                }
+                // Set up timing.
+                auto time = std::chrono::system_clock::now();
+                std::chrono::milliseconds interval{arwain::Intervals::LORA_TRANSMISSION_INTERVAL};
+
+                while (arwain::system_mode == arwain::OperatingMode::Inference)
+                {
+                    arwain::LoraPacket message;
+                    message.metadata = arwain::config.node_id;
+
+                    auto position = arwain::Buffers::POSITION_BUFFER.back();
+
+                    message.x = position.x * 100;
+                    message.y = position.y * 100;
+                    message.z = position.z * 100;
+
+                    // Create alerts flags.
+                    message.alerts = arwain::status.falling | (arwain::status.entangled << 1) | (arwain::status.current_stance << 2);
+
+                    // Reset critical status flags now they have been read.
+                    arwain::status.falling = arwain::StanceDetector::NotFalling;
+                    arwain::status.entangled = arwain::StanceDetector::NotEntangled;
+
+                    // Send transmission.
+                    lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
+
+                    // TODO: Check the log format is as expected and usable.
+                    if (arwain::config.log_to_file)
+                    {
+                        lora_file << time.time_since_epoch().count() << " " << message << "\n";
+                    }
+
+                    // Wait until next tick
+                    time = time + interval;
+
+                    // Watch for receive until the next scheduled transmission.
+                    int timeout_ms = (time - std::chrono::system_clock::now()).count() / 1000000;
+                    auto [rxd, rxd_message] = lora.receive_string(timeout_ms);
+                    if (rxd)
+                    {
+                        std::cout << "RECEIVED: " << rxd_message << std::endl;
+                        if (rxd_message == "C.INFERENCE")
+                        {
+                            // arwain::system_mode = arwain::OperatingMode::Inference;
+                        }
+                        else if (rxd_message == "C.AUTOCAL")
+                        {
+                            // arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+                        }
+                        else if (rxd_message == "C.TERMINATE")
+                        {
+                            // arwain::system_mode = arwain::OperatingMode::Terminate;
+                            // arwain::shutdown = 1;
+                        }
+                        else if (rxd_message == "C.SELFTEST")
+                        {
+                            // arwain::system_mode = arwain::OperatingMode::SelfTest;
+                        }
+                    }
+                    std::this_thread::sleep_until(time);
+                }
+                
+                // Close log file handle.
+                if (arwain::config.log_to_file)
+                {
+                    lora_file.close();
+                }
+
+                break;
             }
-
-            // Wait until next tick
-            time = time + interval;
-
-            // Watch for receive until the next scheduled transmission.
-            int timeout_ms = (time - std::chrono::system_clock::now()).count() / 1000000;
-            auto [rxd, rxd_message] = lora.receive_string(timeout_ms);
-            if (rxd)
+            default:
             {
-                std::cout << "RECEIVED: " << rxd_message << std::endl;
-                if (rxd_message == "C.INFERENCE")
-                {
-                    // arwain::system_mode = arwain::OperatingMode::Inference;
-                }
-                else if (rxd_message == "C.AUTOCAL")
-                {
-                    // arwain::system_mode = arwain::OperatingMode::AutoCalibration;
-                }
-                else if (rxd_message == "C.TERMINATE")
-                {
-                    // arwain::system_mode = arwain::OperatingMode::Terminate;
-                    // arwain::shutdown = 1;
-                }
-                else if (rxd_message == "C.SELFTEST")
-                {
-                    // arwain::system_mode = arwain::OperatingMode::SelfTest;
-                }
+                sleep_ms(10);
+                break;
             }
-            std::this_thread::sleep_until(time);
         }
-        sleep_ms(10);
-    }
-
-    // Close log file handle.
-    if (arwain::config.log_to_file)
-    {
-        lora_file.close();
     }
 }

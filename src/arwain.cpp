@@ -40,6 +40,7 @@ namespace arwain
     double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
+    std::string folder_date_string_suffix;
     arwain::Status status;
     arwain::Logger error_log;
 }
@@ -254,16 +255,13 @@ int arwain::rerun_orientation_filter(const std::string& data_location)
     return arwain::ExitCodes::Success;
 }
 
-
-
-void arwain::setup(const InputParser& input)
+void arwain::setup_log_directory()
 {
-    // Create output directory and write copy of current configuration.
     if (arwain::config.log_to_file)
     {
-        if (input.contains("-name"))
+        if (arwain::folder_date_string_suffix != "")
         {
-            arwain::folder_date_string = "./data_" + arwain::datetimestring() + "_" + input.getCmdOption("-name");
+            arwain::folder_date_string = "./data_" + arwain::datetimestring() + "_" + arwain::folder_date_string_suffix;
         }
         else
         {
@@ -274,14 +272,24 @@ void arwain::setup(const InputParser& input)
             std::filesystem::create_directory(arwain::folder_date_string);
         }
         std::filesystem::copy(arwain::config.config_file, arwain::folder_date_string + "/config.conf");
-    }
 
-    // Open error log file (globally accessible)
-    if (arwain::config.log_to_file)
-    {
         arwain::error_log.open(arwain::folder_date_string + "/ERRORS.txt");
         arwain::error_log << "time event" << "\n";
     }
+}
+
+void arwain::setup(const InputParser& input)
+{
+    if (input.contains("-name"))
+    {
+        arwain::folder_date_string_suffix = input.getCmdOption(("-name"));
+    }
+    else
+    {
+        arwain::folder_date_string_suffix = "";
+    }
+    // Create output directory and write copy of current configuration.
+    setup_log_directory();
 }
 
 /** \brief Create a configuration object based on supplied filename.
@@ -522,36 +530,95 @@ arwain::Configuration::Configuration(const InputParser& input)
     }
 }
 
-void cin_fn()
+class ArwainThread
+{
+    public:
+        ArwainThread(int* shutdown_flag)
+        : shutdown(shutdown_flag), th(std::thread{&ArwainThread::run, this}), go(true)
+        {
+        }
+        void join()
+        {
+            th.join();
+        }
+        /** \brief Provide the ability to stop the thread manually, regardless of shutdown flag. */
+        void stop()
+        {
+            go = false;
+        }
+
+    protected:
+        std::thread th;
+        int* shutdown;
+        bool go;
+
+        virtual void run() = 0;
+};
+
+class CommandLine : public ArwainThread
+{
+    void run() override
+    {
+        // TODO Take care to update any global state when switching from or to any relevant modes.
+        // An important example is that the folder_date_string should change when starting a new logging session,
+        // i.e. when switching to inference mode. Different logging might become relevant in other modes, so that
+        // might be important there too.
+
+        while (!(*shutdown))
+        {
+            std::string input;
+            std::cout << "ARWAIN > ";
+            std::getline(std::cin, input);
+
+            if (input == "quit" || input == "exit" || input == "shutdown" || input == "stop")
+            {
+                std::cout << "Cleaning up before closing, please wait ..." << std::endl;
+                arwain::shutdown = 1;
+                arwain::system_mode = arwain::OperatingMode::Terminate;
+            }
+            else if (input == "inference" || input == "infer")
+            {
+                if (arwain::system_mode == arwain::OperatingMode::Inference)
+                {
+                    std::cout << "Already in inference mode" << std::endl;
+                }
+                else
+                {
+                    std::cout << "Entering inference mode" << std::endl;
+                    arwain::setup_log_directory();
+                    arwain::system_mode = arwain::OperatingMode::Inference;
+                }
+            }
+            else if (input == "autocal" || input == "idle")
+            {
+                std::cout << "Entering autocalibration mode" << std::endl;
+                arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+            }
+            else if (input == "mode")
+            {
+                std::cout << "current mode: " << arwain::system_mode << std::endl;
+            }
+            else
+            {
+                std::cout << "error: unrecognised command" << std::endl;
+            }
+            if (!go)
+            {
+                break;
+            }
+        }
+    }
+    public:
+        CommandLine(int* shutdown_flag) : ArwainThread(shutdown_flag)
+        {
+        }
+};
+
+void command_line_fn()
 {
     while (!arwain::shutdown)
     {
-        std::string input;
-        std::cout << "ARWAIN >> ";
-        std::getline(std::cin, input);
-
-        if (input == "quit" || input == "exit" || input == "shutdown" || input == "stop")
-        {
-            std::cout << "Cleaning up before closing, please wait ..." << std::endl;
-            arwain::shutdown = 1;
-            arwain::system_mode = arwain::OperatingMode::Terminate;
-        }
-        else if (input == "inference" || input == "infer")
-        {
-            std::cout << "Entering inference mode" << std::endl;
-        }
-        else if (input == "autocal" || input == "idle")
-        {
-            std::cout << "Entering autocalibration mode" << std::endl;
-        }
-        else if (input == "mode")
-        {
-            std::cout << "current mode: " << arwain::system_mode << std::endl;
-        }
-        else
-        {
-            std::cout << "error: unrecognised command" << std::endl;
-        }
+        
     }
 }
 
@@ -566,7 +633,7 @@ int arwain::execute_inference()
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
-    std::thread cin_thread(cin_fn);
+    CommandLine cmd{&arwain::shutdown};
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
     // Wait for all threads to terminate.
@@ -578,7 +645,7 @@ int arwain::execute_inference()
     indoor_positioning_thread.join();
     py_inference_thread.join();
     altimeter_thread.join();
-    cin_thread.join();
+    cmd.join();
     // kalman_filter.join();
 
     return arwain::ExitCodes::Success;
