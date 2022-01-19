@@ -74,6 +74,7 @@ namespace arwain
     extern int shutdown;
     extern OperatingMode system_mode;
     extern std::string folder_date_string;
+    extern std::string folder_date_string_suffix;
     extern arwain::Configuration config;
     extern arwain::Status status;
     extern arwain::Logger error_log;
@@ -196,6 +197,8 @@ namespace arwain
 {
     std::string datetimestring();
     float getPiCPUTemp();
+    void setup_log_directory();
+
 
     int calibrate_gyroscopes();
     int calibrate_accelerometers();

@@ -36,6 +36,13 @@ static Vector3 world_align(const Vector3& vec, const Quaternion& rotation)
     };
 }
 
+static Vector6 world_align(const Vector6& vec, const Quaternion& rotation)
+{
+    auto a = world_align(vec.acce, rotation);
+    auto g = world_align(vec.gyro, rotation);
+    return {a, g};
+}
+
 static euler_orientation_t compute_euler(Quaternion& q)
 {
     euler_orientation_t euler;
@@ -103,53 +110,6 @@ void imu_reader()
     arwain::Madgwick madgwick_filter_3{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
     arwain::Madgwick madgwick_filter_mag_1{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
 
-    // File handles for logging.
-    arwain::Logger ori_diff_file;
-    arwain::Logger acce_file_1;
-    arwain::Logger world_acce_file_1;
-    arwain::Logger gyro_file_1;
-    arwain::Logger world_gyro_file_1;
-    arwain::Logger madgwick_euler_file_1;
-    arwain::Logger madgwick_euler_file_2;
-    arwain::Logger madgwick_euler_file_3;
-    arwain::Logger madgwick_euler_mag_file_1;
-    arwain::Logger madgwick_quat_file_1;
-
-    if (arwain::config.log_to_file)
-    {
-        // Open file handles for data logging.
-        ori_diff_file.open(arwain::folder_date_string + "/ori_diff.txt");
-        acce_file_1.open(arwain::folder_date_string + "/acce.txt");
-        world_acce_file_1.open(arwain::folder_date_string + "/world_acce.txt");
-        gyro_file_1.open(arwain::folder_date_string + "/gyro.txt");
-        world_gyro_file_1.open(arwain::folder_date_string + "/world_gyro.txt");
-        madgwick_euler_file_1.open(arwain::folder_date_string + "/madgwick_euler_orientation.txt");
-        madgwick_euler_file_2.open(arwain::folder_date_string + "/madgwick_euler_orientation_2.txt");
-        madgwick_euler_file_3.open(arwain::folder_date_string + "/madgwick_euler_orientation_3.txt");
-        madgwick_quat_file_1.open(arwain::folder_date_string + "/madgwick_game_rv.txt");
-        madgwick_euler_mag_file_1.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation.txt");
-
-        // File headers
-        ori_diff_file << "time yaw" << "\n";
-        acce_file_1 << "time x y z" << "\n";
-        world_acce_file_1 << "time x y z" << "\n";
-        gyro_file_1 << "time x y z" << "\n";
-        world_gyro_file_1 << "time x y z" << "\n";
-        madgwick_euler_file_1 << "time roll pitch yaw" << "\n";
-        madgwick_euler_file_2 << "time roll pitch yaw" << "\n";
-        madgwick_euler_file_3 << "time roll pitch yaw" << "\n";
-        madgwick_quat_file_1 << "time w x y z" << "\n";
-        madgwick_euler_mag_file_1 << "time roll pitch yaw" << "\n";
-    }
-
-    // quaternion quat1;//, quat2, quat3, quat_aggregate, magnetovector;
-    long cycle_count = 0;
-
-    // Set up timing.
-    auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
-    auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
-    std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
-
     // After the specificed period has passed, set the magnetic filter gain to the standard value.
     std::thread quick_convergence{
         [&madgwick_filter_mag_1]()
@@ -161,126 +121,256 @@ void imu_reader()
 
     while (!arwain::shutdown)
     {
-        while (
-            arwain::system_mode == arwain::OperatingMode::Inference ||
-            arwain::system_mode == arwain::OperatingMode::SelfTest ||
-            arwain::system_mode == arwain::OperatingMode::AutoCalibration
-        ) 
+        switch (arwain::system_mode)
         {
-            cycle_count++;
-            timeCount = std::chrono::system_clock::now().time_since_epoch().count();
-
-            auto [accel_data1, gyro_data1] = imu1.read_IMU();
-            auto [accel_data2, gyro_data2] = imu2.read_IMU();
-            auto [accel_data3, gyro_data3] = imu3.read_IMU();
-
-            Vector3 magnet = magn.read();
-            magnet.x = magnet.x + magnet.y*arwain::config.mag_scale_xy + magnet.z*arwain::config.mag_scale_xz; // scale/axis correction
-            magnet.y = magnet.y + magnet.z*arwain::config.mag_scale_yz; // scale/axis correction
-            magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
-
-            { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
-                std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-                arwain::Buffers::IMU_BUFFER.pop_front();
-                arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
-            }
-
-            madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
-            madgwick_filter_2.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
-            madgwick_filter_3.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
-            madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
-
-            // SLERP all orientation filters into a canonical filter.
-            // quat1 = {filter1->getW(), filter1->getX(), filter1->getY(), filter1->getZ()};
-            // quat2 = {filter2->getW(), filter2->getX(), filter2->getY(), filter2->getZ()};
-            // quat3 = {filter3->getW(), filter3->getX(), filter3->getY(), filter3->getZ()};
-            // quat_aggregate = quaternion::nslerp(quaternion::nslerp(quat1, quat2, 0.5), quat3, 0.6666666);
-
-            // Compute the SLERP factor based on how 'wrong' the magnetic orientation is compared to the gyro orientation.
-            // double s = gyro_mag_co_trust(quat_aggregate, magnetovector);
-            // SLERP the two orientation vectors using the computed trust factor.
-            // quat_aggregate = quaternion::nslerp(quat_aggregate, magnetovector, 1 - s);
-
-            // Back SLERP
-            // quat1 = quaternion::slerp(quat1, quat_aggregate, 0.02);
-            // quat2 = quaternion::slerp(quat2, quat_aggregate, 0.02);
-            // quat3 = quaternion::slerp(quat3, quat_aggregate, 0.02);
-            // filter1->setQ(quat1.w, quat1.x, quat1.y, quat1.z);
-            // filter2->setQ(quat2.w, quat2.x, quat2.y, quat2.z);
-            // filter3->setQ(quat3.w, quat3.x, quat3.y, quat3.z);
-
-            // Extract Euler orientation from filters.
-            Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
-            Quaternion madgwick_quaternion_data2 = {madgwick_filter_2.getW(), madgwick_filter_2.getX(), madgwick_filter_2.getY(), madgwick_filter_2.getZ()};
-            Quaternion madgwick_quaternion_data3 = {madgwick_filter_3.getW(), madgwick_filter_3.getX(), madgwick_filter_3.getY(), madgwick_filter_3.getZ()};
-            Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
-            euler_orientation_t madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
-            euler_orientation_t madgwick_euler_data2 = compute_euler(madgwick_quaternion_data2);
-            euler_orientation_t madgwick_euler_data3 = compute_euler(madgwick_quaternion_data3);
-            euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
-
-            { // Add orientation information to buffers.
-                std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
-                arwain::Buffers::EULER_ORIENTATION_BUFFER.pop_front();
-                arwain::Buffers::EULER_ORIENTATION_BUFFER.push_back(madgwick_euler_data1);
-                arwain::Buffers::QUAT_ORIENTATION_BUFFER.pop_front();
-                arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
-            }
-
-            // Add world-aligned IMU to its own buffer.
-            Vector3 world_accel_data1 = world_align(accel_data1, madgwick_quaternion_data1);
-            Vector3 world_gyro_data1 = world_align(gyro_data1, madgwick_quaternion_data1);
+            case arwain::OperatingMode::Inference:
             {
-                std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-                arwain::Buffers::IMU_WORLD_BUFFER.pop_front();
-                arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
-            }
+                // mode-specific setup should go here, before the while loop. e.g. open new log files. ----------------
+                
+                // File handles for logging.
+                arwain::Logger ori_diff_file;
+                arwain::Logger acce_file_1;
+                arwain::Logger world_acce_file_1;
+                arwain::Logger gyro_file_1;
+                arwain::Logger world_gyro_file_1;
+                arwain::Logger madgwick_euler_file_1;
+                arwain::Logger madgwick_euler_file_2;
+                arwain::Logger madgwick_euler_file_3;
+                arwain::Logger madgwick_euler_mag_file_1;
+                arwain::Logger madgwick_quat_file_1;
 
-            // Compute the new correction based on magn/gyro filter diffs.
-            double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
-            if (arwain::yaw_offset == 0)
-            {
-                arwain::yaw_offset = new_yaw_offset;
-            }
-            else
-            {
-                arwain::yaw_offset = new_yaw_offset*0.001 + 0.999*arwain::yaw_offset;
-            }
+                if (arwain::config.log_to_file)
+                {
+                    // Open file handles for data logging.
+                    ori_diff_file.open(arwain::folder_date_string + "/ori_diff.txt");
+                    acce_file_1.open(arwain::folder_date_string + "/acce.txt");
+                    world_acce_file_1.open(arwain::folder_date_string + "/world_acce.txt");
+                    gyro_file_1.open(arwain::folder_date_string + "/gyro.txt");
+                    world_gyro_file_1.open(arwain::folder_date_string + "/world_gyro.txt");
+                    madgwick_euler_file_1.open(arwain::folder_date_string + "/madgwick_euler_orientation.txt");
+                    madgwick_euler_file_2.open(arwain::folder_date_string + "/madgwick_euler_orientation_2.txt");
+                    madgwick_euler_file_3.open(arwain::folder_date_string + "/madgwick_euler_orientation_3.txt");
+                    madgwick_quat_file_1.open(arwain::folder_date_string + "/madgwick_game_rv.txt");
+                    madgwick_euler_mag_file_1.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation.txt");
 
-            // Write all log files.
-            if (arwain::config.log_to_file)
-            {
-                ori_diff_file << timeCount << " " << arwain::yaw_offset << "\n";
-                acce_file_1 << timeCount << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
-                gyro_file_1 << timeCount << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
-                world_acce_file_1 << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
-                world_gyro_file_1 << timeCount << " " << world_gyro_data1.x << " " << world_gyro_data1.y << " " << world_gyro_data1.z << "\n";
-                madgwick_euler_file_1 << timeCount << " " << madgwick_euler_data1.roll << " " << madgwick_euler_data1.pitch << " " << madgwick_euler_data1.yaw << "\n";
-                madgwick_euler_file_2 << timeCount << " " << madgwick_euler_data2.roll << " " << madgwick_euler_data2.pitch << " " << madgwick_euler_data2.yaw << "\n";
-                madgwick_euler_file_3 << timeCount << " " << madgwick_euler_data3.roll << " " << madgwick_euler_data3.pitch << " " << madgwick_euler_data3.yaw << "\n";
-                madgwick_euler_mag_file_1 << timeCount << " " << madgwick_euler_mag_data1.roll << " " << madgwick_euler_mag_data1.pitch << " " << madgwick_euler_mag_data1.yaw << "\n";
-                madgwick_quat_file_1 << timeCount << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
-            }
+                    // File headers
+                    ori_diff_file << "time yaw" << "\n";
+                    acce_file_1 << "time x y z" << "\n";
+                    world_acce_file_1 << "time x y z" << "\n";
+                    gyro_file_1 << "time x y z" << "\n";
+                    world_gyro_file_1 << "time x y z" << "\n";
+                    madgwick_euler_file_1 << "time roll pitch yaw" << "\n";
+                    madgwick_euler_file_2 << "time roll pitch yaw" << "\n";
+                    madgwick_euler_file_3 << "time roll pitch yaw" << "\n";
+                    madgwick_quat_file_1 << "time w x y z" << "\n";
+                    madgwick_euler_mag_file_1 << "time roll pitch yaw" << "\n";
+                }
 
-            // Wait until the next tick.
-            loopTime = loopTime + interval;
-            std::this_thread::sleep_until(loopTime);
+                // Set up timing.
+                auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
+                auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
+                std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
+
+                // end of mode-specific setup ------------------------------------------------------------------------
+
+                while (arwain::system_mode == arwain::OperatingMode::Inference)
+                {
+                    timeCount = std::chrono::system_clock::now().time_since_epoch().count();
+
+                    auto [accel_data1, gyro_data1] = imu1.read_IMU();
+                    auto [accel_data2, gyro_data2] = imu2.read_IMU();
+                    auto [accel_data3, gyro_data3] = imu3.read_IMU();
+
+                    Vector3 magnet = magn.read();
+                    magnet.x = magnet.x + magnet.y*arwain::config.mag_scale_xy + magnet.z*arwain::config.mag_scale_xz; // scale/axis correction
+                    magnet.y = magnet.y + magnet.z*arwain::config.mag_scale_yz; // scale/axis correction
+                    magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
+
+                    { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
+                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+                        arwain::Buffers::IMU_BUFFER.pop_front();
+                        arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
+                    }
+
+                    madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
+                    madgwick_filter_2.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
+                    madgwick_filter_3.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
+                    madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
+
+                    // Extract Euler orientation from filters.
+                    Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
+                    Quaternion madgwick_quaternion_data2 = {madgwick_filter_2.getW(), madgwick_filter_2.getX(), madgwick_filter_2.getY(), madgwick_filter_2.getZ()};
+                    Quaternion madgwick_quaternion_data3 = {madgwick_filter_3.getW(), madgwick_filter_3.getX(), madgwick_filter_3.getY(), madgwick_filter_3.getZ()};
+                    Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
+                    euler_orientation_t madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
+                    euler_orientation_t madgwick_euler_data2 = compute_euler(madgwick_quaternion_data2);
+                    euler_orientation_t madgwick_euler_data3 = compute_euler(madgwick_quaternion_data3);
+                    euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
+
+                    { // Add orientation information to buffers.
+                        std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
+                        arwain::Buffers::EULER_ORIENTATION_BUFFER.pop_front();
+                        arwain::Buffers::EULER_ORIENTATION_BUFFER.push_back(madgwick_euler_data1);
+                        arwain::Buffers::QUAT_ORIENTATION_BUFFER.pop_front();
+                        arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
+                    }
+
+                    // Add world-aligned IMU to its own buffer.
+                    Vector3 world_accel_data1 = world_align(accel_data1, madgwick_quaternion_data1);
+                    Vector3 world_gyro_data1 = world_align(gyro_data1, madgwick_quaternion_data1);
+                    {
+                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+                        arwain::Buffers::IMU_WORLD_BUFFER.pop_front();
+                        arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
+                    }
+
+                    // Compute the new correction based on magn/gyro filter diffs.
+                    double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
+                    if (arwain::yaw_offset == 0)
+                    {
+                        arwain::yaw_offset = new_yaw_offset;
+                    }
+                    else
+                    {
+                        arwain::yaw_offset = new_yaw_offset*0.001 + 0.999*arwain::yaw_offset;
+                    }
+
+                    // Write all log files.
+                    if (arwain::config.log_to_file)
+                    {
+                        ori_diff_file << timeCount << " " << arwain::yaw_offset << "\n";
+                        acce_file_1 << timeCount << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
+                        gyro_file_1 << timeCount << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
+                        world_acce_file_1 << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
+                        world_gyro_file_1 << timeCount << " " << world_gyro_data1.x << " " << world_gyro_data1.y << " " << world_gyro_data1.z << "\n";
+                        madgwick_euler_file_1 << timeCount << " " << madgwick_euler_data1.roll << " " << madgwick_euler_data1.pitch << " " << madgwick_euler_data1.yaw << "\n";
+                        madgwick_euler_file_2 << timeCount << " " << madgwick_euler_data2.roll << " " << madgwick_euler_data2.pitch << " " << madgwick_euler_data2.yaw << "\n";
+                        madgwick_euler_file_3 << timeCount << " " << madgwick_euler_data3.roll << " " << madgwick_euler_data3.pitch << " " << madgwick_euler_data3.yaw << "\n";
+                        madgwick_euler_mag_file_1 << timeCount << " " << madgwick_euler_mag_data1.roll << " " << madgwick_euler_mag_data1.pitch << " " << madgwick_euler_mag_data1.yaw << "\n";
+                        madgwick_quat_file_1 << timeCount << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
+                    }
+
+                    // Wait until the next tick.
+                    loopTime = loopTime + interval;
+                    std::this_thread::sleep_until(loopTime);
+                }
+                // mode-specific cleanup should go here, after the while loop. e.g. close log files.
+                // Close all file handles.
+                if (arwain::config.log_to_file)
+                {
+                    ori_diff_file.close();
+                    acce_file_1.close();
+                    world_acce_file_1.close();
+                    gyro_file_1.close();
+                    world_gyro_file_1.close();
+                    madgwick_euler_file_1.close();
+                    madgwick_quat_file_1.close();
+                    madgwick_euler_mag_file_1.close();
+                }
+                break;
+            }
+            case arwain::OperatingMode::AutoCalibration:
+            {
+                // TODO This mode should do nothing but read the sensors (mainly IMU) and keeo the orientation filter(s) and buffers up to date.
+
+                // TODO Any mode-specific setup goes here
+                // Set up timing.
+                auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
+                auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
+                std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
+
+                while (arwain::system_mode == arwain::OperatingMode::AutoCalibration)
+                {
+                    timeCount = std::chrono::system_clock::now().time_since_epoch().count();
+
+                    auto [accel_data1, gyro_data1] = imu1.read_IMU();
+                    auto [accel_data2, gyro_data2] = imu2.read_IMU();
+                    auto [accel_data3, gyro_data3] = imu3.read_IMU();
+
+                    Vector3 magnet = magn.read();
+                    // TODO Internalise the magnetometer calibration corrections.
+                    magnet.x = magnet.x + magnet.y*arwain::config.mag_scale_xy + magnet.z*arwain::config.mag_scale_xz; // scale/axis correction
+                    magnet.y = magnet.y + magnet.z*arwain::config.mag_scale_yz; // scale/axis correction
+                    magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
+
+                    { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
+                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+                        arwain::Buffers::IMU_BUFFER.pop_front();
+                        arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
+                    }
+
+                    madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
+                    madgwick_filter_2.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
+                    madgwick_filter_3.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
+                    madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
+
+                    // Extract Euler orientation from filters.
+                    Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
+                    Quaternion madgwick_quaternion_data2 = {madgwick_filter_2.getW(), madgwick_filter_2.getX(), madgwick_filter_2.getY(), madgwick_filter_2.getZ()};
+                    Quaternion madgwick_quaternion_data3 = {madgwick_filter_3.getW(), madgwick_filter_3.getX(), madgwick_filter_3.getY(), madgwick_filter_3.getZ()};
+                    Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
+                    euler_orientation_t madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
+                    euler_orientation_t madgwick_euler_data2 = compute_euler(madgwick_quaternion_data2);
+                    euler_orientation_t madgwick_euler_data3 = compute_euler(madgwick_quaternion_data3);
+                    euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
+
+                    { // Add orientation information to buffers.
+                        std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
+                        arwain::Buffers::EULER_ORIENTATION_BUFFER.pop_front();
+                        arwain::Buffers::EULER_ORIENTATION_BUFFER.push_back(madgwick_euler_data1);
+                        arwain::Buffers::QUAT_ORIENTATION_BUFFER.pop_front();
+                        arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
+                    }
+
+                    // Add world-aligned IMU to its own buffer.
+                    Vector3 world_accel_data1 = world_align(accel_data1, madgwick_quaternion_data1);
+                    Vector3 world_gyro_data1 = world_align(gyro_data1, madgwick_quaternion_data1);
+                    {
+                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+                        arwain::Buffers::IMU_WORLD_BUFFER.pop_front();
+                        arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
+                    }
+
+                    // Compute the new correction based on magn/gyro filter diffs.
+                    double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
+                    if (arwain::yaw_offset == 0)
+                    {
+                        arwain::yaw_offset = new_yaw_offset;
+                    }
+                    else
+                    {
+                        arwain::yaw_offset = new_yaw_offset*0.001 + 0.999*arwain::yaw_offset;
+                    }
+
+                    // Wait until the next tick.
+                    loopTime = loopTime + interval;
+                    std::this_thread::sleep_until(loopTime);
+                }
+
+                // TODO mode-specific cleanup should go here, after the while loop. e.g. close log files.
+
+                break;
+            }
+            case arwain::OperatingMode::SelfTest:
+            {
+                // TODO mode-specific setup should go here, before the while loop. e.g. open new log files.
+                while (arwain::system_mode == arwain::OperatingMode::SelfTest)
+                {
+                    // Relevant work
+                    std::cout << "TODO in selftest mode which is not yet defined" << std::endl;
+                    sleep_ms(1000);
+                }
+                // TODO mode-specific cleanup should go here, after the while loop. e.g. close log files.
+                break;
+            }
+            default:
+            {
+                sleep_ms(10);
+                break;
+            }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds{10});
     }
 
+    // Clean up the thread left by the quick convergence timer.
     quick_convergence.join();
-
-    // Close all file handles.
-    if (arwain::config.log_to_file)
-    {
-        ori_diff_file.close();
-        acce_file_1.close();
-        world_acce_file_1.close();
-        gyro_file_1.close();
-        world_gyro_file_1.close();
-        madgwick_euler_file_1.close();
-        madgwick_quat_file_1.close();
-        madgwick_euler_mag_file_1.close();
-    }
 }
