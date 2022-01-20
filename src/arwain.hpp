@@ -71,13 +71,14 @@ inline std::ostream& operator<<(std::ostream& stream, arwain::OperatingMode toke
 namespace arwain
 {
     extern double yaw_offset;
-    extern int shutdown;
     extern OperatingMode system_mode;
     extern std::string folder_date_string;
     extern std::string folder_date_string_suffix;
     extern arwain::Configuration config;
     extern arwain::Status status;
     extern arwain::Logger error_log;
+    extern bool request_gyro_calib;
+    extern bool ready_for_inference;
 }
 
 /** \brief Contains mutex locks for thread coordination. */

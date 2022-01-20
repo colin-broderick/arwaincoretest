@@ -42,9 +42,9 @@ void predict_velocity()
     std::stringstream request;
     char response_buffer[50];
 
-    std::cout << "Inference started" << std::endl;
+    arwain::ready_for_inference = true;
 
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
         {

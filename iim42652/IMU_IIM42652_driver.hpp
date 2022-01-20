@@ -95,12 +95,12 @@ public:
     Vector6 read_IMU();
     double read_temperature();
     Vector3 calibrate_gyroscope();
-    // Vector3 calibrate_accelerometer();
     Vector3 calibration_accel_sample();
     void set_gyro_bias(double x, double y, double z);
     void set_accel_bias(double x, double y, double z);
     void enable_auto_calib();
     void disable_auto_calib();
+    Vector3 get_gyro_calib();
 
 private:
     double accel_resolution = 0;

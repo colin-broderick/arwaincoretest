@@ -25,7 +25,7 @@ void std_output()
         std::this_thread::sleep_for(interval*3);
         auto time = std::chrono::system_clock::now();
 
-        while (!arwain::shutdown)
+        while (arwain::system_mode != arwain::OperatingMode::Terminate)
         {
             switch (arwain::system_mode)
             {

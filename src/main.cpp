@@ -49,7 +49,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "calibration.hpp"
 
 /** \brief Capture the SIGINT signal for clean exit.
- * Sets the global SHUTDOWN flag informing all threads to clean up and exit.
+ * Sets the system mode to Terminate, which instructs all threads to clean up and exit.
  * \param signal The signal to capture.
  */
 static void sigint_handler(int signal)
@@ -57,7 +57,6 @@ static void sigint_handler(int signal)
     if (signal == SIGINT)
     {
         std::cout << "\nReceived SIGINT - closing\n" << "\n";
-        arwain::shutdown = 1;
         arwain::system_mode = arwain::OperatingMode::Terminate;
     }
 }
