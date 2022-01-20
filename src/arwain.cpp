@@ -362,6 +362,9 @@ int arwain::Configuration::read_from_file()
     read_option(options, "mag_scale_x", this->mag_scale.x);
     read_option(options, "mag_scale_y", this->mag_scale.y);
     read_option(options, "mag_scale_z", this->mag_scale.z);
+    read_option(options, "mag_scale_xy", this->mag_scale_xy);
+    read_option(options, "mag_scale_xz", this->mag_scale_yz);
+    read_option(options, "mag_scale_yz", this->mag_scale_xz);
     read_option(options, "use_magnetometer", this->use_magnetometer);
     read_option(options, "log_magnetometer", this->log_magnetometer);
     read_option(options, "npu_vel_weight_confidence", this->npu_vel_weight_confidence);
@@ -392,9 +395,6 @@ int arwain::Configuration::read_from_file()
     read_option(options, "node_id", this->node_id);
     read_option(options, "altitude_filter_weight", this->altitude_filter_weight);
     read_option(options, "pressure_offset", this->pressure_offset);
-    read_option(options, "mag_scale_xy", this->mag_scale_xy);
-    read_option(options, "mag_scale_xz", this->mag_scale_yz);
-    read_option(options, "mag_scale_yz", this->mag_scale_xz);
     read_option(options, "correct_with_yaw_diff", this->correct_with_yaw_diff);
 
     // Apply LoRa settings

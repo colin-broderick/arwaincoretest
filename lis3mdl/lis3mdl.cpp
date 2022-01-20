@@ -171,6 +171,9 @@ double LIS3MDL::read_temp()
     return (double)temp_int / 8.0;
 }
 
+/** \brief Read the data from the sensor. The returned values have been calibrated
+ * according to any internally set parameters.
+ */
 Vector3 LIS3MDL::read()
 {
     uint8_t read_buffer[6];
@@ -184,17 +187,29 @@ Vector3 LIS3MDL::read()
     double mag_y = this->fsr_res * y_int;
     double mag_z = this->fsr_res * z_int;
 
-    return {
+    Vector3 v = {
         (mag_x - this->bias.x) * this->scale.x,
         (mag_y - this->bias.y) * this->scale.y,
         (mag_z - this->bias.z) * this->scale.z
     };
+
+    return {
+        v.x + v.y * cross_scale.x + v.z * cross_scale.z,
+        v.y + v.z * cross_scale.y,
+        v.z
+    };
 }
 
-void LIS3MDL::set_calibration(Vector3 bias_, Vector3 scale_)
+/** \brief Set the calibration of the magnetometer.
+ * \param bias_ Vector3 representing hard iron offsets.
+ * \param scale_ Vector3 representing scale of axes.
+ * \param cross_scale_ Vector3 representing the cross-correlation between axes, in the order xz, yz, xz.
+ */
+void LIS3MDL::set_calibration(Vector3 bias_, Vector3 scale_, Vector3 cross_scale_)
 {
     this->bias = bias_;
     this->scale = scale_;
+    this->cross_scale = cross_scale_;
 }
 
 void LIS3MDL::calibrate()

@@ -102,7 +102,11 @@ void imu_reader()
     imu3.enable_auto_calib();
     
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
-    magn.set_calibration(arwain::config.mag_bias, arwain::config.mag_scale);
+    magn.set_calibration(
+        arwain::config.mag_bias,
+        arwain::config.mag_scale,
+        {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}
+    );
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Madgwick madgwick_filter_1{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
@@ -190,8 +194,6 @@ void imu_reader()
                     }
 
                     Vector3 magnet = magn.read();
-                    magnet.x = magnet.x + magnet.y*arwain::config.mag_scale_xy + magnet.z*arwain::config.mag_scale_xz; // scale/axis correction
-                    magnet.y = magnet.y + magnet.z*arwain::config.mag_scale_yz; // scale/axis correction
                     magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
                     { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
@@ -296,9 +298,6 @@ void imu_reader()
                     auto [accel_data3, gyro_data3] = imu3.read_IMU();
 
                     Vector3 magnet = magn.read();
-                    // TODO Internalise the magnetometer calibration corrections.
-                    magnet.x = magnet.x + magnet.y*arwain::config.mag_scale_xy + magnet.z*arwain::config.mag_scale_xz; // scale/axis correction
-                    magnet.y = magnet.y + magnet.z*arwain::config.mag_scale_yz; // scale/axis correction
                     magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
                     { // Add new reading to end of buffer, and remove oldest reading from start of buffer.

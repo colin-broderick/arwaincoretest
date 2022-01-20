@@ -26,7 +26,7 @@ class LIS3MDL
         Quaternion read_orientation();
         double read_temp();
         void calibrate();
-        void set_calibration(Vector3 bias_, Vector3 scale_);
+        void set_calibration(Vector3 bias_, Vector3 scale_, Vector3 cross_scale_);
 
     private: // Methods
         void soft_reset();
@@ -43,6 +43,7 @@ class LIS3MDL
         double fsr_res;
         Vector3 bias = {0, 0, 0};
         Vector3 scale = {1, 1, 1};
+        Vector3 cross_scale = {0, 0, 0}; // In the order xy, yz, xz.
 
     private: // Statics
         // CHIP ADDRESS -----------------------------------------------------
