@@ -34,7 +34,7 @@ int arwain::test_pressure()
 
     sleep_ms(50);
 
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         auto [new_pressure, new_temperature] = bmp384.read();
         new_pressure = new_pressure - arwain::config.pressure_offset;
@@ -65,7 +65,7 @@ int arwain::test_imu()
     auto time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{10};
 
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         auto [accel_data, gyro_data] = imu.read_IMU();
 
@@ -92,7 +92,7 @@ int arwain::test_lora_rx()
 
     std::cout << "Receiving LoRa messages ..." << std::endl;
 
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         auto [rx, message] = lora.receive_string(1000);
         if (rx)
@@ -112,7 +112,7 @@ int arwain::test_mag(int argc, char **argv)
 
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
 
-    while (!arwain::shutdown && ros::ok())
+    while (arwain::system_mode != arwain::OperatingMode::Terminate && ros::ok())
     {
         Vector3 reading = magn.read();
         geometry_msgs::Vector3Stamped msg;
@@ -141,7 +141,7 @@ int arwain::test_mag()
     }
     std::cout << "Chip ID: " << std::hex << std::showbase << magn.test_chip() << std::dec << std::endl;
 
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         Vector3 reading = magn.read();
         std::cout << "Magnetometer readings: " << reading << " .... " << reading.magnitude() << std::endl;
@@ -165,7 +165,7 @@ int arwain::test_lora_tx()
     std::cout << "Transmitting message \"" << message << ".x\" at 1 Hz ..." << std::endl;
 
     int i = 0;
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         i++;
         std::string msg = message + "." + std::to_string(i);
@@ -192,7 +192,7 @@ int arwain::test_ori(int frequency)
 
     std::cout << "Starting orientation filter at " << frequency << " Hz" << std::endl;
 
-    while (!shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         time += interval;
         auto timeCount = time.time_since_epoch().count();

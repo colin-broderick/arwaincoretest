@@ -202,7 +202,7 @@ void LIS3MDL::calibrate()
     std::vector<Vector3> readings;
 
     // Take readings while tumbling device.
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         Vector3 reading = this->read();
         readings.push_back(reading);

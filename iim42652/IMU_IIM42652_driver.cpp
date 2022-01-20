@@ -30,6 +30,11 @@ IMU_IIM42652::IMU_IIM42652(int bus_address, const std::string &bus_name)
     std::this_thread::sleep_for(std::chrono::milliseconds{25});
 }
 
+Vector3 IMU_IIM42652::get_gyro_calib()
+{
+    return {gyro_bias_x, gyro_bias_y, gyro_bias_z};
+}
+
 namespace
 {
     struct AccelerometerCalibrationCandidate

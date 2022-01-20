@@ -37,7 +37,7 @@ void altimeter()
     };
     
     // Spin until shutdown signal received.
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
         {

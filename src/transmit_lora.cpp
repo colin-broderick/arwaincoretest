@@ -34,7 +34,7 @@ void transmit_lora()
     // }
     // lora.setSyncWord(0x12);
 
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
         {
@@ -98,7 +98,6 @@ void transmit_lora()
                         else if (rxd_message == "C.TERMINATE")
                         {
                             // arwain::system_mode = arwain::OperatingMode::Terminate;
-                            // arwain::shutdown = 1;
                         }
                         else if (rxd_message == "C.SELFTEST")
                         {

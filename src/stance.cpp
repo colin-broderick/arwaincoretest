@@ -37,7 +37,7 @@ void stance_detector()
     std::deque<Vector3> vel_data;
     Quaternion rotation_quaternion;
 
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
         {

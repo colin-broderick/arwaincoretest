@@ -36,13 +36,15 @@
 namespace arwain
 {
     int shutdown = 0;
-    OperatingMode system_mode = arwain::OperatingMode::Inference;
+    OperatingMode system_mode = arwain::OperatingMode::AutoCalibration;
     double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
     std::string folder_date_string_suffix;
     arwain::Status status;
     arwain::Logger error_log;
+    bool request_gyro_calib = false;
+    bool ready_for_inference = false;
 }
 
 // Shared data buffers; mutex locks must be used when accessing.
@@ -273,6 +275,11 @@ void arwain::setup_log_directory()
         }
         std::filesystem::copy(arwain::config.config_file, arwain::folder_date_string + "/config.conf");
 
+        // Close the current error log, if there is one, and start a new one.
+        if (arwain::error_log.is_open())
+        {
+            arwain::error_log.close();
+        }
         arwain::error_log.open(arwain::folder_date_string + "/ERRORS.txt");
         arwain::error_log << "time event" << "\n";
     }
@@ -289,7 +296,7 @@ void arwain::setup(const InputParser& input)
         arwain::folder_date_string_suffix = "";
     }
     // Create output directory and write copy of current configuration.
-    setup_log_directory();
+    // setup_log_directory();
 }
 
 /** \brief Create a configuration object based on supplied filename.
@@ -533,8 +540,8 @@ arwain::Configuration::Configuration(const InputParser& input)
 class ArwainThread
 {
     public:
-        ArwainThread(int* shutdown_flag)
-        : shutdown(shutdown_flag), th(std::thread{&ArwainThread::run, this}), go(true)
+        ArwainThread()
+        : th(std::thread{&ArwainThread::run, this}), go(true)
         {
         }
         void join()
@@ -549,7 +556,6 @@ class ArwainThread
 
     protected:
         std::thread th;
-        int* shutdown;
         bool go;
 
         virtual void run() = 0;
@@ -564,7 +570,10 @@ class CommandLine : public ArwainThread
         // i.e. when switching to inference mode. Different logging might become relevant in other modes, so that
         // might be important there too.
 
-        while (!(*shutdown))
+        // TODO APIs for request of runtime status? I added request for gyro calib simply to confirm it was auto
+        // calibrating as expected, but it's not a good implementation.
+
+        while (arwain::system_mode != arwain::OperatingMode::Terminate)
         {
             std::string input;
             std::cout << "ARWAIN > ";
@@ -573,7 +582,6 @@ class CommandLine : public ArwainThread
             if (input == "quit" || input == "exit" || input == "shutdown" || input == "stop")
             {
                 std::cout << "Cleaning up before closing, please wait ..." << std::endl;
-                arwain::shutdown = 1;
                 arwain::system_mode = arwain::OperatingMode::Terminate;
             }
             else if (input == "inference" || input == "infer")
@@ -582,12 +590,21 @@ class CommandLine : public ArwainThread
                 {
                     std::cout << "Already in inference mode" << std::endl;
                 }
+                else if (!arwain::ready_for_inference)
+                {
+                    std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
+                }
                 else
                 {
                     std::cout << "Entering inference mode" << std::endl;
                     arwain::setup_log_directory();
                     arwain::system_mode = arwain::OperatingMode::Inference;
                 }
+            }
+            else if (input == "gyro")
+            {
+                arwain::request_gyro_calib = true;
+                sleep_ms(10);
             }
             else if (input == "autocal" || input == "idle")
             {
@@ -609,18 +626,10 @@ class CommandLine : public ArwainThread
         }
     }
     public:
-        CommandLine(int* shutdown_flag) : ArwainThread(shutdown_flag)
+        CommandLine() : ArwainThread()
         {
         }
 };
-
-void command_line_fn()
-{
-    while (!arwain::shutdown)
-    {
-        
-    }
-}
 
 int arwain::execute_inference()
 {
@@ -633,7 +642,7 @@ int arwain::execute_inference()
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
-    CommandLine cmd{&arwain::shutdown};
+    CommandLine cmd;                                             // Simple command line interface for runtime mode switching.
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
     // Wait for all threads to terminate.
@@ -750,7 +759,7 @@ int arwain::calibrate_magnetometers()
     sleep_ms(3000);
     std::cout << "Calibration started ..." << std::endl;
 
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         clbr.feed(magnetometer.read());
         sleep_ms(100);

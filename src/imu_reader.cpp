@@ -119,7 +119,7 @@ void imu_reader()
         }
     };
 
-    while (!arwain::shutdown)
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
         {
@@ -180,6 +180,14 @@ void imu_reader()
                     auto [accel_data1, gyro_data1] = imu1.read_IMU();
                     auto [accel_data2, gyro_data2] = imu2.read_IMU();
                     auto [accel_data3, gyro_data3] = imu3.read_IMU();
+
+                    if (arwain::request_gyro_calib)
+                    {
+                        std::cout << imu1.get_gyro_calib() << "      ";
+                        std::cout << imu2.get_gyro_calib() << "      ";
+                        std::cout << imu3.get_gyro_calib() << std::endl;
+                        arwain::request_gyro_calib = false;
+                    }
 
                     Vector3 magnet = magn.read();
                     magnet.x = magnet.x + magnet.y*arwain::config.mag_scale_xy + magnet.z*arwain::config.mag_scale_xz; // scale/axis correction
