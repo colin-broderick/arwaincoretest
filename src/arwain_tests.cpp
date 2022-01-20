@@ -131,7 +131,11 @@ int arwain::test_mag(int argc, char **argv)
 int arwain::test_mag()
 {
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
-    magn.set_calibration(arwain::config.mag_bias, arwain::config.mag_scale);
+    magn.set_calibration(
+        arwain::config.mag_bias,
+        arwain::config.mag_scale,
+        {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}    
+    );
 
     int id = magn.test_chip();
     if (id != 0x3D)
