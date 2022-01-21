@@ -156,33 +156,6 @@ void predict_velocity()
                 }
                 break;
             }
-            case arwain::OperatingMode::AutoCalibration:
-            {
-                while (arwain::system_mode == arwain::OperatingMode::AutoCalibration)
-                {
-                    // TODO
-                    sleep_ms(10);
-                }
-                break;
-            }
-            case arwain::OperatingMode::SelfTest:
-            {
-                while (arwain::system_mode == arwain::OperatingMode::SelfTest)
-                {
-                    // TODO
-                    sleep_ms(10);
-                }
-                break;
-            }
-            case arwain::OperatingMode::Terminate:
-            {
-                while (arwain::system_mode == arwain::OperatingMode::Terminate)
-                {
-                    // TODO
-                    sleep_ms(10);
-                }
-                break;
-            }
             default:
             {
                 sleep_ms(10);

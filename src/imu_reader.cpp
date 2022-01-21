@@ -264,7 +264,6 @@ void imu_reader()
                     loopTime = loopTime + interval;
                     std::this_thread::sleep_until(loopTime);
                 }
-                // mode-specific cleanup should go here, after the while loop. e.g. close log files.
                 // Close all file handles.
                 if (arwain::config.log_to_file)
                 {
@@ -281,9 +280,6 @@ void imu_reader()
             }
             case arwain::OperatingMode::AutoCalibration:
             {
-                // TODO This mode should do nothing but read the sensors (mainly IMU) and keeo the orientation filter(s) and buffers up to date.
-
-                // TODO Any mode-specific setup goes here
                 // Set up timing.
                 auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
                 auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
@@ -361,21 +357,16 @@ void imu_reader()
                     loopTime = loopTime + interval;
                     std::this_thread::sleep_until(loopTime);
                 }
-
-                // TODO mode-specific cleanup should go here, after the while loop. e.g. close log files.
-
                 break;
             }
             case arwain::OperatingMode::SelfTest:
             {
-                // TODO mode-specific setup should go here, before the while loop. e.g. open new log files.
                 while (arwain::system_mode == arwain::OperatingMode::SelfTest)
                 {
                     // Relevant work
                     std::cout << "TODO in selftest mode which is not yet defined" << std::endl;
                     sleep_ms(1000);
                 }
-                // TODO mode-specific cleanup should go here, after the while loop. e.g. close log files.
                 break;
             }
             default:

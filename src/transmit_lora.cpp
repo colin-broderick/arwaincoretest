@@ -72,7 +72,7 @@ void transmit_lora()
                     // Send transmission.
                     lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
 
-                    // TODO: Check the log format is as expected and usable.
+                    // Log message to file.
                     if (arwain::config.log_to_file)
                     {
                         lora_file << time.time_since_epoch().count() << " " << message << "\n";
