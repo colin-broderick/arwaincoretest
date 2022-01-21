@@ -36,13 +36,6 @@ static Vector3 world_align(const Vector3& vec, const Quaternion& rotation)
     };
 }
 
-static Vector6 world_align(const Vector6& vec, const Quaternion& rotation)
-{
-    auto a = world_align(vec.acce, rotation);
-    auto g = world_align(vec.gyro, rotation);
-    return {a, g};
-}
-
 static euler_orientation_t compute_euler(Quaternion& q)
 {
     euler_orientation_t euler;
