@@ -15,6 +15,11 @@
  */
 void indoor_positioning()
 {
+    if (!arwain::config.use_ips)
+    {
+        return;
+    }
+
     arwain::CornerDetector corner_detector{11, 115.0, 0.20}; // 11 * 0.2 means a window of 11 points separated by at least 20 cm each, so about 2 m total.
     arwain::FloorTracker floor_tracker{5, 0.10, 0.20}; // UK stairs are gradient approx. 0.9.
 

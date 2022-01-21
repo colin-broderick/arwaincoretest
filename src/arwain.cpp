@@ -367,10 +367,10 @@ int arwain::Configuration::read_from_file()
     read_option(options, "mag_scale_yz", this->mag_scale_xz);
     read_option(options, "use_magnetometer", this->use_magnetometer);
     read_option(options, "log_magnetometer", this->log_magnetometer);
+    read_option(options, "use_ips", this->use_ips);
     read_option(options, "npu_vel_weight_confidence", this->npu_vel_weight_confidence);
     read_option(options, "madgwick_beta", this->madgwick_beta);
     read_option(options, "madgwick_beta_conv", this->madgwick_beta_conv);
-    read_option(options, "use_indoor_positioning_system", this->use_indoor_positioning_system);
     read_option(options, "orientation_filter", this->orientation_filter);
 
     // We want to fail out if the model XML file cannot be found.
