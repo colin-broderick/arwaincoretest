@@ -236,12 +236,12 @@ namespace arwain
             double mag_scale_yz;
             int use_magnetometer; // Whether to use the magnetometer for orientation filtering.
             int log_magnetometer; // Whether to take and log magnetometer readings.
+            int use_ips; // Whether to use the indoor positioning system (floor levelling, corner detection, etc).
             double npu_vel_weight_confidence; // Relative confidence in NPU vs. IMU integration for velocity predictions, 1 being 100% NPU, 0 being 100% integration.
             double madgwick_beta; // Madgwick filter gain parameter.
             double madgwick_beta_conv; // Madgwick gain while magnetmometer converges.
             double efaroe_beta; // EFAROE filter gain parameter.
             double efaroe_zeta; // EFAROE filter gain parameter.
-            int use_indoor_positioning_system; // Whether to use IPS for stair and floor snapping.
             std::string orientation_filter; // Which orientation filter to use out of options [efaroe, madgwick].
             LoRa::Frequency lora_rf_frequency; // Frequency in MHz of the LoRa radio.
             int lora_packet_frequency; // Times per second to transmit LoRa packet.

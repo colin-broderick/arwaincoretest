@@ -297,6 +297,14 @@ void imu_reader()
                     auto [accel_data2, gyro_data2] = imu2.read_IMU();
                     auto [accel_data3, gyro_data3] = imu3.read_IMU();
 
+                    if (arwain::request_gyro_calib)
+                    {
+                        std::cout << imu1.get_gyro_calib() << "      ";
+                        std::cout << imu2.get_gyro_calib() << "      ";
+                        std::cout << imu3.get_gyro_calib() << std::endl;
+                        arwain::request_gyro_calib = false;
+                    }
+
                     Vector3 magnet = magn.read();
                     magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
