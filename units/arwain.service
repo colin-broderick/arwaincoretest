@@ -1,0 +1,13 @@
+[Unit]
+Description=ArwainService
+
+[Service]
+WorkingDirectory=/home/pi/arwain_inference_core/
+ExecStart=/home/pi/arwain_inference_core/build/arwain -conf arwain.conf -lfile -noinf
+Sockets=arwain.socket
+StandardInput=socket
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

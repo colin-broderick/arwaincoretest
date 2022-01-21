@@ -454,7 +454,7 @@ int arwain::Configuration::read_from_file()
     else if (bandwidth == "500")
         this->lora_bandwidth = LoRa::Bandwidth::BW_500K;
     else
-        this->lora_bandwidth = LoRa::Bandwidth::BW_125K;
+        this->lora_bandwidth = LoRa::Bandwidth::BW_500K;
 
     // Apply LoRa coding rate with default 48.
     std::string codingrate = options["lora_coding_rate"];
