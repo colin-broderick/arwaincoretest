@@ -44,15 +44,20 @@ def read_dataset(dataset, facet):
             data["time"] = (data["time"] - data["time"][0])/1e9
             data_load["madgwick_game_rv"] = data
         except: pass
-        # try:
-        #     data = pd.read_csv(f"{WD}/{dataset}/mag_euler_orientation.txt", delimiter=" ").iloc[::10]
-        #     data["time"] = (data["time"] - data["time"][0])/1e9
-        #     data_load["mag_euler_orientation"] = data
-        # except: pass
         try:
             data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation.txt", delimiter=" ").iloc[::10]
             data["time"] = (data["time"] - data["time"][0])/1e9
             data_load["madgwick_euler_orientation"] = data
+        except: pass
+        try:
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation_2.txt", delimiter=" ").iloc[::10]
+            data["time"] = (data["time"] - data["time"][0])/1e9
+            data_load["madgwick_euler_orientation_2"] = data
+        except: pass
+        try:
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation_3.txt", delimiter=" ").iloc[::10]
+            data["time"] = (data["time"] - data["time"][0])/1e9
+            data_load["madgwick_euler_orientation_3"] = data
         except: pass
         try:
             data = pd.read_csv(f"{WD}/{dataset}/ori_diff.txt", delimiter=" ").iloc[::10]
@@ -79,7 +84,6 @@ def get_datasets():
         return ["No data available"], None
     df = read_dataset(datasets[0], "position")
     return datasets, df
-
 
 
 ## Get the datasets.
@@ -174,6 +178,7 @@ def update_gyro_plot(dataset):
     fig.add_trace(go.Scatter(x=df["time"], y=df["z"], mode="lines", name="z"))
     return fig
 
+
 @app.callback(
     dash.dependencies.Output("accel_plot", "figure"),
     dash.dependencies.Input("dataset_list", "value")
@@ -187,7 +192,6 @@ def update_accel_plot(dataset):
     fig.add_trace(go.Scatter(x=df["time"], y=df["y"], mode="lines", name="y"))
     fig.add_trace(go.Scatter(x=df["time"], y=df["z"], mode="lines", name="z"))
     return fig
-
 
 
 ## Update dataset list from button #############################################
@@ -214,23 +218,6 @@ def update_list(clicks):
     return [{"label":i,"value":i} for i in datasets]
 
 
-# ## Orientation plot callback ###################################################
-# @app.callback(
-#     dash.dependencies.Output("quaternion_orientation_plot", "figure"),
-#     dash.dependencies.Input("dataset_list", "value")
-# )
-# def update_orientation_plot(dataset):
-#     df = read_dataset(dataset, "madgwick_game_rv")
-#     # fig = px.scatter(df, x=df["x"], y=df["y"], title="Orientation over time")
-#     fig = go.Figure()
-#     fig.update_layout(title="Rotation quaternion", title_x=0.5)
-#     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
-#     fig.add_trace(go.Scatter(x=df["time"], y=df["w"], mode="lines", name="w"))
-#     fig.add_trace(go.Scatter(x=df["time"], y=df["x"], mode="lines", name="x"))
-#     fig.add_trace(go.Scatter(x=df["time"], y=df["y"], mode="lines", name="y"))
-#     fig.add_trace(go.Scatter(x=df["time"], y=df["z"], mode="lines", name="z"))
-#     return fig
-
 ## Euler orientation callback ##################################################
 @app.callback(
     dash.dependencies.Output("euler_plot", "figure"),
@@ -238,22 +225,18 @@ def update_list(clicks):
 )
 def update_euler_plot(dataset):
     df_madgwick = read_dataset(dataset, "madgwick_euler_orientation")
-    # df_magn = read_dataset(dataset, "mag_euler_orientation")
+    df_madgwick_2 = read_dataset(dataset, "madgwick_euler_orientation_2")
+    df_madgwick_3 = read_dataset(dataset, "madgwick_euler_orientation_3")
     df_diff = read_dataset(dataset, "ori_diff")
     df_madgwick_mag = read_dataset(dataset, "madgwick_mag_euler_orientation")
 
     fig = go.Figure()
     fig.update_layout(title="Euler yaw [deg]", title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
-    # fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["roll"], discont=np.pi)*180/np.pi, mode="lines", name="roll"))
-    # fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["pitch"], discont=np.pi)*180/np.pi, mode="lines", name="pitch"))
-    # fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["pitch"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick pitch"))
-    # fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["roll"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Roll"))
-    fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw"))
-    # fig.add_trace(go.Scatter(x=df_magn["time"], y=np.unwrap(df_magn["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Mag yaw"))
+    fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw 1"))
+    fig.add_trace(go.Scatter(x=df_madgwick_2["time"], y=np.unwrap(df_madgwick_2["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw 2"))
+    fig.add_trace(go.Scatter(x=df_madgwick_3["time"], y=np.unwrap(df_madgwick_3["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw 3"))
     fig.add_trace(go.Scatter(x=df_diff["time"], y=np.unwrap(df_diff["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Yaw diff"))
-    # fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["pitch"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-pitch"))
-    # fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["roll"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-roll"))
     fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-yaw"))
 
     return fig
@@ -285,7 +268,6 @@ def update_altitude_plot(dataset):
     return fig
 
 
-## Euler orientation callback ##################################################
 @app.callback(
     dash.dependencies.Output("pressure_temperature_plot", "figure"),
     dash.dependencies.Input("dataset_list","value")
@@ -300,24 +282,6 @@ def update_pressure_temperature_plot(dataset):
     return fig
 
 
-
-
-# @app.callback(
-#     dash.dependencies.Output("mag_ori_plot", "figure"),
-#     dash.dependencies.Input("dataset_list", "value")
-# )
-# def update_mag_ori_plot(dataset):
-    # df = read_dataset(dataset, "mag_euler_orientation")
-    # fig = go.Figure()
-    # fig.update_layout(title="Magnetic orientation, yaw", title_x=0.5)
-    # fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
-    # fig.add_trace(go.Scatter(x=df["time"], y=df["yaw"], mode="lines", name="mag yaw"))
-    # return fig
-
-
-
-
-## Position scatter callback ###################################################
 @app.callback(
     dash.dependencies.Output("position_scatter", "figure"),
     [
