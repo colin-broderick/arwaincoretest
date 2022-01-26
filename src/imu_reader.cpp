@@ -107,6 +107,8 @@ void imu_reader()
     arwain::Madgwick madgwick_filter_3{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta};
     arwain::Madgwick madgwick_filter_mag_1{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
 
+    Quaternion test_vector{0, 1, 0, 0};
+
     // After the specificed period has passed, set the magnetic filter gain to the standard value.
     std::thread quick_convergence{
         [&madgwick_filter_mag_1]()
@@ -125,6 +127,7 @@ void imu_reader()
                 // mode-specific setup should go here, before the while loop. e.g. open new log files. ----------------
                 
                 // File handles for logging.
+                arwain::Logger quat_diff_file;
                 arwain::Logger ori_diff_file;
                 arwain::Logger acce_file_1;
                 arwain::Logger world_acce_file_1;
@@ -139,6 +142,7 @@ void imu_reader()
                 if (arwain::config.log_to_file)
                 {
                     // Open file handles for data logging.
+                    quat_diff_file.open(arwain::folder_date_string + "/quat_delta_angle.txt");
                     ori_diff_file.open(arwain::folder_date_string + "/ori_diff.txt");
                     acce_file_1.open(arwain::folder_date_string + "/acce.txt");
                     world_acce_file_1.open(arwain::folder_date_string + "/world_acce.txt");
@@ -151,6 +155,7 @@ void imu_reader()
                     madgwick_euler_mag_file_1.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation.txt");
 
                     // File headers
+                    quat_diff_file << "time diff_q1_q2 diff_q1_q3" << "\n";
                     ori_diff_file << "time yaw" << "\n";
                     acce_file_1 << "time x y z" << "\n";
                     world_acce_file_1 << "time x y z" << "\n";
@@ -227,6 +232,10 @@ void imu_reader()
                         arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
                     }
 
+                    auto v1 = (madgwick_quaternion_data1 * test_vector * madgwick_quaternion_data1.conjugate()).vector_part();
+                    auto v2 = (madgwick_quaternion_data2 * test_vector * madgwick_quaternion_data2.conjugate()).vector_part();
+                    auto v3 = (madgwick_quaternion_data3 * test_vector * madgwick_quaternion_data3.conjugate()).vector_part();
+
                     // Compute the new correction based on magn/gyro filter diffs.
                     double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
                     if (arwain::yaw_offset == 0)
@@ -241,6 +250,7 @@ void imu_reader()
                     // Write all log files.
                     if (arwain::config.log_to_file)
                     {
+                        quat_diff_file << timeCount << " " << 1.0 - std::pow(Quaternion::dot(madgwick_quaternion_data1, madgwick_quaternion_data2), 2) << " " << 1.0 - std::pow(Quaternion::dot(madgwick_quaternion_data1, madgwick_quaternion_data3), 2) << "\n";
                         ori_diff_file << timeCount << " " << arwain::yaw_offset << "\n";
                         acce_file_1 << timeCount << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
                         gyro_file_1 << timeCount << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
