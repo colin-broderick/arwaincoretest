@@ -254,6 +254,11 @@ double Quaternion::getAngle() const
     return angle;
 }
 
+Vector3 Quaternion::vector_part() const
+{
+    return Vector3{this->x, this->y, this->z};
+}
+
 std::array<double, 3> Quaternion::getAxis() const
 {
     return axis;
