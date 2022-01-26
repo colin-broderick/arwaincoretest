@@ -40,22 +40,32 @@ def read_dataset(dataset, facet):
             data_load["world_gyro"] = data
         except: pass
         try:
-            data = pd.read_csv(f"{WD}/{dataset}/madgwick_game_rv.txt", delimiter=" ").iloc[::10]
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_game_rv_1.txt", delimiter=" ").iloc[::10]
             data["time"] = (data["time"] - data["time"][0])/1e9
-            data_load["madgwick_game_rv"] = data
+            data_load["madgwick_game_rv_1"] = data
         except: pass
         try:
-            data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation.txt", delimiter=" ").iloc[::10]
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_game_rv_2.txt", delimiter=" ").iloc[::10]
             data["time"] = (data["time"] - data["time"][0])/1e9
-            data_load["madgwick_euler_orientation"] = data
+            data_load["madgwick_game_rv_2"] = data
         except: pass
         try:
-            data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation_2.txt", delimiter=" ").iloc[::10]
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_game_rv_3.txt", delimiter=" ").iloc[::10]
+            data["time"] = (data["time"] - data["time"][0])/1e9
+            data_load["madgwick_game_rv_3"] = data
+        except: pass
+        try:
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation_1.txt", delimiter=" ")#.iloc[::10]
+            data["time"] = (data["time"] - data["time"][0])/1e9
+            data_load["madgwick_euler_orientation_1"] = data
+        except: pass
+        try:
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation_2.txt", delimiter=" ")#.iloc[::10]
             data["time"] = (data["time"] - data["time"][0])/1e9
             data_load["madgwick_euler_orientation_2"] = data
         except: pass
         try:
-            data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation_3.txt", delimiter=" ").iloc[::10]
+            data = pd.read_csv(f"{WD}/{dataset}/madgwick_euler_orientation_3.txt", delimiter=" ")#.iloc[::10]
             data["time"] = (data["time"] - data["time"][0])/1e9
             data_load["madgwick_euler_orientation_3"] = data
         except: pass
@@ -224,7 +234,7 @@ def update_list(clicks):
     dash.dependencies.Input("dataset_list","value")
 )
 def update_euler_plot(dataset):
-    df_madgwick = read_dataset(dataset, "madgwick_euler_orientation")
+    df_madgwick = read_dataset(dataset, "madgwick_euler_orientation_1")
     df_madgwick_2 = read_dataset(dataset, "madgwick_euler_orientation_2")
     df_madgwick_3 = read_dataset(dataset, "madgwick_euler_orientation_3")
     df_diff = read_dataset(dataset, "ori_diff")
@@ -301,11 +311,13 @@ def update_position_scatter(dataset, drift):
     points_x = list(df["x"])
     points_y = list(df["y"])
     points = [ [points_x[i], points_y[i]] for i in range(1, len(points_x))]
-    points = drift_simulator.simulate_drift(points, drift)
+    points, best_drift = drift_simulator.find_best_drift_correction(points)
+
+    # points = drift_simulator.simulate_drift(points, drift)
     df_drifted = pd.DataFrame(points)
 
     ## Add the drifted path to the figure.
-    fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="lines", name="Drifted path"))
+    fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="lines", name=f"Drifted path by {best_drift}"))
     fig.update_layout(title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
     fig.update_yaxes(scaleanchor="x", scaleratio=1) # Correct aspect ratio.
