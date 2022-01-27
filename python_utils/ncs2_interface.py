@@ -39,7 +39,6 @@ class Predictor:
         try:
             data = torch.rand(1, 6, 200)
             sample = self.predict(data)
-            print("Inference test passed", file=sys.stderr)
         except Exception as e:
             print("Inference test failed - is the NSC2 accessible?", file=sys.stderr)
             raise e
