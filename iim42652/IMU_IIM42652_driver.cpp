@@ -35,6 +35,21 @@ Vector3 IMU_IIM42652::get_gyro_calib()
     return {gyro_bias_x, gyro_bias_y, gyro_bias_z};
 }
 
+double IMU_IIM42652::get_gyro_calib_x()
+{
+    return gyro_bias_x;
+}
+
+double IMU_IIM42652::get_gyro_calib_y()
+{
+    return gyro_bias_y;
+}
+
+double IMU_IIM42652::get_gyro_calib_z()
+{
+    return gyro_bias_z;
+}
+
 namespace
 {
     struct AccelerometerCalibrationCandidate

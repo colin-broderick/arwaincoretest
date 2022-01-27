@@ -101,6 +101,10 @@ public:
     void enable_auto_calib();
     void disable_auto_calib();
     Vector3 get_gyro_calib();
+    double get_gyro_calib_x();
+    double get_gyro_calib_y();
+    double get_gyro_calib_z();
+
 
 private:
     double accel_resolution = 0;
@@ -121,7 +125,7 @@ private:
     double accelerometer_z = 0;
     double auto_calib_timer = 0;
     int calib_time = 200;
-    double auto_calib_threshold = 0.1;
+    double auto_calib_threshold = 0.025;
     bool auto_calib_enabled = false;
 
 private:
