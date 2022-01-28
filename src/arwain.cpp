@@ -613,7 +613,43 @@ class CommandLine : public ArwainThread
             }
             else if (input == "mode")
             {
-                std::cout << "current mode: " << arwain::system_mode << std::endl;
+                std::cout << "Current mode: " << arwain::system_mode << std::endl;
+            }
+            else if (input == "calibg")
+            {
+                if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+                {
+                    std::cout << "error: Active calibration modes can only be entered from idle/autocalibration modes" << std::endl;
+                }
+                else
+                {
+                    std::cout << "Starting gyroscope calibration" << std::endl;
+                    arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
+                }
+            }
+            else if (input == "calibm")
+            {
+                if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+                {
+                    std::cout << "error: Active calibration modes can only be entered from idle/autocalibration modes" << std::endl;
+                }
+                else
+                {
+                    std::cout << "Starting magnetometer calibration" << std::endl;
+                    arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
+                }
+            }
+            else if (input == "caliba")
+            {
+                if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+                {
+                    std::cout << "error: Active calibration modes can only be entered from idle/autocalibration modes" << std::endl;
+                }
+                else
+                {
+                    std::cout << "Starting accelerometer calibration" << std::endl;
+                    arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
+                }
             }
             else
             {
