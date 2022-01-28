@@ -651,9 +651,30 @@ class CommandLine : public ArwainThread
                     arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
                 }
             }
+            else if (input.substr(0, 4) == "name")
+            {
+                if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+                {
+                    std::cout << "error: Folder name can only be changed from idle/autocalibration modes" << std::endl;
+                }
+                else
+                {
+                    std::string value;
+                    std::istringstream iss{input};
+                    iss >> value >> value;
+                    if (value == "name")
+                    {
+                        std::cout << "error: Provide a valid name" << std::endl;
+                    }
+                    else
+                    {
+                        arwain::folder_date_string_suffix = value;
+                    }
+                }
+            }
             else
             {
-                std::cout << "error: unrecognised command" << std::endl;
+                std::cout << "error: unrecognised command: " << input << std::endl;
             }
             if (!go)
             {
