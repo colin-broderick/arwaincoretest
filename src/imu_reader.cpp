@@ -14,6 +14,7 @@
 #include "arwain.hpp"
 #include "timers.hpp"
 #include "lis3mdl.hpp"
+#include "calibration.hpp"
 
 /** \brief Rotates a 3-vector according to a quaternion orientation.
  * \param vec The 3-vector to rotate.
@@ -94,8 +95,8 @@ void imu_reader()
     imu3.set_accel_bias(arwain::config.accel3_bias.x, arwain::config.accel3_bias.y, arwain::config.accel3_bias.z);
     imu3.enable_auto_calib();
     
-    LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
-    magn.set_calibration(
+    LIS3MDL magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
+    magnetometer.set_calibration(
         arwain::config.mag_bias,
         arwain::config.mag_scale,
         {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}
@@ -122,6 +123,122 @@ void imu_reader()
     {
         switch (arwain::system_mode)
         {
+            case arwain::OperatingMode::GyroscopeCalibration:
+            {
+                // Give other threads time to settle out of previous mode
+                sleep_ms(1000);
+
+                Vector3 results;
+
+                imu1.disable_auto_calib();
+                imu2.disable_auto_calib();
+                imu3.disable_auto_calib();
+                imu1.set_gyro_bias(0, 0, 0);
+                imu2.set_gyro_bias(0, 0, 0);
+                imu3.set_gyro_bias(0, 0, 0);
+                
+                // Do the calibration procedure for each gyro and write result to file and into config struct in memory.
+                std::cout << "Calibrating gyro 1" << std::endl;
+                results = (imu1.calibrate_gyroscope() + imu1.calibrate_gyroscope() + imu1.calibrate_gyroscope()) / 3.0;
+                arwain::config.gyro1_bias = results;
+                arwain::config.replace("gyro1_bias_x", results.x);
+                arwain::config.replace("gyro1_bias_y", results.y);
+                arwain::config.replace("gyro1_bias_z", results.z);
+                std::cout << "Calibration of gyro 1 complete" << std::endl;
+
+                std::cout << "Calibrating gyro 2" << std::endl;
+                results = (imu2.calibrate_gyroscope() + imu2.calibrate_gyroscope() + imu2.calibrate_gyroscope()) / 3.0;
+                arwain::config.gyro2_bias = results;
+                arwain::config.replace("gyro2_bias_x", results.x);
+                arwain::config.replace("gyro2_bias_y", results.y);
+                arwain::config.replace("gyro2_bias_z", results.z);
+                std::cout << "Calibration of gyro 2 complete" << std::endl;
+
+                std::cout << "Calibrating gyro 3" << std::endl;
+                results = (imu3.calibrate_gyroscope() + imu3.calibrate_gyroscope() + imu3.calibrate_gyroscope()) / 3.0;
+                arwain::config.gyro3_bias = results;
+                arwain::config.replace("gyro3_bias_x", results.x);
+                arwain::config.replace("gyro3_bias_y", results.y);
+                arwain::config.replace("gyro3_bias_z", results.z);
+                std::cout << "Calibration of gyro 3 complete" << std::endl;
+
+                // Reset calibration parameters and re-enable autocalibration.
+                imu1.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
+                imu2.set_gyro_bias(arwain::config.gyro2_bias.x, arwain::config.gyro2_bias.y, arwain::config.gyro2_bias.z);
+                imu3.set_gyro_bias(arwain::config.gyro3_bias.x, arwain::config.gyro3_bias.y, arwain::config.gyro3_bias.z);
+                imu1.enable_auto_calib();
+                imu2.enable_auto_calib();
+                imu3.enable_auto_calib();
+
+                // Set mode back to idle
+                arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+
+                break;
+            }
+            case arwain::OperatingMode::MagnetometerCalibration:
+            {
+                // Unset current calibration config.
+                magnetometer.set_calibration(
+                    {0, 0, 0},
+                    {1, 1, 1},
+                    {0, 0, 0}
+                );
+
+                // Perform magnetometer calibration procedure.
+                arwain::MagnetometerCalibrator clbr;
+                std::cout << "About to start magnetometer calibration" << std::endl;
+                std::cout << "Move the device through all orientations" << std::endl;
+                sleep_ms(1000);
+                std::cout << "Calibration started ..." << std::endl;
+
+                while (clbr.get_sphere_coverage_quality() < 60)
+                {
+                    clbr.feed(magnetometer.read());
+                    sleep_ms(100);
+                }
+                auto [bias, scale] = clbr.solve();
+
+                std::cout << "Bias: " << bias[0] << " " << bias[1] << " " << bias[2] << "\n";
+                std::cout << "Scale:\n";
+                std::cout << scale[0][0] << " " << scale[0][1] << " " << scale[0][2] << std::endl;
+                std::cout << scale[1][0] << " " << scale[1][1] << " " << scale[1][2] << std::endl;
+                std::cout << scale[2][0] << " " << scale[2][1] << " " << scale[2][2] << std::endl;
+                std::cout << std::endl;
+
+                // Write results into config in memory, and to file.
+                arwain::config.replace("mag_bias_x", bias[0]);
+                arwain::config.replace("mag_bias_y", bias[1]);
+                arwain::config.replace("mag_bias_z", bias[2]);
+                arwain::config.replace("mag_scale_x", scale[0][0]);
+                arwain::config.replace("mag_scale_y", scale[1][1]);
+                arwain::config.replace("mag_scale_z", scale[2][2]);
+                arwain::config.replace("mag_scale_xy", scale[0][1]);
+                arwain::config.replace("mag_scale_xz", scale[0][2]);
+                arwain::config.replace("mag_scale_yz", scale[1][2]);
+                arwain::config.mag_bias = {bias[0], bias[1], bias[2]};
+                arwain::config.mag_scale = {scale[0][0], scale[1][1], scale[2][2]};
+                arwain::config.mag_scale_xy = scale[0][1];
+                arwain::config.mag_scale_xz = scale[0][2];
+                arwain::config.mag_scale_yz = scale[1][2];
+
+                // Enable new calibration parameters.
+                magnetometer.set_calibration(
+                    arwain::config.mag_bias,
+                    arwain::config.mag_scale,
+                    {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}
+                );
+
+                std::cout << "Magnetometer calibration complete" << std::endl;
+
+                arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+
+                break;
+            }
+            case arwain::OperatingMode::AccelerometerCalibration:
+            {
+                // TODO
+                break;
+            }
             case arwain::OperatingMode::Inference:
             {
                 // mode-specific setup should go here, before the while loop. e.g. open new log files. ----------------
@@ -211,7 +328,7 @@ void imu_reader()
                         arwain::request_gyro_calib = false;
                     }
 
-                    Vector3 magnet = magn.read();
+                    Vector3 magnet = magnetometer.read();
                     magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
                     { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
@@ -252,7 +369,7 @@ void imu_reader()
                         arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
                     }
 
-                    // Compute the new correction based on magn/gyro filter diffs.
+                    // Compute the new correction based on magnetometer/gyro filter diffs.
                     double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
                     if (arwain::yaw_offset == 0)
                     {
@@ -335,7 +452,7 @@ void imu_reader()
                         arwain::request_gyro_calib = false;
                     }
 
-                    Vector3 magnet = magn.read();
+                    Vector3 magnet = magnetometer.read();
                     magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
                     { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
@@ -376,7 +493,7 @@ void imu_reader()
                         arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
                     }
 
-                    // Compute the new correction based on magn/gyro filter diffs.
+                    // Compute the new correction based on magnetometer/gyro filter diffs.
                     double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
                     if (arwain::yaw_offset == 0)
                     {

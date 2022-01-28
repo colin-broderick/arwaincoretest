@@ -42,7 +42,10 @@ namespace arwain
         Terminate,
         Inference,
         AutoCalibration,
-        SelfTest
+        SelfTest,
+        GyroscopeCalibration,
+        MagnetometerCalibration,
+        AccelerometerCalibration
     };
 }
 

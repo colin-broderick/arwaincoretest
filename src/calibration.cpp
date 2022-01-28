@@ -104,13 +104,11 @@ void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
     static double z_min = 1000;
     static double z_max = -1000;
 
-    static int i = 0;
-
     // This first 100 samples are used to create a rough estimate of the biases, so that
     // sphere coverage can be accurately measured.
-    if (i < 100)
+    if (feed_count < 100)
     {
-        std::cout << "Determining bias parameters " << i+1 << "%\r" << std::flush;
+        std::cout << "Determining bias parameters " << feed_count+1 << "%\r" << std::flush;
         if (reading.x < x_min) x_min = reading.x;
         if (reading.x > x_max) x_max = reading.x;
         if (reading.y < y_min) y_min = reading.y;
@@ -120,14 +118,14 @@ void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
         x_bias = (x_min + x_max) / 2.0;
         y_bias = (y_min + y_max) / 2.0;
         z_bias = (z_min + z_max) / 2.0;
-        i++;
+        feed_count++;
         return;
     }
 
-    if (i == 100)
+    if (feed_count == 100)
     {
         std::cout << std::endl;
-        i++;
+        feed_count++;
     }
 
     // Once the biases are approximately established, record each data sample into the
@@ -136,7 +134,14 @@ void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
     region_sample_count[region]++;
     region_sample_value[region] = region_sample_value[region] + reading;
 
-    std::cout << "Coverage quality: " << sphere_coverage(region_sample_count) << "%\r" << std::flush;
+    this->sphere_coverage_quality = sphere_coverage(region_sample_count);
+
+    std::cout << "Coverage quality: " << this->sphere_coverage_quality << "%\r" << std::flush;
+}
+
+int arwain::MagnetometerCalibrator::get_sphere_coverage_quality()
+{
+    return this->sphere_coverage_quality;
 }
 
 std::tuple<std::vector<double>, std::vector<std::vector<double>>> arwain::MagnetometerCalibrator::solve()
