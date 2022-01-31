@@ -104,15 +104,11 @@ void imu_reader()
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Madgwick madgwick_filter_1{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
-    arwain::Madgwick madgwick_filter_1_a{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.5}; // ONLY FOR TEST
-    arwain::Madgwick madgwick_filter_1_b{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.9}; // ONLY FOR TEST
     arwain::Madgwick madgwick_filter_2{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
-    arwain::Madgwick madgwick_filter_2_a{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.5}; // ONLY FOR TEST
-    arwain::Madgwick madgwick_filter_2_b{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.9}; // ONLY FOR TEST
     arwain::Madgwick madgwick_filter_3{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
-    arwain::Madgwick madgwick_filter_3_a{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.5}; // ONLY FOR TEST
-    arwain::Madgwick madgwick_filter_3_b{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.9}; // ONLY FOR TEST
     arwain::Madgwick madgwick_filter_mag_1{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
+    arwain::Madgwick madgwick_filter_mag_2{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
+    arwain::Madgwick madgwick_filter_mag_3{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
 
     Quaternion test_vector{0, 1, 0, 0};
 
@@ -257,15 +253,11 @@ void imu_reader()
                 arwain::Logger gyro_file_1;
                 arwain::Logger world_gyro_file_1;
                 arwain::Logger madgwick_euler_file_1;
-                arwain::Logger madgwick_euler_file_1_a; // ONLY FOR TEST
-                arwain::Logger madgwick_euler_file_1_b; // ONLY FOR TEST
                 arwain::Logger madgwick_euler_file_2;
-                arwain::Logger madgwick_euler_file_2_a; // ONLY FOR TEST
-                arwain::Logger madgwick_euler_file_2_b; // ONLY FOR TEST
                 arwain::Logger madgwick_euler_file_3;
-                arwain::Logger madgwick_euler_file_3_a; // ONLY FOR TEST
-                arwain::Logger madgwick_euler_file_3_b; // ONLY FOR TEST
                 arwain::Logger madgwick_euler_mag_file_1;
+                arwain::Logger madgwick_euler_mag_file_2;
+                arwain::Logger madgwick_euler_mag_file_3;
                 arwain::Logger madgwick_quat_file_1;
                 arwain::Logger madgwick_quat_file_2;
                 arwain::Logger madgwick_quat_file_3;
@@ -283,18 +275,14 @@ void imu_reader()
                     gyro_file_1.open(arwain::folder_date_string + "/gyro.txt");
                     world_gyro_file_1.open(arwain::folder_date_string + "/world_gyro.txt");
                     madgwick_euler_file_1.open(arwain::folder_date_string + "/madgwick_euler_orientation_1.txt");
-                    madgwick_euler_file_1_a.open(arwain::folder_date_string + "/madgwick_euler_orientation_1_a.txt"); // ONLY FOR TEST
-                    madgwick_euler_file_1_b.open(arwain::folder_date_string + "/madgwick_euler_orientation_1_b.txt"); // ONLY FOR TEST
                     madgwick_euler_file_2.open(arwain::folder_date_string + "/madgwick_euler_orientation_2.txt");
-                    madgwick_euler_file_2_a.open(arwain::folder_date_string + "/madgwick_euler_orientation_2_a.txt"); // ONLY FOR TEST
-                    madgwick_euler_file_2_b.open(arwain::folder_date_string + "/madgwick_euler_orientation_2_b.txt"); // ONLY FOR TEST
                     madgwick_euler_file_3.open(arwain::folder_date_string + "/madgwick_euler_orientation_3.txt");
-                    madgwick_euler_file_3_a.open(arwain::folder_date_string + "/madgwick_euler_orientation_3_a.txt"); // ONLY FOR TEST
-                    madgwick_euler_file_3_b.open(arwain::folder_date_string + "/madgwick_euler_orientation_3_b.txt"); // ONLY FOR TEST
                     madgwick_quat_file_1.open(arwain::folder_date_string + "/madgwick_game_rv_1.txt");
                     madgwick_quat_file_2.open(arwain::folder_date_string + "/madgwick_game_rv_2.txt");
                     madgwick_quat_file_3.open(arwain::folder_date_string + "/madgwick_game_rv_3.txt");
-                    madgwick_euler_mag_file_1.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation.txt");
+                    madgwick_euler_mag_file_1.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_1.txt");
+                    madgwick_euler_mag_file_2.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_2.txt");
+                    madgwick_euler_mag_file_3.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_3.txt");
                     imu_calib_file_1.open(arwain::folder_date_string + "/imu_calib_1.txt");
                     imu_calib_file_2.open(arwain::folder_date_string + "/imu_calib_2.txt");
                     imu_calib_file_3.open(arwain::folder_date_string + "/imu_calib_3.txt");
@@ -307,18 +295,14 @@ void imu_reader()
                     gyro_file_1 << "time x y z" << "\n";
                     world_gyro_file_1 << "time x y z" << "\n";
                     madgwick_euler_file_1 << "time roll pitch yaw" << "\n";
-                    madgwick_euler_file_1_a << "time roll pitch yaw" << "\n";
-                    madgwick_euler_file_1_b << "time roll pitch yaw" << "\n";
                     madgwick_euler_file_2 << "time roll pitch yaw" << "\n";
-                    madgwick_euler_file_2_a << "time roll pitch yaw" << "\n";
-                    madgwick_euler_file_2_b << "time roll pitch yaw" << "\n";
                     madgwick_euler_file_3 << "time roll pitch yaw" << "\n";
-                    madgwick_euler_file_3_a << "time roll pitch yaw" << "\n";
-                    madgwick_euler_file_3_b << "time roll pitch yaw" << "\n";
                     madgwick_quat_file_1 << "time w x y z" << "\n";
                     madgwick_quat_file_2 << "time w x y z" << "\n";
                     madgwick_quat_file_3 << "time w x y z" << "\n";
                     madgwick_euler_mag_file_1 << "time roll pitch yaw" << "\n";
+                    madgwick_euler_mag_file_2 << "time roll pitch yaw" << "\n";
+                    madgwick_euler_mag_file_3 << "time roll pitch yaw" << "\n";
                     imu_calib_file_1 << "time gx_bias gy_bias gz_bias" << "\n";
                     imu_calib_file_2 << "time gx_bias gy_bias gz_bias" << "\n";
                     imu_calib_file_3 << "time gx_bias gy_bias gz_bias" << "\n";
@@ -362,37 +346,25 @@ void imu_reader()
                     }
 
                     madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
-                    madgwick_filter_1_a.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
-                    madgwick_filter_1_b.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
                     madgwick_filter_2.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
-                    madgwick_filter_2_a.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
-                    madgwick_filter_2_b.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
                     madgwick_filter_3.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
-                    madgwick_filter_3_a.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
-                    madgwick_filter_3_b.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
                     madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
+                    madgwick_filter_mag_2.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z, magnet.x, magnet.y, magnet.z);
+                    madgwick_filter_mag_3.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z, magnet.x, magnet.y, magnet.z);
 
                     // Extract Euler orientation from filters.
                     Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
-                    Quaternion madgwick_quaternion_data1_a = {madgwick_filter_1_a.getW(), madgwick_filter_1_a.getX(), madgwick_filter_1_a.getY(), madgwick_filter_1_a.getZ()};
-                    Quaternion madgwick_quaternion_data1_b = {madgwick_filter_1_b.getW(), madgwick_filter_1_b.getX(), madgwick_filter_1_b.getY(), madgwick_filter_1_b.getZ()};
                     Quaternion madgwick_quaternion_data2 = {madgwick_filter_2.getW(), madgwick_filter_2.getX(), madgwick_filter_2.getY(), madgwick_filter_2.getZ()};
-                    Quaternion madgwick_quaternion_data2_a = {madgwick_filter_2_a.getW(), madgwick_filter_2_a.getX(), madgwick_filter_2_a.getY(), madgwick_filter_2_a.getZ()};
-                    Quaternion madgwick_quaternion_data2_b = {madgwick_filter_2_b.getW(), madgwick_filter_2_b.getX(), madgwick_filter_2_b.getY(), madgwick_filter_2_b.getZ()};
                     Quaternion madgwick_quaternion_data3 = {madgwick_filter_3.getW(), madgwick_filter_3.getX(), madgwick_filter_3.getY(), madgwick_filter_3.getZ()};
-                    Quaternion madgwick_quaternion_data3_a = {madgwick_filter_3_a.getW(), madgwick_filter_3_a.getX(), madgwick_filter_3_a.getY(), madgwick_filter_3_a.getZ()};
-                    Quaternion madgwick_quaternion_data3_b = {madgwick_filter_3_b.getW(), madgwick_filter_3_b.getX(), madgwick_filter_3_b.getY(), madgwick_filter_3_b.getZ()};
                     Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
+                    Quaternion madgwick_quaternion_mag_data2 = {madgwick_filter_mag_2.getW(), madgwick_filter_mag_2.getX(), madgwick_filter_mag_2.getY(), madgwick_filter_mag_2.getZ()};
+                    Quaternion madgwick_quaternion_mag_data3 = {madgwick_filter_mag_3.getW(), madgwick_filter_mag_3.getX(), madgwick_filter_mag_3.getY(), madgwick_filter_mag_3.getZ()};
                     euler_orientation_t madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
-                    euler_orientation_t madgwick_euler_data1_a = compute_euler(madgwick_quaternion_data1_a);
-                    euler_orientation_t madgwick_euler_data1_b = compute_euler(madgwick_quaternion_data1_b);
                     euler_orientation_t madgwick_euler_data2 = compute_euler(madgwick_quaternion_data2);
-                    euler_orientation_t madgwick_euler_data2_a = compute_euler(madgwick_quaternion_data2_a);
-                    euler_orientation_t madgwick_euler_data2_b = compute_euler(madgwick_quaternion_data2_b);
                     euler_orientation_t madgwick_euler_data3 = compute_euler(madgwick_quaternion_data3);
-                    euler_orientation_t madgwick_euler_data3_a = compute_euler(madgwick_quaternion_data3_a);
-                    euler_orientation_t madgwick_euler_data3_b = compute_euler(madgwick_quaternion_data3_b);
                     euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
+                    euler_orientation_t madgwick_euler_mag_data2 = compute_euler(madgwick_quaternion_mag_data2);
+                    euler_orientation_t madgwick_euler_mag_data3 = compute_euler(madgwick_quaternion_mag_data3);
 
                     { // Add orientation information to buffers.
                         std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
@@ -432,15 +404,11 @@ void imu_reader()
                         world_acce_file_1 << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
                         world_gyro_file_1 << timeCount << " " << world_gyro_data1.x << " " << world_gyro_data1.y << " " << world_gyro_data1.z << "\n";
                         madgwick_euler_file_1 << timeCount << " " << madgwick_euler_data1.roll << " " << madgwick_euler_data1.pitch << " " << madgwick_euler_data1.yaw << "\n";
-                        madgwick_euler_file_1_a << timeCount << " " << madgwick_euler_data1_a.roll << " " << madgwick_euler_data1_a.pitch << " " << madgwick_euler_data1_a.yaw << "\n";
-                        madgwick_euler_file_1_b << timeCount << " " << madgwick_euler_data1_b.roll << " " << madgwick_euler_data1_b.pitch << " " << madgwick_euler_data1_b.yaw << "\n";
                         madgwick_euler_file_2 << timeCount << " " << madgwick_euler_data2.roll << " " << madgwick_euler_data2.pitch << " " << madgwick_euler_data2.yaw << "\n";
-                        madgwick_euler_file_2_a << timeCount << " " << madgwick_euler_data2_a.roll << " " << madgwick_euler_data2_a.pitch << " " << madgwick_euler_data2_a.yaw << "\n";
-                        madgwick_euler_file_2_b << timeCount << " " << madgwick_euler_data2_b.roll << " " << madgwick_euler_data2_b.pitch << " " << madgwick_euler_data2_b.yaw << "\n";
                         madgwick_euler_file_3 << timeCount << " " << madgwick_euler_data3.roll << " " << madgwick_euler_data3.pitch << " " << madgwick_euler_data3.yaw << "\n";
-                        madgwick_euler_file_3_a << timeCount << " " << madgwick_euler_data3_a.roll << " " << madgwick_euler_data3_a.pitch << " " << madgwick_euler_data3_a.yaw << "\n";
-                        madgwick_euler_file_3_b << timeCount << " " << madgwick_euler_data3_b.roll << " " << madgwick_euler_data3_b.pitch << " " << madgwick_euler_data3_b.yaw << "\n";
                         madgwick_euler_mag_file_1 << timeCount << " " << madgwick_euler_mag_data1.roll << " " << madgwick_euler_mag_data1.pitch << " " << madgwick_euler_mag_data1.yaw << "\n";
+                        madgwick_euler_mag_file_2 << timeCount << " " << madgwick_euler_mag_data2.roll << " " << madgwick_euler_mag_data2.pitch << " " << madgwick_euler_mag_data2.yaw << "\n";
+                        madgwick_euler_mag_file_3 << timeCount << " " << madgwick_euler_mag_data3.roll << " " << madgwick_euler_mag_data3.pitch << " " << madgwick_euler_mag_data3.yaw << "\n";
                         madgwick_quat_file_1 << timeCount << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
                         madgwick_quat_file_2 << timeCount << " " << madgwick_quaternion_data2.w << " " << madgwick_quaternion_data2.x << " " << madgwick_quaternion_data2.y << " " << madgwick_quaternion_data2.z << "\n";
                         madgwick_quat_file_3 << timeCount << " " << madgwick_quaternion_data3.w << " " << madgwick_quaternion_data3.x << " " << madgwick_quaternion_data3.y << " " << madgwick_quaternion_data3.z << "\n";
@@ -462,14 +430,8 @@ void imu_reader()
                     gyro_file_1.close();
                     world_gyro_file_1.close();
                     madgwick_euler_file_1.close();
-                    madgwick_euler_file_1_a.close();
-                    madgwick_euler_file_1_b.close();
                     madgwick_euler_file_1.close();
-                    madgwick_euler_file_1_a.close();
-                    madgwick_euler_file_1_b.close();
                     madgwick_euler_file_1.close();
-                    madgwick_euler_file_1_a.close();
-                    madgwick_euler_file_1_b.close();
                     madgwick_quat_file_1.close();
                     madgwick_quat_file_2.close();
                     madgwick_quat_file_3.close();
@@ -518,14 +480,8 @@ void imu_reader()
                     }
 
                     madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
-                    madgwick_filter_1_a.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
-                    madgwick_filter_1_b.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
                     madgwick_filter_2.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
-                    madgwick_filter_2_a.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
-                    madgwick_filter_2_b.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
                     madgwick_filter_3.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
-                    madgwick_filter_3_a.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
-                    madgwick_filter_3_b.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
                     madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
 
                     // Extract Euler orientation from filters.
