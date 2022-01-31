@@ -114,10 +114,12 @@ void imu_reader()
 
     // After the specificed period has passed, set the magnetic filter gain to the standard value.
     std::thread quick_convergence{
-        [&madgwick_filter_mag_1]()
+        [&madgwick_filter_mag_1, &madgwick_filter_mag_2, &madgwick_filter_mag_3]()
         {
             std::this_thread::sleep_for(std::chrono::milliseconds{5000});
             madgwick_filter_mag_1.set_beta(arwain::config.madgwick_beta);
+            madgwick_filter_mag_2.set_beta(arwain::config.madgwick_beta);
+            madgwick_filter_mag_3.set_beta(arwain::config.madgwick_beta);
         }
     };
 
