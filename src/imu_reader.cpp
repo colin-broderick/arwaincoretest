@@ -471,15 +471,10 @@ void imu_reader()
                     Quaternion madgwick_quaternion_data2 = {madgwick_filter_2.getW(), madgwick_filter_2.getX(), madgwick_filter_2.getY(), madgwick_filter_2.getZ()};
                     Quaternion madgwick_quaternion_data3 = {madgwick_filter_3.getW(), madgwick_filter_3.getX(), madgwick_filter_3.getY(), madgwick_filter_3.getZ()};
                     Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
-                    euler_orientation_t madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
-                    euler_orientation_t madgwick_euler_data2 = compute_euler(madgwick_quaternion_data2);
-                    euler_orientation_t madgwick_euler_data3 = compute_euler(madgwick_quaternion_data3);
                     euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
 
                     { // Add orientation information to buffers.
                         std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
-                        arwain::Buffers::EULER_ORIENTATION_BUFFER.pop_front();
-                        arwain::Buffers::EULER_ORIENTATION_BUFFER.push_back(madgwick_euler_data1);
                         arwain::Buffers::QUAT_ORIENTATION_BUFFER.pop_front();
                         arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
                     }
