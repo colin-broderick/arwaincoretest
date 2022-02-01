@@ -46,7 +46,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow)
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME} madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter)
+target_link_libraries(${PROJECT_NAME} boost_system madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter)
 target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
 
 ## Install configuration and related files to correct locations.
