@@ -27,6 +27,7 @@
 #include "lis3mdl.hpp"
 #include "bmp384.hpp"
 #include "calibration.hpp"
+#include "serial.hpp"
 
 #include "floor_tracker.hpp"
 #include "new_madgwick_FusionAhrs.h"
@@ -561,6 +562,54 @@ class ArwainThread
         virtual void run() = 0;
 };
 
+class UWBReader : public ArwainThread
+{
+    void run() override
+    {
+        sleep_ms(100);
+        // TODO While relevant mode, read and log UWB position from serial port
+        while (arwain::system_mode != arwain::OperatingMode::Terminate)
+        {
+            switch (arwain::system_mode)
+            {
+                case arwain::OperatingMode::TestSerial:
+                {
+                    while (arwain::system_mode == arwain::OperatingMode::TestSerial)
+                    {
+                        // todo
+                        std::string message = this->serial->readline();
+                        std::cout << message << std::endl;
+                        sleep_ms(20);
+                    }
+                    break;
+                }
+                default:
+                {
+                    sleep_ms(100);
+                    break;
+
+                }
+            }
+        }
+    }
+
+    Serial *serial;
+
+    public:
+        UWBReader(const std::string& port, const int baudrate) : ArwainThread()
+        {
+            this->serial = new Serial{port, baudrate};
+            this->serial->write("\r\r");
+            sleep_ms(1000);
+            this->serial->write("les\r");
+            sleep_ms(1000);
+        }
+        ~UWBReader()
+        {
+            delete this->serial;
+        }
+};
+
 class CommandLine : public ArwainThread
 {
     void run() override
@@ -626,6 +675,10 @@ class CommandLine : public ArwainThread
                     std::cout << "Starting gyroscope calibration" << std::endl;
                     arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
                 }
+            }
+            else if (input == "testuwb")
+            {
+                arwain::system_mode = arwain::OperatingMode::TestSerial;
             }
             else if (input == "calibm")
             {
@@ -700,6 +753,7 @@ int arwain::execute_inference()
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     CommandLine cmd;                                             // Simple command line interface for runtime mode switching.
+    UWBReader uwb{"/dev/serial0", 115200};
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
     // Wait for all threads to terminate.
@@ -712,6 +766,7 @@ int arwain::execute_inference()
     py_inference_thread.join();
     altimeter_thread.join();
     cmd.join();
+    uwb.join();
     // kalman_filter.join();
 
     return arwain::ExitCodes::Success;
