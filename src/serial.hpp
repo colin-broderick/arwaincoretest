@@ -18,8 +18,11 @@
 class Serial
 {
 	public:
-		const static int MAX_LINE_LEN = 120;
+		const static int MAX_LINE_LEN = 512;
 	
+	private:
+		enum flush_type { flush_receive = TCIFLUSH, flush_send = TCOFLUSH, flush_both = TCIOFLUSH };
+
 	public:
 		/** \brief Constructor. Opens and configures serial port.
 		 * \param[in] com_port String defining the port (e.g. "COM14", "/dev/ttyS0").
@@ -30,6 +33,12 @@ class Serial
 			this->port.open(com_port);
 			this->port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
 			this->port_open = true;
+		}
+
+		/** \brief Flush the serial port. */
+		void flush()
+		{
+			::tcflush(this->port.lowest_layer().native_handle(), flush_both);
 		}
 
 		/** \brief Send a string to the serial port.
