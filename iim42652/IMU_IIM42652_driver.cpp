@@ -340,6 +340,12 @@ void IMU_IIM42652::enable_auto_calib()
     auto_calib_enabled = true;
 }
 
+void IMU_IIM42652::enable_auto_calib(double threshold)
+{
+    this->auto_calib_threshold = threshold;
+    this->enable_auto_calib();
+}
+
 void IMU_IIM42652::disable_auto_calib()
 {
     auto_calib_enabled = false;
