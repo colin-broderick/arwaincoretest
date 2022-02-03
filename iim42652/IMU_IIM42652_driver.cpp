@@ -328,11 +328,30 @@ void IMU_IIM42652::update_gyro_bias()
 
     // If not gyro reading breaks the threshold, and the timer has elapsed, use the new reading to update the bias.
     // And knock the timer back a bit.
-    this->gyro_bias_x = this->gyro_bias_x * 0.9 + (this->gyroscope_x + gyro_bias_x) * 0.1;
-    this->gyro_bias_y = this->gyro_bias_y * 0.9 + (this->gyroscope_y + gyro_bias_y) * 0.1;
-    this->gyro_bias_z = this->gyro_bias_z * 0.9 + (this->gyroscope_z + gyro_bias_z) * 0.1;
+    this->gyro_bias_x = this->gyro_bias_x * this->correction_speed + (this->gyroscope_x + gyro_bias_x) * (1.0 - this->correction_speed);
+    this->gyro_bias_y = this->gyro_bias_y * this->correction_speed + (this->gyroscope_y + gyro_bias_y) * (1.0 - this->correction_speed);
+    this->gyro_bias_z = this->gyro_bias_z * this->correction_speed + (this->gyroscope_z + gyro_bias_z) * (1.0 - this->correction_speed);
     // Knock the timer back a little so we don't update too frequently.
     this->auto_calib_timer *= 0.8;
+}
+
+/** \brief Set the gain on the EWMA filter which adjusts gyro bias.
+ * \param speed Value between 0 and 1; update step is prev * speed + new * (1 - speed).
+ */
+void IMU_IIM42652::set_correction_speed(double speed)
+{
+    if (speed < 0)
+    {
+        correction_speed = 0;
+    }
+    else if (speed > 1)
+    {
+        correction_speed = 1;
+    }
+    else
+    {
+        correction_speed = speed;
+    }
 }
 
 void IMU_IIM42652::enable_auto_calib()
