@@ -99,6 +99,7 @@ public:
     void set_gyro_bias(double x, double y, double z);
     void set_accel_bias(double x, double y, double z);
     void enable_auto_calib();
+    void enable_auto_calib(double threshold);
     void disable_auto_calib();
     Vector3 get_gyro_calib();
     double get_gyro_calib_x();
