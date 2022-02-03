@@ -98,6 +98,7 @@ public:
     Vector3 calibration_accel_sample();
     void set_gyro_bias(double x, double y, double z);
     void set_accel_bias(double x, double y, double z);
+    void set_correction_speed(double speed);
     void enable_auto_calib();
     void enable_auto_calib(double threshold);
     void disable_auto_calib();
@@ -105,7 +106,6 @@ public:
     double get_gyro_calib_x();
     double get_gyro_calib_y();
     double get_gyro_calib_z();
-
 
 private:
     double accel_resolution = 0;
@@ -128,6 +128,7 @@ private:
     int calib_time = 200;
     double auto_calib_threshold = 0.025;
     bool auto_calib_enabled = false;
+    double correction_speed = 0.95;
 
 private:
     void i2c_init(const int address, const std::string& bus_name);
