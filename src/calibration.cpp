@@ -108,7 +108,7 @@ void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
     // sphere coverage can be accurately measured.
     if (feed_count < 100)
     {
-        std::cout << "Determining bias parameters " << feed_count+1 << "%\r" << std::flush;
+        std::cout << "Determining bias parameters " << feed_count+1 << std::endl;
         if (reading.x < x_min) x_min = reading.x;
         if (reading.x > x_max) x_max = reading.x;
         if (reading.y < y_min) y_min = reading.y;
@@ -136,7 +136,7 @@ void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
 
     this->sphere_coverage_quality = sphere_coverage(region_sample_count);
 
-    std::cout << "Coverage quality: " << this->sphere_coverage_quality << "%\r" << std::flush;
+    std::cout << "Coverage quality: " << this->sphere_coverage_quality << std::endl;
 }
 
 int arwain::MagnetometerCalibrator::get_sphere_coverage_quality()
