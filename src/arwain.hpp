@@ -280,6 +280,7 @@ namespace arwain
             double altitude_filter_weight;
             double pressure_offset;
             int correct_with_yaw_diff = 0;
+            int use_uwb_positioning = 0;
 
             /** \brief Overwrite the content of the configuration file associated with this struct.
              * \param option The configuration option to overwrite.
