@@ -128,7 +128,7 @@ private:
     int calib_time = 200;
     double auto_calib_threshold = 0.025;
     bool auto_calib_enabled = false;
-    double correction_speed = 0.95;
+    double correction_speed = 0.995;
 
 private:
     void i2c_init(const int address, const std::string& bus_name);
