@@ -30,6 +30,11 @@ def read_dataset(dataset, facet):
             data_load["position"] = data
         except: pass
         try:
+            data = pd.read_csv(f"{WD}/{dataset}/uwb_log.txt", delimiter=" ")
+            data["time"] = (data["time"] - data["time"][0])/1e9
+            data_load["uwb_log"] = data
+        except: pass
+        try:
             data = pd.read_csv(f"{WD}/{dataset}/world_acce.txt", delimiter=" ").iloc[::10]
             data["time"] = (data["time"] - data["time"][0])/1e9
             data_load["world_acce"] = data
@@ -302,8 +307,16 @@ def update_pressure_temperature_plot(dataset):
 def update_position_scatter(dataset, drift):
     drift = drift / 60.0 / 20.0
     df = read_dataset(dataset, "position")
+    
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df["x"], y=df["y"], mode="lines", name="ARWAIN path"))
+    
+    ## Add the UWB path if it exists.
+    try:
+        df2 = read_dataset(dataset, "uwb_log")
+        fig.add_trace(go.Scatter(x=df2["x"], y=df2["y"], mode="lines", name="UWB path"))
+    except:
+        pass
     fig.update_layout(title="Position", title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
 
