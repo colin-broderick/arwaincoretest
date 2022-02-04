@@ -33,6 +33,12 @@ namespace
 
 void uwb_reader(const std::string& port, const int baudrate)
 {
+    // Quit immediately if not enabled by configuration.
+    if (!arwain::config.use_uwb_positioning)
+    {
+        return;
+    }
+
     Serial serial{port, baudrate};
     serial.write("reset\r");
     sleep_ms(1000);

@@ -398,6 +398,9 @@ int arwain::Configuration::read_from_file()
     read_option(options, "pressure_offset", this->pressure_offset);
     read_option(options, "correct_with_yaw_diff", this->correct_with_yaw_diff);
 
+    // UWB options.
+    read_option(options, "use_uwb_positioning", this->use_uwb_positioning);
+
     // Apply LoRa settings
     std::stringstream(options["lora_tx_power"]) >> this->lora_tx_power;
     std::stringstream(options["lora_packet_frequency"]) >> this->lora_packet_frequency;
