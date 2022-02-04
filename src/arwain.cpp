@@ -605,6 +605,25 @@ class CommandLine : public ArwainThread
                     arwain::system_mode = arwain::OperatingMode::Inference;
                 }
             }
+            else if (input == "infer10")
+            {
+                if (arwain::system_mode == arwain::OperatingMode::Inference)
+                {
+                    std::cout << "Already in inference mode" << std::endl;
+                }
+                else if (!arwain::ready_for_inference)
+                {
+                    std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
+                }
+                else
+                {
+                    std::cout << "Entering inference mode in 10 seconds ..." << std::endl;
+                    sleep_ms(10000);
+                    std::cout << "Inference started" << std::endl;
+                    arwain::setup_log_directory();
+                    arwain::system_mode = arwain::OperatingMode::Inference;
+                }
+            }
             else if (input == "gyro")
             {
                 arwain::request_gyro_calib = true;
