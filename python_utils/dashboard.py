@@ -19,6 +19,21 @@ import time
 all_data = dict()
 WD = "/home/pi/arwain_inference_core"
 
+time_slider = dcc.RangeSlider(
+    min=0,
+    max=10000//20,
+    step=5,
+    marks={x:str(x) for x in range(0, 10000//20, 1000//20)},
+    value=[0, 10000//20],
+    allowCross=True,
+    pushable=10,
+    disabled=False,
+    dots=True,
+    included=True,
+    updatemode="mouseup",
+    vertical=False,
+    id="time_slider"
+)
 
 def read_dataset(dataset, facet):
     ## If this is a new dataset, load it.
@@ -136,10 +151,11 @@ app.layout = html.Div(children=[
     html.Div(
         children=[ 
             html.Div([
-                    daq.NumericInput(id='drift_slider',min=-50, max=50, value=0),
-                    dcc.Graph(id='position_scatter', figure=fig, style={"height":"90vh"})
+                    # daq.NumericInput(id='drift_slider',min=-50, max=50, value=0),
+                    dcc.Graph(id='position_scatter', figure=fig, style={"height":"90vh"}),
+                    time_slider
                 ],
-                style={"width":"49%", "float":"left"}
+                # style={"width":"49%", "float":"left"}
             ),
             html.Div([
                 
@@ -301,40 +317,57 @@ def update_pressure_temperature_plot(dataset):
     dash.dependencies.Output("position_scatter", "figure"),
     [
         dash.dependencies.Input("dataset_list", "value"),
-        dash.dependencies.Input("drift_slider", "value")
+        # dash.dependencies.Input("drift_slider", "value"),
+        dash.dependencies.Input("time_slider", "value")
     ]
 )
-def update_position_scatter(dataset, drift):
-    drift = drift / 60.0 / 20.0
+def update_position_scatter(dataset, slider_values):
+    # drift = drift / 60.0 / 20.0
+    # df = read_dataset(dataset, "position")
+    
+    # fig = go.Figure()
+    # fig.add_trace(go.Scatter(x=df["x"], y=df["y"], mode="lines", name="ARWAIN path"))
+    
+    # ## Add the UWB path if it exists.
+    # try:
+    #     df2 = read_dataset(dataset, "uwb_log")
+    #     fig.add_trace(go.Scatter(x=df2["x"], y=df2["y"], mode="lines", name="UWB path"))
+    # except:
+    #     pass
+    # fig.update_layout(title="Position", title_x=0.5)
+    # fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+
+    ## Convert to 2D array, apply drift, convert back to dataframe.
+    #points_x = list(df["x"])
+    #points_y = list(df["y"])
+    #points = [ [points_x[i], points_y[i]] for i in range(1, len(points_x))]
+    #points, best_drift = drift_simulator.find_best_drift_correction(points)
+
+    # points = drift_simulator.simulate_drift(points, drift)
+    #df_drifted = pd.DataFrame(points)
+
+    ## Add the drifted path to the figure.
+    #fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="lines", name=f"Drifted path by {best_drift}"))
+    # fig.update_layout(title_x=0.5)
+    # fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+    # fig.update_yaxes(scaleanchor="x", scaleratio=1) # Correct aspect ratio.
+
+    # return fig
+
     df = read_dataset(dataset, "position")
     
+    start = slider_values[0]*20
+    end = slider_values[1]*20
+
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df["x"], y=df["y"], mode="lines", name="ARWAIN path"))
+    fig.add_trace(go.Scatter(x=df["x"][start:end], y=df["y"][start:end], text=df["time"][start:end], mode="lines", name="ARWAIN path"))
     
-    ## Add the UWB path if it exists.
-    try:
-        df2 = read_dataset(dataset, "uwb_log")
-        fig.add_trace(go.Scatter(x=df2["x"], y=df2["y"], mode="lines", name="UWB path"))
-    except:
-        pass
     fig.update_layout(title="Position", title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
 
-    ## Convert to 2D array, apply drift, convert back to dataframe.
-    points_x = list(df["x"])
-    points_y = list(df["y"])
-    points = [ [points_x[i], points_y[i]] for i in range(1, len(points_x))]
-    points, best_drift = drift_simulator.find_best_drift_correction(points)
-
-    # points = drift_simulator.simulate_drift(points, drift)
-    df_drifted = pd.DataFrame(points)
-
-    ## Add the drifted path to the figure.
-    fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="lines", name=f"Drifted path by {best_drift}"))
     fig.update_layout(title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
     fig.update_yaxes(scaleanchor="x", scaleratio=1) # Correct aspect ratio.
-
     return fig
 
 
