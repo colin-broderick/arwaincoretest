@@ -45,6 +45,11 @@ def read_dataset(dataset, facet):
             data_load["position"] = data
         except: pass
         try:
+            data = pd.read_csv(f"{WD}/{dataset}/kalman_position.txt", delimiter=" ")
+            data["time"] = (data["time"] - data["time"][0])/1e9
+            data_load["kalman_position"] = data
+        except: pass
+        try:
             data = pd.read_csv(f"{WD}/{dataset}/uwb_log.txt", delimiter=" ")
             data["time"] = (data["time"] - data["time"][0])/1e9
             data_load["uwb_log"] = data
@@ -361,6 +366,8 @@ def update_position_scatter(dataset, slider_values):
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df["x"][start:end], y=df["y"][start:end], text=df["time"][start:end], mode="lines", name="ARWAIN path"))
+    df_k = read_dataset(dataset, "kalman_position")
+    fig.add_trace(go.Scatter(x=df_k["x"][start:end], y=df_k["y"][start:end], text=df_k["time"][start:end], mode="lines", name="Kalman path"))
     
     fig.update_layout(title="Position", title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
@@ -372,4 +379,4 @@ def update_position_scatter(dataset, slider_values):
 
 
 if __name__ == '__main__':
-    app.run_server(host="0.0.0.0", debug=False)
+    app.run_server(host="0.0.0.0", debug=True)
