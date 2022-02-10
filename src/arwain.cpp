@@ -27,6 +27,7 @@
 #include "lis3mdl.hpp"
 #include "bmp384.hpp"
 #include "calibration.hpp"
+#include "command_line.hpp"
 #include "uwb_reader.hpp"
 
 #include "floor_tracker.hpp"
@@ -541,180 +542,6 @@ arwain::Configuration::Configuration(const InputParser& input)
     }
 }
 
-class ArwainThread
-{
-    public:
-        ArwainThread()
-        : th(std::thread{&ArwainThread::run, this}), go(true)
-        {
-        }
-        void join()
-        {
-            th.join();
-        }
-        /** \brief Provide the ability to stop the thread manually, regardless of shutdown flag. */
-        void stop()
-        {
-            go = false;
-        }
-
-    protected:
-        std::thread th;
-        bool go;
-
-        virtual void run() = 0;
-};
-
-class CommandLine : public ArwainThread
-{
-    void run() override
-    {
-        // TODO Take care to update any global state when switching from or to any relevant modes.
-        // An important example is that the folder_date_string should change when starting a new logging session,
-        // i.e. when switching to inference mode. Different logging might become relevant in other modes, so that
-        // might be important there too.
-
-        // TODO APIs for request of runtime status? I added request for gyro calib simply to confirm it was auto
-        // calibrating as expected, but it's not a good implementation.
-
-        while (arwain::system_mode != arwain::OperatingMode::Terminate)
-        {
-            std::string input;
-            std::cout << "ARWAIN > ";
-            std::getline(std::cin, input);
-
-            if (input == "quit" || input == "exit" || input == "shutdown" || input == "stop")
-            {
-                std::cout << "Cleaning up before closing, please wait ..." << std::endl;
-                arwain::system_mode = arwain::OperatingMode::Terminate;
-            }
-            else if (input == "inference" || input == "infer")
-            {
-                if (arwain::system_mode == arwain::OperatingMode::Inference)
-                {
-                    std::cout << "Already in inference mode" << std::endl;
-                }
-                else if (!arwain::ready_for_inference)
-                {
-                    std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
-                }
-                else
-                {
-                    std::cout << "Entering inference mode" << std::endl;
-                    arwain::setup_log_directory();
-                    arwain::system_mode = arwain::OperatingMode::Inference;
-                }
-            }
-            else if (input == "infer10")
-            {
-                if (arwain::system_mode == arwain::OperatingMode::Inference)
-                {
-                    std::cout << "Already in inference mode" << std::endl;
-                }
-                else if (!arwain::ready_for_inference)
-                {
-                    std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
-                }
-                else
-                {
-                    std::cout << "Entering inference mode in 10 seconds ..." << std::endl;
-                    sleep_ms(10000);
-                    std::cout << "Inference started" << std::endl;
-                    arwain::setup_log_directory();
-                    arwain::system_mode = arwain::OperatingMode::Inference;
-                }
-            }
-            else if (input == "gyro")
-            {
-                arwain::request_gyro_calib = true;
-                sleep_ms(10);
-            }
-            else if (input == "autocal" || input == "idle")
-            {
-                std::cout << "Entering autocalibration mode" << std::endl;
-                arwain::system_mode = arwain::OperatingMode::AutoCalibration;
-            }
-            else if (input == "mode")
-            {
-                std::cout << "Current mode: " << arwain::system_mode << std::endl;
-            }
-            else if (input == "calibg")
-            {
-                if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
-                {
-                    std::cout << "error: Active calibration modes can only be entered from idle/autocalibration modes" << std::endl;
-                }
-                else
-                {
-                    std::cout << "Starting gyroscope calibration" << std::endl;
-                    arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
-                }
-            }
-            else if (input == "testuwb")
-            {
-                arwain::system_mode = arwain::OperatingMode::TestSerial;
-            }
-            else if (input == "calibm")
-            {
-                if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
-                {
-                    std::cout << "error: Active calibration modes can only be entered from idle/autocalibration modes" << std::endl;
-                }
-                else
-                {
-                    std::cout << "Starting magnetometer calibration" << std::endl;
-                    arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
-                }
-            }
-            else if (input == "caliba")
-            {
-                if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
-                {
-                    std::cout << "error: Active calibration modes can only be entered from idle/autocalibration modes" << std::endl;
-                }
-                else
-                {
-                    std::cout << "Starting accelerometer calibration" << std::endl;
-                    arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
-                }
-            }
-            else if (input.substr(0, 4) == "name")
-            {
-                if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
-                {
-                    std::cout << "error: Folder name can only be changed from idle/autocalibration modes" << std::endl;
-                }
-                else
-                {
-                    std::string value;
-                    std::istringstream iss{input};
-                    iss >> value >> value;
-                    if (value == "name")
-                    {
-                        std::cout << "error: Provide a valid name" << std::endl;
-                    }
-                    else
-                    {
-                        arwain::folder_date_string_suffix = value;
-                    }
-                }
-            }
-            else
-            {
-                std::cout << "error: unrecognised command: " << input << std::endl;
-            }
-            if (!go)
-            {
-                break;
-            }
-        }
-    }
-    public:
-        CommandLine() : ArwainThread()
-        {
-        }
-};
-
 int arwain::execute_inference()
 {
     // Start worker threads.
@@ -726,8 +553,8 @@ int arwain::execute_inference()
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
-    CommandLine cmd;                                             // Simple command line interface for runtime mode switching.
     std::thread uwb_reader_thread{uwb_reader, "/dev/serial0", 115200};
+    std::thread command_line_thread{command_line};                                             // Simple command line interface for runtime mode switching.
     // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
 
     // Wait for all threads to terminate.
@@ -739,8 +566,8 @@ int arwain::execute_inference()
     indoor_positioning_thread.join();
     py_inference_thread.join();
     altimeter_thread.join();
-    cmd.join();
     uwb_reader_thread.join();
+    command_line_thread.join();
     // kalman_filter.join();
 
     return arwain::ExitCodes::Success;
