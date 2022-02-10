@@ -1,5 +1,6 @@
 add_library(madgwick_filter STATIC madgwick.cpp)
 add_library(efaroe_filter STATIC efaroe.cpp)
+# add_library(android_fusion STATIC android_fusion.cpp)
 
 set(FUSION_C_FILES new_madgwick_FusionAhrs.c new_madgwick_FusionBias.c new_madgwick_FusionCompass.c)
 
