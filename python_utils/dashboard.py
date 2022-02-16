@@ -45,6 +45,11 @@ def read_dataset(dataset, facet):
             data_load["position"] = data
         except: pass
         try:
+            data = pd.read_csv(f"{WD}/{dataset}/velocity.txt", delimiter=" ")
+            data["time"] = (data["time"] - data["time"][0])/1e9
+            data_load["velocity"] = data
+        except: pass
+        try:
             data = pd.read_csv(f"{WD}/{dataset}/kalman_position.txt", delimiter=" ")
             data["time"] = (data["time"] - data["time"][0])/1e9
             data_load["kalman_position"] = data
@@ -52,7 +57,7 @@ def read_dataset(dataset, facet):
         try:
             data = pd.read_csv(f"{WD}/{dataset}/uwb_log.txt", delimiter=" ")
             data["time"] = (data["time"] - data["time"][0])/1e9
-            data_load["uwb_log"] = data
+            data_load["uwb_position"] = data
         except: pass
         try:
             data = pd.read_csv(f"{WD}/{dataset}/world_acce.txt", delimiter=" ").iloc[::10]
@@ -160,15 +165,11 @@ app.layout = html.Div(children=[
                     dcc.Graph(id='position_scatter', figure=fig, style={"height":"90vh"}),
                     time_slider
                 ],
-                # style={"width":"49%", "float":"left"}
             ),
-            html.Div([
-                
-            ]),
-            # html.Div(
-            #     [dcc.Graph(id='quaternion_orientation_plot', figure=fig)],
-            #     style={"width":"49%","float":"left"}
-            # ),
+            html.Div(
+                [dcc.Graph(id='velocity_plot', figure=fig)],
+                style={"width":"49%","float":"left"}
+            ),
             html.Div(
                 [dcc.Graph(id='euler_plot', figure=fig)],
                 style={"width":"49%","float":"left"}
@@ -230,6 +231,23 @@ def update_accel_plot(dataset):
     return fig
 
 
+@app.callback(
+    dash.dependencies.Output("velocity_plot", "figure"),
+    dash.dependencies.Input("dataset_list", "value")
+)
+def update_velocity_plot(dataset):
+    df = read_dataset(dataset, "velocity")
+    fig = go.Figure()
+    fig.update_layout(title="World velocity", title_x=0.5)
+    fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
+    fig.add_trace(go.Scatter(x=df["time"], y=df["x"], mode="lines", name="Velocity x [m/s]"))
+    fig.add_trace(go.Scatter(x=df["time"], y=df["y"], mode="lines", name="Velocity y [m/s]"))
+    fig.add_trace(go.Scatter(x=df["time"], y=df["z"], mode="lines", name="Velocity z [m/s]"))
+    return fig 
+
+
+
+
 ## Update dataset list from button #############################################
 @app.callback(
     dash.dependencies.Output("hidden-div", "title"),
@@ -260,20 +278,30 @@ def update_list(clicks):
     dash.dependencies.Input("dataset_list","value")
 )
 def update_euler_plot(dataset):
-    df_madgwick = read_dataset(dataset, "madgwick_euler_orientation_1")
-    df_madgwick_2 = read_dataset(dataset, "madgwick_euler_orientation_2")
-    df_madgwick_3 = read_dataset(dataset, "madgwick_euler_orientation_3")
-    df_diff = read_dataset(dataset, "ori_diff")
-    df_madgwick_mag = read_dataset(dataset, "madgwick_mag_euler_orientation")
 
     fig = go.Figure()
     fig.update_layout(title="Euler yaw [deg]", title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
-    fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw 1"))
-    fig.add_trace(go.Scatter(x=df_madgwick_2["time"], y=np.unwrap(df_madgwick_2["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw 2"))
-    fig.add_trace(go.Scatter(x=df_madgwick_3["time"], y=np.unwrap(df_madgwick_3["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw 3"))
-    fig.add_trace(go.Scatter(x=df_diff["time"], y=np.unwrap(df_diff["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Yaw diff"))
-    fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-yaw"))
+    try:
+        df_madgwick = read_dataset(dataset, "madgwick_euler_orientation_1")
+        fig.add_trace(go.Scatter(x=df_madgwick["time"], y=np.unwrap(df_madgwick["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw 1"))
+    except: pass
+    try:
+        df_madgwick_2 = read_dataset(dataset, "madgwick_euler_orientation_2")
+        fig.add_trace(go.Scatter(x=df_madgwick_2["time"], y=np.unwrap(df_madgwick_2["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw 2"))
+    except: pass
+    try:
+        df_madgwick_3 = read_dataset(dataset, "madgwick_euler_orientation_3")
+        fig.add_trace(go.Scatter(x=df_madgwick_3["time"], y=np.unwrap(df_madgwick_3["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Madgwick Yaw 3"))
+    except: pass
+    try:
+        df_diff = read_dataset(dataset, "ori_diff")
+        fig.add_trace(go.Scatter(x=df_diff["time"], y=np.unwrap(df_diff["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="Yaw diff"))
+    except: pass
+    try:
+        df_madgwick_mag = read_dataset(dataset, "madgwick_mag_euler_orientation")
+        fig.add_trace(go.Scatter(x=df_madgwick_mag["time"], y=np.unwrap(df_madgwick_mag["yaw"], discont=np.pi)*180/np.pi, mode="lines", name="madg-mag-yaw"))
+    except: pass
 
     return fig
 
@@ -314,7 +342,7 @@ def update_pressure_temperature_plot(dataset):
     fig.update_layout(title="Pressure/Temperature", title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
     fig.add_trace(go.Scatter(x=df_pressure["time"], y=df_pressure["pressure"]/1e5, mode="lines", name="Pressure [hPa/1000]"))
-    fig.add_trace(go.Scatter(x=df_pressure["time"], y=df_pressure["temperature"], mode="lines", name="Temperature [C]"))
+    fig.add_trace(go.Scatter(x=df_pressure["time"], y=df_pressure["temperature"], mode="lines", name="Temperature [°C]"))
     return fig
 
 
@@ -359,15 +387,25 @@ def update_position_scatter(dataset, slider_values):
 
     # return fig
 
-    df = read_dataset(dataset, "position")
     
     start = slider_values[0]*20
     end = slider_values[1]*20
 
     fig = go.Figure()
+
+    df = read_dataset(dataset, "position")
     fig.add_trace(go.Scatter(x=df["x"][start:end], y=df["y"][start:end], text=df["time"][start:end], mode="lines", name="ARWAIN path"))
-    df_k = read_dataset(dataset, "kalman_position")
-    fig.add_trace(go.Scatter(x=df_k["x"][start:end], y=df_k["y"][start:end], text=df_k["time"][start:end], mode="lines", name="Kalman path"))
+    
+    try:
+        df_k = read_dataset(dataset, "kalman_position")
+        fig.add_trace(go.Scatter(x=df_k["x"][start:end], y=df_k["y"][start:end], text=df_k["time"][start:end], mode="lines", name="Kalman path"))
+    except:
+        pass
+    try:
+        df_u = read_dataset(dataset, "uwb_position")
+        fig.add_trace(go.Scatter(x=df_u["x"][start:end], y=df_u["y"][start:end], text=df_u["time"][start:end], mode="lines", name="UWB path"))
+    except:
+        pass
     
     fig.update_layout(title="Position", title_x=0.5)
     fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
