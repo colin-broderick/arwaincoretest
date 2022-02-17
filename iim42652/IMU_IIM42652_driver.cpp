@@ -247,9 +247,9 @@ Vector6 IMU_IIM42652::read_IMU()
     read_IMU_raw_data();
 
     // Store new accelerometer reading.
-    accelerometer_x = accelerometer_x * accel_resolution * GRAVITY - accel_bias_x;
-    accelerometer_y = accelerometer_y * accel_resolution * GRAVITY - accel_bias_y;
-    accelerometer_z = accelerometer_z * accel_resolution * GRAVITY - accel_bias_z;
+    accelerometer_x = (accelerometer_x * accel_resolution * GRAVITY - accel_bias_x) * accel_scale_x;
+    accelerometer_y = (accelerometer_y * accel_resolution * GRAVITY - accel_bias_y) * accel_scale_y;
+    accelerometer_z = (accelerometer_z * accel_resolution * GRAVITY - accel_bias_z) * accel_scale_z;
 
     // Store new gyroscope reading.
     gyroscope_x = gyroscope_x * gyro_resolution * PI_DIVIDED_BY_180 - gyro_bias_x;
@@ -306,6 +306,13 @@ void IMU_IIM42652::set_accel_bias(double x, double y, double z)
     accel_bias_x = x;
     accel_bias_y = y;
     accel_bias_z = z;
+}
+
+void IMU_IIM42652::set_accel_scale(double x, double y, double z)
+{
+    accel_scale_x = x;
+    accel_scale_y = y;
+    accel_scale_z = z;
 }
 
 /** \brief Automatically update the gyroscope bias when the device is detected to be stationary.

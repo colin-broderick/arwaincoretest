@@ -349,6 +349,15 @@ int arwain::Configuration::read_from_file()
     read_option(options, "accel3_bias_x", this->accel3_bias.x);
     read_option(options, "accel3_bias_y", this->accel3_bias.y);
     read_option(options, "accel3_bias_z", this->accel3_bias.z);
+    read_option(options, "accel1_scale_x", this->accel1_scale.x);
+    read_option(options, "accel1_scale_y", this->accel1_scale.y);
+    read_option(options, "accel1_scale_z", this->accel1_scale.z);
+    read_option(options, "accel2_scale_x", this->accel2_scale.x);
+    read_option(options, "accel2_scale_y", this->accel2_scale.y);
+    read_option(options, "accel2_scale_z", this->accel2_scale.z);
+    read_option(options, "accel3_scale_x", this->accel3_scale.x);
+    read_option(options, "accel3_scale_y", this->accel3_scale.y);
+    read_option(options, "accel3_scale_z", this->accel3_scale.z);
     read_option(options, "gyro1_bias_x", this->gyro1_bias.x);
     read_option(options, "gyro1_bias_y", this->gyro1_bias.y);
     read_option(options, "gyro1_bias_z", this->gyro1_bias.z);
@@ -798,10 +807,10 @@ int arwain::calibrate_accelerometers_simple()
     std::vector<Vector3> readings_3;
 
     // Take readings while tumbling device.
-    for (int i = 0; i < 24; i++)
+    for (int i = 0; i < 6; i++)
     {
         std::cout << i+1 << ") Place the device in a random orientation ..." << std::endl;
-        sleep_ms(5000);
+        sleep_ms(10000);
 
         Vector3 reading_1 = imu1.calibration_accel_sample();
         Vector3 reading_2 = imu2.calibration_accel_sample();

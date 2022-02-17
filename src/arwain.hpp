@@ -230,6 +230,9 @@ namespace arwain
             Vector3 accel1_bias; // The systematic bias in measurements from accelerometer 1.
             Vector3 accel2_bias; // The systematic bias in measurements from accelerometer 2.
             Vector3 accel3_bias; // The systematic bias in measurements from accelerometer 3.
+            Vector3 accel1_scale;
+            Vector3 accel2_scale;
+            Vector3 accel3_scale;
             Vector3 gyro1_bias; // The systematic bias in measurements from gyroscope 1.
             Vector3 gyro2_bias; // The systematic bias in measurements from gyroscope 2.
             Vector3 gyro3_bias; // The systematic bias in measurements from gyroscope 3.
