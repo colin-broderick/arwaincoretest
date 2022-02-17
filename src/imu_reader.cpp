@@ -448,13 +448,14 @@ void imu_reader()
                 break;
             }
             case arwain::OperatingMode::AutoCalibration:
+            case arwain::OperatingMode::TestStanceDetector:
             {
                 // Set up timing.
                 auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
                 auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
                 std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
 
-                while (arwain::system_mode == arwain::OperatingMode::AutoCalibration)
+                while (arwain::system_mode == arwain::OperatingMode::AutoCalibration || arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
                 {
                     timeCount = std::chrono::system_clock::now().time_since_epoch().count();
 
