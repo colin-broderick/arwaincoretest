@@ -98,6 +98,7 @@ public:
     Vector3 calibration_accel_sample();
     void set_gyro_bias(double x, double y, double z);
     void set_accel_bias(double x, double y, double z);
+    void set_accel_scale(double x, double y, double z);
     void set_correction_speed(double speed);
     void enable_auto_calib();
     void enable_auto_calib(double threshold);
@@ -112,18 +113,26 @@ private:
     double gyro_resolution = 0;
     int handle = 0;
     double temperature = 0;
+
+    // Calibration parameters.
     double gyro_bias_x = 0;
     double gyro_bias_y = 0;
     double gyro_bias_z = 0;
     double accel_bias_x = 0;
     double accel_bias_y = 0;
     double accel_bias_z = 0;
+    double accel_scale_x = 1;
+    double accel_scale_y = 1;
+    double accel_scale_z = 1;
+
+    // Most recent reading lives here.
     double gyroscope_x = 0;
     double gyroscope_y = 0;
     double gyroscope_z = 0;
     double accelerometer_x = 0;
     double accelerometer_y = 0;
     double accelerometer_z = 0;
+    
     double auto_calib_timer = 0;
     int calib_time = 200;
     double auto_calib_threshold = 0.025;
