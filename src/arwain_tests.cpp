@@ -60,6 +60,9 @@ int arwain::test_imu()
 {
     // Initialize the IMU.
     IMU_IIM42652 imu{0x68, "/dev/i2c-1"};
+    imu.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
+    imu.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
+    imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
 
     // Set up timing.
     auto time = std::chrono::system_clock::now();
@@ -68,6 +71,9 @@ int arwain::test_imu()
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         auto [accel_data, gyro_data] = imu.read_IMU();
+        accel_data.x = (accel_data.x - arwain::config.accel1_bias.x) * arwain::config.accel1_scale.x;
+        accel_data.y = (accel_data.y - arwain::config.accel1_bias.y) * arwain::config.accel1_scale.y;
+        accel_data.z = (accel_data.z - arwain::config.accel1_bias.z) * arwain::config.accel1_scale.z;
 
         // Display IMU data.
         std::cout << time.time_since_epoch().count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";
