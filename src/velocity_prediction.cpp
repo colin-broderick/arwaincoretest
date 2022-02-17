@@ -13,48 +13,76 @@ static std::string inference_tcp_socket = "tcp://*:5555";
 
 #define DEBUGKALMAN
 
+/** \brief Estimate the hidden state of a system given a physical model and occasional measurements.
+ * 
+ * Kalman filter components:
+ * A: Transition matrix: Defines how the state will evolve over time given no input and independent
+ * of the control variable. For many systems, this is effectively dt. For constant systems, this is
+ * identity.
+ * B: Control matrix: Defines how the system evolves in response to the control variable.
+ * H: Observation matrix: Translates the measured values into the state observation. If the state is
+ * measured directly, this is the identity. This matrix will be something other than identity if the
+ * state is measured indirectly.
+ * P: Process covariance: Uncertainty in the state computed by the process. Grows over time while
+ * measurements are not supplied, and shrinks when a measurement is supplied.
+ * Q: Initial process covariance: Prevents process covariance reaching zero which would correspond
+ * to complete trust in the process, ignoring measurements.
+ * R: Measurement covariance: Uncertainty in measured values due to measurement noise.
+ */
 class VelocityKalmanFilter
 {
     private:
         uint64_t last_time = 0;
-        Eigen::Matrix<double, 3, 3> kalman_gain;
-        Eigen::Matrix<double, 3, 1> state{0, 0, 0}; // Z
-        Eigen::Matrix<double, 3, 3> state_transition; // A
-        Eigen::Matrix<double, 3, 3> control_matrix; // B
-        Eigen::Matrix<double, 3, 1> process_noise; // omega
-        Eigen::Matrix<double, 3, 1> measurement_noise; // omega
-        Eigen::Matrix<double, 3, 1> gravity{0, 0, 9.81}; // gravity
-        Eigen::Matrix<double, 3, 3> process_covariance;
-        Eigen::Matrix<double, 3, 3> measurement_covariance;
-        Eigen::Matrix<double, 3, 3> initial_process_covariance;
+        Eigen::Matrix<double, 3, 3> kalman_gain;                // K
+        Eigen::Matrix<double, 3, 1> state{0, 0, 0};             // X
+        Eigen::Matrix<double, 3, 3> state_transition;           // A
+        Eigen::Matrix<double, 3, 3> control_matrix;             // B
+        Eigen::Matrix<double, 3, 1> gravity{0, 0, 9.81};        // Gravity
+        Eigen::Matrix<double, 3, 3> process_covariance;         // P
+        Eigen::Matrix<double, 3, 3> measurement_covariance;     // R
+        Eigen::Matrix<double, 3, 3> measurement_covariance_inv; // R.inv, for Mahalonobi distance
+        Eigen::Matrix<double, 3, 3> initial_process_covariance; // Q;
 
         // Fitting matrices
         Eigen::Matrix<double, 3, 3> I{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-        Eigen::Matrix<double, 3, 3> C = I;
-        Eigen::Matrix<double, 3, 3> H = I;
+        Eigen::Matrix<double, 3, 3> observation_matrix;         // H
+        Eigen::Matrix<double, 3, 3> observation_matrix_tr;      // H.inv
 
         arwain::Logger log;
 
     public:
         VelocityKalmanFilter(double process_uncertainty, double measurement_uncertainty)
         {
+            // The state is initialized at zero and is assumed constant without control input.
             state = Eigen::Matrix<double, 3, 1>{0, 0, 0};
-            process_noise = Eigen::Matrix<double, 3, 1>{0, 0, 0};
+            state_transition = I;
+
             auto& p = process_uncertainty;
             process_covariance = Eigen::Matrix<double, 3, 3>{
-                {p*p, 0,     0},
-                {0,   p*p,   0},
-                {0,   0,   p*p}
+                {p*p,   0,   0},
+                {  0, p*p,   0},
+                {  0,   0, p*p}
             };
             initial_process_covariance = process_covariance;
-            measurement_noise = Eigen::Matrix<double, 3, 1>{0, 0, 0};
             auto& m = measurement_uncertainty;
             measurement_covariance = Eigen::Matrix<double, 3, 3>{
-                {m*m,0,0},
-                {0,m*m,0},
-                {0,0,m*m}
+                {m*m,   0,   0},
+                {  0, m*m,   0},
+                {  0,   0, m*m}
             };
+            measurement_covariance_inv = measurement_covariance.inverse();
+            observation_matrix = I;
+            observation_matrix_tr = I;
+
             log.open("kalman_log.txt");
+        }
+
+        /** \brief Computes a distance metric between the measured value and the current state. The distance
+         * is a generalization of standard deviation to multiple dimensions.
+         */
+        double mahalanobi_distance(const Eigen::Matrix<double, 3, 1>& measurement)
+        {
+            return std::sqrt((measurement - state).transpose() * measurement_covariance_inv * (measurement - state));
         }
 
         Vector3 update(const Vector3& velocity_measurement, const Vector3& average_acceleration)
@@ -80,7 +108,6 @@ class VelocityKalmanFilter
             log << velocity_measurement << "\n";
             #endif
 
-            state_transition = I;
             control_matrix = Eigen::Matrix<double, 3, 3>{{dt, 0, 0},{0, dt, 0},{0, 0, dt}};
 
             #ifdef DEBUGKALMAN
@@ -90,11 +117,10 @@ class VelocityKalmanFilter
 
             Eigen::Matrix<double, 3, 1> acceleration{average_acceleration.x, average_acceleration.y, average_acceleration.z};
             
-            /*
+            /* The prediction step updates the state according to the model and measurements from the accelerometer.
                 X = A*X + B*u + w
             */
-            // The prediction step updates the state according to the model and measurements from the accelerometer.
-            state = state_transition * state + control_matrix * (acceleration - gravity) + process_noise;
+            state = state_transition * state + control_matrix * (acceleration - gravity);
 
             #ifdef DEBUGKALMAN
             log << "State after state transition:" << "\n";
@@ -106,11 +132,10 @@ class VelocityKalmanFilter
             log << process_covariance << "\n";
             #endif
 
-            /*
+            /* The process covariance grows over time while measurements are not supplied.
                 P = A*P*A.T + Q
             */
-            // The process covariance matrix is updated to prevent it approaching zero.
-            process_covariance = state_transition * process_covariance * state_transition.transpose() + initial_process_covariance;
+            process_covariance = state_transition * process_covariance * observation_matrix_tr + initial_process_covariance;
 
             #ifdef DEBUGKALMAN
             log << "Process covariance post-update 1:" << "\n";
@@ -122,38 +147,40 @@ class VelocityKalmanFilter
             log << kalman_gain << "\n";
             #endif
 
-            /*
+            /* Update the Kalman gain based on the new process covariance.
                 K = P*H * (H*P*H.T + R)^{-1}
             */
-            // We update the Kalman gain based on the new process covariance.
-            kalman_gain = (process_covariance * H) * (H * process_covariance * H.transpose() + measurement_covariance).inverse();
+            kalman_gain = (process_covariance * observation_matrix) * (observation_matrix * process_covariance * observation_matrix_tr + measurement_covariance).inverse();
 
             #ifdef DEBUGKALMAN
             log << "Kalman gain post-update:" << "\n";
             log << kalman_gain << "\n";
             #endif
 
-            // Modify the state according to the measurement and the Kalman gain.
-            /*
-                Y = C*Y + z
+            /* Transform the measurement into state space.
+                z = H*Y + omega
             */
-            Eigen::Matrix<double, 3, 1> measurement = C * Eigen::Matrix<double, 3, 1>{velocity_measurement.x, velocity_measurement.y, velocity_measurement.z} + measurement_noise;
+            Eigen::Matrix<double, 3, 1> measurement = Eigen::Matrix<double, 3, 1>{velocity_measurement.x, velocity_measurement.y, velocity_measurement.z};
+            #ifdef DEBUGKALMAN
+            double dm = mahalanobi_distance(measurement);
+            std::cout << "Dm(x): " << dm << std::endl;
+            log << "Dm(x): " << dm << "\n";
+            #endif
 
-            /*
+            /* Update the state using the measurement residual and the Kalman gain.
                 X = X + K*(Y - X)
             */
-            state = state + kalman_gain * (measurement - H * state);
+            state = state + kalman_gain * (measurement - observation_matrix * state);
 
             #ifdef DEBUGKALMAN
             log << "State post measurement update:" << "\n";
             log << state << "\n";
             #endif
 
-            // Modify the process covariance according to the Kalman gain.
-            /*
+            /* Modify the process covariance according to the Kalman gain.
                 P = (I - H*K) * P
             */
-            process_covariance = (I - H * kalman_gain) * process_covariance;
+            process_covariance = (I - observation_matrix * kalman_gain) * process_covariance;
 
             #ifdef DEBUGKALMAN
             log << "Process covariance post-update 2:" << "\n";
@@ -169,7 +196,8 @@ class VelocityKalmanFilter
 };
 
 
-/** \brief This has only been developed to the proof of concept stage and is not suitable for deployment.
+/** \brief Predicts velocity by passing IMU data to a neural compute resource, and integrates
+ * velocity into position.
  */
 void predict_velocity()
 {
@@ -178,8 +206,8 @@ void predict_velocity()
         return;
     }
     // *****************************************************************//
-    // NOTE This has only been developed to the proof of concept stage. //
-    // It will not work fully without additional work.                  //
+    // NOTE This relies upon a socket connection to a Python script     //
+    /// which operates the NCS2, and should be deprecated and replaced. //
     // *****************************************************************//
 
     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
@@ -193,7 +221,6 @@ void predict_velocity()
 
     // Buffer to contain local copy of IMU data.
     std::deque<Vector6> imu;
-
 
     // Request and response buffers.
     std::stringstream request;
@@ -211,7 +238,7 @@ void predict_velocity()
                 Vector3 kalman_position{0, 0, 0};
                 Vector3 velocity{0, 0, 0};
                 
-                VelocityKalmanFilter kalman{0.0001, 0.9}; // process, measurement
+                VelocityKalmanFilter kalman{1.0, 0.0001}; // process, measurement
 
                 // Open files for logging.
                 // File handles for logging.
@@ -290,7 +317,7 @@ void predict_velocity()
                     }
                     average_acceleration = average_acceleration / 10.0;
 
-                    auto kalman_velocity = kalman.update(velocity, average_acceleration);
+                    Vector3 kalman_velocity = kalman.update(velocity, average_acceleration);
 
                     { // Store velocity in global buffer.
                         std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
