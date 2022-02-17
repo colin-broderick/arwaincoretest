@@ -17,7 +17,13 @@ import time
 
 
 all_data = dict()
-WD = "/home/pi/arwain_inference_core"
+
+try:
+    WD = sys.argv[1]
+    if WD[-1] == "/":
+        WD = WD[:-1]
+except IndexError:
+    WD = "/home/pi/arwain_inference_core"
 
 time_slider = dcc.RangeSlider(
     min=0,
