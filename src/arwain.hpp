@@ -46,7 +46,8 @@ namespace arwain
         GyroscopeCalibration,
         MagnetometerCalibration,
         AccelerometerCalibration,
-        TestSerial
+        TestSerial,
+        TestStanceDetector
     };
 }
 
@@ -67,6 +68,7 @@ inline std::ostream& operator<<(std::ostream& stream, arwain::OperatingMode toke
             stream << "Terminate";
             break;
         default:
+            stream << "Mode not specified";
             break;
     }
     return stream;

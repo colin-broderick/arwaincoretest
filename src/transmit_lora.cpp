@@ -63,7 +63,10 @@ void transmit_lora()
                     message.z = position.z * 100;
 
                     // Create alerts flags.
-                    message.alerts = arwain::status.falling | (arwain::status.entangled << 1) | (arwain::status.current_stance << 2);
+                    message.alerts = arwain::status.falling |
+                                    (arwain::status.entangled << 1) |
+                                    (arwain::status.attitude << 2) |
+                                    (arwain::status.current_stance << 3);
 
                     // Reset critical status flags now they have been read.
                     arwain::status.falling = arwain::StanceDetector::NotFalling;

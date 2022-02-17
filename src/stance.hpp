@@ -18,18 +18,19 @@ namespace arwain
     {
         public:
             enum Stance {
-                Inactive,
-                Walking,
-                Searching,
-                Crawling,
-                Running,
-                Climbing
+                Inactive,   // The wearer is upright and active but not moving anywhere.
+                Immobile,   // The wearer is not moving and there is ~0 measured by all IMU axes; possibly unconscious.
+                Walking,    // The wearer is making steady progress at normal walking pace.
+                Searching,  // The wearer shows high kinetic activity but forward progress is slow.
+                Crawling,   // The wearer has horizontal attitude and is moving at a crawling pace.
+                Running,    // The wearer is moving at greater than walking pace.
+                Climbing    // The wearer is moving vertically; stairs or ladders.
             };
             enum FallState { 
                 NotFalling,
-                Falling
+                Falling     // There has recently been a period of rapid descent (~0 measured by accelerometers).
             };
-            enum EntangleState {
+            enum EntangleState { // ********** POSSIBLY DEPRECATED ********** //
                 NotEntangled,
                 Entangled
             };

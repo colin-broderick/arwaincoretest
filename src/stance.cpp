@@ -41,6 +41,47 @@ void stance_detector()
     {
         switch (arwain::system_mode)
         {
+            case arwain::OperatingMode::TestStanceDetector:
+            {
+                // Set up timing.
+                auto time = std::chrono::system_clock::now();
+                std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
+
+                while (arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
+                {
+                    // Get all relevant data.
+                    { // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
+                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+                        imu_data = arwain::Buffers::IMU_BUFFER;
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
+                        vel_data = arwain::Buffers::VELOCITY_BUFFER;
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
+                        rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
+                    }
+
+                    // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
+                    stance.update_attitude(rotation_quaternion);
+                    stance.run(imu_data, vel_data);
+                    arwain::status.current_stance = stance.getStance();
+                    arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
+                    arwain::status.entangled = arwain::status.entangled | stance.getEntangledStatus();
+                    arwain::status.attitude = stance.getAttitude();
+                    
+                    std::cout << "Falling:   " << arwain::status.falling << std::endl;
+                    std::cout << "Entangled: " << arwain::status.entangled << std::endl;
+                    std::cout << "Attitude:  " << arwain::status.attitude << std::endl;
+                    std::cout << "Stance:    " << arwain::status.current_stance << std::endl;
+
+                    // Wait until the next tick.
+                    time = time + interval;
+                    std::this_thread::sleep_until(time);
+                }
+                break;
+            }
             case arwain::OperatingMode::Inference:
             {
                 // Open file for freefall/entanglement logging
@@ -161,6 +202,8 @@ void arwain::StanceDetector::update_attitude(Quaternion rotation_quaternion)
 {
     auto rotated_device_z_component = (rotation_quaternion * Quaternion{0, 0, 0, 1} * rotation_quaternion.conjugate()).z;
 
+    std::cout << rotated_device_z_component << std::endl;
+
     if (abs(rotated_device_z_component) < 0.707)
     {
         m_attitude = Vertical;
@@ -180,14 +223,12 @@ void arwain::StanceDetector::run(const std::deque<Vector6> &imu_data, const std:
     // Crunch the numbers ...
     std::vector<Vector3> accel_data;
     std::vector<Vector3> gyro_data;
+
+    
     for (int i = 0; i < 20; i++)
     {
-        accel_data.push_back(Vector3{
-            imu_data[i].acce.x, imu_data[i].acce.y, imu_data[i].acce.z
-        });
-        gyro_data.push_back(Vector3{
-            imu_data[i].gyro.x, imu_data[i].gyro.y, imu_data[i].gyro.z
-        });
+        accel_data.push_back(imu_data[i].acce);
+        gyro_data.push_back(imu_data[i].gyro);
     }
     m_a_mean_magnitude = buffer_mean_magnitude(accel_data);
     m_g_mean_magnitude = buffer_mean_magnitude(gyro_data);
@@ -195,7 +236,7 @@ void arwain::StanceDetector::run(const std::deque<Vector6> &imu_data, const std:
     m_accel_means = get_means(accel_data);
     m_speed_means = get_means(vel_data);
     m_speed_axis = biggest_axis(m_speed_means);
-    m_a_twitch = abs(m_a_mean_magnitude - m_gravity);
+    m_a_twitch = std::abs(m_a_mean_magnitude - m_gravity);
     m_struggle = vector_mean(m_struggle_window);
     m_activity = activity(m_a_mean_magnitude, m_g_mean_magnitude, m_v_mean_magnitude);
     m_tmp_struggle = (m_a_twitch + m_g_mean_magnitude) / (m_v_mean_magnitude + m_sfactor);

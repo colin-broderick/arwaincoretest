@@ -87,6 +87,11 @@ void command_line()
         {
             arwain::system_mode = arwain::OperatingMode::TestSerial;
         }
+        else if (input == "teststance")
+        {
+            // TODO Function to check for validity of mode transitions.
+            arwain::system_mode = arwain::OperatingMode::TestStanceDetector;
+        }
         else if (input == "calibm")
         {
             if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
