@@ -11,8 +11,6 @@
 
 static std::string inference_tcp_socket = "tcp://*:5555";
 
-#define DEBUGKALMAN
-
 /** \brief Estimate the hidden state of a system given a physical model and occasional measurements.
  * 
  * Kalman filter components:
@@ -228,6 +226,8 @@ void predict_velocity()
 
     arwain::ready_for_inference = true;
 
+    uint64_t last_inference_time = 0;
+
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
@@ -351,6 +351,19 @@ void predict_velocity()
                         position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
                         kalman_position_file << time.time_since_epoch().count() << " " << kalman_position.x << " " << kalman_position.y << " " << kalman_position.z << "\n";
                     }
+
+                    // Attempt to keep track of what rate the NCS2 is operating at; it sometimes drops to 7 Hz due to thermal throttling,
+                    // and this can affect other systems if it is not considered.
+                    if (time.time_since_epoch().count() - last_inference_time > 100000000)
+                    {
+                        arwain::velocity_inference_rate = 7;
+                    }
+                    else
+                    {
+                        arwain::velocity_inference_rate = 20;
+                    }
+
+                    last_inference_time = time.time_since_epoch().count();
 
                     // Wait until next tick.
                     time = time + interval;
