@@ -47,6 +47,7 @@ namespace arwain
     arwain::Logger error_log;
     bool request_gyro_calib = false;
     bool ready_for_inference = false;
+    unsigned int velocity_inference_rate = 20;
 }
 
 // Shared data buffers; mutex locks must be used when accessing.

@@ -85,6 +85,7 @@ namespace arwain
     extern arwain::Logger error_log;
     extern bool request_gyro_calib;
     extern bool ready_for_inference;
+    extern unsigned int velocity_inference_rate;
 }
 
 /** \brief Contains mutex locks for thread coordination. */
