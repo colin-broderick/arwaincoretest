@@ -18,13 +18,13 @@ namespace arwain
     {
         public:
             enum Stance {
-                Inactive,   // The wearer is upright and active but not moving anywhere.
-                Immobile,   // The wearer is not moving and there is ~0 measured by all IMU axes; possibly unconscious.
-                Walking,    // The wearer is making steady progress at normal walking pace.
-                Searching,  // The wearer shows high kinetic activity but forward progress is slow.
-                Crawling,   // The wearer has horizontal attitude and is moving at a crawling pace.
-                Running,    // The wearer is moving at greater than walking pace.
-                Climbing    // The wearer is moving vertically; stairs or ladders.
+                Inactive,   // 0, The wearer is upright and active but not moving anywhere.
+                Immobile,   // 1, The wearer is not moving and there is ~0 measured by all IMU axes; possibly unconscious.
+                Walking,    // 2, The wearer is making steady progress at normal walking pace.
+                Searching,  // 3, The wearer shows high kinetic activity but forward progress is slow.
+                Crawling,   // 4, The wearer has horizontal attitude and is moving at a crawling pace.
+                Running,    // 5, The wearer is moving at greater than walking pace.
+                Climbing    // 6, The wearer is moving vertically; stairs or ladders.
             };
             enum FallState { 
                 NotFalling,
@@ -96,6 +96,7 @@ namespace arwain
             Vector3 get_means(const std::vector<Vector3> &source_vector);
             Vector3 get_means(const std::deque<Vector3> &source_vector);
             std::array<double, 6> get_means(const std::deque<std::array<double, 6>> &source_vector);
+            FallState check_for_falls(const std::deque<Vector6>& imu_data);
         
         public:
             // Constructors.

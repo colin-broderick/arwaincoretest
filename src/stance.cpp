@@ -43,6 +43,12 @@ void stance_detector()
         {
             case arwain::OperatingMode::TestStanceDetector:
             {
+
+                // Open file for freefall/entanglement logging
+                arwain::Logger stance_test_file;
+                stance_test_file.open("stance_test.txt");
+                stance_test_file << "time freefall entanglement attitude stance" << "\n";
+
                 // Set up timing.
                 auto time = std::chrono::system_clock::now();
                 std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
@@ -67,7 +73,8 @@ void stance_detector()
                     stance.update_attitude(rotation_quaternion);
                     stance.run(imu_data, vel_data);
                     arwain::status.current_stance = stance.getStance();
-                    arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
+                    arwain::status.falling = stance.getFallingStatus();
+                    // arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
                     arwain::status.entangled = arwain::status.entangled | stance.getEntangledStatus();
                     arwain::status.attitude = stance.getAttitude();
                     
@@ -76,28 +83,27 @@ void stance_detector()
                     std::cout << "Attitude:  " << arwain::status.attitude << std::endl;
                     std::cout << "Stance:    " << arwain::status.current_stance << std::endl;
 
+                    stance_test_file << time.time_since_epoch().count() << " "
+                                    << arwain::status.falling << " "
+                                    << arwain::status.entangled << " "
+                                    << arwain::status.attitude << " "
+                                    << arwain::status.current_stance << "\n";
+
                     // Wait until the next tick.
                     time = time + interval;
                     std::this_thread::sleep_until(time);
                 }
+                stance_test_file.close();
                 break;
             }
             case arwain::OperatingMode::Inference:
             {
-                // Open file for freefall/entanglement logging
-                arwain::Logger freefall_file;
-                if (arwain::config.log_to_file)
-                {
-                    freefall_file.open(arwain::folder_date_string + "/freefall.txt");
-                    freefall_file << "time freefall entanglement" << "\n";
-                }
-
                 // File handle for stance logging.
                 arwain::Logger stance_file;
                 if (arwain::config.log_to_file)
                 {
                     stance_file.open(arwain::folder_date_string + "/stance.txt");
-                    stance_file << "time stance" << "\n";
+                    stance_file << "time freefall entangled attitude stance" << "\n";
                 }
 
                 // Set up timing.
@@ -124,15 +130,24 @@ void stance_detector()
                     stance.update_attitude(rotation_quaternion);
                     stance.run(imu_data, vel_data);
                     arwain::status.current_stance = stance.getStance();
-                    arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
+                    arwain::status.falling = stance.getFallingStatus();
+                    // arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
                     arwain::status.entangled = arwain::status.entangled | stance.getEntangledStatus();
                     arwain::status.attitude = stance.getAttitude();
+
+                    std::cout << "Falling:   " << arwain::status.falling << std::endl;
+                    std::cout << "Entangled: " << arwain::status.entangled << std::endl;
+                    std::cout << "Attitude:  " << arwain::status.attitude << std::endl;
+                    std::cout << "Stance:    " << arwain::status.current_stance << std::endl;
 
                     // Log to file.
                     if (arwain::config.log_to_file)
                     {
-                        freefall_file << time.time_since_epoch().count() << " " << stance.getFallingStatus() << " " << stance.getEntangledStatus() << "\n";
-                        stance_file << time.time_since_epoch().count() << " " << stance.getStance() << "\n";
+                        stance_file << time.time_since_epoch().count() << " "
+                                    << arwain::status.falling << " "
+                                    << arwain::status.entangled << " "
+                                    << arwain::status.attitude << " "
+                                    << arwain::status.current_stance << "\n";
                     }
 
                     // Wait until the next tick.
@@ -142,7 +157,6 @@ void stance_detector()
                 // Close files
                 if (arwain::config.log_to_file)
                 {
-                    freefall_file.close();
                     stance_file.close();
                 }
                 break;
@@ -155,6 +169,42 @@ void stance_detector()
         }
     }
 }
+
+/** \brief Computes a true rolling average as values are fed in.
+ * 
+ * Averages will be produced and can be obtained before the window is filled.
+ * The method .ready() returns true when enough samples have been supplied.
+ */
+class RollingAverage
+{
+    public:
+        RollingAverage(unsigned int window_size_) : window_size(window_size_)
+        {
+        }
+        bool ready()
+        {
+            return stack.size() == window_size;
+        }
+        void feed(double value)
+        {
+            current_average += value/(double)window_size;
+            stack.push_back(value);
+            if (stack.size() > window_size)
+            {
+                current_average -= stack.front() / (double)window_size;
+                stack.pop_front();
+            }
+        }
+        double get_value()
+        {
+            return current_average;
+        }
+
+    private:
+        unsigned int window_size;
+        double current_average = 0;
+        std::deque<double> stack;
+};
 
 // Constructors -----------------------------------------------------------------------------------
 
@@ -182,6 +232,35 @@ arwain::StanceDetector::StanceDetector(double freefall_sensitivity, double crawl
 }
 
 // General methods --------------------------------------------------------------------------------
+
+/** \brief Slides a window across a set of IMU data, and returns Falling if any window contains a freefall event.
+ * 
+ * Assumes that the supplied IMU data cover one second. If any 0.1 second window
+ * contains a freefall event, report a fall. If no window contains a freefall event,
+ * report no fall.
+ */
+arwain::StanceDetector::FallState arwain::StanceDetector::check_for_falls(const std::deque<Vector6>& imu_data)
+{
+    RollingAverage roller{imu_data.size() / 10};
+
+    for (auto& imu : imu_data)
+    {
+        if (!roller.ready())
+        {
+            roller.feed(imu.acce.magnitude());
+            continue;
+        }
+
+        if (roller.get_value() < m_freefall_sensitivity)
+        {
+            return Falling;
+        }
+
+        roller.feed(imu.acce.magnitude());
+    }
+    
+    return NotFalling;
+}
 
 /** \brief Updates the attitude of the device, i.e. determines whether the device is horizontal or vertical.
  * For the current hardware configuration (Pi + IMU), we should expect the z axis of the IMU to be
@@ -223,54 +302,40 @@ void arwain::StanceDetector::run(const std::deque<Vector6> &imu_data, const std:
     // Crunch the numbers ...
     std::vector<Vector3> accel_data;
     std::vector<Vector3> gyro_data;
-
+    std::vector<Vector3> vel_data_local;
     
-    for (int i = 0; i < 20; i++)
+    for (auto& data : imu_data)
     {
-        accel_data.push_back(imu_data[i].acce);
-        gyro_data.push_back(imu_data[i].gyro);
+        accel_data.push_back(data.acce);
+        gyro_data.push_back(data.gyro);
     }
+
+    // This chops the last N samples off the velocity vector, where N depends on the inference rate of the NCS2.
+    for (unsigned int i = 0; i < arwain::velocity_inference_rate; i++)
+    {
+        vel_data_local.push_back(*(vel_data.end() - i));
+    }
+    
     m_a_mean_magnitude = buffer_mean_magnitude(accel_data);
     m_g_mean_magnitude = buffer_mean_magnitude(gyro_data);
-    m_v_mean_magnitude = buffer_mean_magnitude(vel_data);
-    m_accel_means = get_means(accel_data);
-    m_speed_means = get_means(vel_data);
-    m_speed_axis = biggest_axis(m_speed_means);
-    m_a_twitch = std::abs(m_a_mean_magnitude - m_gravity);
-    m_struggle = vector_mean(m_struggle_window);
+    m_v_mean_magnitude = buffer_mean_magnitude(vel_data_local);
+    // m_accel_means = get_means(accel_data);
+    // m_speed_means = get_means(vel_data);
+    // m_speed_axis = biggest_axis(m_speed_means);
+    // m_a_twitch = std::abs(m_a_mean_magnitude - m_gravity);
+    // m_struggle = vector_mean(m_struggle_window);
     m_activity = activity(m_a_mean_magnitude, m_g_mean_magnitude, m_v_mean_magnitude);
-    m_tmp_struggle = (m_a_twitch + m_g_mean_magnitude) / (m_v_mean_magnitude + m_sfactor);
-    m_struggle_window[m_count] = m_tmp_struggle;
+    // m_tmp_struggle = (m_a_twitch + m_g_mean_magnitude) / (m_v_mean_magnitude + m_sfactor);
+    // m_struggle_window[m_count] = m_tmp_struggle;
 
-    // TODO The assumptions about climbing are obviously wrong. Get rid of this or fix it.
-    // If the axis with the highest average speed is the same as the vertical axis, subject must be climbing.
-    // If the speed on the vertical axis exceed the climbing threshold, the subject must be climibing.
-    // {
-    //     m_primary_axis = biggest_axis(m_accel_means);
-    //     std::lock_guard<std::mutex> lock{m_stance_lock};
-    //     if (m_speed_axis == m_primary_axis || m_speed_means[m_vertical_axis] > m_climbing_threshold)
-    //     {
-    //         m_climbing = 1;
-    //     }
-    //     else
-    //     {
-    //         m_climbing = 0;
-    //     }
-    // }
-
-    // Detect falling.
-    if (m_a_mean_magnitude < m_freefall_sensitivity)
-    {
-        std::lock_guard<std::mutex> lock{m_fall_lock};
-        m_falling = Falling;
-    }
+    m_falling = check_for_falls(imu_data);
 
     // Detect entanglement, implied by high IMU activity but low velocity.
-    if (m_struggle > m_struggle_threshold)
-    {
-        std::lock_guard<std::mutex> lock{m_fall_lock};
-        m_entangled = Entangled;
-    }
+    // if (m_struggle > m_struggle_threshold)
+    // {
+    //     std::lock_guard<std::mutex> lock{m_fall_lock};
+    //     m_entangled = Entangled;
+    // }
 
     // Detect stance.
     // Horizontal and slow => inactive
