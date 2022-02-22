@@ -310,6 +310,13 @@ void predict_velocity()
                     std::stringstream(answer.substr(0, delimiter)) >> velocity.y;
                     std::stringstream(answer.substr(delimiter+1)) >> velocity.z;
 
+                    // TODO Temporary to suppress errors in vertical velocity inference;
+                    // Remove when root issue resolved.
+                    if (std::abs(velocity.z) > 4.0)
+                    {
+                        velocity.z = 0.0;
+                    }
+
                     Vector3 average_acceleration{0, 0, 0};
                     for (std::deque<Vector6>::iterator it = imu.end() - 10; it != imu.end(); ++it)
                     {
