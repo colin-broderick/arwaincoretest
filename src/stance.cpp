@@ -350,9 +350,9 @@ void arwain::StanceDetector::run(const std::deque<Vector6> &imu_data, const std:
         {
             if (m_v_mean_magnitude < m_crawling_threshold)
             {
-                m_stance = Inactive;
+                m_stance = Prone;
             }
-            else if (m_v_mean_magnitude >= m_crawling_threshold)
+            else
             {
                 m_stance = Crawling;
             }
@@ -374,7 +374,7 @@ void arwain::StanceDetector::run(const std::deque<Vector6> &imu_data, const std:
             {
                 m_stance = Walking;
             }
-            else if (m_v_mean_magnitude >= m_running_threshold)
+            else
             {
                 m_stance = Running;
             }
