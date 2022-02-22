@@ -18,21 +18,21 @@ namespace arwain
     {
         public:
             enum Stance {
-                Inactive,   // 0, The wearer is upright and active but not moving anywhere.
-                Immobile,   // 1, The wearer is not moving and there is ~0 measured by all IMU axes; possibly unconscious.
-                Walking,    // 2, The wearer is making steady progress at normal walking pace.
-                Searching,  // 3, The wearer shows high kinetic activity but forward progress is slow.
-                Crawling,   // 4, The wearer has horizontal attitude and is moving at a crawling pace.
-                Running,    // 5, The wearer is moving at greater than walking pace.
-                Climbing    // 6, The wearer is moving vertically; stairs or ladders.
+                Inactive,   // The wearer is upright and active but not moving anywhere.
+                Prone,      // The wearer is horizontally oriented but not moving.
+                Walking,    // The wearer is making steady progress at normal walking pace.
+                Searching,  // The wearer shows high kinetic activity but forward progress is slow.
+                Crawling,   // The wearer has horizontal attitude and is moving at a crawling pace.
+                Running,    // The wearer is moving at greater than walking pace.
+                Climbing    // The wearer is moving vertically; stairs or ladders.
             };
             enum FallState { 
                 NotFalling,
                 Falling     // There has recently been a period of rapid descent (~0 measured by accelerometers).
             };
             enum EntangleState { // ********** POSSIBLY DEPRECATED ********** //
-                NotEntangled,
-                Entangled
+                NotEntangled,   // The wearers activity does not indicate entanglement.
+                Entangled       // The wearers activity indicates they may be entangled in cables.
             };
             enum Axis {
                 XAxis,
@@ -40,8 +40,8 @@ namespace arwain
                 ZAxis
             };
             enum Attitude {
-                Vertical,
-                Horizontal
+                Vertical,       // The wearer is vertically oriented, i.e. stood upright.
+                Horizontal      // The wearer is horizontally oriented, e.g. prone or crawling.
             };
 
         private:
