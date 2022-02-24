@@ -49,6 +49,8 @@ namespace arwain
             double m_g_mean_magnitude;
             double m_v_mean_magnitude;
 
+            std::chrono::system_clock::time_point last_freefall_detection{};
+
             Vector3 m_accel_means;
             Vector3 m_speed_means;
 
@@ -96,7 +98,8 @@ namespace arwain
             Vector3 get_means(const std::vector<Vector3> &source_vector);
             Vector3 get_means(const std::deque<Vector3> &source_vector);
             std::array<double, 6> get_means(const std::deque<std::array<double, 6>> &source_vector);
-            FallState check_for_falls(const std::deque<Vector6>& imu_data);
+            void check_for_falls(const std::deque<Vector6>& imu_data);
+            void register_freefall_event();
         
         public:
             // Constructors.
@@ -105,6 +108,8 @@ namespace arwain
             // General methods.
             void update_attitude(Quaternion rotation_quaternion);
             void run(const std::deque<Vector6> &imu_data, const std::deque<Vector3> &vel_data);
+            void clear_freefall_flag();
+            int seconds_since_last_freefall() const;
 
             // Getters.
             Stance getStance();

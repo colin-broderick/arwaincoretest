@@ -72,9 +72,13 @@ void stance_detector()
                     // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
                     stance.update_attitude(rotation_quaternion);
                     stance.run(imu_data, vel_data);
+                    if (stance.seconds_since_last_freefall() > 5)
+                    {
+                        stance.clear_freefall_flag();
+                    }
+
                     arwain::status.current_stance = stance.getStance();
                     arwain::status.falling = stance.getFallingStatus();
-                    // arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
                     arwain::status.entangled = arwain::status.entangled | stance.getEntangledStatus();
                     arwain::status.attitude = stance.getAttitude();
                     
@@ -129,9 +133,13 @@ void stance_detector()
                     // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
                     stance.update_attitude(rotation_quaternion);
                     stance.run(imu_data, vel_data);
+                    if (stance.seconds_since_last_freefall() > 5)
+                    {
+                        stance.clear_freefall_flag();
+                    }
+
                     arwain::status.current_stance = stance.getStance();
                     arwain::status.falling = stance.getFallingStatus();
-                    // arwain::status.falling = arwain::status.falling | stance.getFallingStatus();
                     arwain::status.entangled = arwain::status.entangled | stance.getEntangledStatus();
                     arwain::status.attitude = stance.getAttitude();
 
@@ -233,13 +241,31 @@ arwain::StanceDetector::StanceDetector(double freefall_sensitivity, double crawl
 
 // General methods --------------------------------------------------------------------------------
 
+/** \brief Set the time of the most recent freefall event. */
+void arwain::StanceDetector::register_freefall_event()
+{
+    m_falling = Falling;
+    this->last_freefall_detection = std::chrono::system_clock::now();
+}
+
+int arwain::StanceDetector::seconds_since_last_freefall() const
+{
+    auto t = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - last_freefall_detection);
+    return t.count();
+}
+
+void arwain::StanceDetector::clear_freefall_flag()
+{
+    m_falling = NotFalling;
+}
+
 /** \brief Slides a window across a set of IMU data, and returns Falling if any window contains a freefall event.
  * 
  * Assumes that the supplied IMU data cover one second. If any 0.1 second window
  * contains a freefall event, report a fall. If no window contains a freefall event,
  * report no fall.
  */
-arwain::StanceDetector::FallState arwain::StanceDetector::check_for_falls(const std::deque<Vector6>& imu_data)
+void arwain::StanceDetector::check_for_falls(const std::deque<Vector6>& imu_data)
 {
     RollingAverage roller{imu_data.size() / 10};
 
@@ -253,13 +279,11 @@ arwain::StanceDetector::FallState arwain::StanceDetector::check_for_falls(const 
 
         if (roller.get_value() < m_freefall_sensitivity)
         {
-            return Falling;
+            register_freefall_event();
         }
 
         roller.feed(imu.acce.magnitude());
     }
-    
-    return NotFalling;
 }
 
 /** \brief Updates the attitude of the device, i.e. determines whether the device is horizontal or vertical.
@@ -280,8 +304,6 @@ arwain::StanceDetector::FallState arwain::StanceDetector::check_for_falls(const 
 void arwain::StanceDetector::update_attitude(Quaternion rotation_quaternion)
 {
     auto rotated_device_z_component = (rotation_quaternion * Quaternion{0, 0, 0, 1} * rotation_quaternion.conjugate()).z;
-
-    std::cout << rotated_device_z_component << std::endl;
 
     if (abs(rotated_device_z_component) < 0.707)
     {
@@ -328,7 +350,7 @@ void arwain::StanceDetector::run(const std::deque<Vector6> &imu_data, const std:
     // m_tmp_struggle = (m_a_twitch + m_g_mean_magnitude) / (m_v_mean_magnitude + m_sfactor);
     // m_struggle_window[m_count] = m_tmp_struggle;
 
-    m_falling = check_for_falls(imu_data);
+    check_for_falls(imu_data);
 
     // Detect entanglement, implied by high IMU activity but low velocity.
     // if (m_struggle > m_struggle_threshold)
@@ -592,10 +614,7 @@ arwain::StanceDetector::EntangleState arwain::StanceDetector::getEntangledStatus
  */
 arwain::StanceDetector::FallState arwain::StanceDetector::getFallingStatus()
 {
-    std::lock_guard<std::mutex> lock{m_fall_lock};
-    FallState ret = m_falling;
-    m_falling = NotFalling;
-    return ret;
+    return m_falling;
 }
 
 /** \brief If either value indicates Falling status, return Falling status.

@@ -1,11 +1,14 @@
 #include <thread>
 #include <chrono>
+#include <bitset>
 
 #include "vector3.hpp"
 #include "logger.hpp"
 #include "arwain.hpp"
 #include "lora.hpp"
 #include "timers.hpp"
+
+#define DEBUG_TRANSMIT_LORA 0
 
 /** \brief Forms and transmits LoRa messages on a loop.
  */
@@ -68,9 +71,9 @@ void transmit_lora()
                                     (arwain::status.attitude << 2) |
                                     (arwain::status.current_stance << 3);
 
-                    // Reset critical status flags now they have been read.
-                    arwain::status.falling = arwain::StanceDetector::NotFalling;
-                    arwain::status.entangled = arwain::StanceDetector::NotEntangled;
+                    #if DEBUG_TRANSMIT_LORA == 1
+                    std::cout << std::bitset<8>{message.alerts} << std::endl;
+                    #endif
 
                     // Send transmission.
                     lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
