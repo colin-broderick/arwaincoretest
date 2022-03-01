@@ -262,30 +262,27 @@ int arwain::rerun_orientation_filter(const std::string& data_location)
 
 void arwain::setup_log_directory()
 {
-    if (arwain::config.log_to_file)
+    if (arwain::folder_date_string_suffix != "")
     {
-        if (arwain::folder_date_string_suffix != "")
-        {
-            arwain::folder_date_string = "./data_" + arwain::datetimestring() + "_" + arwain::folder_date_string_suffix;
-        }
-        else
-        {
-            arwain::folder_date_string = "./data_" + arwain::datetimestring();
-        }
-        if (!std::filesystem::is_directory(arwain::folder_date_string))
-        {
-            std::filesystem::create_directory(arwain::folder_date_string);
-        }
-        std::filesystem::copy(arwain::config.config_file, arwain::folder_date_string + "/config.conf");
-
-        // Close the current error log, if there is one, and start a new one.
-        if (arwain::error_log.is_open())
-        {
-            arwain::error_log.close();
-        }
-        arwain::error_log.open(arwain::folder_date_string + "/ERRORS.txt");
-        arwain::error_log << "time event" << "\n";
+        arwain::folder_date_string = "./data_" + arwain::datetimestring() + "_" + arwain::folder_date_string_suffix;
     }
+    else
+    {
+        arwain::folder_date_string = "./data_" + arwain::datetimestring();
+    }
+    if (!std::filesystem::is_directory(arwain::folder_date_string))
+    {
+        std::filesystem::create_directory(arwain::folder_date_string);
+    }
+    std::filesystem::copy(arwain::config.config_file, arwain::folder_date_string + "/config.conf");
+
+    // Close the current error log, if there is one, and start a new one.
+    if (arwain::error_log.is_open())
+    {
+        arwain::error_log.close();
+    }
+    arwain::error_log.open(arwain::folder_date_string + "/ERRORS.txt");
+    arwain::error_log << "time event" << "\n";
 }
 
 void arwain::setup(const InputParser& input)
@@ -532,23 +529,10 @@ arwain::Configuration::Configuration(const InputParser& input)
         this->no_imu = 1;
     }
 
-    // Enable/disable logging to file.
-    if (input.contains("-lfile"))
-    {
-        std::cout << "Logging to file" << "\n";
-        this->log_to_file = 1;
-    }
-
     // If alternate configuration file supplied, read it instead of default.
     if (input.contains("-conf"))
     {
         this->config_file = input.getCmdOption("-conf");
-    }
-
-    // If neither file nor std logging are enabled, warn the user that no data will be logged.
-    if (!input.contains("-lstd") && !input.contains("-lfile"))
-    {
-        std::cerr << "No logging enabled - you probably want to use -lstd or -lfile or both" << "\n";
     }
 }
 

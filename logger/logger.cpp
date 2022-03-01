@@ -13,6 +13,12 @@ arwain::Logger::Logger(const std::string& file_name)
     this->output_file.open(this->filename);
 }
 
+/** \brief The destructor closes the file handle in case it wasn't already done. */
+arwain::Logger::~Logger()
+{
+    this->close();
+}
+
 /** \brief Open the output file in a Logger if it is not currently open. */
 bool arwain::Logger::open(const std::string& file_name)
 {

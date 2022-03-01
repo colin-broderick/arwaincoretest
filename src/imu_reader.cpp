@@ -270,48 +270,45 @@ void imu_reader()
                 arwain::Logger imu_calib_file_2;
                 arwain::Logger imu_calib_file_3;
 
-                if (arwain::config.log_to_file)
-                {
-                    // Open file handles for data logging.
-                    quat_diff_file.open(arwain::folder_date_string + "/quat_delta_angle.txt");
-                    ori_diff_file.open(arwain::folder_date_string + "/ori_diff.txt");
-                    acce_file_1.open(arwain::folder_date_string + "/acce.txt");
-                    world_acce_file_1.open(arwain::folder_date_string + "/world_acce.txt");
-                    gyro_file_1.open(arwain::folder_date_string + "/gyro.txt");
-                    world_gyro_file_1.open(arwain::folder_date_string + "/world_gyro.txt");
-                    madgwick_euler_file_1.open(arwain::folder_date_string + "/madgwick_euler_orientation_1.txt");
-                    madgwick_euler_file_2.open(arwain::folder_date_string + "/madgwick_euler_orientation_2.txt");
-                    madgwick_euler_file_3.open(arwain::folder_date_string + "/madgwick_euler_orientation_3.txt");
-                    madgwick_quat_file_1.open(arwain::folder_date_string + "/madgwick_game_rv_1.txt");
-                    madgwick_quat_file_2.open(arwain::folder_date_string + "/madgwick_game_rv_2.txt");
-                    madgwick_quat_file_3.open(arwain::folder_date_string + "/madgwick_game_rv_3.txt");
-                    madgwick_euler_mag_file_1.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_1.txt");
-                    madgwick_euler_mag_file_2.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_2.txt");
-                    madgwick_euler_mag_file_3.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_3.txt");
-                    imu_calib_file_1.open(arwain::folder_date_string + "/imu_calib_1.txt");
-                    imu_calib_file_2.open(arwain::folder_date_string + "/imu_calib_2.txt");
-                    imu_calib_file_3.open(arwain::folder_date_string + "/imu_calib_3.txt");
+                // Open file handles for data logging.
+                quat_diff_file.open(arwain::folder_date_string + "/quat_delta_angle.txt");
+                ori_diff_file.open(arwain::folder_date_string + "/ori_diff.txt");
+                acce_file_1.open(arwain::folder_date_string + "/acce.txt");
+                world_acce_file_1.open(arwain::folder_date_string + "/world_acce.txt");
+                gyro_file_1.open(arwain::folder_date_string + "/gyro.txt");
+                world_gyro_file_1.open(arwain::folder_date_string + "/world_gyro.txt");
+                madgwick_euler_file_1.open(arwain::folder_date_string + "/madgwick_euler_orientation_1.txt");
+                madgwick_euler_file_2.open(arwain::folder_date_string + "/madgwick_euler_orientation_2.txt");
+                madgwick_euler_file_3.open(arwain::folder_date_string + "/madgwick_euler_orientation_3.txt");
+                madgwick_quat_file_1.open(arwain::folder_date_string + "/madgwick_game_rv_1.txt");
+                madgwick_quat_file_2.open(arwain::folder_date_string + "/madgwick_game_rv_2.txt");
+                madgwick_quat_file_3.open(arwain::folder_date_string + "/madgwick_game_rv_3.txt");
+                madgwick_euler_mag_file_1.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_1.txt");
+                madgwick_euler_mag_file_2.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_2.txt");
+                madgwick_euler_mag_file_3.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_3.txt");
+                imu_calib_file_1.open(arwain::folder_date_string + "/imu_calib_1.txt");
+                imu_calib_file_2.open(arwain::folder_date_string + "/imu_calib_2.txt");
+                imu_calib_file_3.open(arwain::folder_date_string + "/imu_calib_3.txt");
 
-                    // File headers
-                    quat_diff_file << "time diff_q1_q2 diff_q1_q3" << "\n";
-                    ori_diff_file << "time yaw" << "\n";
-                    acce_file_1 << "time x y z" << "\n";
-                    world_acce_file_1 << "time x y z" << "\n";
-                    gyro_file_1 << "time x y z" << "\n";
-                    world_gyro_file_1 << "time x y z" << "\n";
-                    madgwick_euler_file_1 << "time roll pitch yaw" << "\n";
-                    madgwick_euler_file_2 << "time roll pitch yaw" << "\n";
-                    madgwick_euler_file_3 << "time roll pitch yaw" << "\n";
-                    madgwick_quat_file_1 << "time w x y z" << "\n";
-                    madgwick_quat_file_2 << "time w x y z" << "\n";
-                    madgwick_quat_file_3 << "time w x y z" << "\n";
-                    madgwick_euler_mag_file_1 << "time roll pitch yaw" << "\n";
-                    madgwick_euler_mag_file_2 << "time roll pitch yaw" << "\n";
-                    madgwick_euler_mag_file_3 << "time roll pitch yaw" << "\n";
-                    imu_calib_file_1 << "time gx_bias gy_bias gz_bias" << "\n";
-                    imu_calib_file_2 << "time gx_bias gy_bias gz_bias" << "\n";
-                    imu_calib_file_3 << "time gx_bias gy_bias gz_bias" << "\n";
-                }
+                // File headers
+                quat_diff_file << "time diff_q1_q2 diff_q1_q3" << "\n";
+                ori_diff_file << "time yaw" << "\n";
+                acce_file_1 << "time x y z" << "\n";
+                world_acce_file_1 << "time x y z" << "\n";
+                gyro_file_1 << "time x y z" << "\n";
+                world_gyro_file_1 << "time x y z" << "\n";
+                madgwick_euler_file_1 << "time roll pitch yaw" << "\n";
+                madgwick_euler_file_2 << "time roll pitch yaw" << "\n";
+                madgwick_euler_file_3 << "time roll pitch yaw" << "\n";
+                madgwick_quat_file_1 << "time w x y z" << "\n";
+                madgwick_quat_file_2 << "time w x y z" << "\n";
+                madgwick_quat_file_3 << "time w x y z" << "\n";
+                madgwick_euler_mag_file_1 << "time roll pitch yaw" << "\n";
+                madgwick_euler_mag_file_2 << "time roll pitch yaw" << "\n";
+                madgwick_euler_mag_file_3 << "time roll pitch yaw" << "\n";
+                imu_calib_file_1 << "time gx_bias gy_bias gz_bias" << "\n";
+                imu_calib_file_2 << "time gx_bias gy_bias gz_bias" << "\n";
+                imu_calib_file_3 << "time gx_bias gy_bias gz_bias" << "\n";
 
                 // Set up timing.
                 auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
@@ -400,50 +397,28 @@ void imu_reader()
                     }
 
                     // Write all log files.
-                    if (arwain::config.log_to_file)
-                    {
-                        quat_diff_file << timeCount << " " << 1.0 - std::pow(Quaternion::dot(madgwick_quaternion_data1, madgwick_quaternion_data2), 2) << " " << 1.0 - std::pow(Quaternion::dot(madgwick_quaternion_data1, madgwick_quaternion_data3), 2) << "\n";
-                        ori_diff_file << timeCount << " " << arwain::yaw_offset << "\n";
-                        acce_file_1 << timeCount << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
-                        gyro_file_1 << timeCount << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
-                        world_acce_file_1 << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
-                        world_gyro_file_1 << timeCount << " " << world_gyro_data1.x << " " << world_gyro_data1.y << " " << world_gyro_data1.z << "\n";
-                        madgwick_euler_file_1 << timeCount << " " << madgwick_euler_data1.roll << " " << madgwick_euler_data1.pitch << " " << madgwick_euler_data1.yaw << "\n";
-                        madgwick_euler_file_2 << timeCount << " " << madgwick_euler_data2.roll << " " << madgwick_euler_data2.pitch << " " << madgwick_euler_data2.yaw << "\n";
-                        madgwick_euler_file_3 << timeCount << " " << madgwick_euler_data3.roll << " " << madgwick_euler_data3.pitch << " " << madgwick_euler_data3.yaw << "\n";
-                        madgwick_euler_mag_file_1 << timeCount << " " << madgwick_euler_mag_data1.roll << " " << madgwick_euler_mag_data1.pitch << " " << madgwick_euler_mag_data1.yaw << "\n";
-                        madgwick_euler_mag_file_2 << timeCount << " " << madgwick_euler_mag_data2.roll << " " << madgwick_euler_mag_data2.pitch << " " << madgwick_euler_mag_data2.yaw << "\n";
-                        madgwick_euler_mag_file_3 << timeCount << " " << madgwick_euler_mag_data3.roll << " " << madgwick_euler_mag_data3.pitch << " " << madgwick_euler_mag_data3.yaw << "\n";
-                        madgwick_quat_file_1 << timeCount << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
-                        madgwick_quat_file_2 << timeCount << " " << madgwick_quaternion_data2.w << " " << madgwick_quaternion_data2.x << " " << madgwick_quaternion_data2.y << " " << madgwick_quaternion_data2.z << "\n";
-                        madgwick_quat_file_3 << timeCount << " " << madgwick_quaternion_data3.w << " " << madgwick_quaternion_data3.x << " " << madgwick_quaternion_data3.y << " " << madgwick_quaternion_data3.z << "\n";
-                        imu_calib_file_1 << timeCount << " " << imu1.get_gyro_calib_x() << " " << imu1.get_gyro_calib_y() << " " << imu1.get_gyro_calib_z() << "\n";
-                        imu_calib_file_2 << timeCount << " " << imu2.get_gyro_calib_x() << " " << imu2.get_gyro_calib_y() << " " << imu2.get_gyro_calib_z() << "\n";
-                        imu_calib_file_3 << timeCount << " " << imu3.get_gyro_calib_x() << " " << imu3.get_gyro_calib_y() << " " << imu3.get_gyro_calib_z() << "\n";
-                    }
+                    quat_diff_file << timeCount << " " << 1.0 - std::pow(Quaternion::dot(madgwick_quaternion_data1, madgwick_quaternion_data2), 2) << " " << 1.0 - std::pow(Quaternion::dot(madgwick_quaternion_data1, madgwick_quaternion_data3), 2) << "\n";
+                    ori_diff_file << timeCount << " " << arwain::yaw_offset << "\n";
+                    acce_file_1 << timeCount << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
+                    gyro_file_1 << timeCount << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
+                    world_acce_file_1 << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
+                    world_gyro_file_1 << timeCount << " " << world_gyro_data1.x << " " << world_gyro_data1.y << " " << world_gyro_data1.z << "\n";
+                    madgwick_euler_file_1 << timeCount << " " << madgwick_euler_data1.roll << " " << madgwick_euler_data1.pitch << " " << madgwick_euler_data1.yaw << "\n";
+                    madgwick_euler_file_2 << timeCount << " " << madgwick_euler_data2.roll << " " << madgwick_euler_data2.pitch << " " << madgwick_euler_data2.yaw << "\n";
+                    madgwick_euler_file_3 << timeCount << " " << madgwick_euler_data3.roll << " " << madgwick_euler_data3.pitch << " " << madgwick_euler_data3.yaw << "\n";
+                    madgwick_euler_mag_file_1 << timeCount << " " << madgwick_euler_mag_data1.roll << " " << madgwick_euler_mag_data1.pitch << " " << madgwick_euler_mag_data1.yaw << "\n";
+                    madgwick_euler_mag_file_2 << timeCount << " " << madgwick_euler_mag_data2.roll << " " << madgwick_euler_mag_data2.pitch << " " << madgwick_euler_mag_data2.yaw << "\n";
+                    madgwick_euler_mag_file_3 << timeCount << " " << madgwick_euler_mag_data3.roll << " " << madgwick_euler_mag_data3.pitch << " " << madgwick_euler_mag_data3.yaw << "\n";
+                    madgwick_quat_file_1 << timeCount << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
+                    madgwick_quat_file_2 << timeCount << " " << madgwick_quaternion_data2.w << " " << madgwick_quaternion_data2.x << " " << madgwick_quaternion_data2.y << " " << madgwick_quaternion_data2.z << "\n";
+                    madgwick_quat_file_3 << timeCount << " " << madgwick_quaternion_data3.w << " " << madgwick_quaternion_data3.x << " " << madgwick_quaternion_data3.y << " " << madgwick_quaternion_data3.z << "\n";
+                    imu_calib_file_1 << timeCount << " " << imu1.get_gyro_calib_x() << " " << imu1.get_gyro_calib_y() << " " << imu1.get_gyro_calib_z() << "\n";
+                    imu_calib_file_2 << timeCount << " " << imu2.get_gyro_calib_x() << " " << imu2.get_gyro_calib_y() << " " << imu2.get_gyro_calib_z() << "\n";
+                    imu_calib_file_3 << timeCount << " " << imu3.get_gyro_calib_x() << " " << imu3.get_gyro_calib_y() << " " << imu3.get_gyro_calib_z() << "\n";
 
                     // Wait until the next tick.
                     loopTime = loopTime + interval;
                     std::this_thread::sleep_until(loopTime);
-                }
-                // Close all file handles.
-                if (arwain::config.log_to_file)
-                {
-                    ori_diff_file.close();
-                    acce_file_1.close();
-                    world_acce_file_1.close();
-                    gyro_file_1.close();
-                    world_gyro_file_1.close();
-                    madgwick_euler_file_1.close();
-                    madgwick_euler_file_1.close();
-                    madgwick_euler_file_1.close();
-                    madgwick_quat_file_1.close();
-                    madgwick_quat_file_2.close();
-                    madgwick_quat_file_3.close();
-                    madgwick_euler_mag_file_1.close();
-                    imu_calib_file_1.close();
-                    imu_calib_file_2.close();
-                    imu_calib_file_3.close();
                 }
                 break;
             }

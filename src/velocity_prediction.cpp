@@ -247,17 +247,14 @@ void predict_velocity()
                 arwain::Logger position_file;
                 arwain::Logger kalman_position_file;
 
-                if (arwain::config.log_to_file)
-                {
-                    velocity_file.open(arwain::folder_date_string + "/velocity.txt");
-                    kalman_velocity_file.open(arwain::folder_date_string + "/kalman_velocity.txt");
-                    position_file.open(arwain::folder_date_string + "/position.txt");
-                    kalman_position_file.open(arwain::folder_date_string + "/kalman_position.txt");
-                    velocity_file << "time x y z" << "\n";
-                    kalman_velocity_file << "time x y z" << "\n";
-                    position_file << "time x y z" << "\n";
-                    kalman_position_file << "time x y z" << "\n";
-                }
+                velocity_file.open(arwain::folder_date_string + "/velocity.txt");
+                kalman_velocity_file.open(arwain::folder_date_string + "/kalman_velocity.txt");
+                position_file.open(arwain::folder_date_string + "/position.txt");
+                kalman_position_file.open(arwain::folder_date_string + "/kalman_position.txt");
+                velocity_file << "time x y z" << "\n";
+                kalman_velocity_file << "time x y z" << "\n";
+                position_file << "time x y z" << "\n";
+                kalman_position_file << "time x y z" << "\n";
 
                 // Set up timing.
                 std::chrono::time_point<std::chrono::system_clock> lastTime = std::chrono::system_clock::now();
@@ -351,13 +348,10 @@ void predict_velocity()
                     }
 
                     // Log results to file.
-                    if (arwain::config.log_to_file)
-                    {
-                        velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
-                        kalman_velocity_file << time.time_since_epoch().count() << " " << kalman_velocity.x << " " << kalman_velocity.y << " " << kalman_velocity.z << "\n";
-                        position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
-                        kalman_position_file << time.time_since_epoch().count() << " " << kalman_position.x << " " << kalman_position.y << " " << kalman_position.z << "\n";
-                    }
+                    velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
+                    kalman_velocity_file << time.time_since_epoch().count() << " " << kalman_velocity.x << " " << kalman_velocity.y << " " << kalman_velocity.z << "\n";
+                    position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
+                    kalman_position_file << time.time_since_epoch().count() << " " << kalman_position.x << " " << kalman_position.y << " " << kalman_position.z << "\n";
 
                     // Attempt to keep track of what rate the NCS2 is operating at; it sometimes drops to 7 Hz due to thermal throttling,
                     // and this can affect other systems if it is not considered.
@@ -377,14 +371,6 @@ void predict_velocity()
                     std::this_thread::sleep_until(time);
                 }
                 
-                // Flush and close log files.
-                if (arwain::config.log_to_file)
-                {
-                    velocity_file.close();
-                    kalman_velocity_file.close();
-                    position_file.close();
-                    kalman_position_file.close();
-                }
                 break;
             }
             default:

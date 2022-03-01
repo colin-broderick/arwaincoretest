@@ -31,13 +31,10 @@ void indoor_positioning()
             {
                 arwain::Logger corner_log;
                 arwain::Logger tracked_floor_log;
-                if (arwain::config.log_to_file)
-                {
-                    corner_log.open(arwain::folder_date_string + "/corner_log.txt");
-                    corner_log << "time x y z\n";
-                    tracked_floor_log.open(arwain::folder_date_string + "/tracked_floors.txt");
-                    tracked_floor_log << "time x, y, z\n" ;
-                }
+                corner_log.open(arwain::folder_date_string + "/corner_log.txt");
+                corner_log << "time x y z\n";
+                tracked_floor_log.open(arwain::folder_date_string + "/tracked_floors.txt");
+                tracked_floor_log << "time x, y, z\n" ;
 
                 auto time = std::chrono::high_resolution_clock::now();
                 std::chrono::milliseconds interval{arwain::Intervals::IPS_INTERVAL};
@@ -68,11 +65,6 @@ void indoor_positioning()
                     //           << floor_tracker.tracked_position.x << " "
                     //           << floor_tracker.tracked_position.y << " "
                     //           << floor_tracker.tracked_position.z << "\n";
-                }
-                if (arwain::config.log_to_file)
-                {
-                    corner_log.close();
-                    tracked_floor_log.close();
                 }
                 break;
             }

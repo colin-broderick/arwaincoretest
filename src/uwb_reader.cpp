@@ -64,11 +64,8 @@ void uwb_reader(const std::string& port, const int baudrate)
             case arwain::OperatingMode::Inference:
             {
                 arwain::Logger uwb_log;
-                if (arwain::config.log_to_file)
-                {
-                    uwb_log.open(arwain::folder_date_string + "/uwb_log.txt");
-                    uwb_log << "time x y z" << "\n";
-                }
+                uwb_log.open(arwain::folder_date_string + "/uwb_log.txt");
+                uwb_log << "time x y z" << "\n";
                 serial.flush();
 
                 while (arwain::system_mode == arwain::OperatingMode::Inference)
@@ -84,9 +81,6 @@ void uwb_reader(const std::string& port, const int baudrate)
                         uwb_log << time.time_since_epoch().count() << " " << x << " " << y << " " << z << "\n";
                     }
                 }
-
-                uwb_log.close();
-
                 break;
             }
             default:

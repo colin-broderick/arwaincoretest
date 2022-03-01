@@ -94,7 +94,7 @@ def start():
         response_dict["result"] = "Failed, already running"
 
     else:
-        cmd = ["./build/arwain", "-lfile", "-conf", "arwain.conf"]
+        cmd = ["./build/arwain", "-conf", "arwain.conf"]
         fname = request.args.get("fname")
         if fname is not None:
             cmd.append("-name")

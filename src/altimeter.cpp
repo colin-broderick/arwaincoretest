@@ -45,11 +45,8 @@ void altimeter()
             {
                 // Set up logging and timing.
                 arwain::Logger pressure_log;
-                if (arwain::config.log_to_file)
-                {
-                    pressure_log.open(arwain::folder_date_string + "/pressure.txt");
-                    pressure_log << "time pressure temperature altitude\n";
-                }
+                pressure_log.open(arwain::folder_date_string + "/pressure.txt");
+                pressure_log << "time pressure temperature altitude\n";
 
                 auto loopTime = std::chrono::system_clock::now();
                 std::chrono::milliseconds interval{arwain::Intervals::ALTIMETER_INTERVAL};
@@ -66,18 +63,11 @@ void altimeter()
                         arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude});
                     }
 
-                    if (arwain::config.log_to_file)
-                    {
-                        pressure_log << loopTime.time_since_epoch().count() << " " << pressure << " " << temperature << " " << altitude << "\n";
-                    }
+                    pressure_log << loopTime.time_since_epoch().count() << " " << pressure << " " << temperature << " " << altitude << "\n";
 
                     // Wait until next tick.
                     loopTime = loopTime + interval;
                     std::this_thread::sleep_until(loopTime);
-                }
-                if (arwain::config.log_to_file)
-                {
-                    pressure_log.close();
                 }
                 break;
             }
