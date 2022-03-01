@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 
     // Attempt to read the config file and quit if failed.
     arwain::config = arwain::Configuration{input};
-    if ((ret = arwain::config.read_from_file()) != arwain::ExitCodes::Success)
+    if ((ret = arwain::config.read_from_file()) != arwain::Configuration::ReturnCodes::OK)
     {
         std::cout << arwain::ErrorMessages[ret] << std::endl;
     }
