@@ -35,6 +35,7 @@ set(PROJECT_CPP_FILES
     src/arwain.cpp 
     src/arwain_tests.cpp 
     src/command_line.cpp 
+    src/configuration.cpp
 )
 
 add_subdirectory(iim42652)
