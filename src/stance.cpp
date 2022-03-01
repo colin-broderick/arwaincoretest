@@ -97,18 +97,14 @@ void stance_detector()
                     time = time + interval;
                     std::this_thread::sleep_until(time);
                 }
-                stance_test_file.close();
                 break;
             }
             case arwain::OperatingMode::Inference:
             {
                 // File handle for stance logging.
                 arwain::Logger stance_file;
-                if (arwain::config.log_to_file)
-                {
-                    stance_file.open(arwain::folder_date_string + "/stance.txt");
-                    stance_file << "time freefall entangled attitude stance" << "\n";
-                }
+                stance_file.open(arwain::folder_date_string + "/stance.txt");
+                stance_file << "time freefall entangled attitude stance" << "\n";
 
                 // Set up timing.
                 auto time = std::chrono::system_clock::now();
@@ -149,23 +145,15 @@ void stance_detector()
                     std::cout << "Stance:    " << arwain::status.current_stance << std::endl;
 
                     // Log to file.
-                    if (arwain::config.log_to_file)
-                    {
-                        stance_file << time.time_since_epoch().count() << " "
-                                    << arwain::status.falling << " "
-                                    << arwain::status.entangled << " "
-                                    << arwain::status.attitude << " "
-                                    << arwain::status.current_stance << "\n";
-                    }
+                    stance_file << time.time_since_epoch().count() << " "
+                                << arwain::status.falling << " "
+                                << arwain::status.entangled << " "
+                                << arwain::status.attitude << " "
+                                << arwain::status.current_stance << "\n";
 
                     // Wait until the next tick.
                     time = time + interval;
                     std::this_thread::sleep_until(time);
-                }
-                // Close files
-                if (arwain::config.log_to_file)
-                {
-                    stance_file.close();
                 }
                 break;
             }

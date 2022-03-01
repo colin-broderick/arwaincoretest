@@ -266,7 +266,6 @@ namespace arwain
             std::string inference_model_xml; // The location of the inference model xml file.
             double sea_level_pressure; // Sea level pressure near the region of interest.
             int log_to_stdout = 0; // Whether to show printed output on the console.
-            int log_to_file = 0; // Whether to log data to file.
             int no_inference = 0; // Disables inference using NPU.
             int no_imu = 0; // Disables IMU.
             int no_lora = 0; // Disables LoRa radio.
@@ -339,7 +338,6 @@ namespace arwain
         "\n"
         "Arguments:\n"
         "    -lstd          Log friendly output to stdout\n"
-        "    -lfile         Record sensor data to file - files are stored in ./data_<datetime>\n"
         "    -conf          Specify alternate configuration file\n"
         "    -calib         Perform online calibration - make sure the device is totally stationary\n"
         "    -noinf         Do not do velocity inference\n"
@@ -357,7 +355,7 @@ namespace arwain
         "        -address   The address of the IMU in hexadecimal, e.g. 0x68\n"
         "\n"
         "Example usages:\n"
-        "    ./arwain -lstd -calib calib.txt -conf arwain.conf -lfile\n"
+        "    ./arwain -lstd -calib calib.txt -conf arwain.conf\n"
         "    ./arwain -calibg -bus /dev/i2c-1 -address 0x68 -conf /etc/arwain.conf\n"
         "\n"
         "Return codes:\n"

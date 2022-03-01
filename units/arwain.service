@@ -3,7 +3,7 @@ Description=ArwainService
 
 [Service]
 WorkingDirectory=/home/pi/arwain_inference_core/
-ExecStart=/home/pi/arwain_inference_core/build/arwain -conf arwain.conf -lfile
+ExecStart=/home/pi/arwain_inference_core/build/arwain -conf arwain.conf
 User=pi
 Sockets=arwain.socket
 StandardInput=socket

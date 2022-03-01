@@ -45,11 +45,8 @@ void transmit_lora()
             {
                 // Open file handles for data logging.
                 arwain::Logger lora_file;
-                if (arwain::config.log_to_file)
-                {
-                    lora_file.open(arwain::folder_date_string + "/lora_log.txt");
-                    lora_file << "time x y z alerts" << "\n";
-                }
+                lora_file.open(arwain::folder_date_string + "/lora_log.txt");
+                lora_file << "time x y z alerts" << "\n";
                 // Set up timing.
                 auto time = std::chrono::system_clock::now();
                 std::chrono::milliseconds interval{arwain::Intervals::LORA_TRANSMISSION_INTERVAL};
@@ -79,10 +76,7 @@ void transmit_lora()
                     lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
 
                     // Log message to file.
-                    if (arwain::config.log_to_file)
-                    {
-                        lora_file << time.time_since_epoch().count() << " " << message << "\n";
-                    }
+                    lora_file << time.time_since_epoch().count() << " " << message << "\n";
 
                     // Wait until next tick
                     time = time + interval;
@@ -113,12 +107,6 @@ void transmit_lora()
                     std::this_thread::sleep_until(time);
                 }
                 
-                // Close log file handle.
-                if (arwain::config.log_to_file)
-                {
-                    lora_file.close();
-                }
-
                 break;
             }
             default:
