@@ -57,6 +57,7 @@ void transmit_lora()
                     message.metadata = arwain::config.node_id;
 
                     auto position = arwain::Buffers::POSITION_BUFFER.back();
+                    position.z = arwain::Buffers::POSITION_BUFFER.back().z; // Replace z-estimate with pressure filter output.
 
                     message.x = position.x * 100;
                     message.y = position.y * 100;
@@ -68,9 +69,6 @@ void transmit_lora()
                                     (arwain::status.attitude << 2) |
                                     (arwain::status.current_stance << 3);
 
-                    #if DEBUG_TRANSMIT_LORA == 1
-                    std::cout << std::bitset<8>{message.alerts} << std::endl;
-                    #endif
 
                     // Send transmission.
                     lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
@@ -82,28 +80,28 @@ void transmit_lora()
                     time = time + interval;
 
                     // Watch for receive until the next scheduled transmission.
-                    int timeout_ms = (time - std::chrono::system_clock::now()).count() / 1000000;
-                    auto [rxd, rxd_message] = lora.receive_string(timeout_ms);
-                    if (rxd)
-                    {
-                        std::cout << "RECEIVED: " << rxd_message << std::endl;
-                        if (rxd_message == "C.INFERENCE")
-                        {
-                            // arwain::system_mode = arwain::OperatingMode::Inference;
-                        }
-                        else if (rxd_message == "C.AUTOCAL")
-                        {
-                            // arwain::system_mode = arwain::OperatingMode::AutoCalibration;
-                        }
-                        else if (rxd_message == "C.TERMINATE")
-                        {
-                            // arwain::system_mode = arwain::OperatingMode::Terminate;
-                        }
-                        else if (rxd_message == "C.SELFTEST")
-                        {
-                            // arwain::system_mode = arwain::OperatingMode::SelfTest;
-                        }
-                    }
+                    // int timeout_ms = (time - std::chrono::system_clock::now()).count() / 1000000;
+                    // auto [rxd, rxd_message] = lora.receive_string(timeout_ms);
+                    // if (rxd)
+                    // {
+                    //     std::cout << "RECEIVED: " << rxd_message << std::endl;
+                    //     if (rxd_message == "C.INFERENCE")
+                    //     {
+                    //         // arwain::system_mode = arwain::OperatingMode::Inference;
+                    //     }
+                    //     else if (rxd_message == "C.AUTOCAL")
+                    //     {
+                    //         // arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+                    //     }
+                    //     else if (rxd_message == "C.TERMINATE")
+                    //     {
+                    //         // arwain::system_mode = arwain::OperatingMode::Terminate;
+                    //     }
+                    //     else if (rxd_message == "C.SELFTEST")
+                    //     {
+                    //         // arwain::system_mode = arwain::OperatingMode::SelfTest;
+                    //     }
+                    // }
                     std::this_thread::sleep_until(time);
                 }
                 

@@ -1,0 +1,127 @@
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<style>
+    body {
+        background-color: rgb(11, 19, 42);
+        color: white;
+        font-family: sans-serif;
+    }
+
+    .block {
+        display: block;
+        width: 100%;
+        padding: 14px 28px;
+        margin: 1px;
+    }
+
+    textarea {
+        width: 100%;
+    }
+</style>
+
+
+<script>
+    var dns_name = "192.168.2.108";
+
+    // Called if an http request is unsuccessful (usually indiciates the box isn't reachable).
+    function error_callback(box_dns_name) {
+        console.log("Request timed out");
+        let element = document.getElementById(box_dns_name);
+        element.innerHTML = "\u274C Offline";
+    }
+
+    // Send an update request to a given inference module. Status is whether the ARWAIN code is running or not.
+    function update(box_dns_name) {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () {
+            if (req.readyState == 4 && req.status == 200) {
+                console.log(req.responseText);
+                let jsonobj = JSON.parse(req.responseText);
+                let textbox = document.getElementById("service_output");
+                for (const el of jsonobj.result) {
+                    textbox.value += el + "\n";
+                    console.log(el);
+                }
+                textbox.scrollTop = textbox.scrollHeight;
+                let status_icon = document.getElementById(box_dns_name);
+                status_icon.innerHTML = "\u2705 Online";
+            }
+        }
+        req.onerror = function () {
+            error_callback(box_dns_name);
+        }
+
+        req.open("GET", "http://" + box_dns_name + ":8051/info", true);
+        req.send();
+    }
+
+    // Start the given inference module.
+    function start(box_dns_name, box_filename) {
+        var fnamebox = document.getElementById(box_filename);
+        var fname = fnamebox.value;
+        console.log(fname);
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () { };
+        if (fname == "") {
+            req.open("GET", "http://" + box_dns_name + ":8051/start", true);
+        }
+        else {
+            req.open("GET", "http://" + box_dns_name + ":8051/start?fname=" + fname, true);
+        }
+        req.send();
+    }
+
+    // Stop the given inference module.
+    function stop(box_dns_name) {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () { };
+        req.open("GET", "http://" + box_dns_name + ":8051/stop", true);
+        req.send();
+    }
+
+    function shutdown(box_dns_name) {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () { };
+        req.open("GET", "http://" + box_dns_name + ":8051/shutdown", true);
+        req.send();
+    }
+
+    function calibg(box_dns_name) {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () { };
+        req.open("GET", "http://" + box_dns_name + ":8051/calibrate_gyroscopes", true);
+        req.send();
+    }
+
+    // Periodically call for a status update from each inference module.
+    setInterval(function () { update(dns_name); }, 1000);
+
+</script>
+
+<body>
+    <div>
+        <img src="static/arwain_logo_blwh_150.png" />
+        <h2>Tracking module 192.168.2.108 <span id="192.168.2.108"></span></h2>
+
+
+        <!-- <form> -->
+        <label for="log_filename">Log name (optional, no spaces):</label>
+        <input class="block" type="text" id="log_filename" name="fname">
+        <button class="block" id="button_start_inference" onclick="start(dns_name, 'log_filename');">Start
+            tracking</button>
+        <button class="block" id="button_stop_inference" onclick="stop(dns_name);">Stop tracking</button>
+        <button class="block" id="button_shutdown" onclick="shutdown(dns_name);">Shutdown</button>
+        <button class="block" id="button_calibg" onclick="calibg(dns_name);">Calibrate gyroscopes</button>
+        <!-- </form> -->
+    </div>
+    <hr>
+    <div id="service_output_container">
+        <textarea readonly id="service_output" rows="10"></textarea>
+    </div>
+</body>
+
+</html>

@@ -3,6 +3,7 @@
 
 import os
 import dash
+import sys
 from dash import dcc
 from dash import html
 import dash_daq as daq
@@ -423,4 +424,4 @@ def update_position_scatter(dataset, slider_values):
 
 
 if __name__ == '__main__':
-    app.run_server(host="0.0.0.0", debug=True)
+    app.run_server(host="0.0.0.0", debug=False)
