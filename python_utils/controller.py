@@ -98,6 +98,15 @@ def calibrate_gyroscopes():
     return response
 
 
+@app.route("/calibrate_magnetometer")
+def calibrate_magnetometer():
+    write_to_service("calibm")
+    response_dict = {"action": "calibm"}
+    response = jsonify(response_dict)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+
 @app.route("/mode")
 def check_mode():
     response_dict = {"action":"mode"}
@@ -142,11 +151,13 @@ def shutdown():
     return response
 
 
-@app.route("/kill")
-def kill():
-    subprocess.Popen(["pkill", "-f", "arwain"])
-    subprocess.Popen(["pkill", "-f", "ncs2_interface.py"])
-    response = jsonify({'action': f"kill", "result": "killed"})
+
+@app.route("/restart_service")
+def restart():
+    subprocess.Popen(["sudo", "systemctl", "stop", "arwain"])
+    time.sleep(1)
+    subprocess.Popen(["sudo", "systemctl", "enable", "--now", "arwain"])
+    response = jsonify({'action': f"kill", "result": "restarted_service"})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
