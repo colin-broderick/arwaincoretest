@@ -21,6 +21,153 @@
     textarea {
         width: 100%;
     }
+    /*
+    * Made by Erik Terwan
+    * 24th of November 2015
+    * MIT License
+    *
+    *
+    * If you are thinking of using this in
+    * production code, beware of the browser
+    * prefixes.
+    */
+
+
+    #menuToggle a
+    {
+        text-decoration: none;
+        color: #232323;
+        
+        transition: color 0.3s ease;
+    }
+
+    #menuToggle a:hover
+    {
+        color: tomato;
+    }
+
+
+    #menuToggle input
+    {
+        display: block;
+        width: 40px;
+        height: 32px;
+        position: absolute;
+        top: -7px;
+        left: -5px;
+        
+        cursor: pointer;
+        
+        opacity: 0; /* hide this */
+        z-index: 2; /* and place it over the hamburger */
+        
+        -webkit-touch-callout: none;
+    }
+
+    /*
+    * Just a quick hamburger
+    */
+    #menuToggle span
+    {
+        display: inline;
+        width: 33px;
+        height: 4px;
+        margin-bottom: 5px;
+        position: relative;
+        
+        background: #cdcdcd;
+        border-radius: 3px;
+        
+        z-index: 1;
+        
+        transform-origin: 4px 0px;
+        
+        transition: transform 0.5s cubic-bezier(0.77,0.2,0.05,1.0),
+                    background 0.5s cubic-bezier(0.77,0.2,0.05,1.0),
+                    opacity 0.55s ease;
+    }
+
+    #menuToggle span:first-child
+    {
+        transform-origin: 0% 0%;
+    }
+
+    #menuToggle span:nth-last-child(2)
+    {
+        transform-origin: 0% 100%;
+    }
+
+    /* 
+    * Transform all the slices of hamburger
+    * into a crossmark.
+    */
+    #menuToggle input:checked ~ span
+    {
+        opacity: 1;
+        transform: rotate(45deg) translate(-2px, -1px);
+        background: #232323;
+    }
+
+    /*
+    * But let's hide the middle one.
+    */
+    #menuToggle input:checked ~ span:nth-last-child(3)
+    {
+        opacity: 0;
+        transform: rotate(0deg) scale(0.2, 0.2);
+    }
+
+    .centre {
+        display:block;
+        margin-left:auto;
+        margin-right:auto;
+    }
+
+    /*
+    * Ohyeah and the last one should go the other direction
+    */
+    #menuToggle input:checked ~ span:nth-last-child(2)
+    {
+        transform: rotate(-45deg) translate(0, -1px);
+    }
+
+    /*
+    * Make this absolute positioned
+    * at the top left of the screen
+    */
+    #menu
+    {
+        position: absolute;
+        width: 300px;
+        margin: -100px 0 0 -50px;
+        padding: 50px;
+        padding-top: 125px;
+        
+        background: #222222;
+        list-style-type: none;
+        -webkit-font-smoothing: antialiased;
+        /* to stop flickering of text in safari */
+        
+        transform-origin: 0% 0%;
+        transform: translate(-100%, 0);
+        
+        transition: transform 0.5s cubic-bezier(0.77,0.2,0.05,1.0);
+    }
+
+    #menu li
+    {
+        padding: 10px 0;
+        font-size: 22px;
+        color: #ffffff;
+    }
+
+    /*
+    * And let's slide it in from the left
+    */
+    #menuToggle input:checked ~ ul
+    {
+        transform: none;
+    }
 </style>
 
 
@@ -35,6 +182,12 @@
     }
 
     // Send an update request to a given inference module. Status is whether the ARWAIN code is running or not.
+    function get_mode(box_dns_name)
+    {
+        var req = new XMLHttpRequest();
+        req.open("GET", "http://" + box_dns_name + ":8051/mode", true);
+        req.send();
+    }
     function update(box_dns_name) {
         var req = new XMLHttpRequest();
         req.onreadystatechange = function () {
@@ -45,8 +198,8 @@
                 for (const el of jsonobj.result) {
                     textbox.value += el + "\n";
                     console.log(el);
+                    textbox.scrollTop = textbox.scrollHeight;
                 }
-                textbox.scrollTop = textbox.scrollHeight;
                 let status_icon = document.getElementById(box_dns_name);
                 status_icon.innerHTML = "\u2705 Online";
             }
@@ -83,6 +236,14 @@
         req.send();
     }
 
+    function restart_service(box_dns_name)
+    {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () { };
+        req.open("GET", "http://" + box_dns_name + ":8051/restart_service", true);
+        req.send();
+    }
+
     function shutdown(box_dns_name) {
         var req = new XMLHttpRequest();
         req.onreadystatechange = function () { };
@@ -97,14 +258,52 @@
         req.send();
     }
 
+    function calibrate_magnetometer(box_dns_name)
+    {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () { };
+        req.open("GET", "http://" + box_dns_name + ":8051/calibrate_magnetometer", true);
+        req.send();
+    }
+
     // Periodically call for a status update from each inference module.
     setInterval(function () { update(dns_name); }, 1000);
 
 </script>
 
 <body>
+    <nav role="navigation">
+        <div id="menuToggle">
+          <!--
+          A fake / hidden checkbox is used as click reciever,
+          so you can use the :checked selector on it.
+          -->
+          <input type="checkbox" />
+          
+          <!--
+          Some spans to act as a hamburger.
+          
+          They are acting like a real hamburger,
+          not that McDonalds stuff.
+          -->
+          <span></span>
+          <span></span>
+          <span></span>
+          
+          <!--
+          Too bad the menu has to be inside of the button
+          but hey, it's pure CSS magic.
+          -->
+          <ul id="menu">
+            <a href="javascript:get_mode(dns_name);"><li>Check mode</li></a>
+            <a href="javascript:calibrate_magnetometer(dns_name);"><li>Calibrate magnetometer</li></a>
+            <a href="javascript:restart_service(dns_name);"><li>Restart service</li></a>
+          </ul>
+        </div>
+      </nav>
     <div>
-        <img src="static/arwain_logo_blwh_150.png" />
+        <img class="centre" src="static/arwain_logo_blwh_150.png" />
+        
         <h2>Tracking module 192.168.2.108 <span id="192.168.2.108"></span></h2>
 
 
