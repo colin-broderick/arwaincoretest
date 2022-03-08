@@ -508,7 +508,7 @@ int arwain::calibrate_gyroscopes()
     return arwain::ExitCodes::Success;
 }
 
-static std::tuple<Vector3, Vector3> deduce_calib_params(std::vector<Vector3> readings)
+std::tuple<Vector3, Vector3> deduce_calib_params(const std::vector<Vector3>& readings)
 {
     double x_min = 1e6;
     double x_max = -1e6;

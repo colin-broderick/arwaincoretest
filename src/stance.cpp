@@ -139,10 +139,12 @@ void stance_detector()
                     arwain::status.entangled = arwain::status.entangled | stance.getEntangledStatus();
                     arwain::status.attitude = stance.getAttitude();
 
+                    #ifdef DEBUG_STANCE
                     std::cout << "Falling:   " << arwain::status.falling << std::endl;
                     std::cout << "Entangled: " << arwain::status.entangled << std::endl;
                     std::cout << "Attitude:  " << arwain::status.attitude << std::endl;
                     std::cout << "Stance:    " << arwain::status.current_stance << std::endl;
+                    #endif
 
                     // Log to file.
                     stance_file << time.time_since_epoch().count() << " "

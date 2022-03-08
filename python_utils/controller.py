@@ -1,13 +1,11 @@
-from flask import Flask, Response, jsonify, request
+from flask import Flask, Response, jsonify, request, send_from_directory
+from systemd import journal
 import subprocess
 import time
-import os
-import signal
 
 
-app = Flask(__name__)
-process = None
-state = "Idle"
+app = Flask(__name__, static_url_path="/home/pi/arwain_inference_core/python_utils")
+arwain_service_stdin = "/tmp/arwain.stdin"
 
 arwain_env = {
     "PYTHONPATH":"/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer",
@@ -60,25 +58,50 @@ env = {
 }
 
 
+def write_to_service(s):
+    with open(arwain_service_stdin, "w") as h:
+        h.write(s + "\n")
+
+
+@app.route("/")
+def index():
+    return send_from_directory("static", "controller.html")
+
+
+@app.route("/static/<path:path>")
+def send_static(path):
+    return send_from_directory("static", path)
+
+
 @app.route("/info")
 def info():
-    global process, state
-    if process is None or process.poll() is not None:
-        state = "Idle"
-        process = None
-    response = jsonify({'action': "info", "result": state})
-
+    j.get_next()
+    response_dict = {"action":"info", "result":list()}
+    while True:
+        a = j.get_next().get("MESSAGE", "null")
+        if a == "null":
+            j.get_previous()
+            break
+        else:
+            response_dict["result"].append(a)
+    response = jsonify(response_dict)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
 
 @app.route("/calibrate_gyroscopes")
 def calibrate_gyroscopes():
-    global process, state
-    response_dict = {"action": "start"}
-    process = subprocess.Popen(["./build/arwain", "-conf", "arwain.conf", "-calibg"], shell=False, env=arwain_env)
-    state = "Calibrating gyroscopes"
-    response_dict["result"] = "Started calibration"
+    write_to_service("calibg")
+    response_dict = {"action": "calibg"}
+    response = jsonify(response_dict)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+
+@app.route("/mode")
+def check_mode():
+    response_dict = {"action":"mode"}
+    write_to_service("mode")
     response = jsonify(response_dict)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
@@ -86,24 +109,15 @@ def calibrate_gyroscopes():
 
 @app.route("/start", methods=["GET"])
 def start():
-    global process, state
     response_dict = {"action": "start"}
 
-    ## Are we already running?
-    if process is not None:
-        response_dict["result"] = "Failed, already running"
-
+    fname = request.args.get("fname")
+    if fname is not None:
+        write_to_service(f"name {fname}")
+        time.sleep(0.1)
+        write_to_service("infer")        
     else:
-        cmd = ["./build/arwain", "-conf", "arwain.conf"]
-        fname = request.args.get("fname")
-        if fname is not None:
-            cmd.append("-name")
-            cmd.append(fname)
-        print(cmd)
-        state = "Performing inference"
-        process = subprocess.Popen(cmd, shell=False, env=arwain_env)
-        
-        response_dict["result"] = f"Started with pid {process.pid}"
+        write_to_service("infer")        
 
     response = jsonify(response_dict)
     response.headers.add('Access-Control-Allow-Origin', '*')
@@ -112,23 +126,8 @@ def start():
 
 @app.route("/stop")
 def stop():
-    global process
-
     response_dict = {"action":"stop", "result": "Stopped"}
-
-    if process is not None:
-        ## Try to stop
-        os.kill(process.pid, signal.SIGINT)
-
-        for _ in range(5):
-            if process.poll() is None:
-                time.sleep(1.0)
-
-        subprocess.Popen(["pkill", "-f", "arwain"])
-        subprocess.Popen(["pkill", "-f", "ncs2_interface.py"])
-
-    process = None
-
+    write_to_service("idle")
     response = jsonify(response_dict)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
@@ -146,10 +145,17 @@ def shutdown():
 @app.route("/kill")
 def kill():
     subprocess.Popen(["pkill", "-f", "arwain"])
-    subprocess.Popen(["pkill", "-f", "ncs2"])
+    subprocess.Popen(["pkill", "-f", "ncs2_interface.py"])
     response = jsonify({'action': f"kill", "result": "killed"})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
+
+
+j = journal.Reader()
+j.this_boot()
+j.add_match(_SYSTEMD_UNIT="arwain.service")
+j.seek_tail()
+j.get_previous()
 
 
 if __name__ == "__main__":
