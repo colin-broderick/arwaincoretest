@@ -27,6 +27,8 @@ void altimeter()
         sleep_ms(50);
     }
 
+    double altitude_zero = altitude;
+
     // Create a filter to fuse pressure readings and accelerometer readings.
     arwain::Filters::SabatiniAltimeter sabatini_filter{
         altitude,                                                          // Initial altitude.
@@ -60,7 +62,7 @@ void altimeter()
                     {
                         std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
                         arwain::Buffers::PRESSURE_BUFFER.pop_front();
-                        arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude});
+                        arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
                     }
 
                     pressure_log << loopTime.time_since_epoch().count() << " " << pressure << " " << temperature << " " << altitude << "\n";
