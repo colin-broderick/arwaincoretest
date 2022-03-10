@@ -170,8 +170,11 @@ void stance_detector()
 
 /** \brief Computes a true rolling average as values are fed in.
  * 
- * Averages will be produced and can be obtained before the window is filled.
- * The method .ready() returns true when enough samples have been supplied.
+ * Averages will be produced and can be obtained before the window is filled,
+ * although this will likely not be a useful value before the averaging window
+ * is filled. The method .ready() can be called to confirm that the roller has
+ * been fed enough values to fill the window and the average value is therefore
+ * valid.
  */
 class RollingAverage
 {
@@ -185,17 +188,17 @@ class RollingAverage
         }
         void feed(double value)
         {
-            current_average += value/(double)window_size;
+            current_average += value;
             stack.push_back(value);
             if (stack.size() > window_size)
             {
-                current_average -= stack.front() / (double)window_size;
+                current_average -= stack.front() ;
                 stack.pop_front();
             }
         }
         double get_value()
         {
-            return current_average;
+            return current_average / static_cast<double>(window_size);
         }
 
     private:
