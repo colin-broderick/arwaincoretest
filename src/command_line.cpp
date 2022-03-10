@@ -1,4 +1,190 @@
+#include <map>
+#include <string_view>
+
 #include "arwain.hpp"
+
+namespace
+{
+    constexpr int s2i(std::string_view input)
+    {
+        enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT };
+
+        if (input == "quit" || input == "stop" || input == "shutdown" || input == "exit") return QUIT;
+        if (input == "infer" || input == "inference") return INFER;
+        if (input == "autocal" || input == "idle") return AUTOCAL;
+        if (input == "mode") return MODE;
+        if (input == "calibg") return CALIBG;
+        if (input == "calibm") return CALIBM;
+        if (input == "caliba") return CALIBA;
+        if (input == "name") return NAME;
+        if (input.substr(0, 4) == "name") return NAME;
+
+        else return DEFAULT;
+    }
+
+    /** \brief Reports the current system mode. */
+    void report_current_mode()
+    {
+        std::cout << "Current mode: " << arwain::system_mode << "\n";
+    }
+
+    /** \brief Report inability to switch modes and inform of current mode. */
+    void fail_to_switch_to(arwain::OperatingMode mode)
+    {
+        std::cout << "Cannot switch to " << mode << " from current mode\n";
+        report_current_mode();
+    }
+
+    /** \brief Switches the system to Terminate mode, which instructs all threads to clean up and exit.
+     * This mode can be entered from any other mode.
+     */
+    void switch_to_exit_mode()
+    {
+        std::cout << "Cleaning up before closing, please wait ..." << std::endl;
+        arwain::system_mode = arwain::OperatingMode::Terminate;
+    }
+
+    /** \brief Switches the system to Inference mode. Can only be entered from Idle/Autocalibration mode. */
+    void switch_to_inference_mode()
+    {
+        if (arwain::system_mode == arwain::OperatingMode::Inference)
+        {
+            std::cout << "Already in inference mode" << std::endl;
+        }
+        else if (!arwain::ready_for_inference)
+        {
+            std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
+        }
+        else if (arwain::system_mode == arwain::OperatingMode::AutoCalibration)
+        {
+            std::cout << "Entering inference mode" << std::endl;
+            arwain::setup_log_directory();
+            arwain::system_mode = arwain::OperatingMode::Inference;
+        }
+        else
+        {
+            std::cout << "Cannot switch to inference from current mode\n";
+            report_current_mode();
+        }
+    }
+
+    /** \brief Puts the system into Idle mode. Only reachable from Inference mode.
+     * Other modes will put the system into this Idle mode automatically when their
+     * work is complete.
+     */
+    void switch_to_idle_autocal_mode()
+    {
+        if (arwain::system_mode == arwain::OperatingMode::Inference)
+        {
+            std::cout << "Entering autocalibration mode" << std::endl;
+            arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+        }
+        else
+        {
+            fail_to_switch_to(arwain::OperatingMode::AutoCalibration);
+        }
+    }
+
+    /** \brief Switch to active gyro calibration mode. Only reachable from Idle/Autocal modes. */
+    void switch_to_gyro_calib_mode()
+    {
+        if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+        {
+            fail_to_switch_to(arwain::OperatingMode::GyroscopeCalibration);
+        }
+        else
+        {
+            std::cout << "Starting gyroscope calibration" << std::endl;
+            arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
+        }
+    }
+
+    /** \brief Switch to active magnetometer calibration mode. Only reachable from Idle/Autocal modes. */
+    void switch_to_mag_calib_mode()
+    {
+        if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+        {
+            fail_to_switch_to(arwain::OperatingMode::MagnetometerCalibration);
+        }
+        else
+        {
+            std::cout << "Starting magnetometer calibration" << std::endl;
+            arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
+        }
+    }
+
+    /** \brief Switch to active accelerometer calibration mode. Only reachable from Idle/Autocal modes. */
+    void switch_to_accel_calib_mode()
+    {
+        if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+        {
+            fail_to_switch_to(arwain::OperatingMode::AccelerometerCalibration);
+        }
+        else
+        {
+            std::cout << "Starting accelerometer calibration" << std::endl;
+            arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
+        }
+    }
+
+    void set_folder_name(const std::string& input)
+    {
+        if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+        {
+            std::cout << "Folder name can only be changed from idle/autocalibration modes" << std::endl;
+            report_current_mode();
+        }
+        else
+        {
+            std::string value;
+            std::istringstream iss{input};
+            iss >> value >> value;
+            if (value == "name")
+            {
+                std::cout << "ERROR: Provide a valid name" << std::endl;
+            }
+            else
+            {
+                arwain::folder_date_string_suffix = value;
+                std::cout << "Log folder name suffux set to '" << value << "'" << std::endl;
+            }
+        }
+    }
+
+    void parse_cli_input(const std::string& input)
+    {
+        switch (s2i(input.c_str()))
+        {
+            case s2i("quit"):
+                switch_to_exit_mode();
+                break;
+            case s2i("infer"):
+                switch_to_inference_mode();
+                break;
+            case s2i("autocal"):
+                switch_to_idle_autocal_mode();
+                break;
+            case s2i("mode"):
+                report_current_mode();
+                break;
+            case s2i("calibg"):
+                switch_to_gyro_calib_mode();
+                break;
+            case s2i("calibm"):
+                switch_to_mag_calib_mode();
+                break;
+            case s2i("caliba"):
+                switch_to_accel_calib_mode();
+                break;
+            case s2i("name"):
+                set_folder_name(input);
+                break;
+            default:
+                std::cout << "ERROR: Command not recognised: " << input << std::endl;
+                break;
+        }
+    }
+}
 
 void command_line()
 {
@@ -13,134 +199,7 @@ void command_line()
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         std::string input;
-        std::cout << "ARWAIN > ";
         std::getline(std::cin, input);
-
-        if (input == "quit" || input == "exit" || input == "shutdown" || input == "stop")
-        {
-            std::cout << "Cleaning up before closing, please wait ..." << std::endl;
-            arwain::system_mode = arwain::OperatingMode::Terminate;
-        }
-        else if (input == "inference" || input == "infer")
-        {
-            if (arwain::system_mode == arwain::OperatingMode::Inference)
-            {
-                std::cout << "Already in inference mode" << std::endl;
-            }
-            else if (!arwain::ready_for_inference)
-            {
-                std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
-            }
-            else
-            {
-                std::cout << "Entering inference mode" << std::endl;
-                arwain::setup_log_directory();
-                arwain::system_mode = arwain::OperatingMode::Inference;
-            }
-        }
-        else if (input == "infer10")
-        {
-            if (arwain::system_mode == arwain::OperatingMode::Inference)
-            {
-                std::cout << "Already in inference mode" << std::endl;
-            }
-            else if (!arwain::ready_for_inference)
-            {
-                std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
-            }
-            else
-            {
-                std::cout << "Entering inference mode in 10 seconds ..." << std::endl;
-                sleep_ms(10000);
-                std::cout << "Inference started" << std::endl;
-                arwain::setup_log_directory();
-                arwain::system_mode = arwain::OperatingMode::Inference;
-            }
-        }
-        else if (input == "gyro")
-        {
-            arwain::request_gyro_calib = true;
-            sleep_ms(10);
-        }
-        else if (input == "autocal" || input == "idle")
-        {
-            std::cout << "Entering autocalibration mode" << std::endl;
-            arwain::system_mode = arwain::OperatingMode::AutoCalibration;
-        }
-        else if (input == "mode")
-        {
-            std::cout << "Current mode: " << arwain::system_mode << std::endl;
-        }
-        else if (input == "calibg")
-        {
-            if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
-            {
-                std::cout << "error: Active calibration modes can only be entered from idle/autocalibration modes" << std::endl;
-            }
-            else
-            {
-                std::cout << "Starting gyroscope calibration" << std::endl;
-                arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
-            }
-        }
-        else if (input == "testuwb")
-        {
-            arwain::system_mode = arwain::OperatingMode::TestSerial;
-        }
-        else if (input == "teststance")
-        {
-            // TODO Function to check for validity of mode transitions.
-            arwain::system_mode = arwain::OperatingMode::TestStanceDetector;
-        }
-        else if (input == "calibm")
-        {
-            if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
-            {
-                std::cout << "error: Active calibration modes can only be entered from idle/autocalibration modes" << std::endl;
-            }
-            else
-            {
-                std::cout << "Starting magnetometer calibration" << std::endl;
-                arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
-            }
-        }
-        else if (input == "caliba")
-        {
-            if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
-            {
-                std::cout << "error: Active calibration modes can only be entered from idle/autocalibration modes" << std::endl;
-            }
-            else
-            {
-                std::cout << "Starting accelerometer calibration" << std::endl;
-                arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
-            }
-        }
-        else if (input.substr(0, 4) == "name")
-        {
-            if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
-            {
-                std::cout << "error: Folder name can only be changed from idle/autocalibration modes" << std::endl;
-            }
-            else
-            {
-                std::string value;
-                std::istringstream iss{input};
-                iss >> value >> value;
-                if (value == "name")
-                {
-                    std::cout << "error: Provide a valid name" << std::endl;
-                }
-                else
-                {
-                    arwain::folder_date_string_suffix = value;
-                    std::cout << "Log folder name suffux set to '" << value << "'" << std::endl;
-                }
-            }
-        }
-        else
-        {
-            std::cout << "error: unrecognised command: " << input << std::endl;
-        }
+        parse_cli_input(input);
     }
 }
