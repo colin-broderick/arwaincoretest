@@ -296,30 +296,24 @@
           -->
           <ul id="menu">
             <a href="javascript:get_mode(dns_name);"><li>Check mode</li></a>
+            <a href="javascript:calibg(dns_name);"><li>Calibrate gyroscopes</li></a>
             <a href="javascript:calibrate_magnetometer(dns_name);"><li>Calibrate magnetometer</li></a>
             <a href="javascript:restart_service(dns_name);"><li>Restart service</li></a>
+            <a href="javascript:shutdown(dns_name);"><li>Shutdown</li></a>
           </ul>
         </div>
       </nav>
     <div>
         <img class="centre" src="static/arwain_logo_blwh_150.png" />
-        
         <h2>Tracking module 192.168.2.108 <span id="192.168.2.108"></span></h2>
-
-
-        <!-- <form> -->
         <label for="log_filename">Log name (optional, no spaces):</label>
         <input class="block" type="text" id="log_filename" name="fname">
-        <button class="block" id="button_start_inference" onclick="start(dns_name, 'log_filename');">Start
-            tracking</button>
+        <button class="block" id="button_start_inference" onclick="start(dns_name, 'log_filename');">Start tracking</button>
         <button class="block" id="button_stop_inference" onclick="stop(dns_name);">Stop tracking</button>
-        <button class="block" id="button_shutdown" onclick="shutdown(dns_name);">Shutdown</button>
-        <button class="block" id="button_calibg" onclick="calibg(dns_name);">Calibrate gyroscopes</button>
-        <!-- </form> -->
     </div>
     <hr>
     <div id="service_output_container">
-        <textarea readonly id="service_output" rows="10"></textarea>
+        <textarea readonly id="service_output" rows="15"></textarea>
     </div>
 </body>
 
