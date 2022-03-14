@@ -77,6 +77,11 @@ namespace arwain::Filters
             {
                 return X[1];
             }
+
+            void set_dt(double dt_)
+            {
+                dt = dt_;
+            }
     };
 }
 
