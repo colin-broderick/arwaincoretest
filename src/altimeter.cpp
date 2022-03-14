@@ -73,6 +73,32 @@ void altimeter()
                 }
                 break;
             }
+            case arwain::OperatingMode::AutoCalibration:
+            {
+                sabatini_filter.set_dt(arwain::Intervals::ALTIMETER_INTERVAL*10/1000.0);
+                auto loopTime = std::chrono::system_clock::now();
+                std::chrono::milliseconds interval{arwain::Intervals::ALTIMETER_INTERVAL * 10}; // Lower data collection rate in Idle/Autocalibration mode.
+
+                while (arwain::system_mode == arwain::OperatingMode::AutoCalibration)
+                {
+                    auto [pressure, temperature] = bmp384.read();
+                    pressure = pressure - arwain::config.pressure_offset;
+                    double new_altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+                    altitude = sabatini_filter.update(arwain::Buffers::IMU_WORLD_BUFFER.back().acce.z - arwain::config.gravity, new_altitude);
+                    {
+                        std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
+                        arwain::Buffers::PRESSURE_BUFFER.pop_front();
+                        arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
+                    }
+
+                    // Wait until next tick.
+                    loopTime = loopTime + interval;
+                    std::this_thread::sleep_until(loopTime);
+                }
+                sabatini_filter.set_dt(arwain::Intervals::ALTIMETER_INTERVAL/1000.0);
+                altitude_zero = altitude;
+                break;
+            }
             default:
             {
                 sleep_ms(10);
