@@ -172,7 +172,7 @@
 
 
 <script>
-    var dns_name = "192.168.2.108";
+    var dns_name = "{{ip}}";
 
     // Called if an http request is unsuccessful (usually indiciates the box isn't reachable).
     function error_callback(box_dns_name) {
@@ -305,7 +305,7 @@
       </nav>
     <div>
         <img class="centre" src="static/arwain_logo_blwh_150.png" />
-        <h2>Tracking module 192.168.2.108 <span id="192.168.2.108"></span></h2>
+        <h2>Tracking module {{ip}} <span id="{{ip}}"></span></h2>
         <label for="log_filename">Log name (optional, no spaces):</label>
         <input class="block" type="text" id="log_filename" name="fname">
         <button class="block" id="button_start_inference" onclick="start(dns_name, 'log_filename');">Start tracking</button>

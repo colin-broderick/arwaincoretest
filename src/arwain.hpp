@@ -137,9 +137,9 @@ namespace arwain::ExitCodes
 
 namespace arwain::ExitCodes::Calibration
 {
-        inline const int CalibrationApplied = -5;
-        inline const int CalibrationNotApplied = -6;
-        inline const int NotEnoughData = -7;
+    inline const int CalibrationApplied = -5;
+    inline const int CalibrationNotApplied = -6;
+    inline const int NotEnoughData = -7;
 }
 
 namespace arwain::Intervals
@@ -207,8 +207,6 @@ namespace arwain
     std::string datetimestring();
     float getPiCPUTemp();
     void setup_log_directory();
-
-
     int calibrate_gyroscopes();
     int calibrate_accelerometers();
     int calibrate_accelerometers_simple();

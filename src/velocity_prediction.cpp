@@ -46,7 +46,9 @@ class VelocityKalmanFilter
         Eigen::Matrix<double, 3, 3> observation_matrix;         // H
         Eigen::Matrix<double, 3, 3> observation_matrix_tr;      // H.inv
 
+        #ifdef DEBUGKALMAN
         arwain::Logger log;
+        #endif
 
     public:
         VelocityKalmanFilter(double process_uncertainty, double measurement_uncertainty)
@@ -72,7 +74,9 @@ class VelocityKalmanFilter
             observation_matrix = I;
             observation_matrix_tr = I;
 
+            #ifdef DEBUGKALMAN
             log.open("kalman_log.txt");
+            #endif
         }
 
         /** \brief Computes a distance metric between the measured value and the current state. The distance
