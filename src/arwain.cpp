@@ -295,8 +295,6 @@ void arwain::setup(const InputParser& input)
     {
         arwain::folder_date_string_suffix = "";
     }
-    // Create output directory and write copy of current configuration.
-    // setup_log_directory();
 }
 
 int arwain::execute_inference()
@@ -311,8 +309,7 @@ int arwain::execute_inference()
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     std::thread uwb_reader_thread{uwb_reader, "/dev/serial0", 115200};
-    std::thread command_line_thread{command_line};                                             // Simple command line interface for runtime mode switching.
-    // std::thread kalman_filter(kalman);                           // Experimental: Fuse IMU reading and pressure reading for altitude.
+    std::thread command_line_thread{command_line};                // Simple command line interface for runtime mode switching.
 
     // Wait for all threads to terminate.
     imu_reader_thread.join();
@@ -325,7 +322,6 @@ int arwain::execute_inference()
     altimeter_thread.join();
     uwb_reader_thread.join();
     command_line_thread.join();
-    // kalman_filter.join();
 
     return arwain::ExitCodes::Success;
 }

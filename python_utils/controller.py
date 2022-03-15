@@ -1,6 +1,7 @@
-from flask import Flask, Response, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory, render_template
 from systemd import journal
 import subprocess
+import socket
 import time
 
 
@@ -58,6 +59,14 @@ env = {
 }
 
 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    s.connect(("10.255.255.255", 1))
+    IP = s.getsockname()[0]
+    return IP
+
+
 def write_to_service(s):
     with open(arwain_service_stdin, "w") as h:
         h.write(s + "\n")
@@ -65,6 +74,7 @@ def write_to_service(s):
 
 @app.route("/")
 def index():
+    return render_template("controller.html", ip=IP)
     return send_from_directory("static", "controller.html")
 
 
@@ -167,6 +177,9 @@ j.this_boot()
 j.add_match(_SYSTEMD_UNIT="arwain.service")
 j.seek_tail()
 j.get_previous()
+
+
+IP = get_ip()
 
 
 if __name__ == "__main__":
