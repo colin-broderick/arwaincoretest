@@ -19,6 +19,28 @@ class Vector6;
 class Quaternion;
 class InputParser;
 
+/** \brief Computes a true rolling average as values are fed in.
+ * 
+ * Averages will be produced and can be obtained before the window is filled,
+ * although this will likely not be a useful value before the averaging window
+ * is filled. The method .ready() can be called to confirm that the roller has
+ * been fed enough values to fill the window and the average value is therefore
+ * valid.
+ */
+class RollingAverage
+{
+    public:
+        RollingAverage(unsigned int window_size_);
+        bool ready();
+        void feed(double value);
+        double get_value();
+
+    private:
+        unsigned int window_size;
+        double current_average = 0;
+        std::deque<double> stack;
+};
+
 double unwrap_phase_degrees(double new_angle, double previous_angle);
 double unwrap_phase_radians(double new_angle, double previous_angle);
 
@@ -87,6 +109,8 @@ namespace arwain
     extern bool request_gyro_calib;
     extern bool ready_for_inference;
     extern unsigned int velocity_inference_rate;
+    extern RollingAverage rolling_average_accel_z_for_altimeter;
+    extern RollingAverage rolling_average_accel_z_for_altimeter_slow;
 }
 
 /** \brief Contains mutex locks for thread coordination. */

@@ -48,6 +48,8 @@ namespace arwain
     bool request_gyro_calib = false;
     bool ready_for_inference = false;
     unsigned int velocity_inference_rate = 20;
+    RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
+    RollingAverage rolling_average_accel_z_for_altimeter_slow{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200.0*10.0)}; // TODO 200 is IMU sample rate, remove magic number
 }
 
 // Shared data buffers; mutex locks must be used when accessing.
@@ -301,15 +303,25 @@ int arwain::execute_inference()
 {
     // Start worker threads.
     std::thread imu_reader_thread(imu_reader);                   // Reading IMU data, updating orientation filters.
+    pthread_setname_np(imu_reader_thread.native_handle(), "arwain thread: imu_reader");
     std::thread predict_velocity_thread(predict_velocity);       // Velocity and position inference.
+    pthread_setname_np(predict_velocity_thread.native_handle(), "arwain thread: predict_velocity");
     std::thread stance_detector_thread(stance_detector);         // Stance, freefall, entanglement detection.
+    pthread_setname_np(stance_detector_thread.native_handle(), "arwain thread: stance_detector");
     std::thread transmit_lora_thread(transmit_lora);             // LoRa packet transmissions.
+    pthread_setname_np(transmit_lora_thread.native_handle(), "arwain thread: transmit_lora");
     std::thread std_output_thread(std_output);                   // Prints useful output to std out.
+    pthread_setname_np(std_output_thread.native_handle(), "arwain thread: std_output");
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
+    pthread_setname_np(indoor_positioning_thread.native_handle(), "arwain thread: indoor_positioning");
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
+    pthread_setname_np(altimeter_thread.native_handle(), "arwain thread: altimeter");
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
+    pthread_setname_np(py_inference_thread.native_handle(), "arwain thread: py_inference");
     std::thread uwb_reader_thread{uwb_reader, "/dev/serial0", 115200};
+    pthread_setname_np(uwb_reader_thread.native_handle(), "arwain thread: uwb_reader");
     std::thread command_line_thread{command_line};                // Simple command line interface for runtime mode switching.
+    pthread_setname_np(command_line_thread.native_handle(), "arwain thread: command_line");
 
     // Wait for all threads to terminate.
     imu_reader_thread.join();
@@ -599,3 +611,25 @@ int arwain::calibrate_accelerometers_simple()
 
     return arwain::ExitCodes::Success;
 }
+
+RollingAverage::RollingAverage(unsigned int window_size_) : window_size(window_size_)
+{
+}
+bool RollingAverage::ready()
+{
+    return stack.size() == window_size;
+}
+void RollingAverage::feed(double value)
+{
+    current_average += value;
+    stack.push_back(value);
+    if (stack.size() > window_size)
+    {
+        current_average -= stack.front() ;
+        stack.pop_front();
+    }
+}
+double RollingAverage::get_value()
+{
+    return current_average / static_cast<double>(window_size);
+    }
