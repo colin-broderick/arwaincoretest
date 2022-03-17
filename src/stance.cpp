@@ -168,45 +168,6 @@ void stance_detector()
     }
 }
 
-/** \brief Computes a true rolling average as values are fed in.
- * 
- * Averages will be produced and can be obtained before the window is filled,
- * although this will likely not be a useful value before the averaging window
- * is filled. The method .ready() can be called to confirm that the roller has
- * been fed enough values to fill the window and the average value is therefore
- * valid.
- */
-class RollingAverage
-{
-    public:
-        RollingAverage(unsigned int window_size_) : window_size(window_size_)
-        {
-        }
-        bool ready()
-        {
-            return stack.size() == window_size;
-        }
-        void feed(double value)
-        {
-            current_average += value;
-            stack.push_back(value);
-            if (stack.size() > window_size)
-            {
-                current_average -= stack.front() ;
-                stack.pop_front();
-            }
-        }
-        double get_value()
-        {
-            return current_average / static_cast<double>(window_size);
-        }
-
-    private:
-        unsigned int window_size;
-        double current_average = 0;
-        std::deque<double> stack;
-};
-
 // Constructors -----------------------------------------------------------------------------------
 
 /** \brief Constructor for the stance class.

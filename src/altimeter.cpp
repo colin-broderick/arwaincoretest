@@ -58,7 +58,7 @@ void altimeter()
                     auto [pressure, temperature] = bmp384.read();
                     pressure = pressure - arwain::config.pressure_offset;
                     double new_altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
-                    altitude = sabatini_filter.update(arwain::Buffers::IMU_WORLD_BUFFER.back().acce.z - arwain::config.gravity, new_altitude);
+                    altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, new_altitude);
                     {
                         std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
                         arwain::Buffers::PRESSURE_BUFFER.pop_front();
@@ -84,7 +84,7 @@ void altimeter()
                     auto [pressure, temperature] = bmp384.read();
                     pressure = pressure - arwain::config.pressure_offset;
                     double new_altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
-                    altitude = sabatini_filter.update(arwain::Buffers::IMU_WORLD_BUFFER.back().acce.z - arwain::config.gravity, new_altitude);
+                    altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter_slow.get_value() - arwain::config.gravity, new_altitude);
                     {
                         std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
                         arwain::Buffers::PRESSURE_BUFFER.pop_front();
