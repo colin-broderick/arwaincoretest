@@ -251,6 +251,14 @@
         req.send();
     }
 
+    function reboot(box_dns_name)
+    {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () { };
+        req.open("GET", "http://" + box_dns_name + ":8051/reboot", true);
+        req.send();
+    }
+
     function calibg(box_dns_name) {
         var req = new XMLHttpRequest();
         req.onreadystatechange = function () { };
@@ -299,6 +307,7 @@
             <a href="javascript:calibg(dns_name);"><li>Calibrate gyroscopes</li></a>
             <a href="javascript:calibrate_magnetometer(dns_name);"><li>Calibrate magnetometer</li></a>
             <a href="javascript:restart_service(dns_name);"><li>Restart service</li></a>
+            <a href="javascript:reboot(dns_name);"><li>Reboot</li></a>
             <a href="javascript:shutdown(dns_name);"><li>Shutdown</li></a>
           </ul>
         </div>
