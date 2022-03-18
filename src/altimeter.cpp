@@ -35,7 +35,7 @@ void altimeter()
         0,                                                                 // Initial vertical velocity.
         static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0, // Time between samples in seconds.
         0.2,                                                               // STDEV accelerometer.
-        2                                                                  // STDEV pressure altitude.
+        0.3                                                                // STDEV pressure altitude.
     };
     
     // Spin until shutdown signal received.
