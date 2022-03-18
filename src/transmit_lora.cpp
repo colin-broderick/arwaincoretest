@@ -57,7 +57,7 @@ void transmit_lora()
                     message.metadata = arwain::config.node_id;
 
                     auto position = arwain::Buffers::POSITION_BUFFER.back();
-                    position.z = arwain::Buffers::PRESSURE_BUFFER.back().z + 2.0; // Replace z-estimate with pressure filter output. TODO Remove the +2; this is to prevent it going underground in the UI. The UI should be fixed to account for this possibility.
+                    position.z = arwain::Buffers::PRESSURE_BUFFER.back().z + 6.0; // Replace z-estimate with pressure filter output. TODO Remove the +2; this is to prevent it going underground in the UI. The UI should be fixed to account for this possibility.
 
                     message.x = position.x * 100;
                     message.y = position.y * 100;
