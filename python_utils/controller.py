@@ -161,6 +161,15 @@ def shutdown():
     return response
 
 
+@app.route("/reboot")
+def reboot():
+    subprocess.Popen(["sudo", "reboot", "now"])
+    response_dict = dict()
+    response = jsonify(response_dict)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+    
+
 
 @app.route("/restart_service")
 def restart():
