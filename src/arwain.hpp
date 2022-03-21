@@ -110,7 +110,6 @@ namespace arwain
     extern bool ready_for_inference;
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
-    extern RollingAverage rolling_average_accel_z_for_altimeter_slow;
 }
 
 /** \brief Contains mutex locks for thread coordination. */
