@@ -15,6 +15,31 @@ import drift_simulator
 import numpy as np
 import subprocess
 import time
+from pathlib import Path
+
+
+env = {
+    "ROS_PACKAGE_PATH":"/opt/ros/melodic/share",
+    "ROSLISP_PACKAGE_DIRECTORIES":"",
+    "PWD":"/home/pi/arwain_inference_core",
+    "XDG_SESSION_TYPE":"tty",
+    "HOME":"/home/pi",
+    "LANG":"en_GB.UTF-8",
+    "ROS_ETC_DIR":"/opt/ros/melodic/etc/ros",
+    "CMAKE_PREFIX_PATH":"/opt/ros/melodic",
+    "XDG_SESSION_CLASS":"user",
+    "PYTHONPATH":"/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer",
+    "USER":"pi",
+    "SHLVL":"1",
+    "ROS_MASTER_URI":"http://192.168.43.176:11311",
+    "XDG_SESSION_ID":"c2",
+    "LD_LIBRARY_PATH":"/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l",
+    "PATH":"/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games",
+    "DBUS_SESSION_BUS_ADDRESS":"unix:path=/run/user/1000/bus",
+    "ROS_ROOT":"/opt/ros/melodic/share/ros",
+    "ROS_DISTRO":"melodic",
+    "_":"/usr/bin/env",
+}
 
 
 all_data = dict()
@@ -159,8 +184,12 @@ app.layout = html.Div(children=[
                     style={"float":"left", "width":"40%", "margin":"5px"}
                 ),
                 html.Button("Refresh", id="refresh_button", n_clicks=0, style={"float":"left", "margin":"5px"}),
+                html.Button("Create ROS replay", id="create_rosbag", n_clicks=0, style={"float":"right", "margin":"5px"}),
+                html.Button("Play ROS replay", id="play_rosbag", n_clicks=0, style={"float":"right", "margin":"5px"}),
                 html.Button("Delete", id="delete_button", n_clicks=0, style={"float":"right", "margin":"5px"}),
-                html.Div(id="hidden-div", style={"display":"none"})
+                dbc.Toast([html.P("Created ROS file")], id="create-ros-toast", body_style={"background-color": "#00ff00", "margin":"5px"}, duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
+                dbc.Toast([html.P("ROS playback started")], id="play-ros-toast", body_style={"background-color": "#00ff00", "margin":"5px"}, duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
+                dbc.Toast([html.P("Deleted dataset")], id="delete-dataset-toast", body_style={"background-color": "#00ff00", "margin":"5px"}, duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
             ],
             style={"display":"flex", "width":"100%", "align-items":"center", "justify-content":"left"}
         )
@@ -254,19 +283,58 @@ def update_velocity_plot(dataset):
 
 
 
-
-## Update dataset list from button #############################################
 @app.callback(
-    dash.dependencies.Output("hidden-div", "title"),
+    dash.dependencies.Output("play-ros-toast", "is_open"),
+    dash.dependencies.Input("play_rosbag", "n_clicks"),
+    dash.dependencies.State("dataset_list", "value")
+)
+def play_rosbag(clicks, selected_dataset):
+    if clicks == 0 or clicks is None:
+        return False
+    subprocess.Popen(
+        [
+            "rosbag",
+            "play",
+            "/home/pi/arwain_inference_core/" + selected_dataset + "/replay.bag",
+        ],
+        env=env
+    )
+    return True
+
+
+
+@app.callback(
+    dash.dependencies.Output("create-ros-toast", "is_open"),
+    dash.dependencies.Input("create_rosbag", "n_clicks"),
+    dash.dependencies.State("dataset_list", "value")
+)
+def create_rosbag(clicks, selected_dataset):
+    if clicks == 0 or clicks is None:
+        return False
+    p = subprocess.Popen(
+        [
+            "python",
+            "/home/pi/arwain_inference_core/python_utils/create_bag.py",
+            "/home/pi/arwain_inference_core/" + selected_dataset,
+        ],
+        env=env
+    )
+    p.wait()
+    print("Created bag file", file=sys.stderr)
+    return True
+
+
+@app.callback(
+    dash.dependencies.Output("delete-dataset-toast", "is_open"),
     dash.dependencies.Input("delete_button", "n_clicks"),
     dash.dependencies.State("dataset_list", "value")
 )
 def delete_data(clicks, selected_dataset):
     if clicks == 0 or clicks is None:
-        return "loaded"
+        return False
     subprocess.Popen(["rm", "-rf", "/home/pi/arwain_inference_core/" + selected_dataset])
     time.sleep(0.5)
-    return "done"
+    return True
 
 
 ## Update dataset list from button #############################################
@@ -276,7 +344,12 @@ def delete_data(clicks, selected_dataset):
 )
 def update_list(clicks):
     datasets, _ = get_datasets()
-    return [{"label":i,"value":i} for i in datasets]
+    l = []
+    for el in datasets:
+        label = el + (" (with ROS)" if Path("/home/pi/arwain_inference_core/" + el + "/replay.bag").is_file() else "")
+        value = el
+        l.append({"label":label, "value":value})
+    return l
 
 
 ## Euler orientation callback ##################################################
@@ -362,39 +435,6 @@ def update_pressure_temperature_plot(dataset):
     ]
 )
 def update_position_scatter(dataset, slider_values):
-    # drift = drift / 60.0 / 20.0
-    # df = read_dataset(dataset, "position")
-    
-    # fig = go.Figure()
-    # fig.add_trace(go.Scatter(x=df["x"], y=df["y"], mode="lines", name="ARWAIN path"))
-    
-    # ## Add the UWB path if it exists.
-    # try:
-    #     df2 = read_dataset(dataset, "uwb_log")
-    #     fig.add_trace(go.Scatter(x=df2["x"], y=df2["y"], mode="lines", name="UWB path"))
-    # except:
-    #     pass
-    # fig.update_layout(title="Position", title_x=0.5)
-    # fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
-
-    ## Convert to 2D array, apply drift, convert back to dataframe.
-    #points_x = list(df["x"])
-    #points_y = list(df["y"])
-    #points = [ [points_x[i], points_y[i]] for i in range(1, len(points_x))]
-    #points, best_drift = drift_simulator.find_best_drift_correction(points)
-
-    # points = drift_simulator.simulate_drift(points, drift)
-    #df_drifted = pd.DataFrame(points)
-
-    ## Add the drifted path to the figure.
-    #fig.add_trace(go.Scatter(x=df_drifted[0], y=df_drifted[1], mode="lines", name=f"Drifted path by {best_drift}"))
-    # fig.update_layout(title_x=0.5)
-    # fig.update_layout(margin={"l":40, "r":40, "t":40, "b":40})
-    # fig.update_yaxes(scaleanchor="x", scaleratio=1) # Correct aspect ratio.
-
-    # return fig
-
-    
     start = slider_values[0]*20
     end = slider_values[1]*20
 
