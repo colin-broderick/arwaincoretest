@@ -385,7 +385,6 @@ void imu_reader()
                         arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
                     }
                     arwain::rolling_average_accel_z_for_altimeter.feed(world_accel_data1.z);
-                    arwain::rolling_average_accel_z_for_altimeter_slow.feed(world_accel_data1.z);
 
                     // Compute the new correction based on magnetometer/gyro filter diffs.
                     double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
@@ -488,6 +487,7 @@ void imu_reader()
                         arwain::Buffers::IMU_WORLD_BUFFER.pop_front();
                         arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
                     }
+                    arwain::rolling_average_accel_z_for_altimeter.feed(world_accel_data1.z);
 
                     // Compute the new correction based on magnetometer/gyro filter diffs.
                     double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);

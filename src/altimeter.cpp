@@ -6,6 +6,8 @@
 #include "logger.hpp"
 #include "sabatini_altimeter.hpp"
 
+#define DEBUGALTIMETER
+
 /** \brief Uses the BMP384 pressure sensor to determine altitude. */
 void altimeter()
 {
@@ -15,19 +17,11 @@ void altimeter()
         return;
     }
 
-    // Create pressure sensor, then average altitude over 1 second to get baseline.
+    // Create pressure sensor.
     BMP384 bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
-    double altitude = 0;
-    for (int i = 0; i < 20; i++)
-    {
-        auto [p, t] = bmp384.read();
-        p = p - arwain::config.pressure_offset;
-        double new_altitude = BMP384::calculate_altitude(p / 100.0, t, arwain::config.sea_level_pressure);
-        altitude = (altitude * i + new_altitude) / (double)(i + 1);
-        sleep_ms(50);
-    }
-
-    double altitude_zero = altitude;
+    auto [p0, t0] = bmp384.read();
+    p0 = p0 - arwain::config.pressure_offset;
+    double altitude = BMP384::calculate_altitude(p0 / 100.0, t0, arwain::config.sea_level_pressure);
 
     // Create a filter to fuse pressure readings and accelerometer readings.
     arwain::Filters::SabatiniAltimeter sabatini_filter{
@@ -37,6 +31,17 @@ void altimeter()
         0.2,                                                               // STDEV accelerometer.
         0.3                                                                // STDEV pressure altitude.
     };
+
+    // Few spins to try and get a good starting value for altitude.
+    for (int i = 0; i < 20; i++)
+    {
+        auto [p, t] = bmp384.read();
+        p = p - arwain::config.pressure_offset;
+        altitude = BMP384::calculate_altitude(p / 100.0, t, arwain::config.sea_level_pressure);
+        altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
+        sleep_ms(50);
+    }
+    double altitude_zero = altitude;
     
     // Spin until shutdown signal received.
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
@@ -57,13 +62,17 @@ void altimeter()
                 {
                     auto [pressure, temperature] = bmp384.read();
                     pressure = pressure - arwain::config.pressure_offset;
-                    double new_altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
-                    altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, new_altitude);
+                    altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+                    altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
                     {
                         std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
                         arwain::Buffers::PRESSURE_BUFFER.pop_front();
                         arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
                     }
+
+                    #ifdef DEBUGALTIMETER
+                    std::cout << "Altitude: " << altitude << std::endl;
+                    #endif
 
                     pressure_log << loopTime.time_since_epoch().count() << " " << pressure << " " << temperature << " " << altitude << "\n";
 
@@ -75,28 +84,29 @@ void altimeter()
             }
             case arwain::OperatingMode::AutoCalibration:
             {
-                sabatini_filter.set_dt(arwain::Intervals::ALTIMETER_INTERVAL*10/1000.0);
                 auto loopTime = std::chrono::system_clock::now();
-                std::chrono::milliseconds interval{arwain::Intervals::ALTIMETER_INTERVAL * 10}; // Lower data collection rate in Idle/Autocalibration mode.
+                std::chrono::milliseconds interval{arwain::Intervals::ALTIMETER_INTERVAL}; // Lower data collection rate in Idle/Autocalibration mode.
 
                 while (arwain::system_mode == arwain::OperatingMode::AutoCalibration)
                 {
                     auto [pressure, temperature] = bmp384.read();
                     pressure = pressure - arwain::config.pressure_offset;
-                    double new_altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
-                    altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter_slow.get_value() - arwain::config.gravity, new_altitude);
+                    altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+                    altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
                     {
                         std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
                         arwain::Buffers::PRESSURE_BUFFER.pop_front();
                         arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
                     }
 
+                    #ifdef DEBUGALTIMETER
+                    std::cout << "Altitude: " << altitude << std::endl;
+                    #endif
+
                     // Wait until next tick.
                     loopTime = loopTime + interval;
                     std::this_thread::sleep_until(loopTime);
                 }
-                sabatini_filter.set_dt(arwain::Intervals::ALTIMETER_INTERVAL/1000.0);
-                altitude_zero = altitude;
                 break;
             }
             default:
