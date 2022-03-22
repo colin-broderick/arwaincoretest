@@ -167,6 +167,8 @@ fig = px.scatter()
 ## Create layout.
 external_stylesheets = [dbc.themes.DARKLY]
 
+toast_style = {"float":"left", "margin":"5px","border":"0", "background":"#51ad4e", "color":"white", "box-shadow":"none","border-radius":"0"}
+
 ## Create dash app + layout.
 app = dash.Dash(__name__, title="ARWAIN Tracking", external_stylesheets=[external_stylesheets])
 app.layout = html.Div(children=[
@@ -187,9 +189,9 @@ app.layout = html.Div(children=[
                 html.Button("Create ROS replay", id="create_rosbag", n_clicks=0, style={"float":"right", "margin":"5px"}),
                 html.Button("Play ROS replay", id="play_rosbag", n_clicks=0, style={"float":"right", "margin":"5px"}),
                 html.Button("Delete", id="delete_button", n_clicks=0, style={"float":"right", "margin":"5px"}),
-                dbc.Toast([html.P("Created ROS file")], id="create-ros-toast", body_style={"background-color": "#00ff00", "margin":"5px"}, duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
-                dbc.Toast([html.P("ROS playback started")], id="play-ros-toast", body_style={"background-color": "#00ff00", "margin":"5px"}, duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
-                dbc.Toast([html.P("Deleted dataset")], id="delete-dataset-toast", body_style={"background-color": "#00ff00", "margin":"5px"}, duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
+                dbc.Toast([html.Button("Created ROS file", style=toast_style)], id="create-ros-toast", duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
+                dbc.Toast([html.Button("ROS playback started", style=toast_style)], id="play-ros-toast", duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
+                dbc.Toast([html.Button("Deleted dataset", style=toast_style)], id="delete-dataset-toast", duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
             ],
             style={"display":"flex", "width":"100%", "align-items":"center", "justify-content":"left"}
         )
@@ -197,7 +199,6 @@ app.layout = html.Div(children=[
     html.Div(
         children=[ 
             html.Div([
-                    # daq.NumericInput(id='drift_slider',min=-50, max=50, value=0),
                     dcc.Graph(id='position_scatter', figure=fig, style={"height":"90vh"}),
                     time_slider
                 ],
@@ -280,7 +281,6 @@ def update_velocity_plot(dataset):
     fig.add_trace(go.Scatter(x=df["time"], y=df["y"], mode="lines", name="Velocity y [m/s]"))
     fig.add_trace(go.Scatter(x=df["time"], y=df["z"], mode="lines", name="Velocity z [m/s]"))
     return fig 
-
 
 
 @app.callback(
