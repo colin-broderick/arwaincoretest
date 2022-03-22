@@ -107,22 +107,16 @@ void imu_reader()
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
     arwain::Madgwick madgwick_filter_1{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
-    arwain::Madgwick madgwick_filter_2{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
-    arwain::Madgwick madgwick_filter_3{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
     arwain::Madgwick madgwick_filter_mag_1{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
-    arwain::Madgwick madgwick_filter_mag_2{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
-    arwain::Madgwick madgwick_filter_mag_3{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
 
     Quaternion test_vector{0, 1, 0, 0};
 
     // After the specificed period has passed, set the magnetic filter gain to the standard value.
     std::thread quick_convergence{
-        [&madgwick_filter_mag_1, &madgwick_filter_mag_2, &madgwick_filter_mag_3]()
+        [&madgwick_filter_mag_1]()
         {
             std::this_thread::sleep_for(std::chrono::milliseconds{5000});
             madgwick_filter_mag_1.set_beta(arwain::config.madgwick_beta);
-            madgwick_filter_mag_2.set_beta(arwain::config.madgwick_beta);
-            madgwick_filter_mag_3.set_beta(arwain::config.madgwick_beta);
         }
     };
 
@@ -251,61 +245,40 @@ void imu_reader()
                 // mode-specific setup should go here, before the while loop. e.g. open new log files. ----------------
                 
                 // File handles for logging.
-                arwain::Logger quat_diff_file;
                 arwain::Logger ori_diff_file;
                 arwain::Logger acce_file_1;
                 arwain::Logger world_acce_file_1;
                 arwain::Logger gyro_file_1;
                 arwain::Logger world_gyro_file_1;
                 arwain::Logger madgwick_euler_file_1;
-                arwain::Logger madgwick_euler_file_2;
-                arwain::Logger madgwick_euler_file_3;
                 arwain::Logger madgwick_euler_mag_file_1;
-                arwain::Logger madgwick_euler_mag_file_2;
-                arwain::Logger madgwick_euler_mag_file_3;
                 arwain::Logger madgwick_quat_file_1;
-                arwain::Logger madgwick_quat_file_2;
-                arwain::Logger madgwick_quat_file_3;
                 arwain::Logger imu_calib_file_1;
                 arwain::Logger imu_calib_file_2;
                 arwain::Logger imu_calib_file_3;
 
                 // Open file handles for data logging.
-                quat_diff_file.open(arwain::folder_date_string + "/quat_delta_angle.txt");
                 ori_diff_file.open(arwain::folder_date_string + "/ori_diff.txt");
                 acce_file_1.open(arwain::folder_date_string + "/acce.txt");
                 world_acce_file_1.open(arwain::folder_date_string + "/world_acce.txt");
                 gyro_file_1.open(arwain::folder_date_string + "/gyro.txt");
                 world_gyro_file_1.open(arwain::folder_date_string + "/world_gyro.txt");
                 madgwick_euler_file_1.open(arwain::folder_date_string + "/madgwick_euler_orientation_1.txt");
-                madgwick_euler_file_2.open(arwain::folder_date_string + "/madgwick_euler_orientation_2.txt");
-                madgwick_euler_file_3.open(arwain::folder_date_string + "/madgwick_euler_orientation_3.txt");
                 madgwick_quat_file_1.open(arwain::folder_date_string + "/madgwick_game_rv_1.txt");
-                madgwick_quat_file_2.open(arwain::folder_date_string + "/madgwick_game_rv_2.txt");
-                madgwick_quat_file_3.open(arwain::folder_date_string + "/madgwick_game_rv_3.txt");
                 madgwick_euler_mag_file_1.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_1.txt");
-                madgwick_euler_mag_file_2.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_2.txt");
-                madgwick_euler_mag_file_3.open(arwain::folder_date_string + "/madgwick_mag_euler_orientation_3.txt");
                 imu_calib_file_1.open(arwain::folder_date_string + "/imu_calib_1.txt");
                 imu_calib_file_2.open(arwain::folder_date_string + "/imu_calib_2.txt");
                 imu_calib_file_3.open(arwain::folder_date_string + "/imu_calib_3.txt");
 
                 // File headers
-                quat_diff_file << "time diff_q1_q2 diff_q1_q3" << "\n";
                 ori_diff_file << "time yaw" << "\n";
                 acce_file_1 << "time x y z" << "\n";
                 world_acce_file_1 << "time x y z" << "\n";
                 gyro_file_1 << "time x y z" << "\n";
                 world_gyro_file_1 << "time x y z" << "\n";
                 madgwick_euler_file_1 << "time roll pitch yaw" << "\n";
-                madgwick_euler_file_2 << "time roll pitch yaw" << "\n";
-                madgwick_euler_file_3 << "time roll pitch yaw" << "\n";
                 madgwick_quat_file_1 << "time w x y z" << "\n";
-                madgwick_quat_file_2 << "time w x y z" << "\n";
-                madgwick_quat_file_3 << "time w x y z" << "\n";
                 madgwick_euler_mag_file_1 << "time roll pitch yaw" << "\n";
-                madgwick_euler_mag_file_2 << "time roll pitch yaw" << "\n";
-                madgwick_euler_mag_file_3 << "time roll pitch yaw" << "\n";
                 imu_calib_file_1 << "time gx_bias gy_bias gz_bias" << "\n";
                 imu_calib_file_2 << "time gx_bias gy_bias gz_bias" << "\n";
                 imu_calib_file_3 << "time gx_bias gy_bias gz_bias" << "\n";
@@ -322,19 +295,10 @@ void imu_reader()
                     timeCount = std::chrono::system_clock::now().time_since_epoch().count();
 
                     auto [accel_data1, gyro_data1] = imu1.read_IMU();
-                    auto [accel_data2, gyro_data2] = imu2.read_IMU();
-                    auto [accel_data3, gyro_data3] = imu3.read_IMU();
-                    // Force approximate alignment of the IMUs.
-                    accel_data2 = {accel_data2.y, -accel_data2.x, accel_data2.z};
-                    gyro_data2 = {gyro_data2.y, -gyro_data2.x, gyro_data2.z};
-                    accel_data3 = {accel_data3.y, -accel_data3.x, accel_data3.z};
-                    gyro_data3 = {gyro_data3.y, -gyro_data3.x, gyro_data3.z};
 
                     if (arwain::request_gyro_calib)
                     {
-                        std::cout << imu1.get_gyro_calib() << "      ";
-                        std::cout << imu2.get_gyro_calib() << "      ";
-                        std::cout << imu3.get_gyro_calib() << std::endl;
+                        std::cout << imu1.get_gyro_calib() << std::endl;
                         arwain::request_gyro_calib = false;
                     }
 
@@ -348,25 +312,13 @@ void imu_reader()
                     }
 
                     madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
-                    madgwick_filter_2.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
-                    madgwick_filter_3.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
                     madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
-                    madgwick_filter_mag_2.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z, magnet.x, magnet.y, magnet.z);
-                    madgwick_filter_mag_3.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z, magnet.x, magnet.y, magnet.z);
 
                     // Extract Euler orientation from filters.
                     Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
-                    Quaternion madgwick_quaternion_data2 = {madgwick_filter_2.getW(), madgwick_filter_2.getX(), madgwick_filter_2.getY(), madgwick_filter_2.getZ()};
-                    Quaternion madgwick_quaternion_data3 = {madgwick_filter_3.getW(), madgwick_filter_3.getX(), madgwick_filter_3.getY(), madgwick_filter_3.getZ()};
                     Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
-                    Quaternion madgwick_quaternion_mag_data2 = {madgwick_filter_mag_2.getW(), madgwick_filter_mag_2.getX(), madgwick_filter_mag_2.getY(), madgwick_filter_mag_2.getZ()};
-                    Quaternion madgwick_quaternion_mag_data3 = {madgwick_filter_mag_3.getW(), madgwick_filter_mag_3.getX(), madgwick_filter_mag_3.getY(), madgwick_filter_mag_3.getZ()};
                     euler_orientation_t madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
-                    euler_orientation_t madgwick_euler_data2 = compute_euler(madgwick_quaternion_data2);
-                    euler_orientation_t madgwick_euler_data3 = compute_euler(madgwick_quaternion_data3);
                     euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
-                    euler_orientation_t madgwick_euler_mag_data2 = compute_euler(madgwick_quaternion_mag_data2);
-                    euler_orientation_t madgwick_euler_mag_data3 = compute_euler(madgwick_quaternion_mag_data3);
 
                     { // Add orientation information to buffers.
                         std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
@@ -387,35 +339,26 @@ void imu_reader()
                     arwain::rolling_average_accel_z_for_altimeter.feed(world_accel_data1.z);
 
                     // Compute the new correction based on magnetometer/gyro filter diffs.
-                    double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
-                    if (arwain::yaw_offset == 0)
-                    {
-                        arwain::yaw_offset = new_yaw_offset;
-                    }
-                    else
-                    {
-                        arwain::yaw_offset = new_yaw_offset*0.001 + 0.999*arwain::yaw_offset;
-                    }
+                    // double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
+                    // if (arwain::yaw_offset == 0)
+                    // {
+                    //     arwain::yaw_offset = new_yaw_offset;
+                    // }
+                    // else
+                    // {
+                    //     arwain::yaw_offset = new_yaw_offset*0.001 + 0.999*arwain::yaw_offset;
+                    // }
 
                     // Write all log files.
-                    quat_diff_file << timeCount << " " << 1.0 - std::pow(Quaternion::dot(madgwick_quaternion_data1, madgwick_quaternion_data2), 2) << " " << 1.0 - std::pow(Quaternion::dot(madgwick_quaternion_data1, madgwick_quaternion_data3), 2) << "\n";
                     ori_diff_file << timeCount << " " << arwain::yaw_offset << "\n";
                     acce_file_1 << timeCount << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
                     gyro_file_1 << timeCount << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
                     world_acce_file_1 << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
                     world_gyro_file_1 << timeCount << " " << world_gyro_data1.x << " " << world_gyro_data1.y << " " << world_gyro_data1.z << "\n";
                     madgwick_euler_file_1 << timeCount << " " << madgwick_euler_data1.roll << " " << madgwick_euler_data1.pitch << " " << madgwick_euler_data1.yaw << "\n";
-                    madgwick_euler_file_2 << timeCount << " " << madgwick_euler_data2.roll << " " << madgwick_euler_data2.pitch << " " << madgwick_euler_data2.yaw << "\n";
-                    madgwick_euler_file_3 << timeCount << " " << madgwick_euler_data3.roll << " " << madgwick_euler_data3.pitch << " " << madgwick_euler_data3.yaw << "\n";
                     madgwick_euler_mag_file_1 << timeCount << " " << madgwick_euler_mag_data1.roll << " " << madgwick_euler_mag_data1.pitch << " " << madgwick_euler_mag_data1.yaw << "\n";
-                    madgwick_euler_mag_file_2 << timeCount << " " << madgwick_euler_mag_data2.roll << " " << madgwick_euler_mag_data2.pitch << " " << madgwick_euler_mag_data2.yaw << "\n";
-                    madgwick_euler_mag_file_3 << timeCount << " " << madgwick_euler_mag_data3.roll << " " << madgwick_euler_mag_data3.pitch << " " << madgwick_euler_mag_data3.yaw << "\n";
                     madgwick_quat_file_1 << timeCount << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
-                    madgwick_quat_file_2 << timeCount << " " << madgwick_quaternion_data2.w << " " << madgwick_quaternion_data2.x << " " << madgwick_quaternion_data2.y << " " << madgwick_quaternion_data2.z << "\n";
-                    madgwick_quat_file_3 << timeCount << " " << madgwick_quaternion_data3.w << " " << madgwick_quaternion_data3.x << " " << madgwick_quaternion_data3.y << " " << madgwick_quaternion_data3.z << "\n";
                     imu_calib_file_1 << timeCount << " " << imu1.get_gyro_calib_x() << " " << imu1.get_gyro_calib_y() << " " << imu1.get_gyro_calib_z() << "\n";
-                    imu_calib_file_2 << timeCount << " " << imu2.get_gyro_calib_x() << " " << imu2.get_gyro_calib_y() << " " << imu2.get_gyro_calib_z() << "\n";
-                    imu_calib_file_3 << timeCount << " " << imu3.get_gyro_calib_x() << " " << imu3.get_gyro_calib_y() << " " << imu3.get_gyro_calib_z() << "\n";
 
                     // Wait until the next tick.
                     loopTime = loopTime + interval;
@@ -436,19 +379,11 @@ void imu_reader()
                     timeCount = std::chrono::system_clock::now().time_since_epoch().count();
 
                     auto [accel_data1, gyro_data1] = imu1.read_IMU();
-                    auto [accel_data2, gyro_data2] = imu2.read_IMU();
-                    auto [accel_data3, gyro_data3] = imu3.read_IMU();
                     // Force approximate alignment of the IMUs.
-                    accel_data2 = {accel_data2.y, -accel_data2.x, accel_data2.z};
-                    gyro_data2 = {gyro_data2.y, -gyro_data2.x, gyro_data2.z};
-                    accel_data3 = {accel_data3.y, -accel_data3.x, accel_data3.z};
-                    gyro_data3 = {gyro_data3.y, -gyro_data3.x, gyro_data3.z};
 
                     if (arwain::request_gyro_calib)
                     {
-                        std::cout << imu1.get_gyro_calib() << "      ";
-                        std::cout << imu2.get_gyro_calib() << "      ";
-                        std::cout << imu3.get_gyro_calib() << std::endl;
+                        std::cout << imu1.get_gyro_calib() << std::endl;
                         arwain::request_gyro_calib = false;
                     }
 
@@ -462,14 +397,10 @@ void imu_reader()
                     }
 
                     madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
-                    madgwick_filter_2.update(timeCount, gyro_data2.x, gyro_data2.y, gyro_data2.z, accel_data2.x, accel_data2.y, accel_data2.z);
-                    madgwick_filter_3.update(timeCount, gyro_data3.x, gyro_data3.y, gyro_data3.z, accel_data3.x, accel_data3.y, accel_data3.z);
                     madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
 
                     // Extract Euler orientation from filters.
                     Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
-                    Quaternion madgwick_quaternion_data2 = {madgwick_filter_2.getW(), madgwick_filter_2.getX(), madgwick_filter_2.getY(), madgwick_filter_2.getZ()};
-                    Quaternion madgwick_quaternion_data3 = {madgwick_filter_3.getW(), madgwick_filter_3.getX(), madgwick_filter_3.getY(), madgwick_filter_3.getZ()};
                     Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
                     euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
 
