@@ -127,12 +127,16 @@ class BMP384
     public:
         const static int min_temp = -40;
         const static int max_temp = 85;
+        enum class Mode { USE_HYPS, USE_SIMPLE };
 
     public:
         BMP384(int bus_address, const std::string &bus_name);
         std::tuple<double, double> read();
         int get_chip_id();
         static double calculate_altitude(const double pressure, const double temperature, const double sea_level_pressure);
+        static double hypsometric_altitude(double pressure, double temperature, double sea_level_pressure);
+        static double simple_altitude(double pressure, double sea_level_pressure);
+        void set_altitude_mode(Mode mode);
 
     private:
         void set_power_mode(uint8_t mode);
@@ -151,6 +155,7 @@ class BMP384
 
     private:
         int handle = 0;
+        const static bool use_hyps = true;
         CalibData calib_data;
 };
 
