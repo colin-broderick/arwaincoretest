@@ -239,10 +239,40 @@ int BMP384::get_chip_id()
  */
 double BMP384::calculate_altitude(const double pressure, const double temperature, const double sea_level_pressure)
 {
+    if (use_hyps)
+    {
+        return hypsometric_altitude(pressure, temperature, sea_level_pressure);
+    }
+    else
+    {
+        return simple_altitude(pressure, sea_level_pressure);
+    }
+}
 
-    double lapse_rate = 0.00649;              // 0.0065 Kelvin/metre. This is theoretically variable.
-    double gas_constant_for_air = 287.053;
-    double gravity = 9.8127;                // This theoretically varies with location.
+double BMP384::hypsometric_altitude(double pressure_hPa, double temperature_K, double sea_level_pressure_hPa)
+{
+    const static double lapse_rate = 0.00649; // 0.00649 Kelvin/metre - expected temperature variation per increase in altitude.
+    const static double gas_constant_for_air = 287.053;
+    const static double gravity = 9.8127;
 
-    return ((pow((sea_level_pressure/pressure), (lapse_rate * gas_constant_for_air / gravity))-1)*(temperature + 273.15))/lapse_rate;
+    return ((std::pow((sea_level_pressure_hPa/pressure_hPa), (lapse_rate * gas_constant_for_air / gravity))-1)*(temperature_K)) / lapse_rate;
+}
+
+double BMP384::simple_altitude(double pressure, double sea_level_pressure)
+{
+    return 44330.0 * (1.0 - std::pow(pressure/sea_level_pressure, 1.0/5.255));
+}
+
+void BMP384::set_altitude_mode(Mode mode)
+{
+    // TODO
+    // Will need to make altitude calcualtion functions non-static.
+    // if (mode == Mode::USE_HYPS)
+    // {
+    //     use_hyps = true;
+    // }
+    // else
+    // {
+    //     use_hyps = false;
+    // }
 }
