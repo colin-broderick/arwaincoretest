@@ -82,6 +82,9 @@ int arwain::Configuration::read_from_file()
     read_option(options, "madgwick_beta", this->madgwick_beta);
     read_option(options, "madgwick_beta_conv", this->madgwick_beta_conv);
     read_option(options, "orientation_filter", this->orientation_filter);
+    read_option(options, "altimeter_z_accel_stdev", this->altimeter_z_accel_stdev);
+    read_option(options, "pressure_altitude_stdev", this->pressure_altitude_stdev);
+
 
     // We want to fail out if the model XML file cannot be found.
     read_option(options, "inference_model_xml", this->inference_model_xml);

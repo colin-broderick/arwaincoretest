@@ -88,6 +88,8 @@ namespace arwain
         double pressure_offset;
         int correct_with_yaw_diff = 0;
         int use_uwb_positioning = 0;
+        double altimeter_z_accel_stdev;
+        double pressure_altitude_stdev;
 
         /** \brief Overwrite the content of the configuration file associated with this struct.
          * \param option The configuration option to overwrite.

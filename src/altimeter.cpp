@@ -6,8 +6,6 @@
 #include "logger.hpp"
 #include "sabatini_altimeter.hpp"
 
-#define DEBUGALTIMETER
-
 /** \brief Uses the BMP384 pressure sensor to determine altitude. */
 void altimeter()
 {
@@ -17,19 +15,21 @@ void altimeter()
         return;
     }
 
+    static const double CONSTANT_ROOM_TEMPERATURE = 21 + 273.15; // We are assuming constant ambient temperature in the hypsometric formula for now.
+
     // Create pressure sensor.
     BMP384 bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
     auto [p0, t0] = bmp384.read();
     p0 = p0 - arwain::config.pressure_offset;
-    double altitude = BMP384::calculate_altitude(p0 / 100.0, t0, arwain::config.sea_level_pressure);
+    double altitude = BMP384::calculate_altitude(p0 / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
 
     // Create a filter to fuse pressure readings and accelerometer readings.
     arwain::Filters::SabatiniAltimeter sabatini_filter{
         altitude,                                                          // Initial altitude.
         0,                                                                 // Initial vertical velocity.
         static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0, // Time between samples in seconds.
-        0.2,                                                               // STDEV accelerometer.
-        0.3                                                                // STDEV pressure altitude.
+        arwain::config.altimeter_z_accel_stdev,                            // STDEV accelerometer.
+        arwain::config.pressure_altitude_stdev                             // STDEV pressure altitude.
     };
 
     // Few spins to try and get a good starting value for altitude.
@@ -37,7 +37,7 @@ void altimeter()
     {
         auto [p, t] = bmp384.read();
         p = p - arwain::config.pressure_offset;
-        altitude = BMP384::calculate_altitude(p / 100.0, t, arwain::config.sea_level_pressure);
+        altitude = BMP384::calculate_altitude(p / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
         altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
         sleep_ms(50);
     }
@@ -62,7 +62,7 @@ void altimeter()
                 {
                     auto [pressure, temperature] = bmp384.read();
                     pressure = pressure - arwain::config.pressure_offset;
-                    altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+                    altitude = BMP384::calculate_altitude(pressure / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
                     altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
                     {
                         std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
@@ -91,7 +91,7 @@ void altimeter()
                 {
                     auto [pressure, temperature] = bmp384.read();
                     pressure = pressure - arwain::config.pressure_offset;
-                    altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+                    altitude = BMP384::calculate_altitude(pressure / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
                     altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
                     {
                         std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
