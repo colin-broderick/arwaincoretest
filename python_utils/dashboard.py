@@ -188,7 +188,9 @@ app.layout = html.Div(children=[
                 html.Button("Refresh", id="refresh_button", n_clicks=0, style={"float":"left", "margin":"5px"}),
                 html.Button("Create ROS replay", id="create_rosbag", n_clicks=0, style={"float":"right", "margin":"5px"}),
                 html.Button("Play ROS replay", id="play_rosbag", n_clicks=0, style={"float":"right", "margin":"5px"}),
+                html.Button("Stop ROS replay", id="stop_button", n_clicks=0, style={"float":"right", "margin":"5px"}),
                 html.Button("Delete", id="delete_button", n_clicks=0, style={"float":"right", "margin":"5px"}),
+                dbc.Toast([html.Button("Stopped ROS playback", style=toast_style)], id="stop_replay_toast", duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
                 dbc.Toast([html.Button("Created ROS file", style=toast_style)], id="create-ros-toast", duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
                 dbc.Toast([html.Button("ROS playback started", style=toast_style)], id="play-ros-toast", duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
                 dbc.Toast([html.Button("Deleted dataset", style=toast_style)], id="delete-dataset-toast", duration=3000, header_style={"display":"none"}, dismissable=True, is_open=False),
@@ -424,6 +426,19 @@ def update_pressure_temperature_plot(dataset):
     fig.add_trace(go.Scatter(x=df_pressure["time"], y=df_pressure["pressure"]/1e5, mode="lines", name="Pressure [hPa/1000]"))
     fig.add_trace(go.Scatter(x=df_pressure["time"], y=df_pressure["temperature"], mode="lines", name="Temperature [°C]"))
     return fig
+
+
+@app.callback(
+    dash.dependencies.Output("stop_replay_toast", "is_open"),
+    dash.dependencies.Input("stop_button", "n_clicks")
+)
+def stop_replay(clicks):
+    global replay_pid
+    print(replay_pid, file=sys.stderr)
+    if clicks == 0 or clicks is None:
+        return False
+    subprocess.Popen(["sudo", "systemctl", "restart", "arwain_dashboard.service"])
+    return True
 
 
 @app.callback(
