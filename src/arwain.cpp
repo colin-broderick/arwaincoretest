@@ -302,24 +302,24 @@ int arwain::execute_inference()
 {
     // Start worker threads.
     std::thread imu_reader_thread(imu_reader);                   // Reading IMU data, updating orientation filters.
-    pthread_setname_np(imu_reader_thread.native_handle(), "arwain_imu_th");
     std::thread predict_velocity_thread(predict_velocity);       // Velocity and position inference.
-    pthread_setname_np(predict_velocity_thread.native_handle(), "arwain_vel_th");
     std::thread stance_detector_thread(stance_detector);         // Stance, freefall, entanglement detection.
-    pthread_setname_np(stance_detector_thread.native_handle(), "arwain_stnc_th");
     std::thread transmit_lora_thread(transmit_lora);             // LoRa packet transmissions.
-    pthread_setname_np(transmit_lora_thread.native_handle(), "arwain_lora_th");
     std::thread std_output_thread(std_output);                   // Prints useful output to std out.
-    pthread_setname_np(std_output_thread.native_handle(), "arwain_std_th");
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
-    pthread_setname_np(indoor_positioning_thread.native_handle(), "arwain_ips_th");
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
-    pthread_setname_np(altimeter_thread.native_handle(), "arwain_alt_th");
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
-    pthread_setname_np(py_inference_thread.native_handle(), "arwain_inf_th");
     std::thread uwb_reader_thread{uwb_reader, "/dev/serial0", 115200};
-    pthread_setname_np(uwb_reader_thread.native_handle(), "arwain_uwb_th");
     std::thread command_line_thread{command_line};                // Simple command line interface for runtime mode switching.
+    pthread_setname_np(imu_reader_thread.native_handle(), "arwain_imu_th");
+    pthread_setname_np(predict_velocity_thread.native_handle(), "arwain_vel_th");
+    pthread_setname_np(stance_detector_thread.native_handle(), "arwain_stnc_th");
+    pthread_setname_np(transmit_lora_thread.native_handle(), "arwain_lora_th");
+    pthread_setname_np(std_output_thread.native_handle(), "arwain_std_th");
+    pthread_setname_np(indoor_positioning_thread.native_handle(), "arwain_ips_th");
+    pthread_setname_np(altimeter_thread.native_handle(), "arwain_alt_th");
+    pthread_setname_np(py_inference_thread.native_handle(), "arwain_inf_th");
+    pthread_setname_np(uwb_reader_thread.native_handle(), "arwain_uwb_th");
     pthread_setname_np(command_line_thread.native_handle(), "arwain_cmd_th");
 
     // Wait for all threads to terminate.
