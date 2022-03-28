@@ -107,6 +107,7 @@ void altimeter()
                     loopTime = loopTime + interval;
                     std::this_thread::sleep_until(loopTime);
                 }
+                altitude_zero = altitude;
                 break;
             }
             default:
