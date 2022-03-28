@@ -433,8 +433,6 @@ def update_pressure_temperature_plot(dataset):
     dash.dependencies.Input("stop_button", "n_clicks")
 )
 def stop_replay(clicks):
-    global replay_pid
-    print(replay_pid, file=sys.stderr)
     if clicks == 0 or clicks is None:
         return False
     subprocess.Popen(["sudo", "systemctl", "restart", "arwain_dashboard.service"])
