@@ -15,6 +15,7 @@ struct Vector3
     Vector3 normalized();
     static Vector3 cross(const Vector3& v1, const Vector3& v2);
     static double angle_between(const Vector3& v1, const Vector3& v2);
+    static double distance_between(const Vector3& v1, const Vector3& v2);
     static double dot(const Vector3& v1, const Vector3& v2);
 };
 
@@ -23,7 +24,20 @@ struct Vector3
  */
 inline double Vector3::magnitude() const
 {
-    return sqrt(x*x+y*y+z*z);
+    return std::sqrt(x*x + y*y + z*z);
+}
+
+/** \brief Computes the distance between two points represented as 3-vectors.
+ * \param v1 First 3-vector.
+ * \param v2 Second 3-vector.
+ * \return The distance between the two points as a double.
+ */
+inline double Vector3::distance_between(const Vector3& v1, const Vector3& v2)
+{
+    double x = v1.x - v2.x;
+    double y = v1.y - v2.y;
+    double z = v1.z - v2.z;
+    return std::sqrt(x*x + y*y + z*z);
 }
 
 /** \brief The element-wise sum of two 3-vectors.
