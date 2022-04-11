@@ -90,6 +90,7 @@ namespace arwain
         int use_uwb_positioning = 0;
         double altimeter_z_accel_stdev;
         double pressure_altitude_stdev;
+        int use_rs2 = 0;
 
         /** \brief Overwrite the content of the configuration file associated with this struct.
          * \param option The configuration option to overwrite.

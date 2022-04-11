@@ -84,6 +84,7 @@ int arwain::Configuration::read_from_file()
     read_option(options, "orientation_filter", this->orientation_filter);
     read_option(options, "altimeter_z_accel_stdev", this->altimeter_z_accel_stdev);
     read_option(options, "pressure_altitude_stdev", this->pressure_altitude_stdev);
+    read_option(options, "use_rs2", this->use_rs2);
 
 
     // We want to fail out if the model XML file cannot be found.
