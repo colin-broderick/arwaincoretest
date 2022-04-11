@@ -29,6 +29,7 @@
 #include "calibration.hpp"
 #include "command_line.hpp"
 #include "uwb_reader.hpp"
+#include "t265.hpp"
 
 #include "floor_tracker.hpp"
 #include "new_madgwick_FusionAhrs.h"
@@ -298,6 +299,46 @@ void arwain::setup(const InputParser& input)
     }
 }
 
+void rs2_reader()
+{
+    // Quit immediately if disabled by config.
+    if (!arwain::config.use_rs2)
+    {
+        return;
+    }
+    
+    T265 t265;
+
+
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    {
+        switch (arwain::system_mode)
+        {
+            case arwain::OperatingMode::DataCollection:
+            {
+                arwain::Logger log;
+                log.open(arwain::folder_date_string + "/position_t265.txt");
+                log << "time x y z\n";
+
+                while (arwain::system_mode == arwain::OperatingMode::DataCollection)
+                {
+                    Vector3 pos = t265.get_position();
+                    log << std::chrono::system_clock::now().time_since_epoch().count() << " "
+                        << pos.x << " "
+                        << pos.y << " "
+                        << pos.z << "\n";
+                }
+                break;
+            }
+            default:
+            {
+                sleep_ms(10);
+                break;
+            }
+        }
+    }
+}
+
 int arwain::execute_inference()
 {
     // Start worker threads.
@@ -310,6 +351,7 @@ int arwain::execute_inference()
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     std::thread uwb_reader_thread{uwb_reader, "/dev/serial0", 115200};
+    std::thread rs2_thread{rs2_reader};
     std::thread command_line_thread{command_line};                // Simple command line interface for runtime mode switching.
     pthread_setname_np(imu_reader_thread.native_handle(), "arwain_imu_th");
     pthread_setname_np(predict_velocity_thread.native_handle(), "arwain_vel_th");
@@ -320,7 +362,8 @@ int arwain::execute_inference()
     pthread_setname_np(altimeter_thread.native_handle(), "arwain_alt_th");
     pthread_setname_np(py_inference_thread.native_handle(), "arwain_inf_th");
     pthread_setname_np(uwb_reader_thread.native_handle(), "arwain_uwb_th");
-    pthread_setname_np(command_line_thread.native_handle(), "arwain_cmd_th");
+    pthread_setname_np(rs2_thread.native_handle(), "arwain_cmd_th");
+    pthread_setname_np(command_line_thread.native_handle(), "arwain_rs2_th");
 
     // Wait for all threads to terminate.
     imu_reader_thread.join();
@@ -332,6 +375,7 @@ int arwain::execute_inference()
     py_inference_thread.join();
     altimeter_thread.join();
     uwb_reader_thread.join();
+    rs2_thread.join();
     command_line_thread.join();
 
     return arwain::ExitCodes::Success;
