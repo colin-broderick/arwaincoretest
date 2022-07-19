@@ -3,7 +3,25 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 
 ## Set include and library source directories
-include_directories(/usr/local/include lora orientation src iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384)
+include_directories(
+    /usr/local/include
+    lora
+    orientation
+    src
+    iim42652
+    orientation_fusion
+    quaternion
+    vector3
+    logger
+    kalman
+    input_parser
+    timers
+    lis3mdl
+    minitrace
+    ips
+    bmp384
+    realsense_t265
+)
 
 option(USEROS "Use ROS topics to publish diagnostic data" OFF)
 if(USEROS)
@@ -50,6 +68,7 @@ add_subdirectory(lis3mdl)
 add_subdirectory(minitrace)
 add_subdirectory(ips)
 add_subdirectory(bmp384)
+add_subdirectory(realsense_t265)
 
 
 ## Executables to build
@@ -61,7 +80,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow)
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME} boost_system madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter)
+target_link_libraries(${PROJECT_NAME} boost_system madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter t265 realsense2)
 target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
 
 ## Install configuration and related files to correct locations.

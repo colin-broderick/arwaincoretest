@@ -7,7 +7,7 @@ namespace
 {
     constexpr int s2i(std::string_view input)
     {
-        enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT };
+        enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT, DATACOLLECTION };
 
         if (input == "quit" || input == "stop" || input == "shutdown" || input == "exit") return QUIT;
         if (input == "infer" || input == "inference") return INFER;
@@ -16,6 +16,7 @@ namespace
         if (input == "calibg") return CALIBG;
         if (input == "calibm") return CALIBM;
         if (input == "caliba") return CALIBA;
+        if (input == "record") return DATACOLLECTION;
         if (input == "name") return NAME;
         if (input.substr(0, 4) == "name") return NAME;
 
@@ -127,6 +128,19 @@ namespace
         }
     }
 
+    void switch_to_data_collection_mode()
+    {
+        if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+        {
+            fail_to_switch_to(arwain::OperatingMode::DataCollection);
+        }
+        else
+        {
+            std::cout << "Starting accelerometer calibration" << std::endl;
+            arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
+        }
+    }
+
     void set_folder_name(const std::string& input)
     {
         if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
@@ -175,6 +189,9 @@ namespace
                 break;
             case s2i("caliba"):
                 switch_to_accel_calib_mode();
+                break;
+            case s2i("record"):
+                switch_to_data_collection_mode();
                 break;
             case s2i("name"):
                 set_folder_name(input);
