@@ -211,7 +211,7 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> arwain::Magnet
     {
         L = nc::linalg::cholesky(Q2).transpose();
     }
-    catch (std::runtime_error e)
+    catch (const std::runtime_error& e)
     {
         L = nc::eye<double>(3);
     }
