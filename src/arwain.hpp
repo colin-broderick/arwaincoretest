@@ -70,7 +70,8 @@ namespace arwain
         MagnetometerCalibration,
         AccelerometerCalibration,
         TestSerial,
-        TestStanceDetector
+        TestStanceDetector,
+        DataCollection
     };
 }
 
@@ -89,6 +90,9 @@ inline std::ostream& operator<<(std::ostream& stream, arwain::OperatingMode toke
             break;
         case arwain::OperatingMode::Terminate:
             stream << "Terminate";
+            break;
+        case arwain::OperatingMode::DataCollection:
+            stream << "DataCollection";
             break;
         default:
             stream << "Mode not specified";
