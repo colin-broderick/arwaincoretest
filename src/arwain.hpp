@@ -53,10 +53,10 @@ class ActivityMetric
     public:
         ActivityMetric(unsigned int ag_window_size, unsigned int velo_window_size);
         ~ActivityMetric();
-        void feed_gyro(double acce_magn);
-        void feed_acce(double gyro_magn);
-        void feed_velo(double velo_magn);
-        double read();
+        void feed_gyro(const Vector3& acce);
+        void feed_acce(const Vector3& gyro);
+        void feed_velo(const Vector3& velo);
+        double read() const;
     private:
         unsigned int ag_window_size;
         unsigned int velo_window_size;

@@ -703,22 +703,22 @@ ActivityMetric::~ActivityMetric()
     delete velo_roller;
 }
 
-void ActivityMetric::feed_gyro(double gyro_magn)
+void ActivityMetric::feed_gyro(const Vector3& gyro)
 {
-    gyro_roller->feed(gyro_magn);
+    gyro_roller->feed(gyro.magnitude());
 }
 
-void ActivityMetric::feed_acce(double acce_magn)
+void ActivityMetric::feed_acce(const Vector3& acce)
 {
-    acce_roller->feed(acce_magn);
+    acce_roller->feed(acce.magnitude());
 }
 
-void ActivityMetric::feed_velo(double velo_magn)
+void ActivityMetric::feed_velo(const Vector3& velo)
 {
-    velo_roller->feed(velo_magn);
+    velo_roller->feed(velo.magnitude());
 }
 
-double ActivityMetric::read()
+double ActivityMetric::read() const
 {
     return 4 * (
           ((acce_roller->get_value() - acce_mean) / acce_stdv)
