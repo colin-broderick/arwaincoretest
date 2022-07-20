@@ -41,6 +41,30 @@ class RollingAverage
         std::deque<double> stack;
 };
 
+class ActivityMetric
+{
+    constexpr static double acce_mean = 10.017;
+    constexpr static double acce_stdv = 2.399;
+    constexpr static double gyro_mean = 0.569;
+    constexpr static double gyro_stdv = 0.647;
+    constexpr static double velo_mean = 0.510;
+    constexpr static double velo_stdv = 0.485;
+
+    public:
+        ActivityMetric(unsigned int ag_window_size, unsigned int velo_window_size);
+        ~ActivityMetric();
+        void feed_gyro(double acce_magn);
+        void feed_acce(double gyro_magn);
+        void feed_velo(double velo_magn);
+        double read();
+    private:
+        unsigned int ag_window_size;
+        unsigned int velo_window_size;
+        RollingAverage* acce_roller;
+        RollingAverage* gyro_roller;
+        RollingAverage* velo_roller;
+};
+
 double unwrap_phase_degrees(double new_angle, double previous_angle);
 double unwrap_phase_radians(double new_angle, double previous_angle);
 
@@ -114,6 +138,7 @@ namespace arwain
     extern bool ready_for_inference;
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
+    extern ActivityMetric activity_metric;
 }
 
 /** \brief Contains mutex locks for thread coordination. */
