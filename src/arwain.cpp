@@ -720,7 +720,7 @@ void ActivityMetric::feed_velo(const Vector3& velo)
 
 double ActivityMetric::read() const
 {
-    return 4 * (
+    return 4 * std::abs<double>(
           ((acce_roller->get_value() - acce_mean) / acce_stdv)
         * ((gyro_roller->get_value() - gyro_mean) / gyro_stdv)
         / ((velo_roller->get_value() - velo_mean) / velo_stdv)
