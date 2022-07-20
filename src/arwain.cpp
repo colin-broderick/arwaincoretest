@@ -29,7 +29,9 @@
 #include "calibration.hpp"
 #include "command_line.hpp"
 #include "uwb_reader.hpp"
+#ifdef REALSENSE
 #include "t265.hpp"
+#endif
 
 #include "floor_tracker.hpp"
 #include "new_madgwick_FusionAhrs.h"
@@ -50,6 +52,7 @@ namespace arwain
     bool ready_for_inference = false;
     unsigned int velocity_inference_rate = 20;
     RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
+    ActivityMetric activity_metric{200, 20};
 }
 
 // Shared data buffers; mutex locks must be used when accessing.
@@ -299,6 +302,7 @@ void arwain::setup(const InputParser& input)
     }
 }
 
+#ifdef REALSENSE
 void rs2_reader()
 {
     // Quit immediately if disabled by config.
@@ -338,6 +342,7 @@ void rs2_reader()
         }
     }
 }
+#endif
 
 int arwain::execute_inference()
 {
@@ -351,7 +356,9 @@ int arwain::execute_inference()
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     std::thread uwb_reader_thread{uwb_reader, "/dev/serial0", 115200};
+    #ifdef REALSENSE
     std::thread rs2_thread{rs2_reader};
+    #endif
     std::thread command_line_thread{command_line};                // Simple command line interface for runtime mode switching.
     pthread_setname_np(imu_reader_thread.native_handle(), "arwain_imu_th");
     pthread_setname_np(predict_velocity_thread.native_handle(), "arwain_vel_th");
@@ -362,8 +369,10 @@ int arwain::execute_inference()
     pthread_setname_np(altimeter_thread.native_handle(), "arwain_alt_th");
     pthread_setname_np(py_inference_thread.native_handle(), "arwain_inf_th");
     pthread_setname_np(uwb_reader_thread.native_handle(), "arwain_uwb_th");
-    pthread_setname_np(rs2_thread.native_handle(), "arwain_cmd_th");
-    pthread_setname_np(command_line_thread.native_handle(), "arwain_rs2_th");
+    #ifdef REALSENSE
+    pthread_setname_np(rs2_thread.native_handle(), "arwain_rs2_th");
+    #endif
+    pthread_setname_np(command_line_thread.native_handle(), "arwain_cmd_th");
 
     // Wait for all threads to terminate.
     imu_reader_thread.join();
@@ -375,7 +384,9 @@ int arwain::execute_inference()
     py_inference_thread.join();
     altimeter_thread.join();
     uwb_reader_thread.join();
+    #ifdef REALSENSE
     rs2_thread.join();
+    #endif
     command_line_thread.join();
 
     return arwain::ExitCodes::Success;
@@ -675,4 +686,43 @@ void RollingAverage::feed(double value)
 double RollingAverage::get_value()
 {
     return current_average / static_cast<double>(window_size);
-    }
+}
+
+ActivityMetric::ActivityMetric(unsigned int ag_window_size_, unsigned int velo_window_size_)
+: ag_window_size(ag_window_size_), velo_window_size(velo_window_size_)
+{
+    acce_roller = new RollingAverage{ag_window_size_};
+    gyro_roller = new RollingAverage{ag_window_size_};
+    velo_roller = new RollingAverage{velo_window_size_};
+}
+
+ActivityMetric::~ActivityMetric()
+{
+    delete acce_roller;
+    delete gyro_roller;
+    delete velo_roller;
+}
+
+void ActivityMetric::feed_gyro(double gyro_magn)
+{
+    gyro_roller->feed(gyro_magn);
+}
+
+void ActivityMetric::feed_acce(double acce_magn)
+{
+    acce_roller->feed(acce_magn);
+}
+
+void ActivityMetric::feed_velo(double velo_magn)
+{
+    velo_roller->feed(velo_magn);
+}
+
+double ActivityMetric::read()
+{
+    return 4 * (
+          ((acce_roller->get_value() - acce_mean) / acce_stdv)
+        * ((gyro_roller->get_value() - gyro_mean) / gyro_stdv)
+        / ((velo_roller->get_value() - velo_mean) / velo_stdv)
+    );
+}
