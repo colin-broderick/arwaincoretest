@@ -381,6 +381,10 @@ void imu_reader()
                     auto [accel_data1, gyro_data1] = imu1.read_IMU();
                     // Force approximate alignment of the IMUs.
 
+                    // Feed the activity metric.
+                    arwain::activity_metric.feed_acce(accel_data1);
+                    arwain::activity_metric.feed_gyro(gyro_data1);
+
                     if (arwain::request_gyro_calib)
                     {
                         std::cout << imu1.get_gyro_calib() << std::endl;
