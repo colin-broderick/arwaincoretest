@@ -189,12 +189,12 @@ namespace arwain
 {
 	struct LoraPacket
 	{
-		int16_t x = 0;
-		int16_t y = 0;
-		int16_t z = 0;
-		uint8_t alerts = 0;
-		uint8_t other = 0;
-		uint8_t metadata = 0;
+		int16_t x = 0; // x position * 100
+		int16_t y = 0; // y position * 100
+		int16_t z = 0; // z position * 100
+		uint8_t alerts = 0; // TODO describe
+		uint8_t other = 0; // TODO Complete description; bits(0:2)=activity_intensity.
+		uint8_t metadata = 0; // TODO describe
 	};
 }
 

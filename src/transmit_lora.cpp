@@ -63,12 +63,15 @@ void transmit_lora()
                     message.y = position.y * 100;
                     message.z = position.z * 100;
 
+                    // Read the activity metric, and convert to small int, capping value at 7.
+                    double act = arwain::activity_metric.read();
+                    message.other = static_cast<uint8_t>(act >= 7 ? 7 : act);
+
                     // Create alerts flags.
                     message.alerts = arwain::status.falling |
                                     (arwain::status.entangled << 1) |
                                     (arwain::status.attitude << 2) |
                                     (arwain::status.current_stance << 3);
-
 
                     // Send transmission.
                     lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
