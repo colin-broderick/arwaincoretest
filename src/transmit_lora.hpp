@@ -20,10 +20,11 @@ namespace arwain
     #if USE_UUBLA == 1
 	struct BeaconPacket
 	{
-		uint8_t id = 0;
 		int16_t x = 0; // x position * 100 // These are the position of the tracking module at the time the beacon is registered.
 		int16_t y = 0; // y position * 100
 		int16_t z = 0; // z position * 100
+		uint8_t id = 0;
+		uint8_t node_id = 0;
 	};
     #endif
 }

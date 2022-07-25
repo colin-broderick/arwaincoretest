@@ -1,0 +1,3 @@
+[submodule "uubla"]
+	path = uubla
+	url = https://bitbucket.org/arwain/uublacpp
