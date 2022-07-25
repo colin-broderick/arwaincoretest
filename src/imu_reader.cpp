@@ -56,7 +56,7 @@ static euler_orientation_t compute_euler(Quaternion& q)
  * \param mag_orientation The orientation as directly measured by magnetometer.
  * \return How much the magnetometer should be trust.
  */
-static double gyro_mag_co_trust(Quaternion gyro_orientation, Quaternion mag_orientation)
+[[maybe_unused]] static double gyro_mag_co_trust(Quaternion gyro_orientation, Quaternion mag_orientation)
 {
     // Note; as written, this formula assumes degrees.
 
@@ -381,6 +381,10 @@ void imu_reader()
                     auto [accel_data1, gyro_data1] = imu1.read_IMU();
                     // Force approximate alignment of the IMUs.
 
+                    // Feed the activity metric.
+                    arwain::activity_metric.feed_acce(accel_data1);
+                    arwain::activity_metric.feed_gyro(gyro_data1);
+
                     if (arwain::request_gyro_calib)
                     {
                         std::cout << imu1.get_gyro_calib() << std::endl;
@@ -402,7 +406,7 @@ void imu_reader()
                     // Extract Euler orientation from filters.
                     Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
                     Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
-                    euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
+                    [[maybe_unused]] euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
 
                     { // Add orientation information to buffers.
                         std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
