@@ -255,8 +255,3 @@ std::tuple<bool, std::vector<uint8_t>> LoRa::receive_bytes()
     return {false, rx_msg};
 }
 
-std::ostream& operator<<(std::ostream& stream, arwain::LoraPacket packet)
-{
-    stream << packet.x << " " << packet.y << " " << packet.z << " " << packet.alerts;
-    return stream;
-}
