@@ -2,6 +2,7 @@
 #include <chrono>
 #include <bitset>
 
+#include "transmit_lora.hpp"
 #include "vector3.hpp"
 #include "logger.hpp"
 #include "arwain.hpp"
@@ -9,6 +10,20 @@
 #include "timers.hpp"
 
 #define DEBUG_TRANSMIT_LORA 0
+
+std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet)
+{
+    stream << "Pose Packet: " << packet.x << " " << packet.y << " " << packet.z << " " << packet.alerts;
+    return stream;
+}
+
+#if USE_UUBLA == 1
+std::ostream& operator<<(std::ostream& stream, arwain::BeaconPacket packet)
+{
+    stream << "Beacon Packet: " << packet.x << " " << packet.y << " " << packet.z;
+    return stream;
+}
+#endif
 
 /** \brief Forms and transmits LoRa messages on a loop.
  */
@@ -53,7 +68,7 @@ void transmit_lora()
 
                 while (arwain::system_mode == arwain::OperatingMode::Inference)
                 {
-                    arwain::LoraPacket message;
+                    arwain::PosePacket message;
                     message.metadata = arwain::config.node_id;
 
                     auto position = arwain::Buffers::POSITION_BUFFER.back();
