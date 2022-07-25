@@ -254,4 +254,3 @@ std::tuple<bool, std::vector<uint8_t>> LoRa::receive_bytes()
 
     return {false, rx_msg};
 }
-
