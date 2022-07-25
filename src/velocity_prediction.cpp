@@ -318,6 +318,9 @@ void predict_velocity()
                         velocity.z = 0.0;
                     }
 
+                    // Feed the activity metrix.
+                    arwain::activity_metric.feed_velo(velocity);
+
                     Vector3 average_acceleration{0, 0, 0};
                     for (std::deque<Vector6>::iterator it = imu.end() - 10; it != imu.end(); ++it)
                     {
