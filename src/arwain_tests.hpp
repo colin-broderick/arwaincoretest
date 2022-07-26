@@ -15,6 +15,9 @@ namespace arwain
     #endif
     int test_pressure();
     int test_ori(int rate);
+    #if USE_UUBLA == 1
+    int test_uubla_integration();
+    #endif
 }
 
 #endif
