@@ -1,12 +1,18 @@
 #include <thread>
 #include <chrono>
 
+#include "build_config.hpp"
 #include "arwain.hpp"
 #include "arwain_tests.hpp"
 #include "bmp384.hpp"
 #include "IMU_IIM42652_driver.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
+
+#if USE_ROS == 1
+#include <ros/ros.h>
+#include <geometry_msgs/Vector3Stamped.h>
+#endif
 
 static euler_orientation_t computer_euler_degrees(Quaternion& q)
 {
@@ -110,7 +116,7 @@ int arwain::test_lora_rx()
     return arwain::ExitCodes::Success;
 }
 
-#ifdef USEROS
+#if USE_ROS == 1
 int arwain::test_mag(int argc, char **argv)
 {
     ros::NodeHandle nh;

@@ -20,40 +20,29 @@ include_directories(
     minitrace
     ips
     bmp384
+    uubla/include
     # realsense_t265
 )
 
-option(USEROS "Use ROS topics to publish diagnostic data" OFF)
-if(USEROS)
-    message("Using ROS for diagnostic data topics")
-    add_definitions(-DUSEROS)
-    find_package(roscpp REQUIRED)
-    target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${roscpp_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} ${roscpp_LIBRARIES})
-endif(USEROS)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 ## Locate source files
 set(PROJECT_CPP_FILES
-    src/main.cpp 
-    src/calibration.cpp 
-    src/stance.cpp 
-    src/velocity_prediction.cpp 
-    src/altimeter.cpp 
-    src/imu_reader.cpp 
-    src/uwb_reader.cpp 
-    src/std_output.cpp 
-    src/transmit_lora.cpp 
-    src/multi_imu.cpp 
-    src/arwain.cpp 
-    src/arwain_tests.cpp 
-    src/command_line.cpp 
-    src/configuration.cpp
+src/main.cpp 
+src/calibration.cpp 
+src/stance.cpp 
+src/velocity_prediction.cpp 
+src/altimeter.cpp 
+src/imu_reader.cpp 
+src/uwb_reader.cpp 
+src/std_output.cpp 
+src/transmit_lora.cpp 
+src/multi_imu.cpp 
+src/arwain.cpp 
+src/arwain_tests.cpp 
+src/command_line.cpp 
+src/configuration.cpp
 )
 
 add_subdirectory(iim42652)
@@ -71,10 +60,13 @@ add_subdirectory(bmp384)
 add_subdirectory(uubla)
 # add_subdirectory(realsense_t265)
 
-
 ## Executables to build
 add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
 add_executable(${PROJECT_NAME}_cmdr src/lora_commander.cpp)
+
+find_package(roscpp REQUIRED)
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${roscpp_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${roscpp_LIBRARIES})
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
