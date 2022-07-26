@@ -73,7 +73,7 @@ static void sigint_handler(int signal)
 int main(int argc, char **argv)
 {
     #if USE_ROS == 1
-    ros::init(argc, argv, "mag_calib_source");
+    ros::init(argc, argv, "arwain_node");
     #endif
 
     int ret;
@@ -156,33 +156,9 @@ int main(int argc, char **argv)
         #endif
     }
     #if USE_UUBLA == 1
-    else if (input.contains("--testuubla"))
+    else if (input.contains("-testuubla"))
     {
-        std::cout << "Creating UUBLA network" << "\n";
-        
-        ros::init(argc, argv, "uubla_talker");
-
-        UUBLA::Network uubla{
-            arwain::config.uubla_serial_port,
-            arwain::config.uubla_baud_rate
-        };
-        uubla.configure("force_z_zero", true);
-        uubla.configure("ewma_gain", 0.1);
-        uubla.start();
-
-        std::thread solver_th{solver_fn, &uubla};
-
-        for (int i = 0; i < 50; i++)
-        {
-            sleep_ms(100);
-        }
-
-        std::cout << "Stopping UUBLA network" << "\n";
-
-        uubla.stop();
-        solver_th.join();
-
-        ret = arwain::ExitCodes::Success;
+        ret = arwain::test_uubla_integration();
     }
     #endif
 
