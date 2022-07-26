@@ -159,7 +159,29 @@ int main(int argc, char **argv)
     else if (input.contains("--testuubla"))
     {
         std::cout << "Creating UUBLA network" << "\n";
-        UUBLA::Network uubla{"/dev/serial0", 115200};
+        
+        ros::init(argc, argv, "uubla_talker");
+
+        UUBLA::Network uubla{
+            arwain::config.uubla_serial_port,
+            arwain::config.uubla_baud_rate
+        };
+        uubla.configure("force_z_zero", true);
+        uubla.configure("ewma_gain", 0.1);
+        uubla.start();
+
+        std::thread solver_th{solver_fn, &uubla};
+
+        for (int i = 0; i < 50; i++)
+        {
+            sleep_ms(100);
+        }
+
+        std::cout << "Stopping UUBLA network" << "\n";
+
+        uubla.stop();
+        solver_th.join();
+
         ret = arwain::ExitCodes::Success;
     }
     #endif

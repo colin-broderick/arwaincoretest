@@ -91,6 +91,8 @@ namespace arwain
         double altimeter_z_accel_stdev;
         double pressure_altitude_stdev;
         int use_rs2 = 0;
+        int uubla_baud_rate;
+        std::string uubla_serial_port;
 
         /** \brief Overwrite the content of the configuration file associated with this struct.
          * \param option The configuration option to overwrite.
