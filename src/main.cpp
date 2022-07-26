@@ -27,10 +27,7 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include <cstdlib>
 #include <experimental/filesystem>
 
-#ifdef USEROS
-#include <ros/ros.h>
-#endif
-
+#include "build_config.hpp"
 #include "arwain.hpp"
 #include "quaternion.hpp"
 #include "stance.hpp"
@@ -47,6 +44,14 @@ from these rules should be accompanied by a comment clearly indiciating why.
 #include "arwain.hpp"
 #include "arwain_tests.hpp"
 #include "calibration.hpp"
+
+#if USE_ROS == 1
+#include <ros/ros.h>
+#endif
+
+#if USE_UUBLA == 1
+#include "uubla.hpp"
+#endif
 
 /** \brief Capture the SIGINT signal for clean exit.
  * Sets the system mode to Terminate, which instructs all threads to clean up and exit.
@@ -67,7 +72,7 @@ static void sigint_handler(int signal)
  */
 int main(int argc, char **argv)
 {
-    #ifdef USEROS
+    #if USE_ROS == 1
     ros::init(argc, argv, "mag_calib_source");
     #endif
 
@@ -144,12 +149,20 @@ int main(int argc, char **argv)
     }
     else if (input.contains("-testmag"))
     {
-        #ifdef USEROS
+        #if USE_ROS == 1
         ret = arwain::test_mag(argc, argv);
         #else
         ret = arwain::test_mag();
         #endif
     }
+    #if USE_UUBLA == 1
+    else if (input.contains("--testuubla"))
+    {
+        std::cout << "Creating UUBLA network" << "\n";
+        UUBLA::Network uubla{"/dev/serial0", 115200};
+        ret = arwain::ExitCodes::Success;
+    }
+    #endif
 
     else
     {
