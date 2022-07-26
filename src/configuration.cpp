@@ -85,7 +85,8 @@ int arwain::Configuration::read_from_file()
     read_option(options, "altimeter_z_accel_stdev", this->altimeter_z_accel_stdev);
     read_option(options, "pressure_altitude_stdev", this->pressure_altitude_stdev);
     read_option(options, "use_rs2", this->use_rs2);
-
+    read_option(options, "uubla_baud_rate", this->uubla_baud_rate);
+    read_option(options, "uubla_serial_port", this->uubla_serial_port);
 
     // We want to fail out if the model XML file cannot be found.
     read_option(options, "inference_model_xml", this->inference_model_xml);
