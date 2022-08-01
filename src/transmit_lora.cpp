@@ -37,6 +37,18 @@ void inform_remove_uubla_node(const std::string& node_name)
     std::cout << "TODO Not implemented: " << __FUNCTION__ << "\n";
 }
 
+auto get_next_time_slot(int node_id)
+{
+    // Wait until this node's transmission time slot.
+    auto slot_time = std::chrono::high_resolution_clock::now();
+    auto ms_count = std::chrono::duration_cast<std::chrono::milliseconds>(
+    slot_time.time_since_epoch()).count();
+    auto extra = ms_count % 2000;
+    ms_count = ms_count + 2000 - extra;
+    std::chrono::time_point<std::chrono::high_resolution_clock> tp{std::chrono::milliseconds{ms_count}};
+    return tp;
+}
+
 /** \brief Forms and transmits LoRa messages on a loop.
  */
 void transmit_lora()
@@ -78,61 +90,69 @@ void transmit_lora()
                 auto time = std::chrono::system_clock::now();
                 std::chrono::milliseconds interval{arwain::Intervals::LORA_TRANSMISSION_INTERVAL};
 
+                std::this_thread::sleep_until(get_next_time_slot(arwain::config.node_id));
+
                 while (arwain::system_mode == arwain::OperatingMode::Inference)
                 {
-                    arwain::PosePacket message;
-                    message.metadata = arwain::config.node_id;
+                    {
+                        arwain::Timers::ScopedTimer t{__FUNCTION__};
+                        arwain::PosePacket message;
+                        message.metadata = arwain::config.node_id;
 
-                    auto position = arwain::Buffers::POSITION_BUFFER.back();
-                    position.z = arwain::Buffers::PRESSURE_BUFFER.back().z;
+                        // std::cout << "Transmission sent: ";
+                        // std::cout << std::chrono::high_resolution_clock::now().time_since_epoch().count() << "\n";
 
-                    message.x = position.x * 100;
-                    message.y = position.y * 100;
-                    message.z = position.z * 100;
+                        auto position = arwain::Buffers::POSITION_BUFFER.back();
+                        position.z = arwain::Buffers::PRESSURE_BUFFER.back().z;
 
-                    // Read the activity metric, and convert to small int, capping value at 7.
-                    double act = arwain::activity_metric.read();
-                    message.other = static_cast<uint8_t>(act >= 7 ? 7 : act);
+                        message.x = position.x * 100;
+                        message.y = position.y * 100;
+                        message.z = position.z * 100;
 
-                    // Create alerts flags.
-                    message.alerts = arwain::status.falling |
-                                    (arwain::status.entangled << 1) |
-                                    (arwain::status.attitude << 2) |
-                                    (arwain::status.current_stance << 3);
+                        // Read the activity metric, and convert to small int, capping value at 7.
+                        double act = arwain::activity_metric.read();
+                        message.other = static_cast<uint8_t>(act >= 7 ? 7 : act);
 
-                    // Send transmission.
-                    lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
+                        // Create alerts flags.
+                        message.alerts = arwain::status.falling |
+                                        (arwain::status.entangled << 1) |
+                                        (arwain::status.attitude << 2) |
+                                        (arwain::status.current_stance << 3);
 
-                    // Log message to file.
-                    lora_file << time.time_since_epoch().count() << " " << message << "\n";
+                        // Send transmission.
+                        lora.send_message((uint8_t*)&message, arwain::BufferSizes::LORA_MESSAGE_LENGTH);
 
-                    // Wait until next tick
-                    time = time + interval;
+                        // Log message to file.
+                        lora_file << time.time_since_epoch().count() << " " << message << "\n";
 
-                    // Watch for receive until the next scheduled transmission.
-                    // int timeout_ms = (time - std::chrono::system_clock::now()).count() / 1000000;
-                    // auto [rxd, rxd_message] = lora.receive_string(timeout_ms);
-                    // if (rxd)
-                    // {
-                    //     std::cout << "RECEIVED: " << rxd_message << std::endl;
-                    //     if (rxd_message == "C.INFERENCE")
-                    //     {
-                    //         // arwain::system_mode = arwain::OperatingMode::Inference;
-                    //     }
-                    //     else if (rxd_message == "C.AUTOCAL")
-                    //     {
-                    //         // arwain::system_mode = arwain::OperatingMode::AutoCalibration;
-                    //     }
-                    //     else if (rxd_message == "C.TERMINATE")
-                    //     {
-                    //         // arwain::system_mode = arwain::OperatingMode::Terminate;
-                    //     }
-                    //     else if (rxd_message == "C.SELFTEST")
-                    //     {
-                    //         // arwain::system_mode = arwain::OperatingMode::SelfTest;
-                    //     }
-                    // }
-                    std::this_thread::sleep_until(time);
+                        // Wait until next tick
+                        time = time + interval;
+
+                        // Watch for receive until the next scheduled transmission.
+                        // int timeout_ms = (time - std::chrono::system_clock::now()).count() / 1000000;
+                        // auto [rxd, rxd_message] = lora.receive_string(timeout_ms);
+                        // if (rxd)
+                        // {
+                        //     std::cout << "RECEIVED: " << rxd_message << std::endl;
+                        //     if (rxd_message == "C.INFERENCE")
+                        //     {
+                        //         // arwain::system_mode = arwain::OperatingMode::Inference;
+                        //     }
+                        //     else if (rxd_message == "C.AUTOCAL")
+                        //     {
+                        //         // arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+                        //     }
+                        //     else if (rxd_message == "C.TERMINATE")
+                        //     {
+                        //         // arwain::system_mode = arwain::OperatingMode::Terminate;
+                        //     }
+                        //     else if (rxd_message == "C.SELFTEST")
+                        //     {
+                        //         // arwain::system_mode = arwain::OperatingMode::SelfTest;
+                        //     }
+                        // }
+                    }
+                    std::this_thread::sleep_until(get_next_time_slot(arwain::config.node_id));
                 }
                 
                 break;
