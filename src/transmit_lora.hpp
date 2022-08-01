@@ -32,6 +32,8 @@ namespace arwain
 std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet);
 #if USE_UUBLA == 1
 std::ostream& operator<<(std::ostream& stream, arwain::BeaconPacket packet);
+void inform_new_uubla_node(const std::string& node_name);
+void inform_remove_uubla_node(const std::string& node_name);
 #endif
 
-#endif
+#endif // end include guard

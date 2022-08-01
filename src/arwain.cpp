@@ -23,6 +23,7 @@
 #include "calibration.hpp"
 #include "command_line.hpp"
 #include "uwb_reader.hpp"
+#include "uubla.hpp"
 
 #if USE_REALSENSE == 1
 #include "t265.hpp"
@@ -346,6 +347,30 @@ void rs2_reader()
 }
 #endif
 
+#if USE_UUBLA == 1
+void uubla_fn()
+{
+    UUBLA::Network uubla{
+        arwain::config.uubla_serial_port,
+        arwain::config.uubla_baud_rate
+    };
+    uubla.configure("force_z_zero", true);
+    uubla.configure("ewma_gain", 0.1);
+    uubla.add_node_callback = inform_new_uubla_node;
+    uubla.remove_node_callback = inform_remove_uubla_node;
+    uubla.start(); // Start as in start reading the serial port. TODO investigate this function for possible leaks.
+    std::thread solver_th{solver_fn, &uubla};
+
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    {
+        sleep_ms(100);
+    }
+
+    uubla.join();
+    solver_th.join();
+}
+#endif
+
 int arwain::execute_inference()
 {
     // Start worker threads.
@@ -357,7 +382,9 @@ int arwain::execute_inference()
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
-    std::thread uwb_reader_thread{uwb_reader, "/dev/serial0", 115200};
+    #if USE_UUBLA == 1
+    std::thread uubla_thread{uubla_fn};
+    #endif
     #if USE_REALSENSE == 1
     std::thread rs2_thread{rs2_reader};
     #endif
@@ -370,9 +397,11 @@ int arwain::execute_inference()
     pthread_setname_np(indoor_positioning_thread.native_handle(), "arwain_ips_th");
     pthread_setname_np(altimeter_thread.native_handle(), "arwain_alt_th");
     pthread_setname_np(py_inference_thread.native_handle(), "arwain_inf_th");
-    pthread_setname_np(uwb_reader_thread.native_handle(), "arwain_uwb_th");
     #if USE_REALSENSE == 1
     pthread_setname_np(rs2_thread.native_handle(), "arwain_rs2_th");
+    #endif
+    #if USE_UUBLA == 1
+    pthread_setname_np(uubla_thread.native_handle(), "arwain_uub_th");
     #endif
     pthread_setname_np(command_line_thread.native_handle(), "arwain_cmd_th");
 
@@ -385,9 +414,11 @@ int arwain::execute_inference()
     indoor_positioning_thread.join();
     py_inference_thread.join();
     altimeter_thread.join();
-    uwb_reader_thread.join();
     #if USE_REALSENSE == 1
     rs2_thread.join();
+    #endif
+    #if USE_UUBLA == 1
+    uubla_thread.join();
     #endif
     command_line_thread.join();
 

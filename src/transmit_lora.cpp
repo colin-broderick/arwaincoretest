@@ -25,6 +25,18 @@ std::ostream& operator<<(std::ostream& stream, arwain::BeaconPacket packet)
 }
 #endif
 
+/** \brief Transmit or queue a LoRa message when a new UUBLA node joins the network. */
+void inform_new_uubla_node(const std::string& node_name)
+{
+    std::cout << "TODO Not implemented: " << __FUNCTION__ << "\n";
+}
+
+/** \brief Transmit or queue a LoRa message when an UUBLA node leaves the network. */
+void inform_remove_uubla_node(const std::string& node_name)
+{
+    std::cout << "TODO Not implemented: " << __FUNCTION__ << "\n";
+}
+
 /** \brief Forms and transmits LoRa messages on a loop.
  */
 void transmit_lora()
