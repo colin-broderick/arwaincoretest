@@ -39,13 +39,15 @@ void inform_remove_uubla_node(const std::string& node_name)
 
 auto get_next_time_slot(int node_id)
 {
-    int offset = node_id * 500;
+    int node_window_sep = 400;
+    int window_size_ms = 1000;
+    int offset = node_id * node_window_sep;
     // Wait until this node's transmission time slot.
     auto slot_time = std::chrono::high_resolution_clock::now();
     auto ms_count = std::chrono::duration_cast<std::chrono::milliseconds>(
     slot_time.time_since_epoch()).count();
-    auto extra = ms_count % 2000;
-    ms_count = ms_count + 2000 - extra + offset;
+    auto extra = ms_count % window_size_ms;
+    ms_count = ms_count + window_size_ms - extra + offset;
     std::chrono::time_point<std::chrono::high_resolution_clock> tp{std::chrono::milliseconds{ms_count}};
     return tp;
 }
