@@ -358,7 +358,7 @@ void uubla_fn()
     uubla.configure("ewma_gain", 0.1);
     uubla.add_node_callback = inform_new_uubla_node;
     uubla.remove_node_callback = inform_remove_uubla_node;
-    uubla.start(); // Start as in start reading the serial port. TODO investigate this function for possible leaks.
+    uubla.start_reading(); // Start as in start reading the serial port. TODO investigate this function for possible leaks.
     std::thread solver_th{solver_fn, &uubla};
 
     while (arwain::system_mode != arwain::OperatingMode::Terminate)

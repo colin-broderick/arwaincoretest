@@ -47,7 +47,7 @@ int arwain::test_uubla_integration()
     uubla.remove_node_callback = rem;
 
     // Start the solver and run for 20 seconds.
-    uubla.start();
+    uubla.start_reading();
     std::thread solver_th{solver_fn, &uubla};
     for (int i = 0; i < 200; i++)
     {
