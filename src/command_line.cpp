@@ -7,7 +7,7 @@ namespace
 {
     constexpr int s2i(std::string_view input)
     {
-        enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT, DATACOLLECTION };
+        enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT, DATACOLLECTION, HELP };
 
         if (input == "quit" || input == "stop" || input == "shutdown" || input == "exit") return QUIT;
         if (input == "infer" || input == "inference") return INFER;
@@ -18,6 +18,7 @@ namespace
         if (input == "caliba") return CALIBA;
         if (input == "record") return DATACOLLECTION;
         if (input == "name") return NAME;
+        if (input == "help") return HELP;
         if (input.substr(0, 4) == "name") return NAME;
 
         else return DEFAULT;
@@ -195,6 +196,9 @@ namespace
                 break;
             case s2i("name"):
                 set_folder_name(input);
+                break;
+            case s2i("help"):
+                std::cout << arwain::help_text << "\n";
                 break;
             default:
                 std::cout << "ERROR: Command not recognised: " << input << std::endl;
