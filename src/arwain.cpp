@@ -22,7 +22,7 @@
 #include "bmp384.hpp"
 #include "calibration.hpp"
 #include "command_line.hpp"
-#include "uwb_reader.hpp"
+// #include "uwb_reader.hpp"
 #include "uubla.hpp"
 
 #if USE_REALSENSE == 1
@@ -56,6 +56,9 @@ namespace arwain
     unsigned int velocity_inference_rate = 20;
     RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
     ActivityMetric activity_metric{200, 20};
+    #if USE_UUBLA == 1
+    UUBLA::Network* uubla_handle = nullptr;
+    #endif
 }
 
 // Shared data buffers; mutex locks must be used when accessing.
@@ -354,11 +357,14 @@ void uubla_fn()
         arwain::config.uubla_serial_port,
         arwain::config.uubla_baud_rate
     };
+    arwain::uubla_handle = &uubla;
+
     uubla.configure("force_z_zero", true);
     uubla.configure("ewma_gain", 0.1);
     uubla.add_node_callback = inform_new_uubla_node;
     uubla.remove_node_callback = inform_remove_uubla_node;
     uubla.start_reading(); // Start as in start reading the serial port. TODO investigate this function for possible leaks.
+    
     std::thread solver_th{solver_fn, &uubla};
 
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
@@ -383,7 +389,11 @@ int arwain::execute_inference()
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
     std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     #if USE_UUBLA == 1
-    std::thread uubla_thread{uubla_fn};
+    std::thread uubla_thread;
+    if (arwain::config.node_id == 2)
+    {
+        uubla_thread = std::thread{uubla_fn};
+    }
     #endif
     #if USE_REALSENSE == 1
     std::thread rs2_thread{rs2_reader};
@@ -401,7 +411,10 @@ int arwain::execute_inference()
     pthread_setname_np(rs2_thread.native_handle(), "arwain_rs2_th");
     #endif
     #if USE_UUBLA == 1
-    pthread_setname_np(uubla_thread.native_handle(), "arwain_uub_th");
+    if (arwain::config.node_id == 2)
+    {
+        pthread_setname_np(uubla_thread.native_handle(), "arwain_uub_th");
+    }
     #endif
     pthread_setname_np(command_line_thread.native_handle(), "arwain_cmd_th");
 
@@ -418,7 +431,10 @@ int arwain::execute_inference()
     rs2_thread.join();
     #endif
     #if USE_UUBLA == 1
-    uubla_thread.join();
+    if (arwain::config.node_id == 2)
+    {
+        uubla_thread.join();
+    }
     #endif
     command_line_thread.join();
 
