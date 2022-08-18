@@ -6,8 +6,8 @@
 
 ***************************************************************************/
 
-#ifndef _GREEVE_UUBLA_SERIAL_H
-#define _GREEVE_UUBLA_SERIAL_H
+#ifndef _GREEVE_ARWAIN_SERIAL_H
+#define _GREEVE_ARWAIN_SERIAL_H
 
 #define BOOST_ALL_NO_LIB
 
@@ -15,7 +15,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/serial_port.hpp>
 
-class Serial
+class ArwainSerial
 {
 	public:
 		const static int MAX_LINE_LEN = 512;
@@ -28,7 +28,7 @@ class Serial
 		 * \param[in] com_port String defining the port (e.g. "COM14", "/dev/ttyS0").
 		 * \param[in] baudrate Speed of the serial port (e.g. 9600, 115200).
 		 */
-		Serial(const std::string& com_port, const int baudrate)
+		ArwainSerial(const std::string& com_port, const int baudrate)
 		{
 			this->port.open(com_port);
 			this->port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
@@ -50,16 +50,16 @@ class Serial
         }
 
 		/** \brief Reads a line from the serial port, up to a maximum length
-		 * given by Serial::MAX_LINE_LEN.
+		 * given by ArwainSerial::MAX_LINE_LEN.
 		 * \return std::string as read from serial port.
 		 */
 		std::string readline()
 		{
 			// TODO This needs some timeout behaviour or it will block forever when nothing received on serial port.
-			char buffer[Serial::MAX_LINE_LEN + 2];
+			char buffer[ArwainSerial::MAX_LINE_LEN + 2];
 			char c = 0;
 			int index = 0;
-			while (index < Serial::MAX_LINE_LEN)
+			while (index < ArwainSerial::MAX_LINE_LEN)
 			{
 				boost::asio::read(this->port, boost::asio::buffer(&c, 1));
 				if (c == '\r' || c  == '\n')
@@ -75,7 +75,7 @@ class Serial
 		}
 
 		/** \brief Destructor. Ensures the port is closed before program exit. */
-		~Serial()
+		~ArwainSerial()
 		{
 			this->close();
 		}

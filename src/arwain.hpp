@@ -8,7 +8,9 @@
 #include <sstream>
 #include <iomanip>
 
+#include "build_config.hpp"
 #include "stance.hpp"
+#include "uubla.hpp"
 #include "lora.hpp"
 #include "configuration.hpp"
 
@@ -139,6 +141,9 @@ namespace arwain
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
     extern ActivityMetric activity_metric;
+    #if USE_UUBLA == 1
+    extern UUBLA::Network* uubla_handle;
+    #endif
 }
 
 /** \brief Contains mutex locks for thread coordination. */
@@ -216,10 +221,14 @@ namespace arwain::BufferSizes
     inline const unsigned int ORIENTATION_BUFFER_LEN = 200;
     inline const unsigned int IMU_BUFFER_LEN = 200;
     inline const unsigned int IPS_BUFFER_LEN = 50;
-    inline const unsigned int LORA_MESSAGE_LENGTH = 9;
+    inline const unsigned int LORA_MESSAGE_LENGTH = 11;
     inline const unsigned int PRESSURE_BUFFER_LEN = 100;
     inline const unsigned int MAG_ORIENTATION_BUFFER_LEN = 100;
     inline const unsigned int MAG_EULER_BUFFER_LEN = 100;
+    
+    #if USE_UUBLA == 1
+    inline const unsigned int LORA_BEACON_MESSAGE_LENGTH = 2;
+    #endif
 }
 
 namespace arwain::Errors
