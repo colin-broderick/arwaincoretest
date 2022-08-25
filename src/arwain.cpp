@@ -627,6 +627,7 @@ std::tuple<Vector3, Vector3> deduce_calib_params(const std::vector<Vector3>& rea
     double y_max = -1e6;
     double z_min = 1e6;
     double z_max = -1e6;
+    
     for (auto& vec : readings)
     {
         x_min = vec.x < x_min ? vec.x : x_min;
