@@ -23,6 +23,12 @@ include_directories(
     # realsense_t265
 )
 
+option(NUMCPP_NO_USE_BOOST "Build NumCpp without Boost as a dependency" OFF)
+if(NUMCPP_NO_USE_BOOST)
+    add_compile_definitions(NUMCPP_NO_USE_BOOST)
+    # TODO This should do find_package(boost) plus includes and links in the else() block.
+endif()
+
 option(USEROS "Use ROS topics to publish diagnostic data" OFF)
 if(USEROS)
     message("Using ROS for diagnostic data topics")
