@@ -42,23 +42,22 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 ## Locate source files
 set(PROJECT_CPP_FILES
-    src/main.cpp 
-    src/calibration.cpp 
-    src/stance.cpp 
-    src/velocity_prediction.cpp 
-    src/altimeter.cpp 
-    src/imu_reader.cpp 
-    src/uwb_reader.cpp 
-    src/std_output.cpp 
-    src/transmit_lora.cpp 
-    src/multi_imu.cpp 
-    src/arwain.cpp 
-    src/arwain_tests.cpp 
-    src/command_line.cpp 
+    src/main.cpp
+    src/calibration.cpp
+    src/stance.cpp
+    src/velocity_prediction.cpp
+    src/altimeter.cpp
+    src/imu_reader.cpp
+    src/uwb_reader.cpp
+    src/std_output.cpp
+    src/transmit_lora.cpp
+    src/multi_imu.cpp
+    src/arwain.cpp
+    src/arwain_tests.cpp
+    src/command_line.cpp
     src/configuration.cpp
 )
 
@@ -90,4 +89,4 @@ target_link_libraries(${PROJECT_NAME} boost_system madgwick_filter efaroe_filter
 target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
 
 ## Install configuration and related files to correct locations.
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/arwain.conf DESTINATION /etc)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)
