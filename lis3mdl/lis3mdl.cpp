@@ -1,10 +1,14 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <vector>
 
 #include "lis3mdl.hpp"
-#include "arwain.hpp"
-#include "logger.hpp"
+
+static void sleep_ms(int ms)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
 
 void LIS3MDL::power_up()
 {
@@ -210,55 +214,6 @@ void LIS3MDL::set_calibration(Vector3 bias_, Vector3 scale_, Vector3 cross_scale
     this->bias = bias_;
     this->scale = scale_;
     this->cross_scale = cross_scale_;
-}
-
-void LIS3MDL::calibrate()
-{
-    std::vector<Vector3> readings;
-
-    // Take readings while tumbling device.
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
-    {
-        Vector3 reading = this->read();
-        readings.push_back(reading);
-        sleep_ms(100);
-    }
-    
-    // TODO Detect and remove outliers.
-    
-
-    // Compute centre offsets; this assumes outliers have been successfully removed.
-    double x_min = 1e6;
-    double x_max = -1e6;
-    double y_min = 1e6;
-    double y_max = -1e6;
-    double z_min = 1e6;
-    double z_max = -1e6;
-    for (auto& vec : readings)
-    {
-        x_min = vec.x < x_min ? vec.x : x_min;
-        x_max = vec.x > x_max ? vec.x : x_max;
-        y_min = vec.y < y_min ? vec.y : y_min;
-        y_max = vec.y > y_max ? vec.y : y_max;
-        z_min = vec.z < z_min ? vec.z : z_min;
-        z_max = vec.z > z_max ? vec.z : z_max;
-    }
-    Vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
-
-    // Compute scale correction factors.
-    Vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
-    double average_delta = (delta.x + delta.y + delta.z)/3.0;
-    double scale_x = average_delta / delta.x;
-    double scale_y = average_delta / delta.y;
-    double scale_z = average_delta / delta.z;
-
-    // Log to config file.
-    arwain::config.replace("mag_bias_x", bias_.x);
-    arwain::config.replace("mag_bias_y", bias_.y);
-    arwain::config.replace("mag_bias_z", bias_.z);
-    arwain::config.replace("mag_scale_x", scale_x);
-    arwain::config.replace("mag_scale_y", scale_y);
-    arwain::config.replace("mag_scale_z", scale_z);
 }
 
 /** \brief Measure the current magnetic field vector and compute the rotation required

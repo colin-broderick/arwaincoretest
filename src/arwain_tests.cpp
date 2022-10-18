@@ -1,12 +1,22 @@
 #include <thread>
 #include <chrono>
 
+#include "build_config.hpp"
 #include "arwain.hpp"
 #include "arwain_tests.hpp"
 #include "bmp384.hpp"
 #include "IMU_IIM42652_driver.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
+
+#if USE_ROS == 1
+#include <ros/ros.h>
+#include <geometry_msgs/Vector3Stamped.h>
+#endif
+
+#if USE_UUBLA == 1
+#include "uubla.hpp"
+#endif
 
 static euler_orientation_t computer_euler_degrees(Quaternion& q)
 {
@@ -16,6 +26,42 @@ static euler_orientation_t computer_euler_degrees(Quaternion& q)
 	euler.yaw = std::atan2(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z)  * 180.0 / 3.14159;
     return euler;
 }
+
+#if USE_UUBLA == 1
+int arwain::test_uubla_integration()
+{
+    std::cout << "Creating UUBLA network and running for 20 s" << "\n";
+
+    // Create and configure the UUBLA network.
+    UUBLA::Network uubla{
+        arwain::config.uubla_serial_port,
+        arwain::config.uubla_baud_rate
+    };
+    uubla.configure("force_z_zero", true);
+    uubla.configure("ewma_gain", 0.1);
+
+    // Add test callbacks for adding/removal of nodes.
+    auto add = [](const std::string& node_name) { std::cout << "Added " << node_name << "\n"; };
+    auto rem = [](const std::string& node_name) { std::cout << "Removed " << node_name << "\n"; };
+    uubla.add_node_callback = add;
+    uubla.remove_node_callback = rem;
+
+    // Start the solver and run for 20 seconds.
+    uubla.start_reading();
+    std::thread solver_th{solver_fn, &uubla};
+    for (int i = 0; i < 200; i++)
+    {
+        sleep_ms(100);
+    }
+
+    // Cleanup and exit.
+    std::cout << "Stopping UUBLA network" << "\n";
+    uubla.stop();
+    solver_th.join();
+
+    return arwain::ExitCodes::Success;
+}
+#endif
 
 int arwain::test_pressure()
 {
@@ -110,7 +156,7 @@ int arwain::test_lora_rx()
     return arwain::ExitCodes::Success;
 }
 
-#ifdef USEROS
+#if USE_ROS == 1
 int arwain::test_mag(int argc, char **argv)
 {
     ros::NodeHandle nh;

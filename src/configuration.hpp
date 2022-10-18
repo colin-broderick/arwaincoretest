@@ -91,6 +91,8 @@ namespace arwain
         double altimeter_z_accel_stdev;
         double pressure_altitude_stdev;
         int use_rs2 = 0;
+        int uubla_baud_rate;
+        std::string uubla_serial_port;
 
         /** \brief Overwrite the content of the configuration file associated with this struct.
          * \param option The configuration option to overwrite.
@@ -131,9 +133,15 @@ namespace arwain
         template <typename T>
         int read_option(const std::map<std::string, std::string> &options, const std::string &option, T &storage)
         {
-            // TODO Add error checking for bad reads and send it up the call stack.
-            std::cout << option << std::endl;
-            std::stringstream(options.at(option)) >> storage;
+            try
+            {
+                std::stringstream(options.at(option)) >> storage;
+            }
+            catch (const std::exception& e)
+            {
+                std::cout << "Failed to read option from configuration file\n";
+                throw std::invalid_argument{option};
+            }
             return ReturnCodes::OK;
         }
     };
