@@ -1,0 +1,6 @@
+[submodule "uubla"]
+	path = uubla
+	url = https://bitbucket.org/arwain/uublacpp
+[submodule "vector3"]
+	path = vector3
+	url = https://bitbucket.org/arwain/vector3

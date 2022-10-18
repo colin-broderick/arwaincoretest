@@ -39,7 +39,7 @@ void uwb_reader(const std::string& port, const int baudrate)
         return;
     }
 
-    Serial serial{port, baudrate};
+    ArwainSerial serial{port, baudrate};
     serial.write("reset\r");
     sleep_ms(1000);
     serial.write("\r\r");
