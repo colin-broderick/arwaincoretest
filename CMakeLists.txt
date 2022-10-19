@@ -24,6 +24,15 @@ include_directories(
     # realsense_t265
 )
 
+# TODO : Additional includes for tensorflow. These need to be tidied up.
+include_directories(
+    /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/onnxruntime/usr/include/onnxruntime/core/session
+    /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/onnxruntime/usr/include/onnxruntime/core/providers/vsi_npu
+    /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/tensorflow-lite-vx-delegate/usr/include/tensorflow-lite-vx-delegate
+    /opt/yocto/imx-yocto-bsp/build/tmp/work/armv8a-poky-linux/flatbuffers/1.12.0-r0/image/usr/include/
+    /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/tensorflow-lite/usr/lib
+)
+
 option(NUMCPP_NO_USE_BOOST "Build NumCpp without Boost as a dependency" OFF)
 if(NUMCPP_NO_USE_BOOST)
     add_compile_definitions(NUMCPP_NO_USE_BOOST)
@@ -87,6 +96,13 @@ target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow
 
 ## Link libraries
 target_link_libraries(${PROJECT_NAME} boost_system madgwick_filter efaroe_filter -pthread dl stdc++fs i2c zmq iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter uublal)
+# FOr tensorflow
+target_link_libraries(
+    ${PROJECT_NAME}
+    tensorflow-lite
+    vx_delegate
+    flatbuffers
+)
 target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
 
 ## Install configuration and related files to correct locations.

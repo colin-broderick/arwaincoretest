@@ -420,12 +420,12 @@ void predict_velocity()
 
     // TODO Create inferencer.
     // If the model file cannot be found or loaded, set mode to terminate and break loop.
-    std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(arwain::config.modelpath);
+    std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(arwain::config.inference_model_xml.c_str());
     if (!model)
     {
         std::cout << "Failed to map model\n";
         arwain::system_mode = arwain::OperatingMode::Terminate;
-        break;
+        throw std::exception{};
     }
     // Configure interpreter.
     tflite::ops::builtin::BuiltinOpResolver resolver;
@@ -459,11 +459,11 @@ void predict_velocity()
                 position_file << "time x y z" << "\n";
                 kalman_position_file << "time x y z" << "\n";
 
-                std::chrono::time_point<std::chrono::system_clock> lastTime = std::chrono::system_clock::now();
+                std::chrono::time_point<std::chrono::system_clock> last_time = std::chrono::system_clock::now();
                 std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
                 std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
 
-                while ()
+                while (arwain::system_mode == arwain::OperatingMode::Inference)
                 {
                     { // Grab latest IMU packet into local buffer.
                         std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
