@@ -7,7 +7,14 @@
 #include "logger.hpp"
 #include "arwain.hpp"
 
+#if USE_NCS2_INFERENCE
 #include <zmq.h>
+#else // Using tflite inference
+#include "tensorflow/lite/interpreter.h"
+#include "tensorflow/lite/kernels/register.h"
+#include "tensorflow/lite/model.h"
+#include "tensorflow/lite/tools/gen_op_registration.h"
+#endif
 
 static std::string inference_tcp_socket = "tcp://*:5555";
 
@@ -197,7 +204,7 @@ class VelocityKalmanFilter
         }
 };
 
-
+#if USE_NCS2_INFERENCE
 /** \brief Predicts velocity by passing IMU data to a neural compute resource, and integrates
  * velocity into position.
  */
@@ -391,3 +398,172 @@ void predict_velocity()
     // Instruct the NCS2 interface script to quit.
     zmq_send(responder, "stop", strlen("stop"), 0);
 }
+#else // Using tflite inference.
+/** \brief Predicts velocity by passing IMU data to tensorflow-lite API. Integrates velocity into position. */
+void predict_velocity()
+{
+    if (arwain::config.no_inference)
+    {
+        return;
+    }
+
+    // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
+    std::chrono::milliseconds presleep(1000);
+    std::this_thread::sleep_for(presleep * 10);
+
+    // Buffer to contain local copy of IMU data.
+    std::deque<Vector6> imu;
+
+    arwain::ready_for_inference = true;
+
+    uint64_t last_inference_time = 0;
+
+    // TODO Create inferencer.
+    // If the model file cannot be found or loaded, set mode to terminate and break loop.
+    std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(arwain::config.modelpath);
+    if (!model)
+    {
+        std::cout << "Failed to map model\n";
+        arwain::system_mode = arwain::OperatingMode::Terminate;
+        break;
+    }
+    // Configure interpreter.
+    tflite::ops::builtin::BuiltinOpResolver resolver;
+    std::unique_ptr<tflite::Interpreter> interpreter;
+    tflite::InterpreterBuilder(*model.get(), resolver)(&interpreter);
+    interpreter->AllocateTensors();
+    float* input = interpreter->typed_input_tensor<float>(0);
+
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    {
+        switch (arwain::system_mode)
+        {
+            case arwain::OperatingMode::Inference:
+            {
+                Vector3 position{0, 0, 0};
+                Vector3 kalman_position{0, 0, 0};
+                Vector3 velocity{0, 0, 0};
+                VelocityKalmanFilter kalman{1.0, 0.0001};
+
+                arwain::Logger velocity_file;
+                arwain::Logger kalman_velocity_file;
+                arwain::Logger position_file;
+                arwain::Logger kalman_position_file;
+
+                velocity_file.open(arwain::folder_date_string + "/velocity.txt");
+                kalman_velocity_file.open(arwain::folder_date_string + "/kalman_velocity.txt");
+                position_file.open(arwain::folder_date_string + "/position.txt");
+                kalman_position_file.open(arwain::folder_date_string + "/kalman_position.txt");
+                velocity_file << "time x y z" << "\n";
+                kalman_velocity_file << "time x y z" << "\n";
+                position_file << "time x y z" << "\n";
+                kalman_position_file << "time x y z" << "\n";
+
+                std::chrono::time_point<std::chrono::system_clock> lastTime = std::chrono::system_clock::now();
+                std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
+                std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
+
+                while ()
+                {
+                    { // Grab latest IMU packet into local buffer.
+                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
+                        imu = arwain::Buffers::IMU_WORLD_BUFFER;
+                    }
+
+                    // Refresh time.
+                    time = std::chrono::system_clock::now();
+
+                    // Get dt in seconds since last update, and update last_time.
+                    double dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - last_time).count() / 1000.0;
+                    last_time = time;
+
+                    // TODO Load data into inference and run inference.
+                    // for (unsigned int i = 0; i < 6; i++)
+                    // {
+                    //     for (unsigned int j = 0; j < 200; j++)
+                    //     {
+                    //         *(input + i*200 + j) = *(data + j*6 + i);
+                    //     }
+                    // }
+                    unsigned int input_index = 0;
+                    for (int i = 0; i < 6; i++)
+                    {
+                        for (int j = 0; j < 200; j++)
+                        {
+                            *(input + input_index) = imu[j][i];
+                            input_index++;
+                        }
+                    }
+
+                    interpreter->Invoke();
+                    float* output = interpreter->typed_output_tensor<float>(0);
+                    velocity = {output[0], output[1], output[2]};
+
+                    // TODO Temporary to suppress large vertical errors in velocity inference.
+                    // TODO Remove when root issue resolved.
+                    if (std::abs(velocity.z) > 4.0)
+                    {
+                        velocity.z = 0.0;
+                    }
+
+                    // Feed the activity metric.
+                    arwain::activity_metric.feed_velo(velocity);
+
+                    Vector3 average_acceleration{0, 0, 0};
+                    for (std::deque<Vector6>::iterator it = imu.end() -10; it != imu.end(); ++it)
+                    {
+                        average_acceleration = average_acceleration + (*it).acce;
+                    }
+                    average_acceleration = average_acceleration / 10.0;
+
+                    Vector3 kalman_velocity = kalman.update(velocity, average_acceleration);
+
+                    { // Store new velocity in global buffer.
+                        std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
+                        arwain::Buffers::VELOCITY_BUFFER.pop_front();
+                        arwain::Buffers::VELOCITY_BUFFER.push_back(velocity);
+                    }
+
+                    // Attempt yaw drift velocity compensation if enabled.
+                    if (arwain::config.correct_with_yaw_diff)
+                    {
+                        velocity = {
+                            std::cos(-arwain::yaw_offset)*velocity.x - std::sin(-arwain::yaw_offset)*velocity.y,
+                            std::sin(-arwain::yaw_offset)*velocity.x + std::cos(-arwain::yaw_offset)*velocity.y,
+                            velocity.z
+                        };
+                    }
+
+                    // Compute new position.
+                    position = position + dt * velocity;
+                    kalman_position = kalman_position + dt * kalman_velocity;
+
+                    { // Add new position to global buffer.
+                        std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
+                        arwain::Buffers::POSITION_BUFFER.pop_front();
+                        arwain::Buffers::POSITION_BUFFER.push_back(position);
+                    }
+
+                    // Log results to file.
+                    velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
+                    kalman_velocity_file << time.time_since_epoch().count() << " " << kalman_velocity.x << " " << kalman_velocity.y << " " << kalman_velocity.z << "\n";
+                    position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
+                    kalman_position_file << time.time_since_epoch().count() << " " << kalman_position.x << " " << kalman_position.y << " " << kalman_position.z << "\n";
+
+                    last_inference_time = time.time_since_epoch().count();
+
+                    time = time + interval;
+                    std::this_thread::sleep_until(time);
+                }
+
+                break;
+            }
+            default:
+            {
+                sleep_ms(10);
+                break;
+            }
+        }
+    }
+}
+#endif
