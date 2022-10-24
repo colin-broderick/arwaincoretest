@@ -96,14 +96,14 @@ void sleep_ms(int ms)
 }
 
 /** \brief Start a Python script which opens a socket and does inference on data we send it. */
-static void py_inference()
-{   
-    if (!arwain::config.no_inference)
-    {   
-        std::string command = "PYTHONPATH=/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share INTEL_OPENVINO_DIR=/opt/intel/openvino OpenCV_DIR=/opt/intel/openvino/opencv/cmake LD_LIBRARY_PATH=/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l PATH=/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games /usr/bin/python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
-        system(command.c_str());
-    }
-}
+//static void py_inference()
+//{   
+//    if (!arwain::config.no_inference)
+//    {   
+//        std::string command = "PYTHONPATH=/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share INTEL_OPENVINO_DIR=/opt/intel/openvino OpenCV_DIR=/opt/intel/openvino/opencv/cmake LD_LIBRARY_PATH=/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l PATH=/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games /usr/bin/python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
+//        system(command.c_str());
+//    }
+//}
 
 double unwrap_phase_radians(double new_angle, double previous_angle)
 {
@@ -387,7 +387,7 @@ int arwain::execute_inference()
     std::thread std_output_thread(std_output);                   // Prints useful output to std out.
     std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
     std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
-    std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
+    // std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
     #if USE_UUBLA == 1
     std::thread uubla_thread;
     if (arwain::config.node_id == 2)
@@ -406,7 +406,7 @@ int arwain::execute_inference()
     pthread_setname_np(std_output_thread.native_handle(), "arwain_std_th");
     pthread_setname_np(indoor_positioning_thread.native_handle(), "arwain_ips_th");
     pthread_setname_np(altimeter_thread.native_handle(), "arwain_alt_th");
-    pthread_setname_np(py_inference_thread.native_handle(), "arwain_inf_th");
+    // pthread_setname_np(py_inference_thread.native_handle(), "arwain_inf_th");
     #if USE_REALSENSE == 1
     pthread_setname_np(rs2_thread.native_handle(), "arwain_rs2_th");
     #endif
@@ -419,23 +419,33 @@ int arwain::execute_inference()
     pthread_setname_np(command_line_thread.native_handle(), "arwain_cmd_th");
 
     // Wait for all threads to terminate.
+    if (arwain::config.log_to_stdout) { std::cout << "Joining imu thread\n"; }
     imu_reader_thread.join();
+    if (arwain::config.log_to_stdout) { std::cout << "Joining velo thread\n"; }
     predict_velocity_thread.join();
+    if (arwain::config.log_to_stdout) { std::cout << "Joining stance thread\n"; }
     stance_detector_thread.join();
+    if (arwain::config.log_to_stdout) { std::cout << "Joining lora thread\n"; }
     transmit_lora_thread.join();
+    if (arwain::config.log_to_stdout) { std::cout << "Joining cout thread\n"; }
     std_output_thread.join();
+    if (arwain::config.log_to_stdout) { std::cout << "Joining ips thread\n"; }
     indoor_positioning_thread.join();
-    py_inference_thread.join();
+    // py_inference_thread.join();
+    if (arwain::config.log_to_stdout) { std::cout << "Joining alt thread\n"; }
     altimeter_thread.join();
     #if USE_REALSENSE == 1
+    if (arwain::config.log_to_stdout) { std::cout << "Joining rs2 thread\n"; }
     rs2_thread.join();
     #endif
     #if USE_UUBLA == 1
     if (arwain::config.node_id == 2)
     {
+        if (arwain::config.log_to_stdout) { std::cout << "Joining uubla thread\n"; }
         uubla_thread.join();
     }
     #endif
+    if (arwain::config.log_to_stdout) { std::cout << "Joining cmd thread\n"; }
     command_line_thread.join();
 
     return arwain::ExitCodes::Success;
