@@ -90,14 +90,20 @@ int main(int argc, char **argv)
         std::cout << arwain::help_text << std::endl;
         return arwain::ExitCodes::Success;
     }
+    if (input.contains("-version"))
+    {
+        std::cout << "ARWAIN executable version 0.1\n";
+        return arwain::ExitCodes::Success;
+    }
 
     // Attempt to read the config file and quit if failed.
     arwain::config = arwain::Configuration{input};
     if ((ret = arwain::config.read_from_file()) != arwain::Configuration::ReturnCodes::OK)
     {
+        std::cout << "Got an error when reading config file:\n";
         std::cout << arwain::ErrorMessages[ret] << std::endl;
     }
-    
+
     // Start IMU test mode. This returns so the program will quit when the test is stopped.
     else if (input.contains("-testimu"))
     {
