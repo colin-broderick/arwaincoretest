@@ -70,7 +70,7 @@ Makefile
 cmake_install.cmake
 lib
 libLoRaPi
-test*
+# test*
 *.png
 mag_test.csv
 magn_log.csv

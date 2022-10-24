@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project(arwain)
 
+## Enable ctest unit testing framework
+include(CTest)
+enable_testing()
+
 ## Set include and library source directories
 include_directories(
     /usr/local/include
@@ -89,6 +93,7 @@ add_subdirectory(uubla)
 ## Executables to build
 add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
 add_executable(${PROJECT_NAME}_cmdr src/lora_commander.cpp)
+add_executable(${PROJECT_NAME}_test src/tests.cpp)
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
@@ -104,6 +109,8 @@ target_link_libraries(
     flatbuffers
 )
 target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
+
+add_test(Test_Test ${PROJECT_NAME}_test Test_Test)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)
