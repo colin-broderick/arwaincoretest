@@ -114,5 +114,7 @@ target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
 
 add_test(Test_Test ${PROJECT_NAME}_test Test_Test)
 
+add_custom_command(TARGET ${PROJECT_NAME}_test POST_BUILD COMMAND ../generate_test_coverage_report.sh)
+
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)
