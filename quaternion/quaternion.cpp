@@ -89,6 +89,7 @@ Quaternion::Quaternion(const double angle, const std::array<double, 3>& axis)
  * \param z The k component of the quaternion.
  */
 Quaternion::Quaternion(const double w, const double x, const double y, const double z)
+: w(w), x(x), y(y), z(z)
 {
     this->w = w;
     this->x = x;
@@ -267,7 +268,7 @@ std::array<double, 3> Quaternion::getAxis() const
 /** \brief Compute the magnitude of the quaternion. */
 double Quaternion::norm() const
 {
-    static double n = std::sqrt(w*w + x*x + y*y + z*z);
+    double n = std::sqrt(w*w + x*x + y*y + z*z);
     return n;
 }
 
