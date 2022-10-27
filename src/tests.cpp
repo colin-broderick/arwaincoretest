@@ -219,18 +219,6 @@ int Test_QuaternionAngleBetween()
     return passing ? pass_test() : fail_test();
 }
 
-int Test_QuaternionSlerp()
-{
-    bool passing = true;
-
-    for (int i = 0; i < 1000; i++)
-    {
-        
-    }
-
-    return passing ? pass_test() : fail_test();
-}
-
 int Test_QuaternionSubtractionOperator()
 {
     bool passing = true;
@@ -406,6 +394,47 @@ int Test_QuaternionProduct()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief We generate some random quaternions, and test that the slerp of them is in agreement with an
+ * an independent calculation. The independent calculator is here (on 27/10/2022):
+ *      https://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
+ */
+int Test_QuaternionSlerp()
+{
+    bool passing = true;
+
+    // Testing 
+    {
+        Quaternion q1{1, 0, 0, 0};
+        Quaternion q2{0, 1, 0, 0};
+        Quaternion q3{0.8837656300886934, 0.46792981426057344, 0, 0};
+        double t = 0.31;
+        Quaternion q4 = Quaternion::slerp(q1, q2, t);
+        passing &= is_close(q3.w, q4.w);
+        passing &= is_close(q3.x, q4.x);
+        passing &= is_close(q3.y, q4.y);
+        passing &= is_close(q3.z, q4.z);
+    }
+
+    {
+        Quaternion q1{1, 0, 0, 0};
+        Quaternion q2{-1, 0, 0, 0};
+        double t = 0.45;
+        Quaternion q4 = Quaternion::slerp(q1, q2, t);
+        passing &= (q1 == q4);
+    }
+    
+    {
+        Quaternion q1{0.99, 0, 0, 0};
+        Quaternion q2{-0.99, 0, 0, 0};
+        double t = 0.72;
+        Quaternion q3{-0.5999075089612407, 4.301907372304284, 0, 0};
+        Quaternion q4 = Quaternion::slerp(q1, q2, t);
+        passing &= (q3 == q4);
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
 int main(int argc, char* argv[])
 {
     std::map<std::string, std::function<int()>> funcs = {
@@ -425,6 +454,7 @@ int main(int argc, char* argv[])
         {"Test_QuaternionEqualityOperator", Test_QuaternionEqualityOperator},
         {"Test_OutputStreamOperator", Test_OutputStreamOperator},
         {"Test_QuaternionProduct", Test_QuaternionProduct},
+        {"Test_QuaternionSlerp", Test_QuaternionSlerp},
     };
 
     if (argc > 1)
