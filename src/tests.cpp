@@ -449,13 +449,16 @@ int Test_Timer()
 int Test_InputParser()
 {
     int j = 2;
-    char* input_array[2] = {"arwain_test","hello"};
+    std::string program = "arwain_test";
+    std::string command = "hello";
+    char* input_array[2] = {program.data(),command.data()};
     InputParser parser(j, input_array);
     
     if(parser.contains("hello"))
     {
         return pass_test();
-    }else
+    }
+    else
     {
         return fail_test();
     }
@@ -464,13 +467,17 @@ int Test_InputParser()
 int Test_InputParserGetCmdOption()
 {
     int j = 3;
-    char* input_array[3] = {"arwain_test","hello", "1"};
+    std::string program = "arwain_test";
+    std::string command = "hello";
+    std::string paramater = "1";
+    char* input_array[3] = {program.data(),command.data(), paramater.data()};
     InputParser parser(j, input_array);
 
     if(parser.getCmdOption("hello") == "1")
     {
         return pass_test();
-    }else
+    }
+    else
     {
         return fail_test();   
     }
@@ -479,13 +486,16 @@ int Test_InputParserGetCmdOption()
 int Test_InputParserGetCmdOption_error()
 {
     int j = 2;
-    char* input_array[2] = {"arwain_test","hello"};
+    std::string program = "arwain_test";
+    std::string command = "hello";
+    char* input_array[2] = {program.data(),command.data()};
     InputParser parser(j, input_array);
 
      if(parser.getCmdOption("hello") == "")
     {
         return pass_test();
-    }else
+    }
+    else
     {
         return fail_test();   
     }
@@ -494,13 +504,16 @@ int Test_InputParserGetCmdOption_error()
 int Test_InputParserContainerError()
 {
     int j = 2;
-    char* input_array[2] = {"arwain_test","hello"};
+    std::string program = "arwain_test";
+    std::string command = "hello";
+    char* input_array[2] = {program.data(),command.data()};
     InputParser parser(j, input_array);
 
     if(parser.contains("bye") == false)
     {
         return pass_test();
-    }else
+    }
+    else
     {
         return fail_test();
     }
