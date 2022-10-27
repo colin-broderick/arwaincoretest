@@ -4,8 +4,6 @@
 #include <functional>
 
 #include "quaternion.hpp"
-// #include "timers.hpp"
-// #include "input_parser.hpp"
 
 namespace Random
 {
@@ -41,7 +39,7 @@ int Test_Test()
     return pass_test();
 }
 
-/* QUATERNION_TESTS */
+/* -------------------------------------- QUATERNION_TESTS ------------------------------------- */
 
 /** \brief Test that the 4-element quaternion constructor produces valid output. */
 int Test_QuaternionConstructors()
@@ -273,6 +271,7 @@ int Test_QuaternionUnarySubtraction()
 
 int Test_QuaternionIsNormal()
 {
+    // TODO: This fails because isNormal() may wrongly return false due to floating point imprecision.
     bool passing = true;
 
     for (int i = 0; i < 1000; i++)
@@ -283,6 +282,125 @@ int Test_QuaternionIsNormal()
 
         passing &= q1.isNormal();
         passing &= !(q2.isNormal());
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+int Test_QuaternionVectorPart()
+{
+    bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        double x = q1.x;
+        double y = q1.y;
+        double z = q1.z;
+        passing &= (q1.vector_part() == Vector3{q1.x, q1.y, q1.z});
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+int Test_QuaternionEqualityOperator()
+{
+    bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        // Any quaternion should be equal to itself, and any random quaternion is (almost certainly) not equal to
+        // another random quaternion.
+        {
+            Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+            Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+            passing &= !(q1 == q2);
+            passing &= (q1 == q1);
+        }
+
+        // Two quaternions are the same except for element w
+        {
+            Quaternion q1{Random::Double(), 1.5, 1.5, 1.5};
+            Quaternion q2{Random::Double(), 1.5, 1.5, 1.5};
+            passing &= !(q1 == q2);
+        }
+
+        // Two quaternions are the same except for element x
+        {
+            Quaternion q1{1.5, Random::Double(), 1.5, 1.5};
+            Quaternion q2{1.5, Random::Double(), 1.5, 1.5};
+            passing &= !(q1 == q2);
+        }
+
+        // Two quaternions are the same except for element y
+        {
+            Quaternion q1{1.5, 1.5, Random::Double(), 1.5};
+            Quaternion q2{1.5, 1.5, Random::Double(), 1.5};
+            passing &= !(q1 == q2);
+        }
+
+        // Two quaternions are the same except for element z
+        {
+            Quaternion q1{1.5, 1.5, 1.5, Random::Double()};
+            Quaternion q2{1.5, 1.5, 1.5, Random::Double()};
+            passing &= !(q1 == q2);
+        }
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+int Test_OutputStreamOperator()
+{
+    // TODO should probably also test output to file using this operator.
+    bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        try
+        {
+            std::cout << q2 << "\n";
+        }
+        catch (const std::exception& e)
+        {
+            passing = false;
+        }
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+int Test_QuaternionProduct()
+{
+    bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        // Generate eight random numbers, then build two quaternions from them,
+        // then do the product manually, and confirm the quaternion product is the same.
+
+        double p1 = Random::Double();
+        double p2 = Random::Double();
+        double p3 = Random::Double();
+        double p4 = Random::Double();
+        double q1 = Random::Double();
+        double q2 = Random::Double();
+        double q3 = Random::Double();
+        double q4 = Random::Double();
+
+        Quaternion p{p1, p2, p3, p4};
+        Quaternion q{q1, q2, q3, q4};
+
+        Quaternion expected_product = p * q;
+        Quaternion actual_product{
+            p1*q1 - p2*q2 - p3*q3 - p4*q4,
+            p1*q2 + p2*q1 + p3*q4 - p4*q3,
+            p1*q3 - p2*q4 + p3*q1 + p4*q2,
+            p1*q4 + p2*q3 - p3*q2 + p4*q1
+        };
+
+        passing &= (expected_product == actual_product);
     }
 
     return passing ? pass_test() : fail_test();
@@ -303,6 +421,10 @@ int main(int argc, char* argv[])
         {"Test_QuaternionSubtractionOperator", Test_QuaternionSubtractionOperator},
         {"Test_QuaternionUnarySubtraction", Test_QuaternionUnarySubtraction},
         {"Test_QuaternionIsNormal", Test_QuaternionIsNormal},
+        {"Test_QuaternionVectorPart", Test_QuaternionVectorPart},
+        {"Test_QuaternionEqualityOperator", Test_QuaternionEqualityOperator},
+        {"Test_OutputStreamOperator", Test_OutputStreamOperator},
+        {"Test_QuaternionProduct", Test_QuaternionProduct},
     };
 
     if (argc > 1)
