@@ -253,26 +253,40 @@ int Test_QuaternionSubtractionOperator()
     return passing ? pass_test() : fail_test();
 }
 
-// int Test_Timer()
-// {
-//     bool passing = true;
-//     {
-//         arwain::Timers::ScopedTimer{"adadsf"};
-//     }
-//     return fail_test();
-// }
+int Test_QuaternionUnarySubtraction()
+{
+    bool passing = true;
 
-// int Test_InputParser()
-// {
-//     bool passing = true;
+    for (int i = 0; i < 1000; i++)
+    {
+        Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        Quaternion q2 = -q1;
 
+        passing &= (q1.w == -q2.w);
+        passing &= (q1.x == -q2.x);
+        passing &= (q1.y == -q2.y);
+        passing &= (q1.z == -q2.z);
+    }
 
+    return passing ? pass_test() : fail_test();
+}
 
-//     return passing ? pass_test() : fail_test();
-// }
+int Test_QuaternionIsNormal()
+{
+    bool passing = true;
 
+    for (int i = 0; i < 1000; i++)
+    {
+        Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        q1 = q1.unit();
 
+        passing &= q1.isNormal();
+        passing &= !(q2.isNormal());
+    }
 
+    return passing ? pass_test() : fail_test();
+}
 
 int main(int argc, char* argv[])
 {
@@ -287,8 +301,8 @@ int main(int argc, char* argv[])
         {"Test_QuaternionDotProduct", Test_QuaternionDotProduct},
         {"Test_QuaternionAngleBetween", Test_QuaternionAngleBetween},
         {"Test_QuaternionSubtractionOperator", Test_QuaternionSubtractionOperator},
-        // {"Test_Timer", Test_Timer},
-        // {"Test_InputParser", Test_InputParser},
+        {"Test_QuaternionUnarySubtraction", Test_QuaternionUnarySubtraction},
+        {"Test_QuaternionIsNormal", Test_QuaternionIsNormal},
     };
 
     if (argc > 1)

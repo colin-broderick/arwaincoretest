@@ -1,7 +1,9 @@
 #!/bin/bash
 
+rm -rf ./CMakeFiles/*/*/*.gcda
 mkdir ./test_report
-lcov --capture --directory ./CMakeFiles/arwain_test.dir/src/ --directory ./CMakeFiles/arwain_test.dir/quaternion/ --directory ./CMakeFiles/arwain_test.dir/timers/ --output-file=coverage.info --directory ./CMakeFiles/arwain_test.dir/input_parser/
+ctest
+lcov --capture -r --directory ./CMakeFiles/arwain_test.dir/src/ --directory ./CMakeFiles/arwain_test.dir/quaternion/ --output-file=coverage.info
 genhtml coverage.info --output-directory=test_report
 
 echo "Test reports placed in PROJECT_DIR/build/test_report/. Run an http server from that location to view in browser."
