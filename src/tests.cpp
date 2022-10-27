@@ -4,6 +4,8 @@
 #include <functional>
 
 #include "quaternion.hpp"
+#include "timers.hpp"
+#include "input_parser.hpp"
 
 namespace Random
 {
@@ -435,6 +437,88 @@ int Test_QuaternionSlerp()
     return passing ? pass_test() : fail_test();
 }
 
+int Test_Timer()
+{
+    bool passing = true;
+    {
+        arwain::Timers::ScopedTimer{"adadsf"};
+    }
+    return fail_test();
+}
+
+int Test_InputParser()
+{
+    int j = 2;
+    std::string program = "arwain_test";
+    std::string command = "hello";
+    char* input_array[2] = {program.data(),command.data()};
+    InputParser parser(j, input_array);
+    
+    if(parser.contains("hello"))
+    {
+        return pass_test();
+    }
+    else
+    {
+        return fail_test();
+    }
+}
+
+int Test_InputParserGetCmdOption()
+{
+    int j = 3;
+    std::string program = "arwain_test";
+    std::string command = "hello";
+    std::string paramater = "1";
+    char* input_array[3] = {program.data(),command.data(), paramater.data()};
+    InputParser parser(j, input_array);
+
+    if(parser.getCmdOption("hello") == "1")
+    {
+        return pass_test();
+    }
+    else
+    {
+        return fail_test();   
+    }
+}
+
+int Test_InputParserGetCmdOption_error()
+{
+    int j = 2;
+    std::string program = "arwain_test";
+    std::string command = "hello";
+    char* input_array[2] = {program.data(),command.data()};
+    InputParser parser(j, input_array);
+
+     if(parser.getCmdOption("hello") == "")
+    {
+        return pass_test();
+    }
+    else
+    {
+        return fail_test();   
+    }
+}
+
+int Test_InputParserContainerError()
+{
+    int j = 2;
+    std::string program = "arwain_test";
+    std::string command = "hello";
+    char* input_array[2] = {program.data(),command.data()};
+    InputParser parser(j, input_array);
+
+    if(parser.contains("bye") == false)
+    {
+        return pass_test();
+    }
+    else
+    {
+        return fail_test();
+    }
+}
+
 int main(int argc, char* argv[])
 {
     std::map<std::string, std::function<int()>> funcs = {
@@ -455,6 +539,11 @@ int main(int argc, char* argv[])
         {"Test_OutputStreamOperator", Test_OutputStreamOperator},
         {"Test_QuaternionProduct", Test_QuaternionProduct},
         {"Test_QuaternionSlerp", Test_QuaternionSlerp},
+        {"Test_Timer", Test_Timer},
+        {"Test_InputParser", Test_InputParser},
+        {"Test_InputParserGetCmdOption",Test_InputParserGetCmdOption},
+        {"Test_InputParserGetCmdOption_error",Test_InputParserGetCmdOption_error},
+        {"Test_InputParserContainerError", Test_InputParserContainerError},
     };
 
     if (argc > 1)
