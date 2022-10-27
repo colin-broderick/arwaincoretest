@@ -264,15 +264,63 @@ int Test_Timer()
 
 int Test_InputParser()
 {
-    bool passing = true;
-
-
-
-    return passing ? pass_test() : fail_test();
+    int j = 2;
+    char* input_array[2] = {"arwain_test","hello"};
+    InputParser parser(j, input_array);
+    
+    if(parser.contains("hello"))
+    {
+        return pass_test();
+    }else
+    {
+        return fail_test();
+    }
 }
 
+int Test_InputParserGetCmdOption()
+{
+    int j = 3;
+    char* input_array[3] = {"arwain_test","hello", "1"};
+    InputParser parser(j, input_array);
 
+    if(parser.getCmdOption("hello") == "1")
+    {
+        return pass_test();
+    }else
+    {
+        return fail_test();   
+    }
+}
 
+int Test_InputParserGetCmdOption_error()
+{
+    int j = 2;
+    char* input_array[2] = {"arwain_test","hello"};
+    InputParser parser(j, input_array);
+
+     if(parser.getCmdOption("hello") == "")
+    {
+        return pass_test();
+    }else
+    {
+        return fail_test();   
+    }
+}
+
+int Test_InputParserContainerError()
+{
+    int j = 2;
+    char* input_array[2] = {"arwain_test","hello"};
+    InputParser parser(j, input_array);
+
+    if(parser.contains("bye") == false)
+    {
+        return pass_test();
+    }else
+    {
+        return fail_test();
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -289,6 +337,9 @@ int main(int argc, char* argv[])
         {"Test_QuaternionSubtractionOperator", Test_QuaternionSubtractionOperator},
         {"Test_Timer", Test_Timer},
         {"Test_InputParser", Test_InputParser},
+        {"Test_InputParserGetCmdOption",Test_InputParserGetCmdOption},
+        {"Test_InputParserGetCmdOption_error",Test_InputParserGetCmdOption_error},
+        {"Test_InputParserContainerError", Test_InputParserContainerError},
     };
 
     if (argc > 1)
