@@ -4,6 +4,8 @@
 #include <functional>
 
 #include "quaternion.hpp"
+// #include "timers.hpp"
+// #include "input_parser.hpp"
 
 namespace Random
 {
@@ -12,6 +14,13 @@ namespace Random
         static std::random_device rd;
         static std::mt19937 mt(rd());
         static std::uniform_real_distribution<double> dist(-10.0, 10.0);
+        return dist(mt);
+    }
+    double DoubleBetween(const double lower_bound, const double upper_bound)
+    {
+        static std::random_device rd;
+        static std::mt19937 mt(rd());
+        std::uniform_real_distribution<double> dist(lower_bound, upper_bound);
         return dist(mt);
     }
 }
@@ -113,8 +122,8 @@ int Test_QuaternionAxisAngleConstructor()
     In addition, it will store the axis and angle originally passed.
     */
 
-    double original_angle = 5.0;
-    std::array<double, 3> original_axis{1, 2, 3};
+    double original_angle = Random::Double();
+    std::array<double, 3> original_axis{Random::Double(), Random::Double(), Random::Double()};
     Quaternion q1{original_angle, original_axis};
     passing &= (q1.getAxis() == original_axis);
     passing &= (q1.getAngle() == original_angle);
@@ -138,6 +147,133 @@ int Test_QuaternionAxisAngleConstructor()
     return passing ? pass_test() : fail_test();
 }
 
+int Test_QuaternionDefaultConstructor()
+{
+    bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        try
+        {
+            Quaternion q1;
+        }
+        catch (const std::exception& e)
+        {
+            passing = false;
+        }
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+int Test_QuaternionVectorConstructor()
+{
+    bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        std::array<double, 3> vector{Random::Double(), Random::Double(), Random::Double()};
+        Quaternion q{vector};
+        passing &= (q.w == 0);
+        passing &= (q.x == vector[0]);
+        passing &= (q.y == vector[1]);
+        passing &= (q.z == vector[2]);
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+int Test_QuaternionDotProduct()
+{
+    bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+
+        double dot_product = Quaternion::dot(q1, q2);
+
+        passing &= (dot_product == q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z);
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+/** \brief Test computation of the angle between two quaternions. Note that this*/
+int Test_QuaternionAngleBetween()
+{
+    bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        q1 = q1.unit();
+        q2 = q2.unit();
+
+        double angle = Quaternion::angle_between(q1, q2);
+        double expected_angle = 2 * std::acos(q1.w*q2.w + q1.x*q2.x + q1.y*q2.y + q1.z*q2.z);
+
+        passing &= (angle == expected_angle);
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+int Test_QuaternionSlerp()
+{
+    bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+int Test_QuaternionSubtractionOperator()
+{
+    bool passing = true;
+    
+    for (int i = 0; i < 1000; i++)
+    {
+        Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+
+        Quaternion diff = q1 - q2;
+
+        passing &= (diff.w == q1.w - q2.w);
+        passing &= (diff.x == q1.x - q2.x);
+        passing &= (diff.y == q1.y - q2.y);
+        passing &= (diff.z == q1.z - q2.z);
+    }
+
+    return passing ? pass_test() : fail_test();
+}
+
+// int Test_Timer()
+// {
+//     bool passing = true;
+//     {
+//         arwain::Timers::ScopedTimer{"adadsf"};
+//     }
+//     return fail_test();
+// }
+
+// int Test_InputParser()
+// {
+//     bool passing = true;
+
+
+
+//     return passing ? pass_test() : fail_test();
+// }
+
+
+
+
 int main(int argc, char* argv[])
 {
     std::map<std::string, std::function<int()>> funcs = {
@@ -146,6 +282,13 @@ int main(int argc, char* argv[])
         {"Test_QuaternionInverse", Test_QuaternionInverse},
         {"Test_QuaternionSum", Test_QuaternionSum},
         {"Test_QuaternionAxisAngleConstructor", Test_QuaternionAxisAngleConstructor},
+        {"Test_QuaternionDefaultConstructor", Test_QuaternionDefaultConstructor},
+        {"Test_QuaternionVectorConstructor", Test_QuaternionVectorConstructor},
+        {"Test_QuaternionDotProduct", Test_QuaternionDotProduct},
+        {"Test_QuaternionAngleBetween", Test_QuaternionAngleBetween},
+        {"Test_QuaternionSubtractionOperator", Test_QuaternionSubtractionOperator},
+        // {"Test_Timer", Test_Timer},
+        // {"Test_InputParser", Test_InputParser},
     };
 
     if (argc > 1)
