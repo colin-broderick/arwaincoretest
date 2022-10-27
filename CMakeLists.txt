@@ -40,6 +40,7 @@ include_directories(
     ips
     bmp384
     uubla/include
+    /opt/arwain/workspace/tensorflow_src
     # realsense_t265
 )
 
