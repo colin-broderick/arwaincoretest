@@ -11,4 +11,5 @@ add_test(Test_QuaternionVectorConstructor arwain_test Test_QuaternionVectorConst
 add_test(Test_QuaternionDotProduct arwain_test Test_QuaternionDotProduct)
 add_test(Test_QuaternionAngleBetween arwain_test Test_QuaternionAngleBetween)
 add_test(Test_QuaternionSubtractionOperator arwain_test Test_QuaternionSubtractionOperator)
-
+add_test(Test_Timer arwain_test Test_Timer)
+add_test(Test_InputParser arwain_test Test_InputParser)

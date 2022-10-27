@@ -4,8 +4,8 @@
 #include <functional>
 
 #include "quaternion.hpp"
-// #include "timers.hpp"
-// #include "input_parser.hpp"
+#include "timers.hpp"
+#include "input_parser.hpp"
 
 namespace Random
 {
@@ -253,23 +253,23 @@ int Test_QuaternionSubtractionOperator()
     return passing ? pass_test() : fail_test();
 }
 
-// int Test_Timer()
-// {
-//     bool passing = true;
-//     {
-//         arwain::Timers::ScopedTimer{"adadsf"};
-//     }
-//     return fail_test();
-// }
+int Test_Timer()
+{
+    bool passing = true;
+    {
+        arwain::Timers::ScopedTimer{"adadsf"};
+    }
+    return fail_test();
+}
 
-// int Test_InputParser()
-// {
-//     bool passing = true;
+int Test_InputParser()
+{
+    bool passing = true;
 
 
 
-//     return passing ? pass_test() : fail_test();
-// }
+    return passing ? pass_test() : fail_test();
+}
 
 
 
@@ -287,8 +287,8 @@ int main(int argc, char* argv[])
         {"Test_QuaternionDotProduct", Test_QuaternionDotProduct},
         {"Test_QuaternionAngleBetween", Test_QuaternionAngleBetween},
         {"Test_QuaternionSubtractionOperator", Test_QuaternionSubtractionOperator},
-        // {"Test_Timer", Test_Timer},
-        // {"Test_InputParser", Test_InputParser},
+        {"Test_Timer", Test_Timer},
+        {"Test_InputParser", Test_InputParser},
     };
 
     if (argc > 1)
