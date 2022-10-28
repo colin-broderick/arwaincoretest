@@ -626,7 +626,7 @@ int Test_InputParserGetCmdOption()
 /** \brief Creates a parser object with a given command, then checks that there hasn't been a value assosiated with that command. 
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_InputParserGetCmdOption_error()
+int Test_InputParserGetCmdOptionError()
 {
     int j = 2;
     std::string program = "arwain_test";
@@ -695,7 +695,7 @@ int main(int argc, char* argv[])
         {"Test_QuaternionNormSlerp", Test_QuaternionNormSlerp},
         {"Test_InputParser", Test_InputParser},
         {"Test_InputParserGetCmdOption",Test_InputParserGetCmdOption},
-        {"Test_InputParserGetCmdOption_error",Test_InputParserGetCmdOption_error},
+        {"Test_InputParserGetCmdOptionError",Test_InputParserGetCmdOptionError},
         {"Test_InputParserContainerError", Test_InputParserContainerError},
     };
 
