@@ -34,6 +34,11 @@ int pass_test()
     return 0;
 }
 
+bool is_close(double num1, double num2, double tolerance = 0.0000001)
+{
+    return std::abs(num1 - num2) < tolerance;
+}
+
 /** \brief Testing that the unit test framework is configured correctly. */
 int Test_Test()
 {
@@ -65,11 +70,6 @@ int Test_QuaternionConstructors()
     return passing ? pass_test() : fail_test();
 }
 
-bool is_close(double num1, double num2, double tolerance = 0.0000001)
-{
-    return std::abs(num1 - num2) < tolerance;
-}
-
 int Test_QuaternionInverse()
 {
     bool passing = true;
@@ -90,11 +90,11 @@ int Test_QuaternionInverse()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief Quaternions add element-wise. */
 int Test_QuaternionSum()
 {
     bool passing = true;
-
-    // Quaternions add element-wise.
+    
     for (int i = 0; i < 1000; i++)
     {
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
@@ -109,6 +109,10 @@ int Test_QuaternionSum()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief A rotor quaternion can be constructed from a real number and a 3-vector.
+ * The real number is the angle by which the rotor will rotate a vector, and the 3-vector
+ * is the axis about which the rotation is performed.
+ */
 int Test_QuaternionAxisAngleConstructor()
 {
     bool passing = true;
@@ -146,6 +150,7 @@ int Test_QuaternionAxisAngleConstructor()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief The default quaternion constructor creates the unit real quaternion. */
 int Test_QuaternionDefaultConstructor()
 {
     bool passing = true;
@@ -155,6 +160,7 @@ int Test_QuaternionDefaultConstructor()
         try
         {
             Quaternion q1;
+            passing &= (q1 == Quaternion{1, 0, 0, 0});
         }
         catch (const std::exception& e)
         {
@@ -165,6 +171,9 @@ int Test_QuaternionDefaultConstructor()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief A quaternion can be constructed from a vector; it will have zero real part, and the vector part
+ * will be equal to the supplied vector.
+ */
 int Test_QuaternionVectorConstructor()
 {
     bool passing = true;
@@ -182,6 +191,7 @@ int Test_QuaternionVectorConstructor()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief The quaternion dot product is the same as for other vectors, i.e. the sum of element-wise products. */
 int Test_QuaternionDotProduct()
 {
     bool passing = true;
@@ -199,7 +209,9 @@ int Test_QuaternionDotProduct()
     return passing ? pass_test() : fail_test();
 }
 
-/** \brief Test computation of the angle between two quaternions. Note that this*/
+/** \brief Test computation of the angle between two rotor quaternions. Note that this concept
+ * is only defined for unit quaternions.
+ */
 int Test_QuaternionAngleBetween()
 {
     bool passing = true;
@@ -220,6 +232,7 @@ int Test_QuaternionAngleBetween()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief Test subtraction of two quaternions. Quaternion subtraction is element-wise. */
 int Test_QuaternionSubtractionOperator()
 {
     bool passing = true;
@@ -240,6 +253,7 @@ int Test_QuaternionSubtractionOperator()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief Test unary subtraction i.e. negation of a quaternion. All elements are negated. */
 int Test_QuaternionUnarySubtraction()
 {
     bool passing = true;
@@ -258,9 +272,9 @@ int Test_QuaternionUnarySubtraction()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief A unit quaternion has norm of one, within the tolerances of floating point arithmetic. */
 int Test_QuaternionIsNormal()
 {
-    // TODO: This fails because isNormal() may wrongly return false due to floating point imprecision.
     bool passing = true;
 
     for (int i = 0; i < 1000; i++)
@@ -276,6 +290,7 @@ int Test_QuaternionIsNormal()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief The vector part of a quaternion is simply a 3-vector formed of elements [x, y, z]. */
 int Test_QuaternionVectorPart()
 {
     bool passing = true;
@@ -292,6 +307,7 @@ int Test_QuaternionVectorPart()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief Two quaternions are equal if all of their elements are equal. */
 int Test_QuaternionEqualityOperator()
 {
     bool passing = true;
@@ -339,9 +355,9 @@ int Test_QuaternionEqualityOperator()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief We can send a string representation of a quaternion using the stream operators. */
 int Test_QuaternionOutputStreamOperator()
 {
-    // TODO should probably also test output to file using this operator.
     bool passing = true;
 
     for (int i = 0; i < 1000; i++)
@@ -360,6 +376,9 @@ int Test_QuaternionOutputStreamOperator()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief The quaternion product is defined here:
+ * https://colin-broderick.medium.com/deriving-the-quaternion-product-a22858c40921
+ */
 int Test_QuaternionProduct()
 {
     bool passing = true;
@@ -395,15 +414,14 @@ int Test_QuaternionProduct()
     return passing ? pass_test() : fail_test();
 }
 
-/** \brief We generate some random quaternions, and test that the slerp of them is in agreement with an
+/** \brief We generate some quaternions, and test that the slerp of them is in agreement with an
  * an independent calculation. The independent calculator is here (on 27/10/2022):
- *      https://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
+ * https://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
  */
 int Test_QuaternionSlerp()
 {
     bool passing = true;
 
-    // Testing 
     {
         Quaternion q1{1, 0, 0, 0};
         Quaternion q2{0, 1, 0, 0};
@@ -449,6 +467,7 @@ int Test_QuaternionSlerp()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief Quaternion::nslerp calls Quaternion::slerp, then normalizes the result before returning. */
 int Test_QuaternionNormSlerp()
 {
     bool passing = true;
