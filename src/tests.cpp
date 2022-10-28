@@ -281,7 +281,7 @@ int Test_QuaternionDotProduct()
 
         double dot_product = Quaternion::dot(q1, q2);
 
-        passing &= (dot_product == q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z);
+        passing &= (dot_product == ((q1.w * q2.w) + (q1.x * q2.x) + (q1.y * q2.y) + (q1.z * q2.z)));
     }
 
     return passing ? pass_test() : fail_test();
