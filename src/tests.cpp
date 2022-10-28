@@ -4,7 +4,6 @@
 #include <functional>
 
 #include "quaternion.hpp"
-#include "timers.hpp"
 #include "input_parser.hpp"
 
 namespace Random
@@ -340,17 +339,17 @@ int Test_QuaternionEqualityOperator()
     return passing ? pass_test() : fail_test();
 }
 
-int Test_OutputStreamOperator()
+int Test_QuaternionOutputStreamOperator()
 {
     // TODO should probably also test output to file using this operator.
     bool passing = true;
 
     for (int i = 0; i < 1000; i++)
     {
-        Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         try
         {
-            std::cout << q2 << "\n";
+            std::cout << q1 << "\n";
         }
         catch (const std::exception& e)
         {
@@ -429,21 +428,41 @@ int Test_QuaternionSlerp()
         Quaternion q1{0.99, 0, 0, 0};
         Quaternion q2{-0.99, 0, 0, 0};
         double t = 0.72;
-        Quaternion q3{-0.5999075089612407, 4.301907372304284, 0, 0};
+        Quaternion q3{0.9940009637008222, 0, 0, 0};
+        Quaternion q4{-0.9940009637008222, 0, 0, 0};
+        Quaternion q5 = Quaternion::slerp(q1, q2, t);
+        passing &= ((q3 == q5) || (q4 == q5));
+    }
+
+    {
+        Quaternion q1{0.951189731, 0.210262993, 0.220275517, 0.050062617};
+        Quaternion q2{0.951189731, 0.220275517, 0.210262993, 0.050062617};
+        double t = 0.77;
+        Quaternion q3{0.9512066194738531, 0.21797647460766956, 0.2125696796489197, 0.050063505867037415};
         Quaternion q4 = Quaternion::slerp(q1, q2, t);
-        passing &= (q3 == q4);
+        passing &= is_close(q3.w, q4.w, 0.001);
+        passing &= is_close(q3.x, q4.x, 0.001);
+        passing &= is_close(q3.y, q4.y, 0.001);
+        passing &= is_close(q3.z, q4.z, 0.001);
     }
 
     return passing ? pass_test() : fail_test();
 }
 
-int Test_Timer()
+int Test_QuaternionNormSlerp()
 {
     bool passing = true;
+
+    for (int i = 0; i < 1000; i++)
     {
-        arwain::Timers::ScopedTimer{"adadsf"};
+        Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
+        double t = Random::DoubleBetween(0, 1);
+        Quaternion q3 = Quaternion::nslerp(q1, q2, t);
+        passing &= q3.isNormal();
     }
-    return fail_test();
+
+    return passing ? pass_test() : fail_test();
 }
 
 int Test_InputParser()
@@ -536,10 +555,10 @@ int main(int argc, char* argv[])
         {"Test_QuaternionIsNormal", Test_QuaternionIsNormal},
         {"Test_QuaternionVectorPart", Test_QuaternionVectorPart},
         {"Test_QuaternionEqualityOperator", Test_QuaternionEqualityOperator},
-        {"Test_OutputStreamOperator", Test_OutputStreamOperator},
+        {"Test_QuaternionOutputStreamOperator", Test_QuaternionOutputStreamOperator},
         {"Test_QuaternionProduct", Test_QuaternionProduct},
         {"Test_QuaternionSlerp", Test_QuaternionSlerp},
-        {"Test_Timer", Test_Timer},
+        {"Test_QuaternionNormSlerp", Test_QuaternionNormSlerp},
         {"Test_InputParser", Test_InputParser},
         {"Test_InputParserGetCmdOption",Test_InputParserGetCmdOption},
         {"Test_InputParserGetCmdOption_error",Test_InputParserGetCmdOption_error},
