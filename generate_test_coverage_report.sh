@@ -1,6 +1,4 @@
 #!/bin/bash
-
-rm -rf ./CMakeFiles/*/*/*.gcda
 mkdir ./test_report
 lcov --capture --directory ./CMakeFiles/arwain_test.dir/src/ --directory ./CMakeFiles/arwain_test.dir/quaternion/ --output-file=coverage.info
 genhtml coverage.info --output-directory=test_report
