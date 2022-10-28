@@ -579,6 +579,9 @@ int Test_QuaternionNormSlerp()
     return passing ? pass_test() : fail_test();
 }
 
+/** \brief Creates a parser object with a given command, then checks command has been stored correctly.
+ * \return 0 for test pass, 1 for test fail.
+ */
 int Test_InputParser()
 {
     int j = 2;
@@ -597,6 +600,10 @@ int Test_InputParser()
     }
 }
 
+/** \brief Creates a parser object with a given command and a value for that command, then checks the command value has been stored correctly
+ *  and can be retreived.
+ * \return 0 for test pass, 1 for test fail.
+ */
 int Test_InputParserGetCmdOption()
 {
     int j = 3;
@@ -616,6 +623,9 @@ int Test_InputParserGetCmdOption()
     }
 }
 
+/** \brief Creates a parser object with a given command, then checks that there hasn't been a value assosiated with that command. 
+ * \return 0 for test pass, 1 for test fail.
+ */
 int Test_InputParserGetCmdOption_error()
 {
     int j = 2;
@@ -634,6 +644,9 @@ int Test_InputParserGetCmdOption_error()
     }
 }
 
+/** \brief Creates a parser object with a given command, then checks for a different command to check that it is not present.
+ * \return 0 for test pass, 1 for test fail.
+ */
 int Test_InputParserContainerError()
 {
     int j = 2;
