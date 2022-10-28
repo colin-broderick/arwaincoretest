@@ -275,7 +275,8 @@ double Quaternion::norm() const
 /** \brief Whether the quaternion has unit magnitude. */
 bool Quaternion::isNormal() const
 {
-    return norm() == 1;
+    double norm_ = norm();
+    return norm_ > 0.99999 && norm_ <  1.00001;
 }
 
 /** \brief Create a new quaternion by normalizing this one. */
