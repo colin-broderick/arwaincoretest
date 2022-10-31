@@ -1,5 +1,8 @@
 #include <random>
 #include <gtest/gtest.h>
+#include <map>
+#include <random>
+#include <functional>
 
 #include "quaternion.hpp"
 
