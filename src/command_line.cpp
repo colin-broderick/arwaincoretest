@@ -7,7 +7,7 @@ namespace
 {
     constexpr int s2i(std::string_view input)
     {
-        enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT, DATACOLLECTION, HELP };
+        enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT, DATACOLLECTION, HELP, ZEROPOS };
 
         if (input == "quit" || input == "stop" || input == "shutdown" || input == "exit") return QUIT;
         if (input == "infer" || input == "inference") return INFER;
@@ -19,6 +19,7 @@ namespace
         if (input == "record") return DATACOLLECTION;
         if (input == "name") return NAME;
         if (input == "help") return HELP;
+        if (input == "zeropos") return ZEROPOS;
         if (input.substr(0, 4) == "name") return NAME;
 
         else return DEFAULT;
@@ -166,6 +167,14 @@ namespace
         }
     }
 
+    /** \brief Sets the most recent entry in the world position buffer equal to (0, 0, 0). A flag is raised
+     * which causes the velocity inference loop to set the position to zero at the next iteration of the loop.
+    */
+    void set_position_zero()
+    {
+        arwain::reset_position = true;
+    }
+
     void parse_cli_input(const std::string& input)
     {
         switch (s2i(input.c_str()))
@@ -196,6 +205,9 @@ namespace
                 break;
             case s2i("name"):
                 set_folder_name(input);
+                break;
+            case s2i("zeropos"):
+                set_position_zero();
                 break;
             case s2i("help"):
                 std::cout << arwain::help_text << "\n";
