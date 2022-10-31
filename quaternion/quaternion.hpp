@@ -5,8 +5,6 @@
 #include <cmath>
 #include <array>
 
-#include "vector3.hpp"
-
 // Class layout ===================================================================================
 
 class Quaternion
@@ -36,7 +34,7 @@ class Quaternion
         double getY() const;
         double getZ() const;
         double getAngle() const;
-        Vector3 vector_part() const;
+        std::array<double, 3> vector_part() const;
         std::array<double, 3> getAxis() const;
         double norm() const;
         bool isNormal() const;
