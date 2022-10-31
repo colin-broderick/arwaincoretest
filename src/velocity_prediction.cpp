@@ -274,14 +274,6 @@ void predict_velocity()
 
                 while (arwain::system_mode == arwain::OperatingMode::Inference)
                 {
-                    // Reset the current position to zero if flag requests it.
-                    if (arwain::reset_position)
-                    {
-                        position = {0, 0, 0};
-                        kalman_position = {0, 0, 0};
-                        arwain::reset_position = false;
-                    }
-
                     { // Grab latest IMU packet
                         std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
                         imu = arwain::Buffers::IMU_WORLD_BUFFER;
@@ -473,14 +465,6 @@ void predict_velocity()
 
                 while (arwain::system_mode == arwain::OperatingMode::Inference)
                 {
-                    // Reset the current position to zero if flag requests it.
-                    if (arwain::reset_position)
-                    {
-                        position = {0, 0, 0};
-                        kalman_position = {0, 0, 0};
-                        arwain::reset_position = false;
-                    }
-                    
                     { // Grab latest IMU packet into local buffer.
                         std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
                         imu = arwain::Buffers::IMU_WORLD_BUFFER;
