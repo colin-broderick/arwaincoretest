@@ -273,7 +273,7 @@ int arwain::rerun_orientation_filter(const std::string& data_location)
 
 void arwain::setup_log_directory()
 {
-    if (arwain::folder_date_string_suffix == "null_name")
+    if (arwain::folder_date_string_suffix == "nullname")
     {
         arwain::folder_date_string_suffix = "";
     }
