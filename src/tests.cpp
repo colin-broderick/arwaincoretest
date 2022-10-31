@@ -684,6 +684,118 @@ int Test_CreateFile()
     }
 }
 
+/** \brief Creates a file object, checks file object is empty.
+ * \return 0 for test pass, 1 for test fail.
+ */
+int Test_CreateFileEmpty()
+{
+    arwain::Logger file;
+
+    if((file.get_filename() == "") && (!file.is_open()))
+    {
+        return pass_test();
+    }
+    else
+    {
+        return fail_test();
+    }
+}
+
+/** \brief checks is_open function is correct.
+ * \return 0 for test pass, 1 for test fail.
+ */
+int Test_FileIsOpen()
+{
+    arwain::Logger file("test_file");
+
+    if(file.is_open())
+    {
+        file.close();
+        return pass_test();
+    }
+    else
+    {
+        return fail_test();
+    }
+}
+
+/** \brief checks is_open function is correct.
+ * \return 0 for test pass, 1 for test fail.
+ */
+int Test_FileIsClosed()
+{
+    arwain::Logger file("test_file");
+    file.close();
+
+    if(!file.is_open())
+    {
+        
+        return pass_test();
+    }
+    else
+    {
+        return fail_test();
+    }
+}
+
+/** \brief checks get_filename() function is correct.
+ * \return 0 for test pass, 1 for test fail.
+ */
+int Test_GetFileName()
+{
+    arwain::Logger file("test_file");
+    file.close();
+
+    if(file.get_filename() == "test_file")
+    {
+        
+        return pass_test();
+    }
+    else
+    {
+        return fail_test();
+    }
+}
+
+/** \brief checks open() function is correct.
+ * \return 0 for test pass, 1 for test fail.
+ */
+int Test_OpenFile()
+{
+    arwain::Logger file("test_file");
+    file.close();
+
+    if(file.open("test_file"))
+    {
+        file.close();
+        return pass_test();
+    }
+    else
+    {
+        return fail_test();
+    }
+}
+
+/** \brief checks open() function is correct when file is already open.
+ * \return 0 for test pass, 1 for test fail.
+ */
+int Test_FileAlreadyOpen()
+{
+    arwain::Logger file("test_file");
+    //file.close();
+
+    if(file.open("test_file"))
+    {
+        file.close();
+        return fail_test();
+    }
+    else
+    {
+        file.close();
+        return pass_test();
+    }
+}
+
 /** \brief Defines and execute tests according to string command line argument.
  * Should be called as
  *     ./binary_name Test_NameOfTest
@@ -717,6 +829,13 @@ int main(int argc, char* argv[])
         {"Test_InputParserGetCmdOptionError",Test_InputParserGetCmdOptionError},
         {"Test_InputParserContainerError", Test_InputParserContainerError},
         {"Test_CreateFile", Test_CreateFile},
+        {"Test_CreateFileEmpty",Test_CreateFileEmpty},
+        {"Test_FileIsOpen",Test_FileIsOpen},
+        {"Test_FileIsClosed",Test_FileIsClosed},
+        {"Test_GetFileName",Test_GetFileName},
+        {"Test_OpenFile",Test_OpenFile},
+        {"Test_FileAlreadyOpen",Test_FileAlreadyOpen},
+
     };
 
     if (argc > 1)
