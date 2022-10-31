@@ -51,6 +51,7 @@ namespace arwain
     std::string folder_date_string_suffix;
     arwain::Status status;
     arwain::Logger error_log;
+    bool reset_position = false;
     bool request_gyro_calib = false;
     bool ready_for_inference = false;
     unsigned int velocity_inference_rate = 20;

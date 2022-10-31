@@ -136,6 +136,7 @@ namespace arwain
     extern arwain::Configuration config;
     extern arwain::Status status;
     extern arwain::Logger error_log;
+    extern bool reset_position;
     extern bool request_gyro_calib;
     extern bool ready_for_inference;
     extern unsigned int velocity_inference_rate;
