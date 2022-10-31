@@ -2,9 +2,7 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project(arwain)
 
-## Enable ctest unit testing framework
-include(CTest)
-enable_testing()
+find_package(GTest CONFIG REQUIRED)
 
 set(TENSORFLOW_SOURCE_DIR "/opt/arwain/workspace/tensorflow_src" CACHE PATH
   "Directory that contains the TensorFlow project" )
@@ -121,7 +119,7 @@ add_executable(${PROJECT_NAME}_test src/tests.cpp quaternion/quaternion.cpp time
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow)
-target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage)
+target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -ftest-coverage -fprofile-arcs)
 
 ## Link libraries
@@ -133,10 +131,6 @@ target_link_libraries(
     flatbuffers
 )
 target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
-
-include(arwain_tests.cmake)
-
-# add_custom_command(TARGET ${PROJECT_NAME}_test POST_BUILD COMMAND ctest && ../generate_test_coverage_report.sh)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)

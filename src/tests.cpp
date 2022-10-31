@@ -5,6 +5,8 @@
 #include <fstream>
 #include <filesystem>
 
+#include <gtest/gtest.h>
+
 #include "quaternion.hpp"
 #include "input_parser.hpp"
 #include "logger.hpp"
@@ -36,50 +38,13 @@ namespace Random
     }
 }
 
-/** \brief Return this to fail a test.
- * \return Integer 1, to indicate failed execution in UNIX-like environment.
- */
-int fail_test()
-{
-    return 1;
-}
-
-/** \brief Return this to pass a test.
- * \return Integer 0, to indicate successful execution in UNIX-like environment.
- */
-int pass_test()
-{
-    return 0;
-}
-
-/** \brief Checks that two doubles are 'equal' to within a certain (optional specified) tolerances.
- * \param num1 First double to compare.
- * \param num2 Second double to compare.
- * \param tolerance [optional] The two doubles should differ by no more than this to be considered equal.
- * \return Boolean indicating whether the two doubles are equal according to the given definition.
- */
-bool is_close(double num1, double num2, double tolerance = 0.0000001)
-{
-    return std::abs(num1 - num2) < tolerance;
-}
-
-/** \brief Testing that the unit test framework is configured correctly.
- * \return 0 for test pass, 1 for test fail.
- */
-int Test_Test()
-{
-    return pass_test();
-}
-
 /* -------------------------------------- QUATERNION_TESTS ------------------------------------- */
 
 /** \brief Test that the 4-element quaternion constructor produces valid output.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionConstructors()
+TEST(Quaternion, FourElementConstructor)
 {
-    bool passing = true;
-    
     for (int i = 0; i < 1000; i++)
     {
         double w = Random::Double();
@@ -89,23 +54,19 @@ int Test_QuaternionConstructors()
 
         Quaternion q{w, x, y, z};
 
-        passing &= (q.w == w);
-        passing &= (q.x == x);
-        passing &= (q.y == y);
-        passing &= (q.z == z);
+        EXPECT_EQ(q.w, w);
+        EXPECT_EQ(q.x, x);
+        EXPECT_EQ(q.y, y);
+        EXPECT_EQ(q.z, z);
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief The inverse of a versor is equal to its conjugate. The general inverse should agree with that given by
  * wolframalpha, e.g. https://www.wolframalpha.com/input/?i=inverse+of+quaternion+1%2B0i%2B0j%2B2k+**+%28-1i%2B3%2B4j%2B3k%29
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionInverse()
+TEST(Quaternion, Inverse)
 {
-    bool passing = true;
-
     // Quaternion inverse is the same as conjugate for unit quaternion.
     for (int i = 0; i < 1000; i++)
     {
@@ -113,60 +74,58 @@ int Test_QuaternionInverse()
         q1 = q1.unit();
         Quaternion q1i = q1.inverse();
         Quaternion q1c = q1.conjugate();
-        passing &= is_close(q1i.w, q1c.w);
-        passing &= is_close(q1i.x, q1c.x);
-        passing &= is_close(q1i.y, q1c.y);
-        passing &= is_close(q1i.z, q1c.z);
+        EXPECT_NEAR(q1i.w, q1c.w, 0.0000001);
+        EXPECT_NEAR(q1i.x, q1c.x, 0.0000001);
+        EXPECT_NEAR(q1i.y, q1c.y, 0.0000001);
+        EXPECT_NEAR(q1i.z, q1c.z, 0.0000001);
     }
 
     // General quaternion inverse, as compard to WolframAlpha result.
     Quaternion q1{0.089732334, 0.036265566, 0.4167531, 0.878915397};
     Quaternion q1i = q1.inverse();
     Quaternion q1i_expected{0.0939072, -0.0379529, -0.436143, -0.919808};
-    passing &= is_close(q1i.w, q1i_expected.w, 0.0001);
-    passing &= is_close(q1i.x, q1i_expected.x, 0.0001);
-    passing &= is_close(q1i.y, q1i_expected.y, 0.0001);
-    passing &= is_close(q1i.z, q1i_expected.z, 0.0001);
+    EXPECT_NEAR(q1i.w, q1i_expected.w, 0.0001);
+    EXPECT_NEAR(q1i.x, q1i_expected.x, 0.0001);
+    EXPECT_NEAR(q1i.y, q1i_expected.y, 0.0001);
+    EXPECT_NEAR(q1i.z, q1i_expected.z, 0.0001);
 
     Quaternion q2{0.143179759, 0.53385755, 0.366605684, 0.100738656};
     Quaternion q2i = q2.inverse();
     Quaternion q2i_expected{0.31814, -1.18621, -0.814585, -0.223838};
-    passing &= is_close(q2i.w, q2i_expected.w, 0.0001);
-    passing &= is_close(q2i.x, q2i_expected.x, 0.0001);
-    passing &= is_close(q2i.y, q2i_expected.y, 0.0001);
-    passing &= is_close(q2i.z, q2i_expected.z, 0.0001);
+    EXPECT_NEAR(q2i.w, q2i_expected.w, 0.0001);
+    EXPECT_NEAR(q2i.x, q2i_expected.x, 0.0001);
+    EXPECT_NEAR(q2i.y, q2i_expected.y, 0.0001);
+    EXPECT_NEAR(q2i.z, q2i_expected.z, 0.0001);
     
     Quaternion q3{0.004420628, 0.616040595, 0.840586052, 0.798462594};
     Quaternion q3i = q3.inverse();
     Quaternion q3i_expected{0.00256469, -0.357404, -0.487677, -0.463239};
-    passing &= is_close(q3i.w, q3i_expected.w, 0.0001);
-    passing &= is_close(q3i.x, q3i_expected.x, 0.0001);
-    passing &= is_close(q3i.y, q3i_expected.y, 0.0001);
-    passing &= is_close(q3i.z, q3i_expected.z, 0.0001);
+    EXPECT_NEAR(q3i.w, q3i_expected.w, 0.0001);
+    EXPECT_NEAR(q3i.x, q3i_expected.x, 0.0001);
+    EXPECT_NEAR(q3i.y, q3i_expected.y, 0.0001);
+    EXPECT_NEAR(q3i.z, q3i_expected.z, 0.0001);
     
     Quaternion q4{0.463493268, 0.516989217, 0.820006171, 0.978068835};
     Quaternion q4i = q4.inverse();
     Quaternion q4i_expected{0.219547, -0.244887, -0.38842, -0.463291};
-    passing &= is_close(q4i.w, q4i_expected.w, 0.0001);
-    passing &= is_close(q4i.x, q4i_expected.x, 0.0001);
-    passing &= is_close(q4i.y, q4i_expected.y, 0.0001);
-    passing &= is_close(q4i.z, q4i_expected.z, 0.0001);
+    EXPECT_NEAR(q4i.w, q4i_expected.w, 0.0001);
+    EXPECT_NEAR(q4i.x, q4i_expected.x, 0.0001);
+    EXPECT_NEAR(q4i.y, q4i_expected.y, 0.0001);
+    EXPECT_NEAR(q4i.z, q4i_expected.z, 0.0001);
     
     Quaternion q5{0.701366791, 0.938252281, 0.837144943, 0.37816936};
     Quaternion q5i = q5.inverse();
     Quaternion q5i_expected{0.316493, -0.423388, -0.377763, -0.17065};
-    passing &= is_close(q5i.w, q5i_expected.w, 0.0001);
-    passing &= is_close(q5i.x, q5i_expected.x, 0.0001);
-    passing &= is_close(q5i.y, q5i_expected.y, 0.0001);
-    passing &= is_close(q5i.z, q5i_expected.z, 0.0001);
-    
-    return passing ? pass_test() : fail_test();
+    EXPECT_NEAR(q5i.w, q5i_expected.w, 0.0001);
+    EXPECT_NEAR(q5i.x, q5i_expected.x, 0.0001);
+    EXPECT_NEAR(q5i.y, q5i_expected.y, 0.0001);
+    EXPECT_NEAR(q5i.z, q5i_expected.z, 0.0001);
 }
 
 /** \brief Quaternions add element-wise.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionSum()
+TEST(Quaternion, Sum)
 {
     bool passing = true;
     
@@ -175,13 +134,11 @@ int Test_QuaternionSum()
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         Quaternion q3 = q1 + q2;
-        passing &= (q3.w == q1.w + q2.w);
-        passing &= (q3.x == q1.x + q2.x);
-        passing &= (q3.y == q1.y + q2.y);
-        passing &= (q3.z == q1.z + q2.z);
+        EXPECT_EQ(q3.w, q1.w + q2.w);
+        EXPECT_EQ(q3.x, q1.x + q2.x);
+        EXPECT_EQ(q3.y, q1.y + q2.y);
+        EXPECT_EQ(q3.z, q1.z + q2.z);
     }
-    
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief A rotor quaternion can be constructed from a real number and a 3-vector.
@@ -189,9 +146,8 @@ int Test_QuaternionSum()
  * is the axis about which the rotation is performed.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionAxisAngleConstructor()
+TEST(Quaternion, AxisAngleConstructor)
 {
-    bool passing = true;
     /*
     The axis-angle constructor should produce the following quaternion:
         w = cos(angle/2.0);
@@ -204,9 +160,9 @@ int Test_QuaternionAxisAngleConstructor()
     double original_angle = Random::Double();
     std::array<double, 3> original_axis{Random::Double(), Random::Double(), Random::Double()};
     Quaternion q1{original_angle, original_axis};
-    passing &= (q1.getAxis() == original_axis);
-    passing &= (q1.getAngle() == original_angle);
-    passing &= (q1.w == std::cos(original_angle/2.0));
+    EXPECT_EQ(q1.getAxis(), original_axis);
+    EXPECT_EQ(q1.getAngle(), original_angle);
+    EXPECT_EQ(q1.w, std::cos(original_angle/2.0));
     
     double original_axis_norm = std::sqrt(
         original_axis[0] * original_axis[0]
@@ -219,64 +175,48 @@ int Test_QuaternionAxisAngleConstructor()
     double y = (std::sin(original_angle/2.0) * original_axis[1] * 1.0 / original_axis_norm);
     double z = (std::sin(original_angle/2.0) * original_axis[2] * 1.0 / original_axis_norm);
 
-    passing &= std::abs(x - q1.x) < tolerance;
-    passing &= std::abs(y - q1.y) < tolerance;
-    passing &= std::abs(z - q1.z) < tolerance;
-
-    return passing ? pass_test() : fail_test();
+    EXPECT_LT(std::abs(x - q1.x), tolerance);
+    EXPECT_LT(std::abs(y - q1.y), tolerance);
+    EXPECT_LT(std::abs(z - q1.z), tolerance);
 }
 
 /** \brief The default quaternion constructor creates the unit real quaternion.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionDefaultConstructor()
+TEST(Quaternion, DefaultConstructor)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
-        try
-        {
-            Quaternion q1;
-            passing &= (q1 == Quaternion{1, 0, 0, 0});
-        }
-        catch (const std::exception& e)
-        {
-            passing = false;
-        }
+        Quaternion q1;
+        EXPECT_EQ(q1.w, 1);
+        EXPECT_EQ(q1.x, 0);
+        EXPECT_EQ(q1.y, 0);
+        EXPECT_EQ(q1.z, 0);
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief A quaternion can be constructed from a vector; it will have zero real part, and the vector part
  * will be equal to the supplied vector.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionVectorConstructor()
+TEST(Quaternion, VectorConstructor)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
         std::array<double, 3> vector{Random::Double(), Random::Double(), Random::Double()};
         Quaternion q{vector};
-        passing &= (q.w == 0);
-        passing &= (q.x == vector[0]);
-        passing &= (q.y == vector[1]);
-        passing &= (q.z == vector[2]);
+        EXPECT_EQ(q.w, 0);
+        EXPECT_EQ(q.x, vector[0]);
+        EXPECT_EQ(q.y, vector[1]);
+        EXPECT_EQ(q.z, vector[2]);
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief The quaternion dot product is the same as for other vectors, i.e. the sum of element-wise products.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionDotProduct()
+TEST(Quaternion, DotProduct)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
@@ -284,19 +224,16 @@ int Test_QuaternionDotProduct()
 
         double dot_product = Quaternion::dot(q1, q2);
 
-        passing &= (dot_product == ((q1.w * q2.w) + (q1.x * q2.x) + (q1.y * q2.y) + (q1.z * q2.z)));
+        EXPECT_EQ(dot_product, ((q1.w * q2.w) + (q1.x * q2.x) + (q1.y * q2.y) + (q1.z * q2.z)));
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief Test computation of the angle between two rotor quaternions. Note that this concept
  * is only defined for unit quaternions.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionAngleBetween()
+TEST(Quaternion, AngleBetween)
 {
-    bool passing = true;
 
     for (int i = 0; i < 1000; i++)
     {
@@ -308,19 +245,15 @@ int Test_QuaternionAngleBetween()
         double angle = Quaternion::angle_between(q1, q2);
         double expected_angle = 2 * std::acos(q1.w*q2.w + q1.x*q2.x + q1.y*q2.y + q1.z*q2.z);
 
-        passing &= (angle == expected_angle);
+        EXPECT_EQ(angle, expected_angle);
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief Test subtraction of two quaternions. Quaternion subtraction is element-wise.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionSubtractionOperator()
+TEST(Quaternion, SubtractionOperator)
 {
-    bool passing = true;
-    
     for (int i = 0; i < 1000; i++)
     {
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
@@ -328,82 +261,70 @@ int Test_QuaternionSubtractionOperator()
 
         Quaternion diff = q1 - q2;
 
-        passing &= (diff.w == q1.w - q2.w);
-        passing &= (diff.x == q1.x - q2.x);
-        passing &= (diff.y == q1.y - q2.y);
-        passing &= (diff.z == q1.z - q2.z);
+        EXPECT_EQ(diff.w, q1.w - q2.w);
+        EXPECT_EQ(diff.x, q1.x - q2.x);
+        EXPECT_EQ(diff.y, q1.y - q2.y);
+        EXPECT_EQ(diff.z, q1.z - q2.z);
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief Test unary subtraction i.e. negation of a quaternion. All elements are negated.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionUnarySubtraction()
+TEST(Quaternion, UnarySubtraction)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         Quaternion q2 = -q1;
 
-        passing &= (q1.w == -q2.w);
-        passing &= (q1.x == -q2.x);
-        passing &= (q1.y == -q2.y);
-        passing &= (q1.z == -q2.z);
+        EXPECT_EQ(q1.w, -q2.w);
+        EXPECT_EQ(q1.x, -q2.x);
+        EXPECT_EQ(q1.y, -q2.y);
+        EXPECT_EQ(q1.z, -q2.z);
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief A unit quaternion has norm of one, within the tolerances of floating point arithmetic.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionIsNormal()
+TEST(Quaternion, IsNormal)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         q1 = q1.unit();
 
-        passing &= q1.isNormal();
-        passing &= !(q2.isNormal());
+        EXPECT_TRUE(q1.isNormal());
+        EXPECT_FALSE(q2.isNormal());
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief The vector part of a quaternion is simply a 3-vector formed of elements [x, y, z].
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionVectorPart()
+TEST(Quaternion, VectorPart)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         double x = q1.x;
         double y = q1.y;
         double z = q1.z;
-        passing &= (q1.vector_part() == std::array<double, 3>{q1.x, q1.y, q1.z});
+        std::array<double, 3> expected_return = q1.vector_part();
+    
+        EXPECT_EQ(expected_return[0], x);
+        EXPECT_EQ(expected_return[1], y);
+        EXPECT_EQ(expected_return[2], z);
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief Two quaternions are equal if all of their elements are equal.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionEqualityOperator()
+TEST(Quaternion, EqualityOperator)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
         // Any quaternion should be equal to itself, and any random quaternion is (almost certainly) not equal to
@@ -411,73 +332,58 @@ int Test_QuaternionEqualityOperator()
         {
             Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
             Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
-            passing &= !(q1 == q2);
-            passing &= (q1 == q1);
+            EXPECT_FALSE(q1 == q2);
+            EXPECT_TRUE(q1 == q1);
         }
 
         // Two quaternions are the same except for element w
         {
             Quaternion q1{Random::Double(), 1.5, 1.5, 1.5};
             Quaternion q2{Random::Double(), 1.5, 1.5, 1.5};
-            passing &= !(q1 == q2);
+            EXPECT_FALSE(q1 == q2);
         }
 
         // Two quaternions are the same except for element x
         {
             Quaternion q1{1.5, Random::Double(), 1.5, 1.5};
             Quaternion q2{1.5, Random::Double(), 1.5, 1.5};
-            passing &= !(q1 == q2);
+            EXPECT_FALSE(q1 == q2);
         }
 
         // Two quaternions are the same except for element y
         {
             Quaternion q1{1.5, 1.5, Random::Double(), 1.5};
             Quaternion q2{1.5, 1.5, Random::Double(), 1.5};
-            passing &= !(q1 == q2);
+            EXPECT_FALSE(q1 == q2);
         }
 
         // Two quaternions are the same except for element z
         {
             Quaternion q1{1.5, 1.5, 1.5, Random::Double()};
             Quaternion q2{1.5, 1.5, 1.5, Random::Double()};
-            passing &= !(q1 == q2);
+            EXPECT_FALSE(q1 == q2);
         }
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief We can send a string representation of a quaternion using the stream operators.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionOutputStreamOperator()
+TEST(Quaternion, OutputStreamOperator)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
-        try
-        {
-            std::cout << q1 << "\n";
-        }
-        catch (const std::exception& e)
-        {
-            passing = false;
-        }
+        EXPECT_NO_THROW(std::cout << q1 << "\n");
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief The quaternion product is defined here:
  * https://colin-broderick.medium.com/deriving-the-quaternion-product-a22858c40921
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionProduct()
+TEST(Quaternion, Product)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
         // Generate eight random numbers, then build two quaternions from them,
@@ -503,10 +409,8 @@ int Test_QuaternionProduct()
             p1*q4 + p2*q3 - p3*q2 + p4*q1
         };
 
-        passing &= (expected_product == actual_product);
+        EXPECT_EQ(expected_product, actual_product);
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief We generate some quaternions, and test that the slerp of them is in agreement with an
@@ -514,30 +418,26 @@ int Test_QuaternionProduct()
  * https://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionSlerp()
+TEST(Quaternion, SLERP)
 {
-    bool passing = true;
-
     {
         Quaternion q1{1, 0, 0, 0};
         Quaternion q2{0, 1, 0, 0};
         Quaternion q3{0.8837656300886934, 0.46792981426057344, 0, 0};
         double t = 0.31;
         Quaternion q4 = Quaternion::slerp(q1, q2, t);
-        passing &= is_close(q3.w, q4.w);
-        passing &= is_close(q3.x, q4.x);
-        passing &= is_close(q3.y, q4.y);
-        passing &= is_close(q3.z, q4.z);
+        EXPECT_NEAR(q3.w, q4.w, 0.0001);
+        EXPECT_NEAR(q3.x, q4.x, 0.0001);
+        EXPECT_NEAR(q3.y, q4.y, 0.0001);
+        EXPECT_NEAR(q3.z, q4.z, 0.0001);
     }
-
     {
         Quaternion q1{1, 0, 0, 0};
         Quaternion q2{-1, 0, 0, 0};
         double t = 0.45;
         Quaternion q4 = Quaternion::slerp(q1, q2, t);
-        passing &= (q1 == q4);
+        EXPECT_EQ(q1, q4);
     }
-    
     {
         Quaternion q1{0.99, 0, 0, 0};
         Quaternion q2{-0.99, 0, 0, 0};
@@ -545,47 +445,40 @@ int Test_QuaternionSlerp()
         Quaternion q3{0.9940009637008222, 0, 0, 0};
         Quaternion q4{-0.9940009637008222, 0, 0, 0};
         Quaternion q5 = Quaternion::slerp(q1, q2, t);
-        passing &= ((q3 == q5) || (q4 == q5));
+        EXPECT_TRUE((q3 == q5) || (q4 == q5));
     }
-
     {
         Quaternion q1{0.951189731, 0.210262993, 0.220275517, 0.050062617};
         Quaternion q2{0.951189731, 0.220275517, 0.210262993, 0.050062617};
         double t = 0.77;
         Quaternion q3{0.9512066194738531, 0.21797647460766956, 0.2125696796489197, 0.050063505867037415};
         Quaternion q4 = Quaternion::slerp(q1, q2, t);
-        passing &= is_close(q3.w, q4.w, 0.001);
-        passing &= is_close(q3.x, q4.x, 0.001);
-        passing &= is_close(q3.y, q4.y, 0.001);
-        passing &= is_close(q3.z, q4.z, 0.001);
+        EXPECT_NEAR(q3.w, q4.w, 0.001);
+        EXPECT_NEAR(q3.x, q4.x, 0.001);
+        EXPECT_NEAR(q3.y, q4.y, 0.001);
+        EXPECT_NEAR(q3.z, q4.z, 0.001);
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief Quaternion::nslerp calls Quaternion::slerp, then normalizes the result before returning.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_QuaternionNormSlerp()
+TEST(Quaternion, NSLERP)
 {
-    bool passing = true;
-
     for (int i = 0; i < 1000; i++)
     {
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         double t = Random::DoubleBetween(0, 1);
         Quaternion q3 = Quaternion::nslerp(q1, q2, t);
-        passing &= q3.isNormal();
+        EXPECT_TRUE(q3.isNormal());
     }
-
-    return passing ? pass_test() : fail_test();
 }
 
 /** \brief Creates a parser object with a given command, then checks command has been stored correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_InputParser()
+TEST(InputParser, Constructor)
 {
     int j = 2;
     std::string program = "arwain_test";
@@ -593,21 +486,14 @@ int Test_InputParser()
     char* input_array[2] = {program.data(),command.data()};
     InputParser parser(j, input_array);
     
-    if(parser.contains("hello"))
-    {
-        return pass_test();
-    }
-    else
-    {
-        return fail_test();
-    }
+    EXPECT_TRUE(parser.contains("hello"));
 }
 
 /** \brief Creates a parser object with a given command and a value for that command, then checks the command value has been stored correctly
  *  and can be retreived.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_InputParserGetCmdOption()
+TEST(InputParser, GetCmdOption)
 {
     int j = 3;
     std::string program = "arwain_test";
@@ -616,20 +502,13 @@ int Test_InputParserGetCmdOption()
     char* input_array[3] = {program.data(),command.data(), paramater.data()};
     InputParser parser(j, input_array);
 
-    if(parser.getCmdOption("hello") == "1")
-    {
-        return pass_test();
-    }
-    else
-    {
-        return fail_test();   
-    }
+    EXPECT_EQ(parser.getCmdOption("hello"), "1");
 }
 
 /** \brief Creates a parser object with a given command, then checks that there hasn't been a value assosiated with that command. 
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_InputParserGetCmdOptionError()
+TEST(InputParser, GetCmdOptionError)
 {
     int j = 2;
     std::string program = "arwain_test";
@@ -637,20 +516,13 @@ int Test_InputParserGetCmdOptionError()
     char* input_array[2] = {program.data(),command.data()};
     InputParser parser(j, input_array);
 
-     if(parser.getCmdOption("hello") == "")
-    {
-        return pass_test();
-    }
-    else
-    {
-        return fail_test();   
-    }
+    EXPECT_EQ(parser.getCmdOption("hello"), "");
 }
 
 /** \brief Creates a parser object with a given command, then checks for a different command to check that it is not present.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_InputParserContainerError()
+TEST(InputParser, ContainerError)
 {
     int j = 2;
     std::string program = "arwain_test";
@@ -658,163 +530,104 @@ int Test_InputParserContainerError()
     char* input_array[2] = {program.data(),command.data()};
     InputParser parser(j, input_array);
 
-    if(parser.contains("bye") == false)
-    {
-        return pass_test();
-    }
-    else
-    {
-        return fail_test();
-    }
+    EXPECT_FALSE(parser.contains("bye"));
 }
 
 /** \brief Creates a file object, checks file has been created correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerCreateFile()
+TEST(Logger, CreateFile)
 {
     arwain::Logger file("test_file");
 
-    if((file.get_filename() == "test_file") && (file.is_open()))
-    {
-        file.close();
-        std::filesystem::remove("test_file");
-        return pass_test();
-        
-    }
-    else
-    {
-        std::filesystem::remove("test_file");
-        return fail_test();
-        
-    }
+    EXPECT_EQ(file.get_filename(), "test_file");
+    EXPECT_TRUE(file.is_open());
+
+    file.close();
+    std::filesystem::remove("test_file");
 }
 
 /** \brief Creates a file object, checks file object is empty.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerCreateFileEmpty()
+TEST(Logger, CreateFileEmpty)
 {
     arwain::Logger file;
 
-    if((file.get_filename() == "") && (!file.is_open()))
-    {
-        std::filesystem::remove("test_file");
-        return pass_test();
-    }
-    else
-    {
-        std::filesystem::remove("test_file");
-        return fail_test();
-    }
+    EXPECT_EQ(file.get_filename(), "");
+    EXPECT_FALSE(file.is_open());
+
+    std::filesystem::remove("test_file");
 }
 
 /** \brief checks is_open function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerFileIsOpen()
+TEST(Logger, FileIsOpen)
 {
     arwain::Logger file("test_file");
 
-    if(file.is_open())
-    {
-        file.close();
-        std::filesystem::remove("test_file");
-        return pass_test();
-    }
-    else
-    {
-        std::filesystem::remove("test_file");
-        return fail_test();
-    }
+    EXPECT_TRUE(file.is_open());
+    file.close();
+    std::filesystem::remove("test_file");
 }
 
 /** \brief checks is_open function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerFileIsClosed()
+TEST(Logger, FileClosed)
 {
     arwain::Logger file("test_file");
     file.close();
 
-    if((!file.is_open()) && (std::filesystem::exists("test_file")))
-    {
-        std::filesystem::remove("test_file");
-        return pass_test();
-    }
-    else
-    {
-        std::filesystem::remove("test_file");
-        return fail_test();
-    }
+    EXPECT_FALSE(file.is_open());
+    EXPECT_TRUE(std::filesystem::exists("test_file"));
+
+    std::filesystem::remove("test_file");
 }
 
 /** \brief checks get_filename() function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerGetFileName()
+TEST(Logger, GetFileName)
 {
     arwain::Logger file("test_file");
     file.close();
 
-    if(file.get_filename() == "test_file")
-    {
-        std::filesystem::remove("test_file");
-        return pass_test();
-    }
-    else
-    {
-        std::filesystem::remove("test_file");
-        return fail_test();
-    }
+    EXPECT_EQ(file.get_filename(), "test_file");
+    std::filesystem::remove("test_file");
 }
 
 /** \brief checks open() function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerOpenFile()
+TEST(Logger, OpenFile)
 {
     arwain::Logger file("test_file");
     file.close();
 
-    if(file.open("test_file"))
-    {
-        file.close();
-        std::filesystem::remove("test_file");
-        return pass_test();
-    }
-    else
-    {
-        std::filesystem::remove("test_file");
-        return fail_test();
-    }
+    EXPECT_TRUE(file.open("test_file"));
+
+    file.close();
+    std::filesystem::remove("test_file");
 }
 
 /** \brief checks open() function is correct when file is already open.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerFileAlreadyOpen()
+TEST(Logger, FileAlreadyOpen)
 {
     arwain::Logger file("test_file");
 
-    if(file.open("test_file"))
-    {
-        file.close();
-        std::filesystem::remove("test_file");
-        return fail_test();
-    }
-    else
-    {
-        file.close();
-        std::filesystem::remove("test_file");
-        return pass_test();
-    }
+    EXPECT_FALSE(file.open("test_file"));
+    file.close();
+    std::filesystem::remove("test_file");
 }
 
 /** \brief checks << operator inserts data into a file correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerInsertString()
+TEST(Logger, InsertString)
 {
     arwain::Logger file("test_file");
     
@@ -824,23 +637,15 @@ int Test_LoggerInsertString()
     std::ifstream inputfile{"test_file"};
     std::string data;
     std::getline(inputfile, data);
+    std::filesystem::remove("test_file");
 
-    if(data == "test string!")
-    {
-        std::filesystem::remove("test_file");
-        return pass_test();
-    }
-    else
-    {
-        std::filesystem::remove("test_file");
-        return fail_test();
-    }
+    EXPECT_EQ(data, "test string!");
 }
 
 /** \brief checks << operator inserts data into a file correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerInsertInt()
+TEST(Logger, InsertInt)
 {
     arwain::Logger file("test_file");
     
@@ -850,23 +655,15 @@ int Test_LoggerInsertInt()
     std::ifstream inputfile{"test_file"};
     std::string data;
     std::getline(inputfile, data);
+    std::filesystem::remove("test_file");
 
-    if(data == "1")
-    {
-        std::filesystem::remove("test_file");
-        return pass_test();
-    }
-    else
-    {
-        std::filesystem::remove("test_file");
-        return fail_test();
-    }
+    EXPECT_EQ(data, "1");
 }
 
 /** \brief checks << operator inserts data into a file correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_LoggerInsertFloat()
+TEST(Logger, InsertFloat)
 {
     arwain::Logger file("test_file");
     
@@ -876,77 +673,14 @@ int Test_LoggerInsertFloat()
     std::ifstream inputfile{"test_file"};
     std::string data;
     std::getline(inputfile, data);
+    std::filesystem::remove("test_file");
 
-    if(data == "1.1")
-    {
-        std::filesystem::remove("test_file");
-        return pass_test();
-    }
-    else
-    {
-        std::filesystem::remove("test_file");
-        return fail_test();
-    }
+    EXPECT_EQ(data, "1.1");
 }
 
-/** \brief Defines and execute tests according to string command line argument.
- * Should be called as
- *     ./binary_name Test_NameOfTest
- * \param argc Argument count.
- * \param argv Array of command line arguments.
- * \return 0 for test pass, 1 for test fail.
- */
 int main(int argc, char* argv[])
 {
-    std::map<std::string, std::function<int()>> funcs = {
-        {"Test_Test", Test_Test},
-        {"Test_QuaternionConstructors", Test_QuaternionConstructors},
-        {"Test_QuaternionInverse", Test_QuaternionInverse},
-        {"Test_QuaternionSum", Test_QuaternionSum},
-        {"Test_QuaternionAxisAngleConstructor", Test_QuaternionAxisAngleConstructor},
-        {"Test_QuaternionDefaultConstructor", Test_QuaternionDefaultConstructor},
-        {"Test_QuaternionVectorConstructor", Test_QuaternionVectorConstructor},
-        {"Test_QuaternionDotProduct", Test_QuaternionDotProduct},
-        {"Test_QuaternionAngleBetween", Test_QuaternionAngleBetween},
-        {"Test_QuaternionSubtractionOperator", Test_QuaternionSubtractionOperator},
-        {"Test_QuaternionUnarySubtraction", Test_QuaternionUnarySubtraction},
-        {"Test_QuaternionIsNormal", Test_QuaternionIsNormal},
-        {"Test_QuaternionVectorPart", Test_QuaternionVectorPart},
-        {"Test_QuaternionEqualityOperator", Test_QuaternionEqualityOperator},
-        {"Test_QuaternionOutputStreamOperator", Test_QuaternionOutputStreamOperator},
-        {"Test_QuaternionProduct", Test_QuaternionProduct},
-        {"Test_QuaternionSlerp", Test_QuaternionSlerp},
-        {"Test_QuaternionNormSlerp", Test_QuaternionNormSlerp},
-        {"Test_InputParser", Test_InputParser},
-        {"Test_InputParserGetCmdOption",Test_InputParserGetCmdOption},
-        {"Test_InputParserGetCmdOptionError",Test_InputParserGetCmdOptionError},
-        {"Test_InputParserContainerError", Test_InputParserContainerError},
-        {"Test_LoggerCreateFile", Test_LoggerCreateFile},
-        {"Test_LoggerCreateFileEmpty",Test_LoggerCreateFileEmpty},
-        {"Test_LoggerFileIsOpen",Test_LoggerFileIsOpen},
-        {"Test_LoggerFileIsClosed",Test_LoggerFileIsClosed},
-        {"Test_LoggerGetFileName",Test_LoggerGetFileName},
-        {"Test_LoggerOpenFile",Test_LoggerOpenFile},
-        {"Test_LoggerFileAlreadyOpen",Test_LoggerFileAlreadyOpen},
-        {"Test_LoggerInsertString", Test_LoggerInsertString},
-        {"Test_LoggerInsertInt", Test_LoggerInsertInt},
-        {"Test_LoggerInsertFloat", Test_LoggerInsertFloat},
-
-    };
-
-    if (argc > 1)
-    {
-        try
-        {
-            return funcs.at(argv[1])();
-        }
-        catch (const std::out_of_range& e)
-        {
-            return fail_test();
-        }
-    }
-    else
-    {
-        return fail_test();
-    }
+    std::cout.rdbuf(nullptr);
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
