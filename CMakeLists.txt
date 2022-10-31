@@ -116,7 +116,7 @@ add_subdirectory(uubla)
 ## Executables to build
 add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
 add_executable(${PROJECT_NAME}_cmdr src/lora_commander.cpp)
-add_executable(${PROJECT_NAME}_test src/tests.cpp quaternion/quaternion.cpp timers/timers.cpp input_parser/input_parser.cpp)
+add_executable(${PROJECT_NAME}_test src/tests.cpp quaternion/quaternion.cpp timers/timers.cpp input_parser/input_parser.cpp logger/logger.cpp)
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
