@@ -197,9 +197,6 @@ namespace
             case s2i("name"):
                 set_folder_name(input);
                 break;
-            case s2i("zeropos"):
-                set_position_zero();
-                break;
             case s2i("help"):
                 std::cout << arwain::help_text << "\n";
                 break;
