@@ -167,14 +167,6 @@ namespace
         }
     }
 
-    /** \brief Sets the most recent entry in the world position buffer equal to (0, 0, 0). A flag is raised
-     * which causes the velocity inference loop to set the position to zero at the next iteration of the loop.
-    */
-    void set_position_zero()
-    {
-        arwain::reset_position = true;
-    }
-
     void parse_cli_input(const std::string& input)
     {
         switch (s2i(input.c_str()))
