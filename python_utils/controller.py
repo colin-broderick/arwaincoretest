@@ -134,8 +134,10 @@ def start():
     if fname is not None:
         write_to_service(f"name {fname}")
         time.sleep(0.1)
-        write_to_service("infer")        
+        write_to_service("infer")
     else:
+        write_to_service("name nullname")
+        time.sleep(0.1)
         write_to_service("infer")        
 
     response = jsonify(response_dict)
