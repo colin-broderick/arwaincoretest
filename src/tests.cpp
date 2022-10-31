@@ -391,7 +391,7 @@ int Test_QuaternionVectorPart()
         double x = q1.x;
         double y = q1.y;
         double z = q1.z;
-        passing &= (q1.vector_part() == Vector3{q1.x, q1.y, q1.z});
+        passing &= (q1.vector_part() == std::array<double, 3>{q1.x, q1.y, q1.z});
     }
 
     return passing ? pass_test() : fail_test();
