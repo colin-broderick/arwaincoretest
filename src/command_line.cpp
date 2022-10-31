@@ -7,7 +7,7 @@ namespace
 {
     constexpr int s2i(std::string_view input)
     {
-        enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT, DATACOLLECTION, HELP, ZEROPOS };
+        enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT, DATACOLLECTION, HELP };
 
         if (input == "quit" || input == "stop" || input == "shutdown" || input == "exit") return QUIT;
         if (input == "infer" || input == "inference") return INFER;
@@ -19,7 +19,6 @@ namespace
         if (input == "record") return DATACOLLECTION;
         if (input == "name") return NAME;
         if (input == "help") return HELP;
-        if (input == "zeropos") return ZEROPOS;
         if (input.substr(0, 4) == "name") return NAME;
 
         else return DEFAULT;
