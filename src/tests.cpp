@@ -2,6 +2,9 @@
 #include <random>
 #include <iostream>
 #include <functional>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
 
 #include "quaternion.hpp"
 #include "input_parser.hpp"
@@ -669,34 +672,40 @@ int Test_InputParserContainerError()
 /** \brief Creates a file object, checks file has been created correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_CreateFile()
+int Test_LoggerCreateFile()
 {
     arwain::Logger file("test_file");
 
     if((file.get_filename() == "test_file") && (file.is_open()))
     {
         file.close();
+        std::filesystem::remove("test_file");
         return pass_test();
+        
     }
     else
     {
+        std::filesystem::remove("test_file");
         return fail_test();
+        
     }
 }
 
 /** \brief Creates a file object, checks file object is empty.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_CreateFileEmpty()
+int Test_LoggerCreateFileEmpty()
 {
     arwain::Logger file;
 
     if((file.get_filename() == "") && (!file.is_open()))
     {
+        std::filesystem::remove("test_file");
         return pass_test();
     }
     else
     {
+        std::filesystem::remove("test_file");
         return fail_test();
     }
 }
@@ -704,17 +713,19 @@ int Test_CreateFileEmpty()
 /** \brief checks is_open function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_FileIsOpen()
+int Test_LoggerFileIsOpen()
 {
     arwain::Logger file("test_file");
 
     if(file.is_open())
     {
         file.close();
+        std::filesystem::remove("test_file");
         return pass_test();
     }
     else
     {
+        std::filesystem::remove("test_file");
         return fail_test();
     }
 }
@@ -722,18 +733,19 @@ int Test_FileIsOpen()
 /** \brief checks is_open function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_FileIsClosed()
+int Test_LoggerFileIsClosed()
 {
     arwain::Logger file("test_file");
     file.close();
 
-    if(!file.is_open())
+    if((!file.is_open()) && (std::filesystem::exists("test_file")))
     {
-        
+        std::filesystem::remove("test_file");
         return pass_test();
     }
     else
     {
+        std::filesystem::remove("test_file");
         return fail_test();
     }
 }
@@ -741,18 +753,19 @@ int Test_FileIsClosed()
 /** \brief checks get_filename() function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_GetFileName()
+int Test_LoggerGetFileName()
 {
     arwain::Logger file("test_file");
     file.close();
 
     if(file.get_filename() == "test_file")
     {
-        
+        std::filesystem::remove("test_file");
         return pass_test();
     }
     else
     {
+        std::filesystem::remove("test_file");
         return fail_test();
     }
 }
@@ -760,7 +773,7 @@ int Test_GetFileName()
 /** \brief checks open() function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_OpenFile()
+int Test_LoggerOpenFile()
 {
     arwain::Logger file("test_file");
     file.close();
@@ -768,10 +781,12 @@ int Test_OpenFile()
     if(file.open("test_file"))
     {
         file.close();
+        std::filesystem::remove("test_file");
         return pass_test();
     }
     else
     {
+        std::filesystem::remove("test_file");
         return fail_test();
     }
 }
@@ -779,20 +794,99 @@ int Test_OpenFile()
 /** \brief checks open() function is correct when file is already open.
  * \return 0 for test pass, 1 for test fail.
  */
-int Test_FileAlreadyOpen()
+int Test_LoggerFileAlreadyOpen()
 {
     arwain::Logger file("test_file");
-    //file.close();
 
     if(file.open("test_file"))
     {
         file.close();
+        std::filesystem::remove("test_file");
         return fail_test();
     }
     else
     {
         file.close();
+        std::filesystem::remove("test_file");
         return pass_test();
+    }
+}
+
+/** \brief checks << operator inserts data into a file correctly.
+ * \return 0 for test pass, 1 for test fail.
+ */
+int Test_LoggerInsertString()
+{
+    arwain::Logger file("test_file");
+    
+    file << "test string!";
+    file.close();
+
+    std::ifstream inputfile{"test_file"};
+    std::string data;
+    std::getline(inputfile, data);
+
+    if(data == "test string!")
+    {
+        std::filesystem::remove("test_file");
+        return pass_test();
+    }
+    else
+    {
+        std::filesystem::remove("test_file");
+        return fail_test();
+    }
+}
+
+/** \brief checks << operator inserts data into a file correctly.
+ * \return 0 for test pass, 1 for test fail.
+ */
+int Test_LoggerInsertInt()
+{
+    arwain::Logger file("test_file");
+    
+    file << 1;
+    file.close();
+
+    std::ifstream inputfile{"test_file"};
+    std::string data;
+    std::getline(inputfile, data);
+
+    if(data == "1")
+    {
+        std::filesystem::remove("test_file");
+        return pass_test();
+    }
+    else
+    {
+        std::filesystem::remove("test_file");
+        return fail_test();
+    }
+}
+
+/** \brief checks << operator inserts data into a file correctly.
+ * \return 0 for test pass, 1 for test fail.
+ */
+int Test_LoggerInsertFloat()
+{
+    arwain::Logger file("test_file");
+    
+    file << 1.1;
+    file.close();
+
+    std::ifstream inputfile{"test_file"};
+    std::string data;
+    std::getline(inputfile, data);
+
+    if(data == "1.1")
+    {
+        std::filesystem::remove("test_file");
+        return pass_test();
+    }
+    else
+    {
+        std::filesystem::remove("test_file");
+        return fail_test();
     }
 }
 
@@ -828,13 +922,16 @@ int main(int argc, char* argv[])
         {"Test_InputParserGetCmdOption",Test_InputParserGetCmdOption},
         {"Test_InputParserGetCmdOptionError",Test_InputParserGetCmdOptionError},
         {"Test_InputParserContainerError", Test_InputParserContainerError},
-        {"Test_CreateFile", Test_CreateFile},
-        {"Test_CreateFileEmpty",Test_CreateFileEmpty},
-        {"Test_FileIsOpen",Test_FileIsOpen},
-        {"Test_FileIsClosed",Test_FileIsClosed},
-        {"Test_GetFileName",Test_GetFileName},
-        {"Test_OpenFile",Test_OpenFile},
-        {"Test_FileAlreadyOpen",Test_FileAlreadyOpen},
+        {"Test_LoggerCreateFile", Test_LoggerCreateFile},
+        {"Test_LoggerCreateFileEmpty",Test_LoggerCreateFileEmpty},
+        {"Test_LoggerFileIsOpen",Test_LoggerFileIsOpen},
+        {"Test_LoggerFileIsClosed",Test_LoggerFileIsClosed},
+        {"Test_LoggerGetFileName",Test_LoggerGetFileName},
+        {"Test_LoggerOpenFile",Test_LoggerOpenFile},
+        {"Test_LoggerFileAlreadyOpen",Test_LoggerFileAlreadyOpen},
+        {"Test_LoggerInsertString", Test_LoggerInsertString},
+        {"Test_LoggerInsertInt", Test_LoggerInsertInt},
+        {"Test_LoggerInsertFloat", Test_LoggerInsertFloat},
 
     };
 
