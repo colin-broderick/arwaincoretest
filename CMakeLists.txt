@@ -123,14 +123,12 @@ add_executable(
     unit_tests/logger_tests.cpp
     unit_tests/madgwick_tests.cpp
     unit_tests/vector3_tests.cpp
-)
-target_link_libraries(
-    ${PROJECT_NAME}_test
-    vector3
-    quaternion
-    input_parser
-    logger
-    madgwick_filter
+    vector3/vector3.cpp
+    quaternion/quaternion.cpp
+    input_parser/input_parser.cpp
+    logger/logger.cpp
+    orientation/madgwick.cpp
+
 )
 
 ## Set compiler flags
