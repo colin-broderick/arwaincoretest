@@ -98,6 +98,7 @@ set(PROJECT_CPP_FILES
 
 add_subdirectory(iim42652)
 add_subdirectory(orientation)
+add_subdirectory(vector3)
 add_subdirectory(lora)
 add_subdirectory(quaternion)
 add_subdirectory(logger)
@@ -122,10 +123,16 @@ add_executable(
     unit_tests/input_parser_tests.cpp
     unit_tests/logger_tests.cpp
     unit_tests/madgwick_tests.cpp
+    unit_tests/vector3_tests.cpp
     input_parser/input_parser.cpp
     logger/logger.cpp
     orientation/madgwick.cpp
 )
+target_link_libraries(
+    ${PROJECT_NAME}_test
+    vector3
+)
+
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
@@ -134,7 +141,7 @@ target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -ftest-coverage -fprofile-arcs)
 
 ## Link libraries
-target_link_libraries(${PROJECT_NAME} boost_system madgwick_filter efaroe_filter -pthread dl stdc++fs i2c iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter uublal)
+target_link_libraries(${PROJECT_NAME} boost_system madgwick_filter efaroe_filter -pthread dl stdc++fs i2c iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter uubla vector3)
 # FOr tensorflow
 target_link_libraries(
     ${PROJECT_NAME}
