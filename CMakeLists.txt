@@ -121,8 +121,10 @@ add_executable(
     unit_tests/quaternion_tests.cpp
     unit_tests/input_parser_tests.cpp
     unit_tests/logger_tests.cpp
+    unit_tests/madgwick_tests.cpp
     input_parser/input_parser.cpp
     logger/logger.cpp
+    orientation/madgwick.cpp
 )
 
 ## Set compiler flags
