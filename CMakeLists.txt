@@ -120,7 +120,7 @@ add_executable(
     quaternion/quaternion.cpp
     unit_tests/quaternion_tests.cpp
     unit_tests/input_parser_tests.cpp
-    unit_tests/logger.cpp
+    unit_tests/logger_tests.cpp
     input_parser/input_parser.cpp
     logger/logger.cpp
 )
