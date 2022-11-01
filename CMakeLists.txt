@@ -118,21 +118,20 @@ add_executable(${PROJECT_NAME}_cmdr src/lora_commander.cpp)
 add_executable(
     ${PROJECT_NAME}_test
     unit_tests/tests.cpp
-    quaternion/quaternion.cpp
     unit_tests/quaternion_tests.cpp
     unit_tests/input_parser_tests.cpp
     unit_tests/logger_tests.cpp
     unit_tests/madgwick_tests.cpp
     unit_tests/vector3_tests.cpp
-    input_parser/input_parser.cpp
-    logger/logger.cpp
-    orientation/madgwick.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}_test
     vector3
+    quaternion
+    input_parser
+    logger
+    madgwick_filter
 )
-
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
