@@ -206,3 +206,116 @@ TEST(Vector3, DotProduct)
     }
 }
 
+TEST(Vector3, AngleBetween)
+{
+    Vector3 v0{0.1857669481991132, 0.32978932882087486, 0.6884939739258459};
+    Vector3 v1{0.780797532183143, 0.2626766978368277, 0.28715335316602153};
+    double expected_angle_01 = 0.89383216130855;
+    EXPECT_NEAR(Vector3::angle_between(v0, v1), expected_angle_01, 0.0000001);
+
+    Vector3 v2{0.8041964747102701, 0.6292249757761414, 0.9353910130782362};
+    Vector3 v3{0.47864511009380295, 0.891823245890142, 0.13513004312589838};
+    double expected_angle_23 = 0.70986287423397;
+    EXPECT_NEAR(Vector3::angle_between(v2, v3), expected_angle_23, 0.0000001);
+
+    Vector3 v4{0.22470798356309896, 0.7116971485311132, 0.4219348611837962};
+    Vector3 v5{0.08542676692363194, 0.8393346354334873, 0.1890299232765289};
+    double expected_angle_45 = 0.350006093883595;
+    EXPECT_NEAR(Vector3::angle_between(v4, v5), expected_angle_45, 0.0000001);
+}
+
+TEST(Vector3, EqualityOperator)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        double x1 = Random::Double();
+        double y1 = Random::Double();
+        double z1 = Random::Double();
+        double x2 = Random::Double();
+        double y2 = Random::Double();
+        double z2 = Random::Double();
+
+        Vector3 v1{x1, y1, z1};
+        Vector3 v2{x2, y2, z2};
+
+        EXPECT_TRUE(v1 == v1);
+        EXPECT_TRUE(v2 == v2);
+        EXPECT_FALSE(v1 == v2);
+        EXPECT_FALSE(v2 == v1);
+
+        Vector3 v3{x1, y1, z1};
+        Vector3 v4{x1, y2, z1};
+
+        EXPECT_FALSE(v3 == v4);
+        EXPECT_FALSE(v4 == v3);
+
+        Vector3 v5{x1, y1, z1};
+        Vector3 v6{x1, y1, z2};
+
+        EXPECT_FALSE(v5 == v6);
+        EXPECT_FALSE(v6 == v5);
+    }
+}
+
+TEST(Vector3, NonEqualityOperator)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        double x1 = Random::Double();
+        double y1 = Random::Double();
+        double z1 = Random::Double();
+        double x2 = Random::Double();
+        double y2 = Random::Double();
+        double z2 = Random::Double();
+
+        Vector3 v1{x1, y1, z1};
+        Vector3 v2{x2, y2, z2};
+
+        EXPECT_TRUE(v1 != v2);
+        EXPECT_TRUE(v2 != v1);
+    }   
+}
+
+TEST(Vector6, IndexOperator)
+{
+    Vector6 v{{1, 2, 3}, {4, 5, 6}};
+
+    EXPECT_EQ(v[3], 1.0);
+    EXPECT_EQ(v[4], 2.0);
+    EXPECT_EQ(v[5], 3.0);
+    EXPECT_EQ(v[0], 4.0);
+    EXPECT_EQ(v[1], 5.0);
+    EXPECT_EQ(v[2], 6.0);
+    EXPECT_THROW(v[7], std::exception);
+}
+
+TEST(Vector3, TemplateScalarDivisionOperator)
+{
+    Vector3 v{Random::Double(), Random::Double(), Random::Double()};
+
+    EXPECT_EQ(v.x/3, (v/3).x);
+    EXPECT_EQ(v.x/3.1, (v/3.1).x);
+    EXPECT_EQ(v.x/3.0f, (v/3.0f).x);
+    EXPECT_EQ(v.x/3L, (v/3L).x);
+    EXPECT_EQ(v.x/3U, (v/3U).x);
+}
+
+TEST(Vector3, TemplateScalarProductOperators)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        Vector3 v{Random::Double(), Random::Double(), Random::Double()};
+
+        EXPECT_EQ(v.x*3, (v*3).x);
+        EXPECT_EQ(v.x*3.1, (v*3.1).x);
+        EXPECT_EQ(v.x*3.0f, (v*3.0f).x);
+        EXPECT_EQ(v.x*3L, (v*3L).x);
+        EXPECT_EQ(v.x*3U, (v*3U).x);
+
+        EXPECT_EQ(v.x*3, (3*v).x);
+        EXPECT_EQ(v.x*3.1, (3.1*v).x);
+        EXPECT_EQ(v.x*3.0f, (3.0f*v).x);
+        EXPECT_EQ(v.x*3L, (3L*v).x);
+        EXPECT_EQ(v.x*3U, (3U*v).x);
+    }
+}
