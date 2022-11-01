@@ -1,10 +1,208 @@
+#include <random>
 #include <gtest/gtest.h>
 
 #include "vector3.hpp"
 
+namespace Random
+{
+    /** \brief Generates a random double in the interval [-10, 10).
+     * \return Double in [-10, 10).
+     */
+    static double Double()
+    {
+        static std::random_device rd;
+        static std::mt19937 mt(rd());
+        static std::uniform_real_distribution<double> dist(-10.0, 10.0);
+        return dist(mt);
+    }
+
+    /** \brief Generates a random double in the interval [lower_bound, upper_bound). 
+     * \param lower_bound Smallest value that can be returned.
+     * \param upper_bound Lowest upper bound on returnable values.
+     * \return Double in [lower_bound, upper_bound).
+     */
+    static double DoubleBetween(const double lower_bound, const double upper_bound)
+    {
+        static std::random_device rd;
+        static std::mt19937 mt(rd());
+        std::uniform_real_distribution<double> dist(lower_bound, upper_bound);
+        return dist(mt);
+    }
+}
+
 TEST(Vector3, Magnitude)
 {
-    Vector3 vector{1, 2, 3};
+    for (int i = 0; i < 1000; i++)
+    {
+        double x = Random::Double();
+        double y = Random::Double();
+        double z = Random::Double();
+        Vector3 vector{x, y, z};
+        double expected_magnitude = std::sqrt(x*x + y*y + z*z);
 
-    EXPECT_EQ(vector.magnitude(), std::sqrt(1.0*1.0+2.0*2.0+3.0*3.0));
+        EXPECT_EQ(vector.magnitude(), expected_magnitude);
+    }
 }
+
+TEST(Vector3, DistanceBetween)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        double x1 = Random::Double();
+        double y1 = Random::Double();
+        double z1 = Random::Double();
+        double x2 = Random::Double();
+        double y2 = Random::Double();
+        double z2 = Random::Double();
+
+        Vector3 v1{x1, y1, z1};
+        Vector3 v2{x2, y2, z2};
+
+        double expected_distance = std::sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1) );
+
+        EXPECT_EQ(Vector3::distance_between(v1, v2), expected_distance);
+    }
+}
+
+TEST(Vector3, AdditionOperator)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        double x1 = Random::Double();
+        double y1 = Random::Double();
+        double z1 = Random::Double();
+        double x2 = Random::Double();
+        double y2 = Random::Double();
+        double z2 = Random::Double();
+
+        Vector3 v1{x1, y1, z1};
+        Vector3 v2{x2, y2, z2};
+        Vector3 v3{x1+x2, y1+y2, z1+z2};
+
+        EXPECT_EQ(v1 + v2, v3);
+    }
+}
+
+TEST(Vector3, SubtractionOperator)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        double x1 = Random::Double();
+        double y1 = Random::Double();
+        double z1 = Random::Double();
+        double x2 = Random::Double();
+        double y2 = Random::Double();
+        double z2 = Random::Double();
+
+        Vector3 v1{x1, y1, z1};
+        Vector3 v2{x2, y2, z2};
+        Vector3 v3{x1-x2, y1-y2, z1-z2};
+
+        EXPECT_EQ(v1 - v2, v3);
+    }
+}
+
+TEST(Vector3, ElementWiseProductOperator)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        double x1 = Random::Double();
+        double y1 = Random::Double();
+        double z1 = Random::Double();
+        double x2 = Random::Double();
+        double y2 = Random::Double();
+        double z2 = Random::Double();
+
+        Vector3 v1{x1, y1, z1};
+        Vector3 v2{x2, y2, z2};
+        Vector3 v3{x1*x2, y1*y2, z1*z2};
+
+        EXPECT_EQ(v1 * v2, v3);
+    }
+}
+
+TEST(Vector3, OutputStreamOperator)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        double x = Random::Double();
+        double y = Random::Double();
+        double z = Random::Double();
+
+        Vector3 vector{x, y, z};
+
+        EXPECT_NO_THROW(std::cout << vector << "\n");
+    }
+}
+
+/** \brief Tests that the cross product of two Vector3s is correct, as compared against an independent calculation
+ * on WolframAlpha.
+ */
+TEST(Vector3, CrossProduct)
+{
+    Vector3 v0{0.1857669481991132, 0.32978932882087486, 0.6884939739258459};
+    Vector3 v1{0.780797532183143, 0.2626766978368277, 0.28715335316602153};
+    Vector3 v0_v1 = Vector3::cross(v0, v1);
+    Vector3 v0_v1_expected{-0.08615121194211027, 0.484230793681472, -0.208702045563506};
+    EXPECT_NEAR(v0_v1.x, v0_v1_expected.x, 0.0000001);
+    EXPECT_NEAR(v0_v1.y, v0_v1_expected.y, 0.0000001);
+    EXPECT_NEAR(v0_v1.z, v0_v1_expected.z, 0.0000001);
+
+    Vector3 v2{0.8041964747102701, 0.6292249757761414, 0.9353910130782362};
+    Vector3 v3{0.47864511009380295, 0.891823245890142, 0.13513004312589838};
+    Vector3 v2_v3 = Vector3::cross(v2, v3);
+    Vector3 v2_v3_expected{-0.749176251347379, 0.3390492301262920, 0.416025652605381};
+    EXPECT_NEAR(v2_v3.x, v2_v3_expected.x, 0.0000001);
+    EXPECT_NEAR(v2_v3.y, v2_v3_expected.y, 0.0000001);
+    EXPECT_NEAR(v2_v3.z, v2_v3_expected.z, 0.0000001);
+
+    Vector3 v4{0.22470798356309896, 0.7116971485311132, 0.4219348611837962};
+    Vector3 v5{0.08542676692363194, 0.8393346354334873, 0.1890299232765289};
+    Vector3 v4_v5 = Vector3::cross(v4, v5);
+    Vector3 v4_v5_expected{-0.2196124855054199, -0.006432001849252958, 0.1278072070351469};
+    EXPECT_NEAR(v4_v5.x, v4_v5_expected.x, 0.0000001);
+    EXPECT_NEAR(v4_v5.y, v4_v5_expected.y, 0.0000001);
+    EXPECT_NEAR(v4_v5.z, v4_v5_expected.z, 0.0000001);
+}
+
+TEST(Vector3, Normalized)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        double x = Random::Double();
+        double y = Random::Double();
+        double z = Random::Double();
+
+        Vector3 vector{x, y, z};
+        Vector3 vector_normalized = vector.normalized();
+
+        double magnitude = std::sqrt(x*x+y*y+z*z);
+        double x_norm = x / magnitude;
+        double y_norm = y / magnitude;
+        double z_norm = z / magnitude;
+
+        EXPECT_NEAR(vector_normalized.x, x_norm, 0.0000001);
+        EXPECT_NEAR(vector_normalized.y, y_norm, 0.0000001);
+        EXPECT_NEAR(vector_normalized.z, z_norm, 0.0000001);
+    }
+}
+
+TEST(Vector3, DotProduct)
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        double x1 = Random::Double();
+        double y1 = Random::Double();
+        double z1 = Random::Double();
+        double x2 = Random::Double();
+        double y2 = Random::Double();
+        double z2 = Random::Double();
+
+        Vector3 v1{x1, y1, z1};
+        Vector3 v2{x2, y2, z2};
+        double expected_dot_product = x1*x2 + y1*y2 + z1*z2;
+
+        EXPECT_EQ(Vector3::dot(v1, v2), expected_dot_product);
+    }
+}
+
