@@ -123,12 +123,13 @@ add_executable(
     unit_tests/logger_tests.cpp
     unit_tests/madgwick_tests.cpp
     unit_tests/vector3_tests.cpp
+    unit_tests/timers_tests.cpp
     vector3/vector3.cpp
     quaternion/quaternion.cpp
     input_parser/input_parser.cpp
     logger/logger.cpp
     orientation/madgwick.cpp
-
+    timers/timers.cpp
 )
 
 ## Set compiler flags
