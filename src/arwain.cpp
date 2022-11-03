@@ -5,6 +5,7 @@
 #include <cmath>
 #include <tuple>
 
+#include "arwain_thread.hpp"
 #include "build_config.hpp"
 #include "arwain.hpp"
 #include "input_parser.hpp"
@@ -97,14 +98,14 @@ void sleep_ms(int ms)
 }
 
 /** \brief Start a Python script which opens a socket and does inference on data we send it. */
-//static void py_inference()
-//{   
-//    if (!arwain::config.no_inference)
-//    {   
-//        std::string command = "PYTHONPATH=/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share INTEL_OPENVINO_DIR=/opt/intel/openvino OpenCV_DIR=/opt/intel/openvino/opencv/cmake LD_LIBRARY_PATH=/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l PATH=/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games /usr/bin/python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
-//        system(command.c_str());
-//    }
-//}
+static void py_inference()
+{   
+   if (!arwain::config.no_inference)
+   {   
+       std::string command = "PYTHONPATH=/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share INTEL_OPENVINO_DIR=/opt/intel/openvino OpenCV_DIR=/opt/intel/openvino/opencv/cmake LD_LIBRARY_PATH=/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l PATH=/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games /usr/bin/python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
+       system(command.c_str());
+   }
+}
 
 double unwrap_phase_radians(double new_angle, double previous_angle)
 {
@@ -385,72 +386,48 @@ void uubla_fn()
 int arwain::execute_inference()
 {
     // Start worker threads.
-    std::thread imu_reader_thread(imu_reader);                   // Reading IMU data, updating orientation filters.
-    std::thread predict_velocity_thread(predict_velocity);       // Velocity and position inference.
-    std::thread stance_detector_thread(stance_detector);         // Stance, freefall, entanglement detection.
-    std::thread transmit_lora_thread(transmit_lora);             // LoRa packet transmissions.
-    std::thread std_output_thread(std_output);                   // Prints useful output to std out.
-    std::thread indoor_positioning_thread(indoor_positioning);   // Floor, stair, corner snapping.
-    std::thread altimeter_thread(altimeter);                     // Uses the BMP384 sensor to determine altitude.
-    // std::thread py_inference_thread{py_inference};               // Temporary: Run Python script to handle velocity inference.
-    #if USE_UUBLA == 1
-    std::thread uubla_thread;
-    if (arwain::config.node_id == 2)
-    {
-        uubla_thread = std::thread{uubla_fn};
-    }
-    #endif
-    #if USE_REALSENSE == 1
-    std::thread rs2_thread{rs2_reader};
-    #endif
-    std::thread command_line_thread{command_line};                // Simple command line interface for runtime mode switching.
-    pthread_setname_np(imu_reader_thread.native_handle(), "arwain_imu_th");
-    pthread_setname_np(predict_velocity_thread.native_handle(), "arwain_vel_th");
-    pthread_setname_np(stance_detector_thread.native_handle(), "arwain_stnc_th");
-    pthread_setname_np(transmit_lora_thread.native_handle(), "arwain_lora_th");
-    pthread_setname_np(std_output_thread.native_handle(), "arwain_std_th");
-    pthread_setname_np(indoor_positioning_thread.native_handle(), "arwain_ips_th");
-    pthread_setname_np(altimeter_thread.native_handle(), "arwain_alt_th");
-    // pthread_setname_np(py_inference_thread.native_handle(), "arwain_inf_th");
-    #if USE_REALSENSE == 1
-    pthread_setname_np(rs2_thread.native_handle(), "arwain_rs2_th");
+    ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th", {ArwainThread::AllCores});                   // Reading IMU data, updating orientation filters.
+    ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th", {ArwainThread::AllCores});       // Velocity and position inference.
+    ArwainThread stance_detector_thread(stance_detector, "arwain_stnc_th", {ArwainThread::AllCores});        // Stance, freefall, entanglement detection.
+    ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th", {ArwainThread::AllCores});            // LoRa packet transmissions.
+    ArwainThread std_output_thread(std_output, "arwain_std_th", {ArwainThread::AllCores});                   // Prints useful output to std out.
+    ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th", {ArwainThread::AllCores});   // Floor, stair, corner snapping.
+    ArwainThread altimeter_thread(altimeter, "arwain_alt_th", {ArwainThread::AllCores});                     // Uses the BMP384 sensor to determine altitude.
+    #if USENCS2
+        ArwainThread py_inference_thread{py_inference, "arwain_ncs2_th", {ArwainThread::AllCores}};          // Temporary: Run Python script to handle velocity inference.
     #endif
     #if USE_UUBLA == 1
-    if (arwain::config.node_id == 2)
-    {
-        pthread_setname_np(uubla_thread.native_handle(), "arwain_uub_th");
-    }
+        std::thread uubla_thread;
+        if (arwain::config.node_id == 2)
+        {
+            uubla_thread = std::thread{uubla_fn};
+        }
     #endif
-    pthread_setname_np(command_line_thread.native_handle(), "arwain_cmd_th");
+    #if USE_REALSENSE == 1
+    ArwainThread rs2_thread{rs2_reader, "arwain_rs2_th", {ArwainThread::AllCores}};
+    #endif
+    ArwainThread command_line_thread{command_line, "arwain_cmd_th", {ArwainThread::AllCores}};                // Simple command line interface for runtime mode switching.
 
     // Wait for all threads to terminate.
-    if (arwain::config.log_to_stdout) { std::cout << "Joining imu thread\n"; }
     imu_reader_thread.join();
-    if (arwain::config.log_to_stdout) { std::cout << "Joining velo thread\n"; }
     predict_velocity_thread.join();
-    if (arwain::config.log_to_stdout) { std::cout << "Joining stance thread\n"; }
     stance_detector_thread.join();
-    if (arwain::config.log_to_stdout) { std::cout << "Joining lora thread\n"; }
     transmit_lora_thread.join();
-    if (arwain::config.log_to_stdout) { std::cout << "Joining cout thread\n"; }
     std_output_thread.join();
-    if (arwain::config.log_to_stdout) { std::cout << "Joining ips thread\n"; }
     indoor_positioning_thread.join();
-    // py_inference_thread.join();
-    if (arwain::config.log_to_stdout) { std::cout << "Joining alt thread\n"; }
+    #if USENCS2
+    py_inference_thread.join();
+    #endif
     altimeter_thread.join();
     #if USE_REALSENSE == 1
-    if (arwain::config.log_to_stdout) { std::cout << "Joining rs2 thread\n"; }
     rs2_thread.join();
     #endif
     #if USE_UUBLA == 1
     if (arwain::config.node_id == 2)
     {
-        if (arwain::config.log_to_stdout) { std::cout << "Joining uubla thread\n"; }
         uubla_thread.join();
     }
     #endif
-    if (arwain::config.log_to_stdout) { std::cout << "Joining cmd thread\n"; }
     command_line_thread.join();
 
     return arwain::ExitCodes::Success;
