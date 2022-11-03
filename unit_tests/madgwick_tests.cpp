@@ -27,3 +27,39 @@ TEST(Madgwick, Get_Beta)
     double beta = mad.get_beta();
     EXPECT_TRUE(beta == 0.1);
 }
+
+TEST(Madgwick, Get_W)
+{
+    arwain::Madgwick mad;
+    double w = mad.getW();
+    EXPECT_TRUE(w == 1.0);
+}
+
+TEST(Madgwick, Get_X)
+{
+    arwain::Madgwick mad;
+    double x = mad.getX();
+    EXPECT_TRUE(x == 0.0);
+}
+
+TEST(Madgwick, Get_Y)
+{
+    arwain::Madgwick mad;
+    double y = mad.getY();
+    EXPECT_TRUE(y == 0.0);
+}
+
+TEST(Madgwick, Get_Z)
+{
+    arwain::Madgwick mad;
+    double z = mad.getZ();
+    EXPECT_TRUE(z == 0.0);
+}
+
+TEST(Madgwick, Get_roll)
+{
+    arwain::Madgwick mad;
+    double roll = mad.getRoll();
+    //EXPECT_TRUE(roll == 0.0);
+}
+
