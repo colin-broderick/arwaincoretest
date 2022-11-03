@@ -2,9 +2,7 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project(arwain)
 
-## Enable ctest unit testing framework
-include(CTest)
-enable_testing()
+find_package(GTest CONFIG REQUIRED)
 
 ## Set include and library source directories
 include_directories(
@@ -81,6 +79,7 @@ set(PROJECT_CPP_FILES
 
 add_subdirectory(iim42652)
 add_subdirectory(orientation)
+add_subdirectory(vector3)
 add_subdirectory(lora)
 add_subdirectory(quaternion)
 add_subdirectory(logger)
@@ -98,7 +97,22 @@ add_subdirectory(arwain_thread)
 ## Executables to build
 add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
 add_executable(${PROJECT_NAME}_cmdr src/lora_commander.cpp)
-add_executable(${PROJECT_NAME}_test src/tests.cpp quaternion/quaternion.cpp timers/timers.cpp input_parser/input_parser.cpp logger/logger.cpp)
+add_executable(
+    ${PROJECT_NAME}_test
+    unit_tests/tests.cpp
+    unit_tests/quaternion_tests.cpp
+    unit_tests/input_parser_tests.cpp
+    unit_tests/logger_tests.cpp
+    unit_tests/madgwick_tests.cpp
+    unit_tests/vector3_tests.cpp
+    unit_tests/timers_tests.cpp
+    vector3/vector3.cpp
+    quaternion/quaternion.cpp
+    input_parser/input_parser.cpp
+    logger/logger.cpp
+    orientation/madgwick.cpp
+    timers/timers.cpp
+)
 
 option(USENCS2 "Use the Neural Compute Stick for inference" OFF)
 if(USENCS2)
@@ -132,10 +146,12 @@ endif()
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow)
-target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage)
+target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -ftest-coverage -fprofile-arcs)
 
 ## Link libraries
+target_link_libraries(${PROJECT_NAME} boost_system madgwick_filter efaroe_filter -pthread dl stdc++fs i2c iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter uubla vector3)
+# FOr tensorflow
 target_link_libraries(
     ${PROJECT_NAME}
     boost_system
@@ -157,15 +173,11 @@ target_link_libraries(
     bmp384
     lora
     fusion_filter
-    uublal
+    uubla
     arwain_thread
 )
 
 target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
-
-include(arwain_tests.cmake)
-
-# add_custom_command(TARGET ${PROJECT_NAME}_test POST_BUILD COMMAND ctest && ../generate_test_coverage_report.sh)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)
