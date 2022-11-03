@@ -61,5 +61,95 @@ TEST(Madgwick, Get_roll)
     arwain::Madgwick mad;
     double roll = mad.getRoll();
     //EXPECT_TRUE(roll == 0.0);
+    FAIL();
 }
+
+TEST(Madgwick, Get_pitch)
+{
+    arwain::Madgwick mad;
+    double pitch = mad.getPitch();
+    //EXPECT_TRUE(pitch == 0.0);
+    FAIL();
+}
+
+TEST(Madgwick, Get_yaw)
+{
+    arwain::Madgwick mad;
+    double pitch = mad.getYaw();
+    //EXPECT_TRUE(yaw == 0.0);
+    FAIL();
+}
+
+TEST(Madgwick, Get_roll_radians)
+{
+    arwain::Madgwick mad;
+    double roll_radians = mad.getRollRadians();
+    //EXPECT_TRUE(roll_radians == 0.0);
+    FAIL();
+}
+
+TEST(Madgwick, Get_pitch_radians)
+{
+    arwain::Madgwick mad;
+    double pitch_radians = mad.getPitchRadians();
+    //EXPECT_TRUE(pitch_radians == 0.0);
+    FAIL();
+}
+
+TEST(Madgwick, Get_pitch_yaw)
+{
+    arwain::Madgwick mad;
+    double yaw_radians = mad.getYawRadians();
+    //EXPECT_TRUE(yaw_radians == 0.0);
+    FAIL();
+}
+
+TEST(Madgwick, setQ)
+{
+    arwain::Madgwick mad;
+    mad.setQ(1.0, 2.0, 3.0, 4.0);
+    EXPECT_TRUE(mad.getW() == 1.0);
+    EXPECT_TRUE(mad.getX() == 2.0);
+    EXPECT_TRUE(mad.getY() == 3.0);
+    EXPECT_TRUE(mad.getZ() == 4.0);
+}
+
+TEST(Madgwick, set_beta)
+{
+    arwain::Madgwick mad;
+    mad.set_beta(1.0);
+    EXPECT_TRUE(mad.get_beta() == 1.0);
+}
+
+TEST(Madgwick, update)
+{
+    arwain::Madgwick mad;
+    //mad.set_beta(1.0);
+    //EXPECT_TRUE(mad.get_beta() == 1.0);
+    FAIL();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
