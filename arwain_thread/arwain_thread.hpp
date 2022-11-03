@@ -21,14 +21,16 @@ class ArwainThread : public std::thread
         ArwainThread(Callable func, const std::string& name_, const std::vector<int>&& cores)
         : std::thread(func)
         {
-            this->set_name(name);
+            this->set_name(name_);
+            this->set_processor_affinity(cores);
         };
 
         template <class Callable, class... Args>
         ArwainThread(Callable func, const std::string& name_, const std::vector<int>&& cores, Args&&... args)
         : std::thread(func, args...)
         {
-            this->set_name(name);
+            this->set_name(name_);
+            this->set_processor_affinity(cores);
         };
 
         std::string get_name();
