@@ -7,7 +7,7 @@
  */
 void ArwainThread::set_name(const std::string& name)
 {
-    pthread_setname_np(this->native_handle(), name.c_str());
+    int rc = pthread_setname_np(this->native_handle(), name.data());
 }
 
 /** \brief Assign core affinity to the thread.
@@ -44,6 +44,7 @@ void ArwainThread::set_processor_affinity(const std::vector<int>& cores)
     {
         CPU_SET(cpu_number, &cpuset);
     }
+
     int rc = pthread_setaffinity_np(this->native_handle(), sizeof(cpu_set_t), &cpuset);
     if (rc != 0)
     {
@@ -53,7 +54,7 @@ void ArwainThread::set_processor_affinity(const std::vector<int>& cores)
 
 std::string ArwainThread::get_name()
 {
-    char name[64] = {0};
-    int _ = pthread_getname_np(this->native_handle(), name, 64);
-    return name;
+    char name[16] = {0};
+    int rc = pthread_getname_np(this->native_handle(), name, 16);
+    return std::string{name};
 }
