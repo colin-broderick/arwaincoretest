@@ -23,8 +23,6 @@ namespace
 
 TEST(ArwainThread, Constructors)
 {
-    int i = 1;
-    
     EXPECT_NO_THROW(
         // "Normal" std thread invokation.
         ArwainThread th(test_func);
@@ -38,12 +36,13 @@ TEST(ArwainThread, Constructors)
     );
 
     EXPECT_NO_THROW(
+        // ARWAIN thread with a name, core affinity set, and function arguments.
         ArwainThread th3(test_func2, "name", {ArwainThread::AllCores}, 1);
         th3.join();
     );
 }
 
-TEST(ArwainThread, GetName)
+TEST(ArwainThread, SetGetName)
 {
     ArwainThread th(test_func, "TestName", {ArwainThread::AllCores});
     std::this_thread::sleep_for(std::chrono::milliseconds{80});
@@ -52,7 +51,7 @@ TEST(ArwainThread, GetName)
     EXPECT_EQ(name, "TestName");
 }
 
-TEST(ArwainThread, SetProcessorAffinity)
+TEST(ArwainThread, SetGetProcessorAffinity)
 {
     ArwainThread th(test_func3, "TestName", {1, 2}, std::chrono::milliseconds{500});
     std::this_thread::sleep_for(std::chrono::milliseconds{100});
@@ -63,8 +62,8 @@ TEST(ArwainThread, SetProcessorAffinity)
     pthread_getaffinity_np(th.native_handle(), sizeof(cpu_set_t), &cpuset_actual);
 
     int equal = CPU_EQUAL(&cpuset_actual, &cpuset_expected);
-
-    EXPECT_NE(0, equal);
-    // EXPECT_TRUE(false);
+    
     th.join();
+    
+    EXPECT_NE(0, equal);
 }
