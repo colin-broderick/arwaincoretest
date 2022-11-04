@@ -386,15 +386,15 @@ void uubla_fn()
 int arwain::execute_inference()
 {
     // Start worker threads.
-    ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th", {ArwainThread::AllCores});                   // Reading IMU data, updating orientation filters.
-    ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th", {ArwainThread::AllCores});       // Velocity and position inference.
-    ArwainThread stance_detector_thread(stance_detector, "arwain_stnc_th", {ArwainThread::AllCores});        // Stance, freefall, entanglement detection.
-    ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th", {ArwainThread::AllCores});            // LoRa packet transmissions.
-    ArwainThread std_output_thread(std_output, "arwain_std_th", {ArwainThread::AllCores});                   // Prints useful output to std out.
-    ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th", {ArwainThread::AllCores});   // Floor, stair, corner snapping.
-    ArwainThread altimeter_thread(altimeter, "arwain_alt_th", {ArwainThread::AllCores});                     // Uses the BMP384 sensor to determine altitude.
+    ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th");                   // Reading IMU data, updating orientation filters.
+    ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th");       // Velocity and position inference.
+    ArwainThread stance_detector_thread(stance_detector, "arwain_stnc_th");        // Stance, freefall, entanglement detection.
+    ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th");            // LoRa packet transmissions.
+    ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
+    ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
+    ArwainThread altimeter_thread(altimeter, "arwain_alt_th");                     // Uses the BMP384 sensor to determine altitude.
     #if USENCS2
-        ArwainThread py_inference_thread{py_inference, "arwain_ncs2_th", {ArwainThread::AllCores}};          // Temporary: Run Python script to handle velocity inference.
+        ArwainThread py_inference_thread{py_inference, "arwain_ncs2_th"};          // Temporary: Run Python script to handle velocity inference.
     #endif
     #if USE_UUBLA == 1
         std::thread uubla_thread;
@@ -404,9 +404,9 @@ int arwain::execute_inference()
         }
     #endif
     #if USE_REALSENSE == 1
-    ArwainThread rs2_thread{rs2_reader, "arwain_rs2_th", {ArwainThread::AllCores}};
+    ArwainThread rs2_thread{rs2_reader, "arwain_rs2_th"};
     #endif
-    ArwainThread command_line_thread{command_line, "arwain_cmd_th", {ArwainThread::AllCores}};                // Simple command line interface for runtime mode switching.
+    ArwainThread command_line_thread{command_line, "arwain_cmd_th"};                // Simple command line interface for runtime mode switching.
 
     // Wait for all threads to terminate.
     imu_reader_thread.join();
