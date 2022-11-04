@@ -19,6 +19,7 @@ TEST(Madgwick, Constructor)
     EXPECT_TRUE(mad.get_beta() == 1.0);
     //sample frequency can't be verified - NEEDS TO BE VERIFIED!!!
     //all other parts of the constructor can't be verified due to being private with no getters.
+    FAIL();
 }
 
 TEST(Madgwick, Get_Beta)
@@ -124,32 +125,8 @@ TEST(Madgwick, set_beta)
 TEST(Madgwick, update)
 {
     arwain::Madgwick mad;
+    mad.update(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
     //mad.set_beta(1.0);
     //EXPECT_TRUE(mad.get_beta() == 1.0);
     FAIL();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
