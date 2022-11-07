@@ -25,6 +25,7 @@
 #include "command_line.hpp"
 // #include "uwb_reader.hpp"
 #include "uubla.hpp"
+#include "global_buffer.hpp"
 
 #if USE_REALSENSE == 1
 #include "t265.hpp"
@@ -66,18 +67,18 @@ namespace arwain
 // Shared data buffers; mutex locks must be used when accessing.
 namespace arwain::Buffers
 {
-    std::deque<Vector6> IMU_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
-    std::deque<Vector6> IMU_WORLD_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
-    std::deque<Vector3> VELOCITY_BUFFER{arwain::BufferSizes::VELOCITY_BUFFER_LEN};
-    std::deque<Vector3> POSITION_BUFFER{arwain::BufferSizes::POSITION_BUFFER_LEN};
-    std::deque<Vector3> MAG_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
-    std::deque<Vector3> MAG_WORLD_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
-    std::deque<Vector3> IPS_BUFFER{arwain::BufferSizes::IPS_BUFFER_LEN};
-    std::deque<Vector3> PRESSURE_BUFFER{arwain::BufferSizes::PRESSURE_BUFFER_LEN};
-    std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
-    std::deque<Quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
-    std::deque<Quaternion> MAG_ORIENTATION_BUFFER{arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN};
-    std::deque<double> MAG_EULER_BUFFER{arwain::BufferSizes::MAG_EULER_BUFFER_LEN};
+    GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
+    GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_WORLD_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::VELOCITY_BUFFER_LEN> VELOCITY_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::POSITION_BUFFER_LEN> POSITION_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_WORLD_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::IPS_BUFFER_LEN> IPS_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::PRESSURE_BUFFER_LEN> PRESSURE_BUFFER;
+    GlobalBuffer<euler_orientation_t, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> EULER_ORIENTATION_BUFFER;
+    GlobalBuffer<Quaternion, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> QUAT_ORIENTATION_BUFFER;
+    GlobalBuffer<Quaternion, arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN> MAG_ORIENTATION_BUFFER;
+    GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
 
 // Mutex locks for use when accessing shared buffers.

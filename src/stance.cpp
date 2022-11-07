@@ -56,18 +56,10 @@ void stance_detector()
                 while (arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
                 {
                     // Get all relevant data.
-                    { // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-                        imu_data = arwain::Buffers::IMU_BUFFER;
-                    }
-                    {
-                        std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
-                        vel_data = arwain::Buffers::VELOCITY_BUFFER;
-                    }
-                    {
-                        std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
-                        rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
-                    }
+                    // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
+                    imu_data = arwain::Buffers::IMU_BUFFER.get_data();
+                    vel_data = arwain::Buffers::VELOCITY_BUFFER.get_data();
+                    rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
 
                     // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
                     stance.update_attitude(rotation_quaternion);
@@ -112,19 +104,9 @@ void stance_detector()
 
                 while (arwain::system_mode == arwain::OperatingMode::Inference)
                 {
-                    // Get all relevant data.
-                    { // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-                        imu_data = arwain::Buffers::IMU_BUFFER;
-                    }
-                    {
-                        std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
-                        vel_data = arwain::Buffers::VELOCITY_BUFFER;
-                    }
-                    {
-                        std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
-                        rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
-                    }
+                    imu_data = arwain::Buffers::IMU_BUFFER.get_data();
+                    vel_data = arwain::Buffers::VELOCITY_BUFFER.get_data();
+                    rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
 
                     // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
                     stance.update_attitude(rotation_quaternion);
@@ -221,7 +203,7 @@ void arwain::StanceDetector::clear_freefall_flag()
  */
 void arwain::StanceDetector::check_for_falls(const std::deque<Vector6>& imu_data)
 {
-    RollingAverage roller{imu_data.size() / 10};
+    RollingAverage roller{static_cast<unsigned int>(imu_data.size() / 10)};
 
     for (auto& imu : imu_data)
     {
