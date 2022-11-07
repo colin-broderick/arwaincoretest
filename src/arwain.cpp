@@ -81,18 +81,6 @@ namespace arwain::Buffers
     GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
 
-// Mutex locks for use when accessing shared buffers.
-namespace arwain::Locks
-{
-    std::mutex IMU_BUFFER_LOCK;
-    std::mutex MAG_BUFFER_LOCK;
-    std::mutex VELOCITY_BUFFER_LOCK;
-    std::mutex STATUS_FLAG_LOCK;
-    std::mutex POSITION_BUFFER_LOCK;
-    std::mutex ORIENTATION_BUFFER_LOCK;
-    std::mutex PRESSURE_BUFFER_LOCK;
-}
-
 void sleep_ms(int ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds{ms});
