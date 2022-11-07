@@ -148,7 +148,7 @@ endif()
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow)
-target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest)
+target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest stdc++fs)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -ftest-coverage -fprofile-arcs)
 
 ## Link libraries
