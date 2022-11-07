@@ -166,19 +166,6 @@ namespace arwain
     #endif
 }
 
-/** \brief Contains mutex locks for thread coordination. */
-namespace arwain::Locks
-{
-    extern std::mutex PRESSURE_BUFFER_LOCK;
-    extern std::mutex IMU_BUFFER_LOCK;
-    extern std::mutex MAG_BUFFER_LOCK;
-    extern std::mutex VELOCITY_BUFFER_LOCK;
-    extern std::mutex STATUS_FLAG_LOCK;
-    extern std::mutex POSITION_BUFFER_LOCK;
-    extern std::mutex ORIENTATION_BUFFER_LOCK;
-    extern std::mutex PRESSURE_BUFFER_LOCK;
-}
-
 namespace arwain::Buffers
 {
     extern GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
