@@ -107,6 +107,7 @@ add_executable(
     unit_tests/vector3_tests.cpp
     unit_tests/timers_tests.cpp
     unit_tests/arwain_thread_tests.cpp
+    unit_tests/global_buffer_tests.cpp
     vector3/vector3.cpp
     quaternion/quaternion.cpp
     input_parser/input_parser.cpp
