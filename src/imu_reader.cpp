@@ -15,6 +15,144 @@
 #include "timers.hpp"
 #include "lis3mdl.hpp"
 #include "calibration.hpp"
+#include "arwain_thread.hpp"
+
+namespace ImuProcessing
+{
+    namespace // private
+    {
+        void run_inference();
+        void run_idle();
+        void setup_inference();
+        void cleanup_inference();
+
+        ArwainThread job_thread;
+        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
+        IMU_IIM42652 imu1;
+        IMU_IIM42652 imu2;
+        IMU_IIM42652 imu3;
+        LIS3MDL magnetometer;
+        arwain::Madgwick madgwick_filter_1;
+        arwain::Madgwick madgwick_filter_mag_1;
+
+        /** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does idle sleep if in non-relevant mode. */
+        void run()
+        {
+            while (mode != arwain::OperatingMode::Terminate)
+            {
+                switch (mode)
+                {
+                    case arwain::OperatingMode::Inference:
+                        run_inference();
+                        break;
+                    default:
+                        run_idle();
+                        break;
+                }
+            }
+        }
+
+        /** \brief Executes the inference mode job thread. */
+        void run_inference()
+        {
+            setup_inference();
+
+            while (mode == arwain::OperatingMode::Inference)
+            {
+                // TODO
+            }
+
+            cleanup_inference();
+        }
+
+        /** \brief Does an idle sleep while the mode is Idle. */
+        void run_idle()
+        {
+            while (mode == arwain::OperatingMode::AutoCalibration)
+            {
+                sleep_ms(10);
+            }
+        }
+
+        void setup_inference()
+        {
+
+        }
+
+        void cleanup_inference()
+        {
+            
+        }
+
+        void core_setup()
+        {
+            // Configure IMUs.
+            imu1 = IMU_IIM42652{arwain::config.imu1_address, arwain::config.imu1_bus};
+            imu1.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
+            imu1.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
+            imu1.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
+            imu1.enable_auto_calib();
+
+            imu2 = IMU_IIM42652{arwain::config.imu2_address, arwain::config.imu2_bus};
+            imu2.set_gyro_bias(arwain::config.gyro2_bias.x, arwain::config.gyro2_bias.y, arwain::config.gyro2_bias.z);
+            imu2.set_accel_bias(arwain::config.accel2_bias.x, arwain::config.accel2_bias.y, arwain::config.accel2_bias.z);
+            imu2.set_accel_scale(arwain::config.accel2_scale.x, arwain::config.accel2_scale.y, arwain::config.accel2_scale.z);
+            imu2.enable_auto_calib();
+
+            imu3 = IMU_IIM42652{arwain::config.imu3_address, arwain::config.imu3_bus};
+            imu3.set_gyro_bias(arwain::config.gyro3_bias.x, arwain::config.gyro3_bias.y, arwain::config.gyro3_bias.z);
+            imu3.set_accel_bias(arwain::config.accel3_bias.x, arwain::config.accel3_bias.y, arwain::config.accel3_bias.z);
+            imu3.set_accel_scale(arwain::config.accel3_scale.x, arwain::config.accel3_scale.y, arwain::config.accel3_scale.z);
+            imu3.enable_auto_calib();
+
+            // Configure magnetometer.
+            magnetometer = LIS3MDL{arwain::config.magn_address, arwain::config.magn_bus};
+            magnetometer.set_calibration(
+                arwain::config.mag_bias,
+                arwain::config.mag_scale,
+                {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}
+            );
+
+            // Choose an orientation filter depending on configuration, with Madgwick as default.
+            madgwick_filter_1 = arwain::Madgwick{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
+            madgwick_filter_mag_1 = arwain::Madgwick{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
+        }
+    }
+
+    // Public
+
+    /** \brief Does overall initialization and sets up the job thread. */
+    bool init()
+    {
+        core_setup();
+        job_thread = ArwainThread{ImuProcessing::run, "arwain_imu_th"};
+        return true;
+    }
+
+    /** \brief Sets the mode to terminate, which instructs the job thread to shutdown and clean up. */
+    bool shutdown()
+    {
+        mode = arwain::OperatingMode::Terminate;
+        return true;
+    }
+
+    /** \brief Switches the mode to the specified new_mode, if there is a valid transition from current mode to new mode. 
+     * \param new_mode The operating mode to switch into.
+     * \return If the mode switch was allowed and successful, [true, success_message]. If the mode switch was not allowed
+     * or not susccessful, [false, failure_reason].
+    */
+    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
+    {
+        // TODO
+        return {false, "NotImplemented"};
+    }
+
+    /** \brief Block until the job thread can be joined. */
+    void join()
+    {
+        job_thread.join();
+    }
+}
 
 /** \brief Rotates a 3-vector according to a quaternion orientation.
  * \param vec The 3-vector to rotate.
