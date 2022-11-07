@@ -7,13 +7,13 @@
 #include "logger.hpp"
 #include "arwain.hpp"
 
-#if USE_NCS2_INFERENCE
-#include <zmq.h>
+#if USENCS2
+    #include <zmq.h>
 #else // Using tflite inference
-#include "tensorflow/lite/interpreter.h"
-#include "tensorflow/lite/kernels/register.h"
-#include "tensorflow/lite/model.h"
-#include "tensorflow/lite/tools/gen_op_registration.h"
+    #include "tensorflow/lite/interpreter.h"
+    #include "tensorflow/lite/kernels/register.h"
+    #include "tensorflow/lite/model.h"
+    #include "tensorflow/lite/tools/gen_op_registration.h"
 #endif
 
 static std::string inference_tcp_socket = "tcp://*:5555";
@@ -204,7 +204,7 @@ class VelocityKalmanFilter
         }
 };
 
-#if USE_NCS2_INFERENCE
+#if USENCS2
 /** \brief Predicts velocity by passing IMU data to a neural compute resource, and integrates
  * velocity into position.
  */
