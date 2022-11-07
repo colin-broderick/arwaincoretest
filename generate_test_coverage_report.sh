@@ -6,6 +6,7 @@ lcov --capture \
      --directory ./CMakeFiles/arwain_test.dir/input_parser/ \
      --directory ./CMakeFiles/arwain_test.dir/orientation/ \
      --directory ./CMakeFiles/arwain_test.dir/vector3/ \
+     --directory ./CMakeFiles/arwain_test.dir/timers/ \
      --output-file=coverage.info
 genhtml coverage.info --output-directory=test_report 
 
