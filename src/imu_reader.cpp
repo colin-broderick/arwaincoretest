@@ -305,11 +305,7 @@ void imu_reader()
                     Vector3 magnet = magnetometer.read();
                     magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
-                    { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-                        arwain::Buffers::IMU_BUFFER.pop_front();
-                        arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
-                    }
+                    arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
 
                     madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
                     madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
@@ -320,22 +316,13 @@ void imu_reader()
                     euler_orientation_t madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
                     euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
 
-                    { // Add orientation information to buffers.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
-                        arwain::Buffers::EULER_ORIENTATION_BUFFER.pop_front();
-                        arwain::Buffers::EULER_ORIENTATION_BUFFER.push_back(madgwick_euler_data1);
-                        arwain::Buffers::QUAT_ORIENTATION_BUFFER.pop_front();
-                        arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
-                    }
+                    arwain::Buffers::EULER_ORIENTATION_BUFFER.push_back(madgwick_euler_data1);
+                    arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
 
                     // Add world-aligned IMU to its own buffer.
                     Vector3 world_accel_data1 = world_align(accel_data1, madgwick_quaternion_data1);
                     Vector3 world_gyro_data1 = world_align(gyro_data1, madgwick_quaternion_data1);
-                    {
-                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-                        arwain::Buffers::IMU_WORLD_BUFFER.pop_front();
-                        arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
-                    }
+                    arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
                     arwain::rolling_average_accel_z_for_altimeter.feed(world_accel_data1.z);
 
                     // Compute the new correction based on magnetometer/gyro filter diffs.
@@ -394,11 +381,7 @@ void imu_reader()
                     Vector3 magnet = magnetometer.read();
                     magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
-                    { // Add new reading to end of buffer, and remove oldest reading from start of buffer.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-                        arwain::Buffers::IMU_BUFFER.pop_front();
-                        arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
-                    }
+                    arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
 
                     madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
                     madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
@@ -408,20 +391,12 @@ void imu_reader()
                     Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
                     [[maybe_unused]] euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
 
-                    { // Add orientation information to buffers.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::ORIENTATION_BUFFER_LOCK};
-                        arwain::Buffers::QUAT_ORIENTATION_BUFFER.pop_front();
-                        arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
-                    }
+                    arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
 
                     // Add world-aligned IMU to its own buffer.
                     Vector3 world_accel_data1 = world_align(accel_data1, madgwick_quaternion_data1);
                     Vector3 world_gyro_data1 = world_align(gyro_data1, madgwick_quaternion_data1);
-                    {
-                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-                        arwain::Buffers::IMU_WORLD_BUFFER.pop_front();
-                        arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
-                    }
+                    arwain::Buffers::IMU_WORLD_BUFFER.push_back({world_accel_data1, world_gyro_data1});
                     arwain::rolling_average_accel_z_for_altimeter.feed(world_accel_data1.z);
 
                     // Compute the new correction based on magnetometer/gyro filter diffs.

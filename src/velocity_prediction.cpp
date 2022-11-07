@@ -282,10 +282,7 @@ void predict_velocity()
                         arwain::reset_position = false;
                     }
 
-                    { // Grab latest IMU packet
-                        std::lock_guard<std::mutex> lock{arwain::Locks::IMU_BUFFER_LOCK};
-                        imu = arwain::Buffers::IMU_WORLD_BUFFER;
-                    }
+                    imu = arwain::Buffers::IMU_WORLD_BUFFER.get_data();
 
                     // Check what the time really is since it might not be accurate.
                     time = std::chrono::system_clock::now();
@@ -345,11 +342,7 @@ void predict_velocity()
 
                     Vector3 kalman_velocity = kalman.update(velocity, average_acceleration);
 
-                    { // Store velocity in global buffer.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
-                        arwain::Buffers::VELOCITY_BUFFER.pop_front();
-                        arwain::Buffers::VELOCITY_BUFFER.push_back(velocity);
-                    }
+                    arwain::Buffers::VELOCITY_BUFFER.push_back(velocity);
 
                     // Compute new position.
                     if (arwain::config.correct_with_yaw_diff)
@@ -363,11 +356,7 @@ void predict_velocity()
                     position = position + dt * velocity;
                     kalman_position = kalman_position + dt * kalman_velocity;
 
-                    { // Add new position to global buffer.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
-                        arwain::Buffers::POSITION_BUFFER.pop_front();
-                        arwain::Buffers::POSITION_BUFFER.push_back(position);
-                    }
+                    arwain::Buffers::POSITION_BUFFER.push_back(position);
 
                     // Log results to file.
                     velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
@@ -493,14 +482,7 @@ void predict_velocity()
                     double dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - last_time).count() / 1000.0;
                     last_time = time;
 
-                    // TODO Load data into inference and run inference.
-                    // for (unsigned int i = 0; i < 6; i++)
-                    // {
-                    //     for (unsigned int j = 0; j < 200; j++)
-                    //     {
-                    //         *(input + i*200 + j) = *(data + j*6 + i);
-                    //     }
-                    // }
+                    // Load data into inference and run inference.
                     unsigned int input_index = 0;
                     for (int i = 0; i < 6; i++)
                     {
@@ -534,11 +516,7 @@ void predict_velocity()
 
                     Vector3 kalman_velocity = kalman.update(velocity, average_acceleration);
 
-                    { // Store new velocity in global buffer.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::VELOCITY_BUFFER_LOCK};
-                        arwain::Buffers::VELOCITY_BUFFER.pop_front();
-                        arwain::Buffers::VELOCITY_BUFFER.push_back(velocity);
-                    }
+                    arwain::Buffers::VELOCITY_BUFFER.push_back(velocity);
 
                     // Attempt yaw drift velocity compensation if enabled.
                     if (arwain::config.correct_with_yaw_diff)
@@ -554,11 +532,7 @@ void predict_velocity()
                     position = position + dt * velocity;
                     kalman_position = kalman_position + dt * kalman_velocity;
 
-                    { // Add new position to global buffer.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
-                        arwain::Buffers::POSITION_BUFFER.pop_front();
-                        arwain::Buffers::POSITION_BUFFER.push_back(position);
-                    }
+                    arwain::Buffers::POSITION_BUFFER.push_back(position);
 
                     // Log results to file.
                     velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
