@@ -375,7 +375,10 @@ void uubla_fn()
 int arwain::execute_inference()
 {
     // Start worker threads.
-    ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th");                   // Reading IMU data, updating orientation filters.
+    // ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th");                   // Reading IMU data, updating orientation filters.
+    ImuProcessing::init();
+
+
     ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th");       // Velocity and position inference.
     ArwainThread stance_detector_thread(stance_detector, "arwain_stnc_th");        // Stance, freefall, entanglement detection.
     ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th");            // LoRa packet transmissions.
@@ -398,7 +401,9 @@ int arwain::execute_inference()
     ArwainThread command_line_thread{command_line, "arwain_cmd_th"};                // Simple command line interface for runtime mode switching.
 
     // Wait for all threads to terminate.
-    imu_reader_thread.join();
+    // imu_reader_thread.join();
+    ImuProcessing::join();
+
     predict_velocity_thread.join();
     stance_detector_thread.join();
     transmit_lora_thread.join();
