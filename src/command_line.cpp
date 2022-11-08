@@ -75,6 +75,11 @@ namespace
         }
     }
 
+    void force_switch_to_idle_autocal_mode()
+    {
+        arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+    }
+
     /** \brief Puts the system into Idle mode. Only reachable from Inference mode.
      * Other modes will put the system into this Idle mode automatically when their
      * work is complete.
@@ -104,7 +109,7 @@ namespace
         {
             std::cout << "Starting gyroscope calibration" << std::endl;
             arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
-            ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration, std::function<void()>(switch_to_idle_autocal_mode));
+            ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration, std::function<void()>(force_switch_to_idle_autocal_mode));
         }
     }
 
