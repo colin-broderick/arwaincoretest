@@ -2,6 +2,8 @@
 #include <string_view>
 
 #include "arwain.hpp"
+#include "exceptions.hpp"
+#include "imu_reader.hpp"
 
 namespace
 {
@@ -44,6 +46,7 @@ namespace
     void switch_to_exit_mode()
     {
         std::cout << "Cleaning up before closing, please wait ..." << std::endl;
+        ImuProcessing::set_mode(arwain::OperatingMode::Terminate);
         arwain::system_mode = arwain::OperatingMode::Terminate;
     }
 
@@ -62,6 +65,7 @@ namespace
         {
             std::cout << "Entering inference mode" << std::endl;
             arwain::setup_log_directory();
+            ImuProcessing::set_mode(arwain::OperatingMode::Inference);
             arwain::system_mode = arwain::OperatingMode::Inference;
         }
         else
@@ -80,6 +84,7 @@ namespace
         if (arwain::system_mode == arwain::OperatingMode::Inference)
         {
             std::cout << "Entering autocalibration mode" << std::endl;
+            ImuProcessing::set_mode(arwain::OperatingMode::AutoCalibration);
             arwain::system_mode = arwain::OperatingMode::AutoCalibration;
         }
         else
@@ -98,6 +103,7 @@ namespace
         else
         {
             std::cout << "Starting gyroscope calibration" << std::endl;
+            ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration);
             arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
         }
     }
@@ -112,6 +118,7 @@ namespace
         else
         {
             std::cout << "Starting magnetometer calibration" << std::endl;
+            ImuProcessing::set_mode(arwain::OperatingMode::MagnetometerCalibration);
             arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
         }
     }
@@ -126,6 +133,7 @@ namespace
         else
         {
             std::cout << "Starting accelerometer calibration" << std::endl;
+            ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
         }
     }
@@ -138,7 +146,10 @@ namespace
         }
         else
         {
+            // TODO What's going on here?
+            throw NotImplemented{};
             std::cout << "Starting accelerometer calibration" << std::endl;
+            ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
         }
     }
