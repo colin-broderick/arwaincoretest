@@ -5,6 +5,7 @@
 #include <string>
 #include <cmath>
 #include <thread>
+#include <functional>
 
 #include "imu_reader.hpp"
 #include "multi_imu.hpp"
@@ -31,6 +32,8 @@ namespace ImuProcessing
         void run_autocalibration();
         void run_test_stance_detector();
         void run_self_test();
+
+        std::function<void()> callback;
 
         ArwainThread job_thread;
         ArwainThread quick_madgwick_convergence_thread;
@@ -172,6 +175,11 @@ namespace ImuProcessing
             if (!success)
             {
                 throw std::logic_error{message};
+            }
+
+            if (callback)
+            {
+                callback();
             }
         }
 
@@ -501,8 +509,13 @@ namespace ImuProcessing
     */
     std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
     {
-        // TODO
-        return {false, "NotImplemented"};
+        mode = new_mode;
+        return {true, "success"};
+    }
+    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode, std::function<void()> func)
+    {
+        callback = func;
+        return set_mode(new_mode);
     }
 
     /** \brief Block until the job thread can be joined. */
