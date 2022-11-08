@@ -501,8 +501,15 @@ namespace ImuProcessing
     */
     std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
     {
-        // TODO
-        return {false, "NotImplemented"};
+        mode = new_mode;
+        return {true, "succeeded"};
+    }
+
+    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode, std::function)
+
+    arwain::OperatingMode get_mode() const
+    {
+        return mode;
     }
 
     /** \brief Block until the job thread can be joined. */
