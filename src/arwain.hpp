@@ -137,7 +137,22 @@ inline std::ostream& operator<<(std::ostream& stream, arwain::OperatingMode toke
             stream << "Terminate";
             break;
         case arwain::OperatingMode::DataCollection:
-            stream << "DataCollection";
+            stream << "Data collection";
+            break;
+        case arwain::OperatingMode::GyroscopeCalibration:
+            stream << "Gyroscope calibration";
+            break;
+        case arwain::OperatingMode::MagnetometerCalibration:
+            stream << "Magnetometer calibration";
+            break;
+        case arwain::OperatingMode::AccelerometerCalibration:
+            stream << "Accelerometer calibration";
+            break;
+        case arwain::OperatingMode::TestSerial:
+            stream << "Test serial";
+            break;
+        case arwain::OperatingMode::TestStanceDetector:
+            stream << "Test stance detector";
             break;
         default:
             stream << "Mode not specified";
