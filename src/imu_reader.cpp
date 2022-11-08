@@ -518,6 +518,11 @@ namespace ImuProcessing
         return set_mode(new_mode);
     }
 
+    arwain::OperatingMode get_mode()
+    {
+        return mode;
+    }
+
     /** \brief Block until the job thread can be joined. */
     void join()
     {
