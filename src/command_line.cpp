@@ -84,8 +84,8 @@ namespace
         if (arwain::system_mode == arwain::OperatingMode::Inference)
         {
             std::cout << "Entering autocalibration mode" << std::endl;
-            ImuProcessing::set_mode(arwain::OperatingMode::AutoCalibration);
             arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+            ImuProcessing::set_mode(arwain::OperatingMode::AutoCalibration);
         }
         else
         {
@@ -103,8 +103,8 @@ namespace
         else
         {
             std::cout << "Starting gyroscope calibration" << std::endl;
-            ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration);
             arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
+            ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration, std::function<void()>(switch_to_idle_autocal_mode));
         }
     }
 
