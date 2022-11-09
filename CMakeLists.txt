@@ -4,6 +4,11 @@ project(arwain)
 
 find_package(GTest CONFIG REQUIRED)
 
+option(FAKEI2C "Simulating I2C devices" OFF)
+if(FAKEI2C)
+    add_definitions(-DFAKEI2C)
+endif()
+
 ## Set include and library source directories
 include_directories(
     /usr/local/include
