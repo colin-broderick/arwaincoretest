@@ -6,6 +6,8 @@
 #include "velocity_prediction.hpp"
 #include "logger.hpp"
 #include "arwain.hpp"
+#include "exceptions.hpp"
+#include "arwain_thread.hpp"
 
 #if USENCS2
     #include <zmq.h>
@@ -15,6 +17,232 @@
     #include "tensorflow/lite/model.h"
     #include "tensorflow/lite/tools/gen_op_registration.h"
 #endif
+
+namespace PositionVelocityInference
+{
+    namespace // private
+    {
+        void run_inference();
+        void run_idle();
+        void cleanup_inference();
+
+        // Socket for comm with Python script to manage NCS2.
+        const std::string inference_tcp_socket = "tcp://*:5555";
+        void* context = nullptr;
+        void* responder = nullptr;
+        
+        // Socket request and response buffers
+        std::stringstream request;
+        char response_buffer[50];
+
+        // Local copy of IMU buffer data.
+        std::deque<Vector6> imu;
+
+        Vector3 position;
+        Vector3 velocity;
+
+        arwain::Logger velocity_file;
+        arwain::Logger position_file;
+
+        ArwainThread job_thread;
+        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
+
+        uint64_t last_inference_time = 0;
+
+        void core_setup()
+        {
+            // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
+            std::chrono::milliseconds presleep(1000);
+            std::this_thread::sleep_for(presleep*10);
+
+            context = zmq_ctx_new();
+            responder = zmq_socket(context, ZMQ_REP);
+            zmq_bind(responder, inference_tcp_socket.c_str());
+
+            arwain::ready_for_inference = true;
+        }
+
+        void run()
+        {
+            while (mode != arwain::OperatingMode::Terminate)
+            {
+                switch (mode)
+                {
+                    case arwain::OperatingMode::Inference:
+                        run_inference();
+                        break;
+                    default:
+                        run_idle();
+                        break;
+                }
+            }
+        }
+
+        void run_idle()
+        {
+            sleep_ms(10);
+        }
+
+        void setup_inference()
+        {
+            position = {0, 0, 0};
+            velocity = {0, 0, 0};
+            velocity_file.open(arwain::folder_date_string + "/velocity.txt");
+            position_file.open(arwain::folder_date_string + "/position.txt");
+            velocity_file << "time x y z" << "\n";
+            position_file << "time x y z" << "\n";
+        }
+
+        void run_inference()
+        {
+            setup_inference();
+
+            // Set up timing.
+            std::chrono::time_point<std::chrono::system_clock> last_time = std::chrono::system_clock::now();
+            std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
+            std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
+
+            while (mode == arwain::OperatingMode::Inference)
+            {
+                imu = arwain::Buffers::IMU_WORLD_BUFFER.get_data();
+                // Check what the time really is since it might not be accurate.
+                time = std::chrono::high_resolution_clock::now();
+                // Get dt in seconds since last udpate, and update lastTime.
+                double dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - last_time).count()/1000.0;
+                last_time = time;
+                // Load the IMU data into a string for serial transmission, gyro first.
+                for (unsigned int i = 0; i < imu.size(); i++)
+                {
+                    request << std::setprecision(15) << (float)imu[i].gyro.x << ",";
+                    request << std::setprecision(15) << (float)imu[i].gyro.y << ",";
+                    request << std::setprecision(15) << (float)imu[i].gyro.z << ",";
+                    request << std::setprecision(15) << (float)imu[i].acce.x << ",";
+                    request << std::setprecision(15) << (float)imu[i].acce.y << ",";
+                    request << std::setprecision(15) << (float)imu[i].acce.z << ",";
+                }
+                // Send the data and await response.
+                std::string fromStream = request.str();
+                const char *str = fromStream.c_str();
+                zmq_send(responder, str, strlen(str), 0);
+                zmq_recv(responder, response_buffer, 50, 0);
+                request.str("");
+
+                // Process the answer buffer into local velocity buffers.
+                // Assume a comma-separated list of three floats.
+                std::string answer{response_buffer};
+                if (answer == "accept")
+                {
+                    continue;
+                }
+                int delimiter = answer.find(",");
+                std::stringstream(answer.substr(0, delimiter)) >> velocity.x;
+                answer = answer.substr(delimiter+1);
+                delimiter = answer.find(",");
+                std::stringstream(answer.substr(0, delimiter)) >> velocity.y;
+                std::stringstream(answer.substr(delimiter+1)) >> velocity.z;
+
+                // TODO Temporary to suppress errors in vertical velocity inference;
+                // Remove when root issue resolved.
+                if (std::abs(velocity.z) > 4.0)
+                {
+                    velocity.z = 0.0;
+                }
+
+                // Feed the activity metrix.
+                arwain::activity_metric.feed_velo(velocity);
+
+                Vector3 average_acceleration{0, 0, 0};
+                for (std::deque<Vector6>::iterator it = imu.end() - 10; it != imu.end(); ++it)
+                {
+                    average_acceleration = average_acceleration + (*it).acce;
+                }
+                average_acceleration = average_acceleration / 10.0;
+
+                arwain::Buffers::VELOCITY_BUFFER.push_back(velocity);
+
+                // Compute new position.
+                if (arwain::config.correct_with_yaw_diff)
+                {
+                    velocity = {
+                        std::cos(-arwain::yaw_offset)*velocity.x - std::sin(-arwain::yaw_offset)*velocity.y,
+                        std::sin(-arwain::yaw_offset)*velocity.x + std::cos(-arwain::yaw_offset)*velocity.y,
+                        velocity.z
+                    };
+                }
+                position = position + dt * velocity;
+
+                arwain::Buffers::POSITION_BUFFER.push_back(position);
+
+                // Log results to file.
+                velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
+                position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
+
+                // Attempt to keep track of what rate the NCS2 is operating at; it sometimes drops to 7 Hz due to thermal throttling,
+                // and this can affect other systems if it is not considered.
+                if (time.time_since_epoch().count() - last_inference_time > 100000000)
+                {
+                    arwain::velocity_inference_rate = 7;
+                }
+                else
+                {
+                    arwain::velocity_inference_rate = 20;
+                }
+
+                last_inference_time = time.time_since_epoch().count();
+
+                // Wait until next tick.
+                time = time + interval;
+                std::this_thread::sleep_until(time);
+
+            }
+
+            cleanup_inference();
+            throw NotImplemented{};
+        }
+
+        void cleanup_inference()
+        {
+            position = {0, 0, 0};
+            velocity = {0, 0, 0};
+            position_file.close();
+            velocity_file.close();
+        }
+    }
+
+    bool init()
+    {
+        if (arwain::config.no_inference)
+        {
+            return false;
+        }
+        core_setup();
+        job_thread = ArwainThread{PositionVelocityInference::run, "arwain_inf_th"};
+        return true;
+    }
+
+    bool shutdown()
+    {
+        throw NotImplemented{};
+    }
+
+    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
+    {
+        mode = new_mode;
+        return {true, "success"};
+    }
+
+    arwain::OperatingMode get_mode()
+    {
+        return mode;
+    }
+
+    void join()
+    {
+        job_thread.join();
+        // Instruct the NCS2 interface script to quit.
+        zmq_send(responder, "stop", strlen("stop"), 0);
+    }
+}
 
 static std::string inference_tcp_socket = "tcp://*:5555";
 
