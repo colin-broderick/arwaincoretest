@@ -377,9 +377,9 @@ int arwain::execute_inference()
     // Start worker threads.
     // ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th");                   // Reading IMU data, updating orientation filters.
     ImuProcessing::init();
+    PositionVelocityInference::init();
 
-
-    ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th");       // Velocity and position inference.
+    // ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th");       // Velocity and position inference.
     ArwainThread stance_detector_thread(stance_detector, "arwain_stnc_th");        // Stance, freefall, entanglement detection.
     ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th");            // LoRa packet transmissions.
     ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
@@ -404,7 +404,9 @@ int arwain::execute_inference()
     // imu_reader_thread.join();
     ImuProcessing::join();
 
-    predict_velocity_thread.join();
+    // predict_velocity_thread.join();
+    PositionVelocityInference::join();
+    
     stance_detector_thread.join();
     transmit_lora_thread.join();
     std_output_thread.join();
