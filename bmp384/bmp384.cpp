@@ -1,9 +1,60 @@
 #include <thread>
 #include <chrono>
 #include <iostream>
-#include <cmath>
 
 #include "bmp384.hpp"
+
+#if FAKEI2C
+
+static void sleep_ms(int ms)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds{ms});
+}
+
+BMP384::BMP384(int bus_address, const std::string &bus_name)
+{
+    sleep_ms(10);
+}
+
+std::tuple<double, double> BMP384::read()
+{
+    // TODO
+    return {0.1, 0.1};
+}
+
+int BMP384::get_chip_id()
+{
+    // TODO
+    return 0;
+}
+
+double BMP384::calculate_altitude(const double pressure, const double temperature, const double sea_level_pressure)
+{
+    // TODO
+    return 20.0;
+}
+
+double BMP384::hypsometric_altitude(double pressure, double temperature, double sea_level_pressure)
+{
+    // TODO
+    return 20.0;
+}
+
+double BMP384::simple_altitude(double pressure, double sea_level_pressure)
+{
+    // TODO
+    return 20.0;
+}
+
+void BMP384::set_altitude_mode(Mode mode)
+{
+    // TODO
+}
+
+#else // REALI2C
+
+#include <iostream>
+#include <cmath>
 
 static void sleep_ms(int ms)
 {
@@ -13,7 +64,6 @@ static void sleep_ms(int ms)
 BMP384::BMP384(int bus_address, const std::string &bus_name)
 {
     i2c_init(bus_address, bus_name);
-
     soft_reset();
 
     get_calib_data();
@@ -276,3 +326,5 @@ void BMP384::set_altitude_mode(Mode mode)
     //     use_hyps = false;
     // }
 }
+
+#endif
