@@ -31,7 +31,7 @@ namespace arwain
     class Madgwick : public Filter
     {
         private:
-            static double invSqrt(double x);
+            
             double m_beta;	// algorithm gain
             double q0;
             double q1;
@@ -42,8 +42,9 @@ namespace arwain
             double pitch;
             double yaw;
             char anglesComputed;
+            
             void computeAngles();
-
+            static double invSqrt(double x);
         public:
             // Constructors
             Madgwick(void);
