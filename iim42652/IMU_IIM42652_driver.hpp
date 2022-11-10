@@ -1,6 +1,75 @@
 #ifndef GREEVE_IIM42652_HPP
 #define GREEVE_IIM42652_HPP
 
+#include "vector3.hpp"
+
+#if FAKEI2C
+
+class IMU_IIM42652
+{
+public:
+    IMU_IIM42652(int bus_address, const std::string& bus_name);
+    void soft_reset();
+    int IMU_config(uint8_t gyro_config, uint8_t accel_config);
+    void set_resolutions(double accel, double gyro);
+    Vector6 read_IMU();
+    double read_temperature();
+    Vector3 calibrate_gyroscope();
+    Vector3 calibration_accel_sample();
+    void set_gyro_bias(double x, double y, double z);
+    void set_accel_bias(double x, double y, double z);
+    void set_accel_scale(double x, double y, double z);
+    void set_correction_speed(double speed);
+    void enable_auto_calib();
+    void enable_auto_calib(double threshold);
+    void disable_auto_calib();
+    Vector3 get_gyro_calib();
+    double get_gyro_calib_x();
+    double get_gyro_calib_y();
+    double get_gyro_calib_z();
+
+private:
+    double accel_resolution = 0;
+    double gyro_resolution = 0;
+    int handle = 0;
+    double temperature = 0;
+
+    // Calibration parameters.
+    double gyro_bias_x = 0;
+    double gyro_bias_y = 0;
+    double gyro_bias_z = 0;
+    double accel_bias_x = 0;
+    double accel_bias_y = 0;
+    double accel_bias_z = 0;
+    double accel_scale_x = 1;
+    double accel_scale_y = 1;
+    double accel_scale_z = 1;
+
+    // Most recent reading lives here.
+    double gyroscope_x = 0;
+    double gyroscope_y = 0;
+    double gyroscope_z = 0;
+    double accelerometer_x = 0;
+    double accelerometer_y = 0;
+    double accelerometer_z = 0;
+    
+    double auto_calib_timer = 0;
+    int calib_time = 200;
+    double auto_calib_threshold = 0.025;
+    bool auto_calib_enabled = false;
+    double correction_speed = 0.995;
+
+private:
+    void i2c_init(const int address, const std::string& bus_name);
+    void enable();
+    int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
+    int i2c_write(int reg_addr, int bytes, uint8_t *buffer);
+    void read_IMU_raw_data();
+    void update_gyro_bias();
+};
+
+#else // reali2c
+
 #include <iostream>
 #include <map>
 #include <sys/ioctl.h>
@@ -11,8 +80,6 @@ extern "C"
     #include <linux/i2c-dev.h>
     #include <i2c/smbus.h>
 }
-
-#include "vector3.hpp"
 
 // CONSTANTS ===================================================================
 
@@ -148,6 +215,8 @@ private:
     void update_gyro_bias();
 };
 
+#endif // fakei2c
+
 /** \brief Compute the mean value of a 1-dimensional ArrayType of doubles.
  * \param[in] data An iterable ArrayType of 1 dimension containing doubles.
  * \return The mean of the double values in the data array.
@@ -163,4 +232,5 @@ static double array_mean_1d(const ArrayType& data)
     return total / data.size();
 }
 
-#endif
+
+#endif // ifndef
