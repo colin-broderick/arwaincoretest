@@ -4,7 +4,9 @@
 
 TEST(CornerDetector, Constructor)
 {
+
 EXPECT_NO_THROW(arwain::CornerDetector(1,1.0,1.0));
+
 }
 
 TEST(CornerDetector, Update_Angle)
@@ -39,6 +41,3 @@ TEST(CornerDetector, Update_Isufficient_Information)
     arwain::CornerDetector detector(3, 1.0, 0.5);
     EXPECT_FALSE(detector.update(pos));
 }
-
-
-

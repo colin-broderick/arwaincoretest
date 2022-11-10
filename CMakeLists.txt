@@ -108,6 +108,8 @@ add_executable(
     unit_tests/timers_tests.cpp
     unit_tests/arwain_thread_tests.cpp
     unit_tests/corner_detector_tests.cpp
+    unit_tests/floor_tracker_tests.cpp
+    unit_tests/indoor_positioning_wrapper_tests.cpp
     vector3/vector3.cpp
     quaternion/quaternion.cpp
     input_parser/input_parser.cpp
@@ -116,6 +118,22 @@ add_executable(
     timers/timers.cpp
     arwain_thread/arwain_thread.cpp
     ips/corner_detector.cpp
+    ips/floor_tracker.cpp
+    ips/indoor_positioning_wrapper.cpp
+    src/arwain.cpp
+    iim42652/IMU_IIM42652_driver.cpp
+    kalman/kalman.cpp
+    lis3mdl/lis3mdl.cpp
+    src/calibration.cpp
+    orientation/new_madgwick_FusionBias.cpp
+    orientation/new_madgwick_FusionAhrs.cpp
+    orientation/new_madgwick_FusionCompass.cpp
+    src/velocity_prediction.cpp
+    src/imu_reader.cpp
+    src/stance.cpp
+    src/transmit_lora.cpp
+    src/altimeter.cpp
+    src/command_line.cpp
 )
 
 option(USENCS2 "Use the Neural Compute Stick for inference" OFF)
@@ -150,7 +168,7 @@ endif()
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow)
-target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest)
+target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest i2c zmq)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -ftest-coverage -fprofile-arcs)
 
 ## Link libraries
