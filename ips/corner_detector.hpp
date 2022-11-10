@@ -22,6 +22,8 @@ namespace arwain
             double detection_angle;
             double min_separation;
             std::deque<Vector3> track;
+
+            double radians_to_degrees(double radians);
     };
 }
 
