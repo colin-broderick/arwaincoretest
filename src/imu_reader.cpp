@@ -251,7 +251,7 @@ namespace ImuProcessing
         void run_accel_calibration()
         {
             // TODO
-            throw NotImplemented{};
+            throw NotImplemented{__FUNCTION__};
         }
 
         void run_autocalibration()
@@ -324,7 +324,7 @@ namespace ImuProcessing
         void run_self_test()
         {
             // TODO
-            throw NotImplemented{};
+            throw NotImplemented{__FUNCTION__};
         }
 
         /** \brief Executes the inference mode job thread. */
