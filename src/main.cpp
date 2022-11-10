@@ -101,7 +101,7 @@ int main(int argc, char **argv)
     if ((ret = arwain::config.read_from_file()) != arwain::Configuration::ReturnCodes::OK)
     {
         std::cout << "Got an error when reading config file:\n";
-        std::cout << arwain::ErrorMessages[ret] << std::endl;
+        std::cout << ret << ": " << arwain::ErrorMessages[ret] << std::endl;
     }
 
     // Start IMU test mode. This returns so the program will quit when the test is stopped.
