@@ -2,6 +2,9 @@
 #include <string_view>
 
 #include "arwain.hpp"
+#include "exceptions.hpp"
+#include "imu_reader.hpp"
+#include "velocity_prediction.hpp"
 
 namespace
 {
@@ -44,6 +47,8 @@ namespace
     void switch_to_exit_mode()
     {
         std::cout << "Cleaning up before closing, please wait ..." << std::endl;
+        ImuProcessing::set_mode(arwain::OperatingMode::Terminate);
+        PositionVelocityInference::set_mode(arwain::OperatingMode::Terminate);
         arwain::system_mode = arwain::OperatingMode::Terminate;
     }
 
@@ -62,6 +67,8 @@ namespace
         {
             std::cout << "Entering inference mode" << std::endl;
             arwain::setup_log_directory();
+            ImuProcessing::set_mode(arwain::OperatingMode::Inference);
+            PositionVelocityInference::set_mode(arwain::OperatingMode::Inference);
             arwain::system_mode = arwain::OperatingMode::Inference;
         }
         else
@@ -69,6 +76,11 @@ namespace
             std::cout << "Cannot switch to inference from current mode\n";
             report_current_mode();
         }
+    }
+
+    void force_switch_to_idle_autocal_mode()
+    {
+        arwain::system_mode = arwain::OperatingMode::AutoCalibration;
     }
 
     /** \brief Puts the system into Idle mode. Only reachable from Inference mode.
@@ -81,6 +93,8 @@ namespace
         {
             std::cout << "Entering autocalibration mode" << std::endl;
             arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+            ImuProcessing::set_mode(arwain::OperatingMode::AutoCalibration);
+            PositionVelocityInference::set_mode(arwain::OperatingMode::AutoCalibration);
         }
         else
         {
@@ -99,6 +113,8 @@ namespace
         {
             std::cout << "Starting gyroscope calibration" << std::endl;
             arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
+            PositionVelocityInference::set_mode(arwain::OperatingMode::GyroscopeCalibration);
+            ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration, std::function<void()>(force_switch_to_idle_autocal_mode));
         }
     }
 
@@ -112,6 +128,8 @@ namespace
         else
         {
             std::cout << "Starting magnetometer calibration" << std::endl;
+            ImuProcessing::set_mode(arwain::OperatingMode::MagnetometerCalibration);
+            PositionVelocityInference::set_mode(arwain::OperatingMode::MagnetometerCalibration);
             arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
         }
     }
@@ -126,6 +144,8 @@ namespace
         else
         {
             std::cout << "Starting accelerometer calibration" << std::endl;
+            ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
+            PositionVelocityInference::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
         }
     }
@@ -138,7 +158,10 @@ namespace
         }
         else
         {
+            // TODO What's going on here?
             std::cout << "Starting accelerometer calibration" << std::endl;
+            ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
+            PositionVelocityInference::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
         }
     }

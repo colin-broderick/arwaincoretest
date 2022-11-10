@@ -64,11 +64,7 @@ void altimeter()
                     pressure = pressure - arwain::config.pressure_offset;
                     altitude = BMP384::calculate_altitude(pressure / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
                     altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
-                    {
-                        std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
-                        arwain::Buffers::PRESSURE_BUFFER.pop_front();
-                        arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
-                    }
+                    arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
 
                     #ifdef DEBUGALTIMETER
                     std::cout << "Altitude: " << altitude << std::endl;
@@ -93,11 +89,7 @@ void altimeter()
                     pressure = pressure - arwain::config.pressure_offset;
                     altitude = BMP384::calculate_altitude(pressure / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
                     altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
-                    {
-                        std::lock_guard<std::mutex> lock{arwain::Locks::PRESSURE_BUFFER_LOCK};
-                        arwain::Buffers::PRESSURE_BUFFER.pop_front();
-                        arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
-                    }
+                    arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
 
                     #ifdef DEBUGALTIMETER
                     std::cout << "Altitude: " << altitude << std::endl;

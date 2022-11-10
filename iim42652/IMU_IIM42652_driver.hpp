@@ -88,6 +88,7 @@ extern "C"
 class IMU_IIM42652
 {
 public:
+    IMU_IIM42652() = default;
     IMU_IIM42652(int bus_address, const std::string& bus_name);
     void soft_reset();
     int IMU_config(uint8_t gyro_config, uint8_t accel_config);
