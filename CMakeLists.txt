@@ -107,6 +107,7 @@ add_executable(
     unit_tests/vector3_tests.cpp
     unit_tests/timers_tests.cpp
     unit_tests/arwain_thread_tests.cpp
+    unit_tests/global_buffer_tests.cpp
     unit_tests/corner_detector_tests.cpp
     unit_tests/floor_tracker_tests.cpp
     unit_tests/indoor_positioning_wrapper_tests.cpp
@@ -168,7 +169,7 @@ endif()
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
 target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow)
-target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest i2c zmq)
+target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest i2c zmq stdc++fs)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -ftest-coverage -fprofile-arcs)
 
 ## Link libraries

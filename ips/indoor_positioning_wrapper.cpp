@@ -47,10 +47,7 @@ void indoor_positioning()
                     std::this_thread::sleep_until(time);
 
                     Vector3 new_position;
-                    { // Read most recent position from the global position buffer.
-                        std::lock_guard<std::mutex> lock{arwain::Locks::POSITION_BUFFER_LOCK};
-                        new_position = arwain::Buffers::POSITION_BUFFER.back();
-                    }
+                    new_position = arwain::Buffers::POSITION_BUFFER.back();
 
                     if (corner_detector.update(new_position))
                     {
