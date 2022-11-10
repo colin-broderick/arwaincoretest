@@ -31,13 +31,13 @@ static double vertical_gradient(const Vector3& v1, const Vector3& v2)
     return vertical_change / horizontal_change;
 }
 
-void arwain::FloorTracker::update(const Vector3& position)
+bool arwain::FloorTracker::update(const Vector3& position)
 {
     // If the new position is very close to the old one, do not add it to the track.
     // We require meaningful spatial separation to detect corners using this method.
     if ((track.back() - position).magnitude() < min_separation)
     {
-        return;
+        return false;
     }
 
     track.push_back(position);
@@ -45,7 +45,7 @@ void arwain::FloorTracker::update(const Vector3& position)
     if (track.size() < window_size)
     {
         // std::cout << "Skipped; insufficient information" << std::endl;
-        return;
+        return false;
     }
 
     auto& anchor = track[0];
@@ -64,4 +64,5 @@ void arwain::FloorTracker::update(const Vector3& position)
     tracked_position = track[0];
 
     track.pop_front();
+    return true;
 }

@@ -11,6 +11,15 @@ arwain::CornerDetector::CornerDetector(int window_size_, double detection_angle_
     track.push_back({0, 0, 0});
 }
 
+/** \brief Converts an angle in radians to an angle in degrees.
+ * \param radians The size of the angle to convert in radians
+ */
+double arwain::CornerDetector::radians_to_degrees(double radians)
+{
+    //multuplied by 180 degrees and then divided by pi
+     return radians * 180.0 / 3.14159;
+}
+
 /** \brief Checks the track to see if a corner can be detected.
  * 
  * The detector chooses an anchor point, then looks forward in time to an end vector,
@@ -64,7 +73,7 @@ bool arwain::CornerDetector::update(Vector3 position)
     Vector3 anchor = track[halfway_index];
     Vector3 start = track[start_index] - anchor;
     Vector3 end = track[end_index] - anchor;
-    double angle = Vector3::angle_between(start, end) * 180.0 / 3.14159;
+    double angle = radians_to_degrees(Vector3::angle_between(start, end));
 
     std::cout << angle << std::endl;
 
@@ -77,7 +86,7 @@ bool arwain::CornerDetector::update(Vector3 position)
             anchor = track[halfway_index];
             start = track[start_index] - anchor;
             end = track[end_index] - anchor;
-            double new_angle = Vector3::angle_between(start, end) * 180.0 / 3.14159;
+            double new_angle = radians_to_degrees(Vector3::angle_between(start, end));
             if (new_angle > detection_angle) 
             {
                 angle = new_angle;
@@ -94,7 +103,7 @@ bool arwain::CornerDetector::update(Vector3 position)
             anchor = track[halfway_index];
             start = track[start_index] - anchor;
             end = track[end_index] - anchor;
-            double new_angle = Vector3::angle_between(start, end) * 180.0 / 3.14159;
+            double new_angle = radians_to_degrees(Vector3::angle_between(start, end));
             if (new_angle > detection_angle) 
             {
                 angle = new_angle;
