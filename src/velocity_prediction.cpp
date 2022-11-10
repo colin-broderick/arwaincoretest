@@ -197,7 +197,6 @@ namespace PositionVelocityInference
             }
 
             cleanup_inference();
-            throw NotImplemented{};
         }
 
         void cleanup_inference()
@@ -222,7 +221,8 @@ namespace PositionVelocityInference
 
     bool shutdown()
     {
-        throw NotImplemented{};
+        mode = arwain::OperatingMode::Terminate;
+        return true;
     }
 
     std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)

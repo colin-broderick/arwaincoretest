@@ -4,8 +4,8 @@
 class NotImplemented : public std::logic_error
 {
     public:
-        NotImplemented()
-        : std::logic_error("Function not yet implemented")
+        NotImplemented(const std::string& fn_name)
+        : std::logic_error("Function not yet implemented: " + fn_name)
         {
 
         }

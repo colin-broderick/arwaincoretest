@@ -159,7 +159,6 @@ namespace
         else
         {
             // TODO What's going on here?
-            throw NotImplemented{};
             std::cout << "Starting accelerometer calibration" << std::endl;
             ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             PositionVelocityInference::set_mode(arwain::OperatingMode::AccelerometerCalibration);
