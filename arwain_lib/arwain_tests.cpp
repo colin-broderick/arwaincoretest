@@ -1,7 +1,6 @@
 #include <thread>
 #include <chrono>
 
-#include "build_config.hpp"
 #include "arwain.hpp"
 #include "arwain_tests.hpp"
 #include "bmp384.hpp"

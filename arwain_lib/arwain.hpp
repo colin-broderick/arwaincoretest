@@ -8,13 +8,13 @@
 #include <sstream>
 #include <iomanip>
 
-#include "build_config.hpp"
 #include "stance.hpp"
 #include "uubla.hpp"
 #include "lora.hpp"
 #include "configuration.hpp"
 #include "global_buffer.hpp"
 
+int arwain_main(int argc, char** argv);
 void sleep_ms(int ms);
 
 class Vector3;

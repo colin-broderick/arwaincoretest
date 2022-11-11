@@ -2,7 +2,6 @@
 #include <chrono>
 #include <bitset>
 
-#include "build_config.hpp"
 #include "transmit_lora.hpp"
 #include "vector3.hpp"
 #include "logger.hpp"
