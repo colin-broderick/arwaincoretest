@@ -75,3 +75,5 @@ libLoRaPi
 mag_test.csv
 magn_log.csv
 *.conf
+*.tflite
+*.bin

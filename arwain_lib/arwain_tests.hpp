@@ -1,8 +1,6 @@
 #ifndef _ARWAIN_RUNTIME_TESTS_HPP
 #define _ARWAIN_RUNTIME_TESTS_HPP
 
-#include "build_config.hpp"
-
 namespace arwain
 {
     int test_imu();

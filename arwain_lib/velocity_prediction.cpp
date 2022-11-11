@@ -9,7 +9,7 @@
 #include "exceptions.hpp"
 #include "arwain_thread.hpp"
 
-#if USENCS2
+#if USE_NCS2
     #include <zmq.h>
 #else // Using tflite inference
     #include "tensorflow/lite/interpreter.h"
@@ -432,7 +432,7 @@ class VelocityKalmanFilter
         }
 };
 
-#if USENCS2
+#if USE_NCS2
 /** \brief Predicts velocity by passing IMU data to a neural compute resource, and integrates
  * velocity into position.
  */

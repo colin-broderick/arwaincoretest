@@ -1,8 +1,6 @@
 #ifndef _ARWAIN_TRANSMIT_LORA_HPP
 #define _ARWAIN_TRANSMIT_LORA_HPP
 
-#include "build_config.hpp"
-
 void transmit_lora();
 
 namespace arwain

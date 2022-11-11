@@ -1,3 +1,4 @@
+#include <csignal>
 #include <iostream>
 #include <filesystem>
 #include <iomanip>
@@ -5,8 +6,16 @@
 #include <cmath>
 #include <tuple>
 
+#if USE_ROS == 1
+#include <ros/ros.h>
+#endif
+
+#if USE_UUBLA == 1
+#include "uubla.hpp"
+#endif
+
+#include "arwain_tests.hpp"
 #include "arwain_thread.hpp"
-#include "build_config.hpp"
 #include "arwain.hpp"
 #include "input_parser.hpp"
 #include "imu_reader.hpp"
@@ -23,6 +32,7 @@
 #include "bmp384.hpp"
 #include "calibration.hpp"
 #include "command_line.hpp"
+#include "std_output.hpp"
 // #include "uwb_reader.hpp"
 #include "uubla.hpp"
 #include "global_buffer.hpp"
@@ -385,7 +395,7 @@ int arwain::execute_inference()
     ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
     ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
     ArwainThread altimeter_thread(altimeter, "arwain_alt_th");                     // Uses the BMP384 sensor to determine altitude.
-    #if USENCS2
+    #if USE_NCS2
         ArwainThread py_inference_thread{py_inference, "arwain_ncs2_th"};          // Temporary: Run Python script to handle velocity inference.
     #endif
     #if USE_UUBLA == 1
@@ -411,7 +421,7 @@ int arwain::execute_inference()
     transmit_lora_thread.join();
     std_output_thread.join();
     indoor_positioning_thread.join();
-    #if USENCS2
+    #if USE_NCS2
     py_inference_thread.join();
     #endif
     altimeter_thread.join();
@@ -763,4 +773,131 @@ double ActivityMetric::read() const
         * ((gyro_roller->get_value() - gyro_mean) / gyro_stdv)
         / ((velo_roller->get_value() - velo_mean) / velo_stdv)
     );
+}
+
+/** \brief Capture the SIGINT signal for clean exit.
+ * Sets the system mode to Terminate, which instructs all threads to clean up and exit.
+ * \param signal The signal to capture.
+ */
+static void sigint_handler(int signal)
+{
+    if (signal == SIGINT)
+    {
+        std::cout << "\nReceived SIGINT - closing\n" << "\n";
+        arwain::system_mode = arwain::OperatingMode::Terminate;
+    }
+}
+
+/** \brief ARWAIN entry point. */
+int arwain_main(int argc, char **argv)
+{
+    #if USE_ROS == 1
+    ros::init(argc, argv, "arwain_node");
+    #endif
+
+    int ret;
+
+    // Prepare keyboard interrupt signal handler to enable graceful exit.
+    std::signal(SIGINT, sigint_handler);
+
+    // Determine behaviour from command line arguments.
+    InputParser input{argc, argv};
+
+    // Output help text if requested.
+    if (input.contains("-h") || input.contains("-help"))
+    {
+        std::cout << arwain::help_text << std::endl;
+        return arwain::ExitCodes::Success;
+    }
+    if (input.contains("-version"))
+    {
+        std::cout << "ARWAIN executable version 0.1\n";
+        return arwain::ExitCodes::Success;
+    }
+
+    // Attempt to read the config file and quit if failed.
+    arwain::config = arwain::Configuration{input};
+    if ((ret = arwain::config.read_from_file()) != arwain::Configuration::ReturnCodes::OK)
+    {
+        std::cout << "Got an error when reading config file:\n";
+        std::cout << arwain::ErrorMessages[ret] << std::endl;
+    }
+
+    // Start IMU test mode. This returns so the program will quit when the test is stopped.
+    else if (input.contains("-testimu"))
+    {
+        ret = arwain::test_imu();
+    }
+
+    else if (input.contains("-testlorarx"))
+    {
+        ret = arwain::test_lora_rx();
+    }
+    else if (input.contains("-testloratx"))
+    {
+        ret = arwain::test_lora_tx();
+    }
+    else if (input.contains("-calibm"))
+    {
+        ret = arwain::calibrate_magnetometers();
+    }
+    else if (input.contains("-testpressure"))
+    {
+        ret = arwain::test_pressure();
+    }
+    else if (input.contains("-testori"))
+    {
+        int rate;
+        const char *rate_str = input.getCmdOption("-testori").c_str();
+        rate = std::atoi(rate_str);
+        ret = arwain::test_ori(rate);
+    }
+    else if (input.contains("-rerunori"))
+    {
+        ret = arwain::rerun_orientation_filter(input.getCmdOption("-rerunori"));
+    }
+    else if (input.contains("-rerunfloor"))
+    {
+        ret = arwain::rerun_floor_tracker(input.getCmdOption("-rerunfloor"));
+    }
+
+    // Perform quick calibration of gyroscopes and write to config file.
+    else if (input.contains("-calibg"))
+    {
+        ret = arwain::calibrate_gyroscopes();
+    }
+
+    // Perform quick calibration of gyroscopes and write to config file.
+    else if (input.contains("-caliba"))
+    {
+        ret = arwain::calibrate_accelerometers_simple();
+    }
+    else if (input.contains("-testmag"))
+    {
+        #if USE_ROS == 1
+        ret = arwain::test_mag(argc, argv);
+        #else
+        ret = arwain::test_mag();
+        #endif
+    }
+    #if USE_UUBLA == 1
+    else if (input.contains("-testuubla"))
+    {
+        ret = arwain::test_uubla_integration();
+    }
+    #endif
+
+    else
+    {
+        // Attempt to calibrate the gyroscope before commencing other activities.
+        if (input.contains("-calib"))
+        {
+            arwain::calibrate_gyroscopes();
+            arwain::config = arwain::Configuration{input}; // Reread the config file as it has now changed.
+        }
+        arwain::setup(input);
+        ret = arwain::execute_inference();
+    }
+
+    return ret;
 }

@@ -122,8 +122,6 @@ TEST(Quaternion, Inverse)
  */
 TEST(Quaternion, Sum)
 {
-    bool passing = true;
-    
     for (int i = 0; i < 1000; i++)
     {
         Quaternion q1{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
