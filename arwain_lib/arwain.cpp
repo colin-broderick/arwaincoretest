@@ -16,7 +16,6 @@
 
 #include "arwain_tests.hpp"
 #include "arwain_thread.hpp"
-#include "build_config.hpp"
 #include "arwain.hpp"
 #include "input_parser.hpp"
 #include "imu_reader.hpp"
