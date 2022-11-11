@@ -8,7 +8,6 @@
 #include <sstream>
 #include <iomanip>
 
-#include "build_config.hpp"
 #include "stance.hpp"
 #include "uubla.hpp"
 #include "lora.hpp"
