@@ -4,9 +4,11 @@ project(arwain)
 
 find_package(GTest CONFIG REQUIRED)
 
-option(USENCS2             "Use the Neural Compute Stick for inference"  OFF)
-option(NUMCPP_NO_USE_BOOST "Build NumCpp without Boost as a dependency"  OFF)
-option(USEROS              "Use ROS topics to publish diagnostic data"   OFF)
+option(USE_NCS2             "Use the Neural Compute Stick for inference"    OFF)
+option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"    OFF)
+option(USE_ROS              "Use ROS topics to publish diagnostic data"     OFF)
+option(USE_UUBLA            "Include the UUBLA ultra-wideband library"      OFF)
+option(USE_REALSENSE        "Use the Realsense T265 camera for positioning" OFF)
 
 # TODO : Additional includes for tensorflow. These need to be tidied up.
 include_directories(
@@ -45,13 +47,13 @@ add_subdirectory(arwain_lib)
 add_executable(${PROJECT_NAME} src/main.cpp)
 add_executable(${PROJECT_NAME}_test ${UNIT_TEST_SOURCES})
 
-if(USEROS)
+if(USE_ROS)
     message("Using ROS for diagnostic data topics")
-    add_definitions(-DUSEROS)
+    add_definitions(-DUSE_ROS)
     find_package(roscpp REQUIRED)
     target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${roscpp_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} ${roscpp_LIBRARIES})
-endif(USEROS)
+endif(USE_ROS)
 
 if(NUMCPP_NO_USE_BOOST)
     message("Compiling NumCpp without Boost")
@@ -60,9 +62,9 @@ else()
     # TODO This should do find_package(boost) plus includes and links.
 endif()
 
-if(USENCS2)
+if(USE_NCS2)
     message("Using NCS2 for inference")
-    add_definitions(-DUSENCS2)
+    add_definitions(-DUSE_NCS2)
     target_link_libraries(${PROJECT_NAME} zmq)
 else()
     set(TENSORFLOW_SOURCE_DIR "/opt/arwain/workspace/tensorflow_src" CACHE PATH
