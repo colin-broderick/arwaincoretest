@@ -396,7 +396,7 @@ int arwain::execute_inference()
     ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
     ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
     ArwainThread altimeter_thread(altimeter, "arwain_alt_th");                     // Uses the BMP384 sensor to determine altitude.
-    #if USENCS2
+    #if USE_NCS2
         ArwainThread py_inference_thread{py_inference, "arwain_ncs2_th"};          // Temporary: Run Python script to handle velocity inference.
     #endif
     #if USE_UUBLA == 1
@@ -422,7 +422,7 @@ int arwain::execute_inference()
     transmit_lora_thread.join();
     std_output_thread.join();
     indoor_positioning_thread.join();
-    #if USENCS2
+    #if USE_NCS2
     py_inference_thread.join();
     #endif
     altimeter_thread.join();
