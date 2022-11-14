@@ -391,8 +391,9 @@ int arwain::execute_inference()
     PositionVelocityInference::init();
     // ArwainThread stance_detector_thread(stance_detector, "arwain_stnc_th");        // Stance, freefall, entanglement detection.
     StanceDetection::init();
+    // ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th");            // LoRa packet transmissions.
+    StatusReporting::init();
 
-    ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th");            // LoRa packet transmissions.
     ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
     ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
     ArwainThread altimeter_thread(altimeter, "arwain_alt_th");                     // Uses the BMP384 sensor to determine altitude.
@@ -421,7 +422,9 @@ int arwain::execute_inference()
     // stance_detector_thread.join();
     StanceDetection::join();
     
-    transmit_lora_thread.join();
+    // transmit_lora_thread.join();
+    StatusReporting::join();
+
     std_output_thread.join();
     indoor_positioning_thread.join();
     #if USE_NCS2
