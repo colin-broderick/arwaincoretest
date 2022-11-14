@@ -385,20 +385,14 @@ void uubla_fn()
 int arwain::execute_inference()
 {
     // Start worker threads.
-    
-    // ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th");                   // Reading IMU data, updating orientation filters.
-    ImuProcessing::init();
-    // ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th");       // Velocity and position inference.
-    PositionVelocityInference::init();
-    // ArwainThread stance_detector_thread(stance_detector, "arwain_stnc_th");        // Stance, freefall, entanglement detection.
-    StanceDetection::init();
-    // ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th");            // LoRa packet transmissions.
-    StatusReporting::init();
-    // ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
-    DebugPrints::init();
+    ImuProcessing::init();                      // Reading IMU data, updating orientation filters.
+    PositionVelocityInference::init();          // Velocity and position inference.
+    StanceDetection::init();                    // Stance, freefall, entanglement detection.
+    StatusReporting::init();                    // LoRa packet transmissions.
+    DebugPrints::init();                        // Prints useful output to std out.
+    Altimeter::init();                          // Uses the BMP384 sensor to determine altitude.
 
     ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
-    ArwainThread altimeter_thread(altimeter, "arwain_alt_th");                     // Uses the BMP384 sensor to determine altitude.
     #if USE_NCS2
         ArwainThread py_inference_thread{py_inference, "arwain_ncs2_th"};          // Temporary: Run Python script to handle velocity inference.
     #endif
@@ -415,26 +409,17 @@ int arwain::execute_inference()
     ArwainThread command_line_thread{command_line, "arwain_cmd_th"};                // Simple command line interface for runtime mode switching.
 
     // Wait for all threads to terminate.
-    // imu_reader_thread.join();
     ImuProcessing::join();
-
-    // predict_velocity_thread.join();
     PositionVelocityInference::join();
-    
-    // stance_detector_thread.join();
     StanceDetection::join();
-    
-    // transmit_lora_thread.join();
     StatusReporting::join();
-
-    // std_output_thread.join();
     DebugPrints::join();
+    Altimeter::join();
 
     indoor_positioning_thread.join();
     #if USE_NCS2
     py_inference_thread.join();
     #endif
-    altimeter_thread.join();
     #if USE_REALSENSE == 1
     rs2_thread.join();
     #endif
