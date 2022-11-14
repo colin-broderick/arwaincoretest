@@ -51,9 +51,24 @@ namespace PositionVelocityInference
         arwain::Logger position_file;
 
         ArwainThread job_thread;
+        #if USE_NCS2
+        ArwainThread ncs2_thread;
+        #endif
         arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
 
         uint64_t last_inference_time = 0;
+
+        #if USE_NCS2
+        /** \brief Start a Python script which opens a socket and does inference on data we send it. */
+        void py_inference()
+        {   
+            if (!arwain::config.no_inference)
+            {   
+                std::string command = "PYTHONPATH=/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share INTEL_OPENVINO_DIR=/opt/intel/openvino OpenCV_DIR=/opt/intel/openvino/opencv/cmake LD_LIBRARY_PATH=/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l PATH=/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games /usr/bin/python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
+                system(command.c_str());
+            }
+        }
+        #endif
 
         void core_setup()
         {
@@ -254,7 +269,10 @@ namespace PositionVelocityInference
             return false;
         }
         core_setup();
-        job_thread = ArwainThread{PositionVelocityInference::run, "arwain_inf_th"};
+        job_thread = ArwainThread{PositionVelocityInference::run, "arwain_infr_th"};
+        #if USE_NCS2
+        ncs2_thread = ArwainThread{py_inference, "arwain_ncs2_th"};          // Temporary: Run Python script to handle velocity inference.
+        #endif
         return true;
     }
 
@@ -289,6 +307,7 @@ namespace PositionVelocityInference
         // Instruct the NCS2 interface script to quit.
         #if USE_NCS2
         zmq_send(responder, "stop", strlen("stop"), 0);
+        ncs2_thread.join();
         #endif
     }
 }
