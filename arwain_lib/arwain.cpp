@@ -406,7 +406,7 @@ int arwain::execute_inference()
     #if USE_REALSENSE == 1
     ArwainThread rs2_thread{rs2_reader, "arwain_rs2_th"};
     #endif
-    ArwainThread command_line_thread{command_line, "arwain_cmd_th"};                // Simple command line interface for runtime mode switching.
+    ArwainCLI::init();                              // Simple command line interface for runtime mode switching.
 
     // Wait for all threads to terminate.
     ImuProcessing::join();
@@ -429,7 +429,7 @@ int arwain::execute_inference()
         uubla_thread.join();
     }
     #endif
-    command_line_thread.join();
+    ArwainCLI::join();
 
     return arwain::ExitCodes::Success;
 }
