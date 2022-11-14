@@ -130,6 +130,7 @@ class BMP384
         enum class Mode { USE_HYPS, USE_SIMPLE };
 
     public:
+        BMP384() = default;
         BMP384(int bus_address, const std::string &bus_name);
         std::tuple<double, double> read();
         int get_chip_id();
