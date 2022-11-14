@@ -385,6 +385,7 @@ void uubla_fn()
 int arwain::execute_inference()
 {
     // Start worker threads.
+    
     // ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th");                   // Reading IMU data, updating orientation filters.
     ImuProcessing::init();
     // ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th");       // Velocity and position inference.
@@ -393,8 +394,9 @@ int arwain::execute_inference()
     StanceDetection::init();
     // ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th");            // LoRa packet transmissions.
     StatusReporting::init();
+    // ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
+    DebugPrints::init();
 
-    ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
     ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
     ArwainThread altimeter_thread(altimeter, "arwain_alt_th");                     // Uses the BMP384 sensor to determine altitude.
     #if USE_NCS2
@@ -425,7 +427,9 @@ int arwain::execute_inference()
     // transmit_lora_thread.join();
     StatusReporting::join();
 
-    std_output_thread.join();
+    // std_output_thread.join();
+    DebugPrints::join();
+
     indoor_positioning_thread.join();
     #if USE_NCS2
     py_inference_thread.join();
