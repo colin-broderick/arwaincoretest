@@ -4,6 +4,7 @@
 #include "arwain.hpp"
 #include "exceptions.hpp"
 #include "imu_reader.hpp"
+#include "transmit_lora.hpp"
 #include "velocity_prediction.hpp"
 
 namespace
@@ -50,6 +51,7 @@ namespace
         ImuProcessing::set_mode(arwain::OperatingMode::Terminate);
         PositionVelocityInference::set_mode(arwain::OperatingMode::Terminate);
         StanceDetection::set_mode(arwain::OperatingMode::Terminate);
+        StatusReporting::set_mode(arwain::OperatingMode::Terminate);
         arwain::system_mode = arwain::OperatingMode::Terminate;
     }
 
@@ -71,6 +73,7 @@ namespace
             ImuProcessing::set_mode(arwain::OperatingMode::Inference);
             PositionVelocityInference::set_mode(arwain::OperatingMode::Inference);
             StanceDetection::set_mode(arwain::OperatingMode::Inference);
+            StatusReporting::set_mode(arwain::OperatingMode::Inference);
             arwain::system_mode = arwain::OperatingMode::Inference;
         }
         else
@@ -98,6 +101,7 @@ namespace
             ImuProcessing::set_mode(arwain::OperatingMode::AutoCalibration);
             PositionVelocityInference::set_mode(arwain::OperatingMode::AutoCalibration);
             StanceDetection::set_mode(arwain::OperatingMode::AutoCalibration);
+            StatusReporting::set_mode(arwain::OperatingMode::AutoCalibration);
         }
         else
         {
@@ -119,6 +123,7 @@ namespace
             PositionVelocityInference::set_mode(arwain::OperatingMode::GyroscopeCalibration);
             ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration, std::function<void()>(force_switch_to_idle_autocal_mode));
             StanceDetection::set_mode(arwain::OperatingMode::GyroscopeCalibration);
+            StatusReporting::set_mode(arwain::OperatingMode::GyroscopeCalibration);
         }
     }
 
@@ -135,6 +140,7 @@ namespace
             ImuProcessing::set_mode(arwain::OperatingMode::MagnetometerCalibration);
             PositionVelocityInference::set_mode(arwain::OperatingMode::MagnetometerCalibration);
             StanceDetection::set_mode(arwain::OperatingMode::MagnetometerCalibration);
+            StatusReporting::set_mode(arwain::OperatingMode::MagnetometerCalibration);
             arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
         }
     }
@@ -152,6 +158,7 @@ namespace
             ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             PositionVelocityInference::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             StanceDetection::set_mode(arwain::OperatingMode::AccelerometerCalibration);
+            StatusReporting::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
         }
     }
@@ -170,6 +177,7 @@ namespace
             ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             PositionVelocityInference::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             StanceDetection::set_mode(arwain::OperatingMode::AccelerometerCalibration);
+            StatusReporting::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
         }
     }
