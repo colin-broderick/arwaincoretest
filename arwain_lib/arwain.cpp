@@ -6,12 +6,8 @@
 #include <cmath>
 #include <tuple>
 
-#if USE_ROS == 1
+#if USE_ROS
 #include <ros/ros.h>
-#endif
-
-#if USE_UUBLA == 1
-#include "uubla.hpp"
 #endif
 
 #include "arwain_tests.hpp"
@@ -33,15 +29,14 @@
 #include "calibration.hpp"
 #include "command_line.hpp"
 #include "std_output.hpp"
-// #include "uwb_reader.hpp"
-#include "uubla.hpp"
+#include "uwb_reader.hpp"
 #include "global_buffer.hpp"
 
-#if USE_REALSENSE == 1
+#if USE_REALSENSE
 #include "t265.hpp"
 #endif
 
-#if USE_ROS == 1
+#if USE_ROS
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
@@ -69,9 +64,6 @@ namespace arwain
     unsigned int velocity_inference_rate = 20;
     RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
     ActivityMetric activity_metric{200, 20};
-    #if USE_UUBLA == 1
-    UUBLA::Network* uubla_handle = nullptr;
-    #endif
 }
 
 // Shared data buffers; mutex locks must be used when accessing.
@@ -303,7 +295,7 @@ void arwain::setup(const InputParser& input)
     }
 }
 
-#if USE_REALSENSE == 1
+#if USE_REALSENSE
 void rs2_reader()
 {
     // Quit immediately if disabled by config.
@@ -345,33 +337,6 @@ void rs2_reader()
 }
 #endif
 
-#if USE_UUBLA == 1
-void uubla_fn()
-{
-    UUBLA::Network uubla{
-        arwain::config.uubla_serial_port,
-        arwain::config.uubla_baud_rate
-    };
-    arwain::uubla_handle = &uubla;
-
-    uubla.configure("force_z_zero", true);
-    uubla.configure("ewma_gain", 0.1);
-    uubla.add_node_callback = inform_new_uubla_node;
-    uubla.remove_node_callback = inform_remove_uubla_node;
-    uubla.start_reading(); // Start as in start reading the serial port. TODO investigate this function for possible leaks.
-    
-    std::thread solver_th{solver_fn, &uubla};
-
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
-    {
-        sleep_ms(100);
-    }
-
-    uubla.join();
-    solver_th.join();
-}
-#endif
-
 int arwain::execute_inference()
 {
     // Start worker threads.
@@ -382,15 +347,10 @@ int arwain::execute_inference()
     DebugPrints::init();                        // Prints useful output to std out.
     Altimeter::init();                          // Uses the BMP384 sensor to determine altitude.
     IndoorPositioningSystem::init();            // Floor, stair, corner snapping.
-
-    #if USE_UUBLA == 1
-    ArwainThread uubla_thread;
-    if (arwain::config.node_id == 2)
-    {
-        uubla_thread = ArwainThread{uubla_fn, "arwain_uubla_th"};
-    }
+    #if USE_UUBLA
+    UublaWrapper::init();                       // Enable this node to operate as an UUBLA master node.
     #endif
-    #if USE_REALSENSE == 1
+    #if USE_REALSENSE
     ArwainThread rs2_thread{rs2_reader, "arwain_rs2_th"};
     #endif
     ArwainCLI::init();                          // Simple command line interface for runtime mode switching.
@@ -403,15 +363,11 @@ int arwain::execute_inference()
     DebugPrints::join();
     Altimeter::join();
     IndoorPositioningSystem::join();
-
-    #if USE_REALSENSE == 1
-    rs2_thread.join();
+    #if USE_UUBLA
+    UublaWrapper::join();
     #endif
-    #if USE_UUBLA == 1
-    if (arwain::config.node_id == 2)
-    {
-        uubla_thread.join();
-    }
+    #if USE_REALSENSE
+    rs2_thread.join();
     #endif
     ArwainCLI::join();
 
@@ -770,7 +726,7 @@ static void sigint_handler(int signal)
 /** \brief ARWAIN entry point. */
 int arwain_main(int argc, char **argv)
 {
-    #if USE_ROS == 1
+    #if USE_ROS
     ros::init(argc, argv, "arwain_node");
     #endif
 
@@ -853,13 +809,13 @@ int arwain_main(int argc, char **argv)
     }
     else if (input.contains("-testmag"))
     {
-        #if USE_ROS == 1
+        #if USE_ROS
         ret = arwain::test_mag(argc, argv);
         #else
         ret = arwain::test_mag();
         #endif
     }
-    #if USE_UUBLA == 1
+    #if USE_UUBLA
     else if (input.contains("-testuubla"))
     {
         ret = arwain::test_uubla_integration();

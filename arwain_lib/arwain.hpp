@@ -84,7 +84,7 @@ namespace arwain::BufferSizes
     inline const unsigned int MAG_ORIENTATION_BUFFER_LEN = 100;
     inline const unsigned int MAG_EULER_BUFFER_LEN = 100;
     
-    #if USE_UUBLA == 1
+    #if USE_UUBLA
     inline const unsigned int LORA_BEACON_MESSAGE_LENGTH = 2;
     #endif
 }
@@ -176,9 +176,6 @@ namespace arwain
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
     extern ActivityMetric activity_metric;
-    #if USE_UUBLA == 1
-    extern UUBLA::Network* uubla_handle;
-    #endif
 }
 
 namespace arwain::Buffers

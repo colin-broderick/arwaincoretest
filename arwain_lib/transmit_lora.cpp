@@ -10,11 +10,11 @@
 #include "arwain.hpp"
 #include "lora.hpp"
 #include "timers.hpp"
-#if USE_UUBLA == 1
-#include "uubla.hpp"
+#if USE_UUBLA
+#include "uwb_reader.hpp"
 #endif
 
-#if USE_UUBLA == 1
+#if USE_UUBLA
 namespace UUBLAState
 {
     UUBLA::AutoQueue<uint8_t> new_nodes;
@@ -124,7 +124,7 @@ namespace StatusReporting
                                         | (StanceDetection::get_attitude() << 2)
                                         | (StanceDetection::get_stance() << 3);
 
-                #if USE_UUBLA == 1
+                #if USE_UUBLA
                 // As written, only one piece of beacon info can be sent at a time.
                 // This is vulnerable to failure since it cannot be guaranteed that any
                 // given LoRa message is actually received.
@@ -142,8 +142,8 @@ namespace StatusReporting
                 }
                 if (arwain::config.node_id == 2)
                 {
-                    pose_message.partner_distance = static_cast<int8_t>(arwain::uubla_handle->get_distance(0) * 2.0);
-                    std::cout << "Partner distance f = " << arwain::uubla_handle->get_distance(0) << "\n";
+                    pose_message.partner_distance = static_cast<int8_t>(UublaWrapper::get_distance(0) * 2.0);
+                    std::cout << "Partner distance f = " << UublaWrapper::get_distance(0) << "\n";
                     std::cout << "Partner distance i = " << static_cast<int>(pose_message.partner_distance) << "\n";
                     std::cout << "\n";
                 }
@@ -222,7 +222,7 @@ std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet)
     return stream;
 }
 
-#if USE_UUBLA == 1
+#if USE_UUBLA
 std::ostream& operator<<(std::ostream& stream, arwain::BeaconPacket packet)
 {
     stream << (int)packet.beacon_id << " " << (int)packet.arwain_node_id;
@@ -230,7 +230,7 @@ std::ostream& operator<<(std::ostream& stream, arwain::BeaconPacket packet)
 }
 #endif
 
-#if USE_UUBLA == 1
+#if USE_UUBLA
 /** \brief Transmit or queue a LoRa message when a new UUBLA node joins the network. */
 void inform_new_uubla_node(const std::string& node_name)
 {
@@ -238,7 +238,7 @@ void inform_new_uubla_node(const std::string& node_name)
 }
 #endif
 
-#if USE_UUBLA == 1
+#if USE_UUBLA
 /** \brief Transmit or queue a LoRa message when an UUBLA node leaves the network. */
 void inform_remove_uubla_node(const std::string& node_name)
 {

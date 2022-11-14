@@ -6,14 +6,14 @@ namespace arwain
     int test_imu();
     int test_lora_tx();
     int test_lora_rx();
-    #if USE_ROS == 1
+    #if USE_ROS
     int test_mag(int argc, char **argv);
     #else
     int test_mag();
     #endif
     int test_pressure();
     int test_ori(int rate);
-    #if USE_UUBLA == 1
+    #if USE_UUBLA
     int test_uubla_integration();
     #endif
 }
