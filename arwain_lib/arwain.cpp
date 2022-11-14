@@ -96,16 +96,6 @@ void sleep_ms(int ms)
     std::this_thread::sleep_for(std::chrono::milliseconds{ms});
 }
 
-/** \brief Start a Python script which opens a socket and does inference on data we send it. */
-static void py_inference()
-{   
-   if (!arwain::config.no_inference)
-   {   
-       std::string command = "PYTHONPATH=/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share INTEL_OPENVINO_DIR=/opt/intel/openvino OpenCV_DIR=/opt/intel/openvino/opencv/cmake LD_LIBRARY_PATH=/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l PATH=/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games /usr/bin/python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
-       system(command.c_str());
-   }
-}
-
 double unwrap_phase_radians(double new_angle, double previous_angle)
 {
     while (new_angle - previous_angle > 3.14159)
@@ -394,7 +384,7 @@ int arwain::execute_inference()
 
     ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
     #if USE_NCS2
-        ArwainThread py_inference_thread{py_inference, "arwain_ncs2_th"};          // Temporary: Run Python script to handle velocity inference.
+
     #endif
     #if USE_UUBLA == 1
         std::thread uubla_thread;
@@ -417,9 +407,6 @@ int arwain::execute_inference()
     Altimeter::join();
 
     indoor_positioning_thread.join();
-    #if USE_NCS2
-    py_inference_thread.join();
-    #endif
     #if USE_REALSENSE == 1
     rs2_thread.join();
     #endif
