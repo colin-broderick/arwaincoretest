@@ -49,6 +49,7 @@ namespace
         std::cout << "Cleaning up before closing, please wait ..." << std::endl;
         ImuProcessing::set_mode(arwain::OperatingMode::Terminate);
         PositionVelocityInference::set_mode(arwain::OperatingMode::Terminate);
+        StanceDetection::set_mode(arwain::OperatingMode::Terminate);
         arwain::system_mode = arwain::OperatingMode::Terminate;
     }
 
@@ -69,6 +70,7 @@ namespace
             arwain::setup_log_directory();
             ImuProcessing::set_mode(arwain::OperatingMode::Inference);
             PositionVelocityInference::set_mode(arwain::OperatingMode::Inference);
+            StanceDetection::set_mode(arwain::OperatingMode::Inference);
             arwain::system_mode = arwain::OperatingMode::Inference;
         }
         else
@@ -95,6 +97,7 @@ namespace
             arwain::system_mode = arwain::OperatingMode::AutoCalibration;
             ImuProcessing::set_mode(arwain::OperatingMode::AutoCalibration);
             PositionVelocityInference::set_mode(arwain::OperatingMode::AutoCalibration);
+            StanceDetection::set_mode(arwain::OperatingMode::AutoCalibration);
         }
         else
         {
@@ -115,6 +118,7 @@ namespace
             arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
             PositionVelocityInference::set_mode(arwain::OperatingMode::GyroscopeCalibration);
             ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration, std::function<void()>(force_switch_to_idle_autocal_mode));
+            StanceDetection::set_mode(arwain::OperatingMode::GyroscopeCalibration);
         }
     }
 
@@ -130,6 +134,7 @@ namespace
             std::cout << "Starting magnetometer calibration" << std::endl;
             ImuProcessing::set_mode(arwain::OperatingMode::MagnetometerCalibration);
             PositionVelocityInference::set_mode(arwain::OperatingMode::MagnetometerCalibration);
+            StanceDetection::set_mode(arwain::OperatingMode::MagnetometerCalibration);
             arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
         }
     }
@@ -146,6 +151,7 @@ namespace
             std::cout << "Starting accelerometer calibration" << std::endl;
             ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             PositionVelocityInference::set_mode(arwain::OperatingMode::AccelerometerCalibration);
+            StanceDetection::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
         }
     }
@@ -159,9 +165,11 @@ namespace
         else
         {
             // TODO What's going on here?
+            throw NotImplemented{"SEARCHTHISSTRING00000123"};
             std::cout << "Starting accelerometer calibration" << std::endl;
             ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             PositionVelocityInference::set_mode(arwain::OperatingMode::AccelerometerCalibration);
+            StanceDetection::set_mode(arwain::OperatingMode::AccelerometerCalibration);
             arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
         }
     }

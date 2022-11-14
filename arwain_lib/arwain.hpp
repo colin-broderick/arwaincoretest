@@ -259,10 +259,6 @@ namespace arwain
 {
     struct Status
     {
-        arwain::StanceDetector::Stance current_stance;
-        arwain::StanceDetector::Attitude attitude;
-        arwain::StanceDetector::EntangleState entangled;
-        arwain::StanceDetector::FallState falling;
         arwain::Errors::ErrorCondition errors;
         int IMUTemperature;
     };

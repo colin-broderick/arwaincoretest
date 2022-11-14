@@ -42,11 +42,11 @@ void std_output()
                         ss << "Orientation (Q):   " << quat << "\n";
 
                         // Add stance to the string stream.
-                        ss << "Stance flag:       " << arwain::status.current_stance << "\n";
-                        ss << "Horizontal:        " << arwain::status.attitude << "\n";
-                        ss << "Fall flag:         " << arwain::status.falling << "\n";
-                        ss << "Entangled flag:    " << arwain::status.entangled << "\n";
-                        
+                        ss << "Stance flag:       " << StanceDetection::get_stance() << "\n";
+                        ss << "Horizontal:        " << StanceDetection::get_attitude() << "\n";
+                        ss << "Fall flag:         " << StanceDetection::get_falling_state() << "\n";
+                        ss << "Entangled flag:    " << StanceDetection::get_entangled_state() << "\n";
+
                         ss << "Magnetic ori (Q):  " << arwain::Buffers::MAG_ORIENTATION_BUFFER.back() << "\n";
 
                         if (!arwain::config.no_pressure)
