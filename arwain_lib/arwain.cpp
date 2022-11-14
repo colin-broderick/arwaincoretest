@@ -381,32 +381,29 @@ int arwain::execute_inference()
     StatusReporting::init();                    // LoRa packet transmissions.
     DebugPrints::init();                        // Prints useful output to std out.
     Altimeter::init();                          // Uses the BMP384 sensor to determine altitude.
+    IndoorPositioningSystem::init();            // Floor, stair, corner snapping.
 
-    ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
-    #if USE_NCS2
-
-    #endif
     #if USE_UUBLA == 1
-        std::thread uubla_thread;
-        if (arwain::config.node_id == 2)
-        {
-            uubla_thread = std::thread{uubla_fn};
-        }
+    ArwainThread uubla_thread;
+    if (arwain::config.node_id == 2)
+    {
+        uubla_thread = ArwainThread{uubla_fn, "arwain_uubla_th"};
+    }
     #endif
     #if USE_REALSENSE == 1
     ArwainThread rs2_thread{rs2_reader, "arwain_rs2_th"};
     #endif
-    ArwainCLI::init();                              // Simple command line interface for runtime mode switching.
+    ArwainCLI::init();                          // Simple command line interface for runtime mode switching.
 
-    // Wait for all threads to terminate.
+    // Wait for all jobs to terminate.
     ImuProcessing::join();
     PositionVelocityInference::join();
     StanceDetection::join();
     StatusReporting::join();
     DebugPrints::join();
     Altimeter::join();
+    IndoorPositioningSystem::join();
 
-    indoor_positioning_thread.join();
     #if USE_REALSENSE == 1
     rs2_thread.join();
     #endif

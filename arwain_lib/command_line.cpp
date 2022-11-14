@@ -9,6 +9,7 @@
 #include "std_output.hpp"
 #include "velocity_prediction.hpp"
 #include "arwain_thread.hpp"
+#include "indoor_positioning_wrapper.hpp"
 
 namespace ArwainCLI
 {
@@ -89,6 +90,7 @@ namespace ArwainCLI
             DebugPrints::set_mode(arwain::OperatingMode::Terminate);
             Altimeter::set_mode(arwain::OperatingMode::Terminate);
             ArwainCLI::set_mode(arwain::OperatingMode::Terminate);
+            IndoorPositioningSystem::set_mode(arwain::OperatingMode::Terminate);
             arwain::system_mode = arwain::OperatingMode::Terminate;
         }
 
@@ -114,6 +116,7 @@ namespace ArwainCLI
                 DebugPrints::set_mode(arwain::OperatingMode::Inference);
                 Altimeter::set_mode(arwain::OperatingMode::Inference);
                 ArwainCLI::set_mode(arwain::OperatingMode::Inference);
+                IndoorPositioningSystem::set_mode(arwain::OperatingMode::Inference);
                 arwain::system_mode = arwain::OperatingMode::Inference;
             }
             else
@@ -145,6 +148,7 @@ namespace ArwainCLI
                 DebugPrints::set_mode(arwain::OperatingMode::AutoCalibration);
                 Altimeter::set_mode(arwain::OperatingMode::AutoCalibration);
                 ArwainCLI::set_mode(arwain::OperatingMode::AutoCalibration);
+                IndoorPositioningSystem::set_mode(arwain::OperatingMode::AutoCalibration);
             }
             else
             {
@@ -169,6 +173,7 @@ namespace ArwainCLI
                 DebugPrints::set_mode(arwain::OperatingMode::GyroscopeCalibration);
                 Altimeter::set_mode(arwain::OperatingMode::GyroscopeCalibration);
                 ArwainCLI::set_mode(arwain::OperatingMode::GyroscopeCalibration);
+                IndoorPositioningSystem::set_mode(arwain::OperatingMode::GyroscopeCalibration);
                 ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration, std::function<void()>(force_switch_to_idle_autocal_mode));
             }
         }
@@ -190,6 +195,7 @@ namespace ArwainCLI
                 DebugPrints::set_mode(arwain::OperatingMode::MagnetometerCalibration);
                 Altimeter::set_mode(arwain::OperatingMode::MagnetometerCalibration);
                 ArwainCLI::set_mode(arwain::OperatingMode::MagnetometerCalibration);
+                IndoorPositioningSystem::set_mode(arwain::OperatingMode::MagnetometerCalibration);
                 arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
             }
         }
@@ -211,6 +217,7 @@ namespace ArwainCLI
                 DebugPrints::set_mode(arwain::OperatingMode::AccelerometerCalibration);
                 Altimeter::set_mode(arwain::OperatingMode::AccelerometerCalibration);
                 ArwainCLI::set_mode(arwain::OperatingMode::AccelerometerCalibration);
+                IndoorPositioningSystem::set_mode(arwain::OperatingMode::AccelerometerCalibration);
                 arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
             }
         }
@@ -233,6 +240,7 @@ namespace ArwainCLI
                 DebugPrints::set_mode(arwain::OperatingMode::AccelerometerCalibration);
                 Altimeter::set_mode(arwain::OperatingMode::AccelerometerCalibration);
                 ArwainCLI::set_mode(arwain::OperatingMode::AccelerometerCalibration);
+                IndoorPositioningSystem::set_mode(arwain::OperatingMode::AccelerometerCalibration);
                 arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
             }
         }

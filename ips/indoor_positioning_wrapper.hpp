@@ -2,11 +2,15 @@
 #define INDOOR_POSITIONING_WRAPPER_H
 
 #include "vector3.hpp"
+#include "arwain.hpp"
 
-void indoor_positioning();
-
-namespace arwain
+namespace IndoorPositioningSystem
 {
+    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode);
+    bool shutdown();
+    void join();
+    bool init();
+
     class IndoorPositioningWrapper
     {
         private:
