@@ -54,7 +54,6 @@ namespace PositionVelocityInference
         #if USE_NCS2
         ArwainThread ncs2_thread;
         #endif
-        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
 
         uint64_t last_inference_time = 0;
 
@@ -100,9 +99,9 @@ namespace PositionVelocityInference
 
         void run()
         {
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
-                switch (mode)
+                switch (arwain::system_mode)
                 {
                     case arwain::OperatingMode::Inference:
                         run_inference();
@@ -138,7 +137,7 @@ namespace PositionVelocityInference
             std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
             std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
 
-            while (mode == arwain::OperatingMode::Inference)
+            while (arwain::system_mode == arwain::OperatingMode::Inference)
             {
                 imu = arwain::Buffers::IMU_WORLD_BUFFER.get_data();
                 // Check what the time really is since it might not be accurate.
@@ -276,38 +275,19 @@ namespace PositionVelocityInference
         return true;
     }
 
-    bool shutdown()
-    {
-        mode = arwain::OperatingMode::Terminate;
-        #if USE_NCS2
-        // TODO Apparently, deletion of a void* is undefined, so not sure how to clean this up. Technically a memory leak, 
-        // although only one of each of the following ever exist so not a real cause for concern.
-        // delete context;
-        // delete responder;
-        #else // USE_TF
-        delete input;
-        #endif
-        return true;
-    }
-
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
-    {
-        mode = new_mode;
-        return {true, "success"};
-    }
-
-    arwain::OperatingMode get_mode()
-    {
-        return mode;
-    }
-
     void join()
     {
         job_thread.join();
         // Instruct the NCS2 interface script to quit.
         #if USE_NCS2
         zmq_send(responder, "stop", strlen("stop"), 0);
+        // TODO Apparently, deletion of a void* is undefined, so not sure how to clean this up. Technically a memory leak, 
+        // although only one of each of the following ever exist so not a real cause for concern.
+        // delete context;
+        // delete responder;
         ncs2_thread.join();
+        #else // USE_TF
+        delete input;
         #endif
     }
 }

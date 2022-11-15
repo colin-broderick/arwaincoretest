@@ -5,8 +5,6 @@ namespace UublaWrapper
 {
     bool init();
     void join();
-    bool shutdown();
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode);
     double get_distance(const int position);
 }
 

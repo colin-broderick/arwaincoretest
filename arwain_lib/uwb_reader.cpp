@@ -18,7 +18,6 @@ namespace UublaWrapper
 
         ArwainThread job_thread;
         ArwainThread solver_th;
-        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
         UUBLA::Network* uubla;
 
         void core_setup()
@@ -36,9 +35,9 @@ namespace UublaWrapper
 
         void run()
         {
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
-                switch (mode)
+                switch (arwain::system_mode)
                 {
                     case arwain::OperatingMode::Inference:
                         run_inference();
@@ -70,7 +69,7 @@ namespace UublaWrapper
         {
             setup_inference();
             
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
                 sleep_ms(10);
             }
@@ -97,18 +96,6 @@ namespace UublaWrapper
     {
         delete uubla;
         job_thread.join();
-    }
-
-    bool shutdown()
-    {
-        mode = arwain::OperatingMode::Terminate;
-        return true;
-    }
-
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
-    {
-        mode = new_mode;
-        return {true, "success"};
     }
 
     double get_distance(const int position)

@@ -38,7 +38,6 @@ namespace StatusReporting
         void run_autocalibration();
 
         ArwainThread job_thread;
-        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
         LoRa lora;
         arwain::Logger lora_file;
 
@@ -104,7 +103,7 @@ namespace StatusReporting
 
             std::this_thread::sleep_until(get_next_time_slot(arwain::config.node_id));
 
-            while (mode == arwain::OperatingMode::Inference)
+            while (arwain::system_mode == arwain::OperatingMode::Inference)
             {
                 arwain::PosePacket pose_message;
                 pose_message.metadata = arwain::config.node_id;
@@ -164,9 +163,9 @@ namespace StatusReporting
 
         void run()
         {
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
-                switch (mode)
+                switch (arwain::system_mode)
                 {
                     case arwain::OperatingMode::Inference:
                         run_inference();
@@ -190,23 +189,6 @@ namespace StatusReporting
         core_setup();
         job_thread = ArwainThread{StatusReporting::run, "arwain_stat_th"};
         return true;
-    }
-
-    bool shutdown()
-    {
-        mode = arwain::OperatingMode::Terminate;
-        return true;
-    }
-
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
-    {
-        mode = new_mode;
-        return {true, "success"};
-    }
-
-    arwain::OperatingMode get_mode()
-    {
-        return mode;
     }
 
     void join()

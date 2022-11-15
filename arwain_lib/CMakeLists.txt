@@ -18,6 +18,7 @@ add_library(arwain_lib
     arwain_tests.cpp
     command_line.cpp
     configuration.cpp
+    realsense.cpp
 )
 target_link_libraries(arwain_lib stdc++fs)
 include_directories(
@@ -34,4 +35,5 @@ include_directories(
     ../timers
     ../lis3mdl
     ../ips
+    ../realsense_t265
 )

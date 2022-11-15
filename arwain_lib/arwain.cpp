@@ -10,6 +10,10 @@
 #include <ros/ros.h>
 #endif
 
+#if USE_REALSENSE
+#include "realsense.hpp"
+#endif
+
 #include "arwain_tests.hpp"
 #include "arwain_thread.hpp"
 #include "arwain.hpp"
@@ -31,10 +35,6 @@
 #include "std_output.hpp"
 #include "uwb_reader.hpp"
 #include "global_buffer.hpp"
-
-#if USE_REALSENSE
-#include "t265.hpp"
-#endif
 
 #if USE_ROS
 #include <ros/ros.h>
@@ -295,48 +295,6 @@ void arwain::setup(const InputParser& input)
     }
 }
 
-#if USE_REALSENSE
-void rs2_reader()
-{
-    // Quit immediately if disabled by config.
-    if (!arwain::config.use_rs2)
-    {
-        return;
-    }
-    
-    T265 t265;
-
-
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
-    {
-        switch (arwain::system_mode)
-        {
-            case arwain::OperatingMode::DataCollection:
-            {
-                arwain::Logger log;
-                log.open(arwain::folder_date_string + "/position_t265.txt");
-                log << "time x y z\n";
-
-                while (arwain::system_mode == arwain::OperatingMode::DataCollection)
-                {
-                    Vector3 pos = t265.get_position();
-                    log << std::chrono::system_clock::now().time_since_epoch().count() << " "
-                        << pos.x << " "
-                        << pos.y << " "
-                        << pos.z << "\n";
-                }
-                break;
-            }
-            default:
-            {
-                sleep_ms(10);
-                break;
-            }
-        }
-    }
-}
-#endif
-
 int arwain::execute_inference()
 {
     // Start worker threads.
@@ -351,7 +309,7 @@ int arwain::execute_inference()
     UublaWrapper::init();                       // Enable this node to operate as an UUBLA master node.
     #endif
     #if USE_REALSENSE
-    ArwainThread rs2_thread{rs2_reader, "arwain_rs2_th"};
+    CameraController::init();
     #endif
     ArwainCLI::init();                          // Simple command line interface for runtime mode switching.
 
@@ -367,7 +325,7 @@ int arwain::execute_inference()
     UublaWrapper::join();
     #endif
     #if USE_REALSENSE
-    rs2_thread.join();
+    CameraController::join();
     #endif
     ArwainCLI::join();
 

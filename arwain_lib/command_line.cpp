@@ -7,14 +7,13 @@
 #include "transmit_lora.hpp"
 #include "altimeter.hpp"
 #include "std_output.hpp"
+#include "realsense.hpp"
 #include "velocity_prediction.hpp"
 #include "arwain_thread.hpp"
 #include "indoor_positioning_wrapper.hpp"
 
 namespace ArwainCLI
 {
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode);
-
     namespace // private
     {
         void report_current_mode();
@@ -32,11 +31,10 @@ namespace ArwainCLI
         void parse_cli_input(const std::string& input);
         
         ArwainThread job_thread;
-        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
 
         void run()
         {
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
                 std::string input;
                 std::getline(std::cin, input);
@@ -83,14 +81,6 @@ namespace ArwainCLI
         void switch_to_exit_mode()
         {
             std::cout << "Cleaning up before closing, please wait ..." << std::endl;
-            ImuProcessing::set_mode(arwain::OperatingMode::Terminate);
-            PositionVelocityInference::set_mode(arwain::OperatingMode::Terminate);
-            StanceDetection::set_mode(arwain::OperatingMode::Terminate);
-            StatusReporting::set_mode(arwain::OperatingMode::Terminate);
-            DebugPrints::set_mode(arwain::OperatingMode::Terminate);
-            Altimeter::set_mode(arwain::OperatingMode::Terminate);
-            ArwainCLI::set_mode(arwain::OperatingMode::Terminate);
-            IndoorPositioningSystem::set_mode(arwain::OperatingMode::Terminate);
             arwain::system_mode = arwain::OperatingMode::Terminate;
         }
 
@@ -109,14 +99,6 @@ namespace ArwainCLI
             {
                 std::cout << "Entering inference mode" << std::endl;
                 arwain::setup_log_directory();
-                ImuProcessing::set_mode(arwain::OperatingMode::Inference);
-                PositionVelocityInference::set_mode(arwain::OperatingMode::Inference);
-                StanceDetection::set_mode(arwain::OperatingMode::Inference);
-                StatusReporting::set_mode(arwain::OperatingMode::Inference);
-                DebugPrints::set_mode(arwain::OperatingMode::Inference);
-                Altimeter::set_mode(arwain::OperatingMode::Inference);
-                ArwainCLI::set_mode(arwain::OperatingMode::Inference);
-                IndoorPositioningSystem::set_mode(arwain::OperatingMode::Inference);
                 arwain::system_mode = arwain::OperatingMode::Inference;
             }
             else
@@ -141,14 +123,6 @@ namespace ArwainCLI
             {
                 std::cout << "Entering autocalibration mode" << std::endl;
                 arwain::system_mode = arwain::OperatingMode::AutoCalibration;
-                ImuProcessing::set_mode(arwain::OperatingMode::AutoCalibration);
-                PositionVelocityInference::set_mode(arwain::OperatingMode::AutoCalibration);
-                StanceDetection::set_mode(arwain::OperatingMode::AutoCalibration);
-                StatusReporting::set_mode(arwain::OperatingMode::AutoCalibration);
-                DebugPrints::set_mode(arwain::OperatingMode::AutoCalibration);
-                Altimeter::set_mode(arwain::OperatingMode::AutoCalibration);
-                ArwainCLI::set_mode(arwain::OperatingMode::AutoCalibration);
-                IndoorPositioningSystem::set_mode(arwain::OperatingMode::AutoCalibration);
             }
             else
             {
@@ -167,14 +141,7 @@ namespace ArwainCLI
             {
                 std::cout << "Starting gyroscope calibration" << std::endl;
                 arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
-                PositionVelocityInference::set_mode(arwain::OperatingMode::GyroscopeCalibration);
-                StanceDetection::set_mode(arwain::OperatingMode::GyroscopeCalibration);
-                StatusReporting::set_mode(arwain::OperatingMode::GyroscopeCalibration);
-                DebugPrints::set_mode(arwain::OperatingMode::GyroscopeCalibration);
-                Altimeter::set_mode(arwain::OperatingMode::GyroscopeCalibration);
-                ArwainCLI::set_mode(arwain::OperatingMode::GyroscopeCalibration);
-                IndoorPositioningSystem::set_mode(arwain::OperatingMode::GyroscopeCalibration);
-                ImuProcessing::set_mode(arwain::OperatingMode::GyroscopeCalibration, std::function<void()>(force_switch_to_idle_autocal_mode));
+                ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
             }
         }
 
@@ -188,14 +155,6 @@ namespace ArwainCLI
             else
             {
                 std::cout << "Starting magnetometer calibration" << std::endl;
-                ImuProcessing::set_mode(arwain::OperatingMode::MagnetometerCalibration);
-                PositionVelocityInference::set_mode(arwain::OperatingMode::MagnetometerCalibration);
-                StanceDetection::set_mode(arwain::OperatingMode::MagnetometerCalibration);
-                StatusReporting::set_mode(arwain::OperatingMode::MagnetometerCalibration);
-                DebugPrints::set_mode(arwain::OperatingMode::MagnetometerCalibration);
-                Altimeter::set_mode(arwain::OperatingMode::MagnetometerCalibration);
-                ArwainCLI::set_mode(arwain::OperatingMode::MagnetometerCalibration);
-                IndoorPositioningSystem::set_mode(arwain::OperatingMode::MagnetometerCalibration);
                 arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
             }
         }
@@ -210,14 +169,6 @@ namespace ArwainCLI
             else
             {
                 std::cout << "Starting accelerometer calibration" << std::endl;
-                ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                PositionVelocityInference::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                StanceDetection::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                StatusReporting::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                DebugPrints::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                Altimeter::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                ArwainCLI::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                IndoorPositioningSystem::set_mode(arwain::OperatingMode::AccelerometerCalibration);
                 arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
             }
         }
@@ -233,14 +184,6 @@ namespace ArwainCLI
                 // TODO What's going on here?
                 throw NotImplemented{"SEARCHTHISSTRING00000123"};
                 std::cout << "Starting accelerometer calibration" << std::endl;
-                ImuProcessing::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                PositionVelocityInference::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                StanceDetection::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                StatusReporting::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                DebugPrints::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                Altimeter::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                ArwainCLI::set_mode(arwain::OperatingMode::AccelerometerCalibration);
-                IndoorPositioningSystem::set_mode(arwain::OperatingMode::AccelerometerCalibration);
                 arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
             }
         }
@@ -334,20 +277,8 @@ namespace ArwainCLI
         return true;
     }
 
-    bool shutdown()
-    {
-        mode = arwain::OperatingMode::Terminate;
-        return true;
-    }
-
     void join()
     {
         job_thread.join();
-    }
-
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
-    {
-        mode = new_mode;
-        return {true, "success"};
     }
 }

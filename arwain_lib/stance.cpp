@@ -23,7 +23,6 @@ namespace StanceDetection
         void run_idle();
         void run_test_stance_detector();
 
-        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
         ArwainThread job_thread;
 
         arwain::Logger stance_file;
@@ -61,7 +60,7 @@ namespace StanceDetection
             auto time = std::chrono::system_clock::now();
             std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
 
-            while (mode == arwain::OperatingMode::Inference)
+            while (arwain::system_mode == arwain::OperatingMode::Inference)
             {
                 imu_data = arwain::Buffers::IMU_BUFFER.get_data();
                 vel_data = arwain::Buffers::VELOCITY_BUFFER.get_data();
@@ -96,9 +95,9 @@ namespace StanceDetection
             // A little presleep to give IMU data a chance to collect and orientation filter chance to converge.
             std::this_thread::sleep_for(std::chrono::milliseconds{3000});
             
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
-                switch (mode)
+                switch (arwain::system_mode)
                 {
                     case arwain::OperatingMode::Inference:
                         run_inference();
@@ -183,23 +182,6 @@ namespace StanceDetection
         core_setup();
         job_thread = ArwainThread{StanceDetection::run, "arwain_stnc_th"};
         return true;
-    }
-
-    bool shutdown()
-    {
-        mode = arwain::OperatingMode::Terminate;
-        return true;
-    }
-
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
-    {
-        mode = new_mode;
-        return {true, "success"};
-    }
-
-    arwain::OperatingMode get_mode()
-    {
-        return mode;
     }
 
     StanceDetection::StanceDetector::FallState get_falling_state()

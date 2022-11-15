@@ -24,13 +24,12 @@ namespace DebugPrints
         void run_idle();
 
         ArwainThread job_thread;
-        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
 
         void run()
         {
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
-                switch (mode)
+                switch (arwain::system_mode)
                 {
                     case arwain::OperatingMode::Inference:
                         run_inference();
@@ -61,7 +60,7 @@ namespace DebugPrints
             std::this_thread::sleep_for(interval*3);
             auto time = std::chrono::system_clock::now();
 
-            while (mode == arwain::OperatingMode::Inference)
+            while (arwain::system_mode == arwain::OperatingMode::Inference)
             {
                 std::stringstream ss;
 
@@ -122,20 +121,8 @@ namespace DebugPrints
         return true;
     }
 
-    bool shutdown()
-    {
-        mode = arwain::OperatingMode::Terminate;
-        return true;
-    }
-
     void join()
     {
         job_thread.join();
-    }
-
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
-    {
-        mode = new_mode;
-        return {true, "success"};
     }
 }
