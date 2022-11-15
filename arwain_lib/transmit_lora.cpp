@@ -194,6 +194,7 @@ namespace StatusReporting
     void join()
     {
         job_thread.join();
+        std::cout << "Successfully quit StatusReporting\n";
     }
 
 }

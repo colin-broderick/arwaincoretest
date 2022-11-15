@@ -124,5 +124,6 @@ namespace DebugPrints
     void join()
     {
         job_thread.join();
+        std::cout << "Successfully quit DebugPrints\n";
     }
 }

@@ -96,6 +96,7 @@ namespace UublaWrapper
     {
         delete uubla;
         job_thread.join();
+        std::cout << "Successfully quit UublaWrapper\n";
     }
 
     double get_distance(const int position)
