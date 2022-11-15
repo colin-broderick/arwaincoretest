@@ -145,7 +145,7 @@ namespace PositionVelocityInference
                 // Get dt in seconds since last udpate, and update lastTime.
                 double dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - last_time).count()/1000.0;
                 last_time = time;
-                
+
                 #if USE_NCS2
                 // Load the IMU data into a string for serial transmission, gyro first.
                 for (unsigned int i = 0; i < imu.size(); i++)
@@ -161,12 +161,16 @@ namespace PositionVelocityInference
                 std::string fromStream = request.str();
                 const char *str = fromStream.c_str();
                 zmq_send(responder, str, strlen(str), 0);
+                std::cout << "Sent AI query by socket\n";
                 zmq_recv(responder, response_buffer, 50, 0);
+                std::cout << "Received AI response by socket\n";
                 request.str("");
+
 
                 // Process the answer buffer into local velocity buffers.
                 // Assume a comma-separated list of three floats.
                 std::string answer{response_buffer};
+                std::cout << answer << "\n";
                 if (answer == "accept")
                 {
                     continue;

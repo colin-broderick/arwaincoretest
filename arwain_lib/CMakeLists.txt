@@ -4,13 +4,12 @@ project(arwain_lib)
 add_definitions(-DUSE_NCS2)
 set(CMAKE_CXX_STANDARD 17)
 
-add_library(arwain_lib 
+set(SRC_FILES
     calibration.cpp
     stance.cpp
     velocity_prediction.cpp
     altimeter.cpp
     imu_reader.cpp
-    uwb_reader.cpp
     std_output.cpp
     transmit_lora.cpp
     multi_imu.cpp
@@ -18,8 +17,16 @@ add_library(arwain_lib
     arwain_tests.cpp
     command_line.cpp
     configuration.cpp
-    realsense.cpp
 )
+if(USE_UUBLA)
+set(SRC_FILES ${SRC_FILES} uwb_reader.cpp)
+endif()
+if(USE_REALSENSE)
+set(SRC_FILES ${SRC_FILES} realsense.cpp)
+endif()
+
+add_library(arwain_lib ${SRC_FILES})
+
 target_link_libraries(arwain_lib stdc++fs)
 include_directories(
     ../vector3
