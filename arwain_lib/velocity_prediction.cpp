@@ -284,7 +284,9 @@ namespace PositionVelocityInference
         job_thread.join();
         // Instruct the NCS2 interface script to quit.
         #if USE_NCS2
+        std::cout << "stopping zmq\n";
         zmq_send(responder, "stop", strlen("stop"), 0);
+        std::cout << "stopped zmq\n";
         // TODO Apparently, deletion of a void* is undefined, so not sure how to clean this up. Technically a memory leak, 
         // although only one of each of the following ever exist so not a real cause for concern.
         // delete context;
