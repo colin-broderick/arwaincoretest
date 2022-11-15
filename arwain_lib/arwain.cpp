@@ -6,12 +6,12 @@
 #include <cmath>
 #include <tuple>
 
-#if USE_ROS == 1
+#if USE_ROS
 #include <ros/ros.h>
 #endif
 
-#if USE_UUBLA == 1
-#include "uubla.hpp"
+#if USE_REALSENSE
+#include "realsense.hpp"
 #endif
 
 #include "arwain_tests.hpp"
@@ -33,15 +33,10 @@
 #include "calibration.hpp"
 #include "command_line.hpp"
 #include "std_output.hpp"
-// #include "uwb_reader.hpp"
-#include "uubla.hpp"
+#include "uwb_reader.hpp"
 #include "global_buffer.hpp"
 
-#if USE_REALSENSE == 1
-#include "t265.hpp"
-#endif
-
-#if USE_ROS == 1
+#if USE_ROS
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
@@ -69,9 +64,6 @@ namespace arwain
     unsigned int velocity_inference_rate = 20;
     RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
     ActivityMetric activity_metric{200, 20};
-    #if USE_UUBLA == 1
-    UUBLA::Network* uubla_handle = nullptr;
-    #endif
 }
 
 // Shared data buffers; mutex locks must be used when accessing.
@@ -94,16 +86,6 @@ namespace arwain::Buffers
 void sleep_ms(int ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds{ms});
-}
-
-/** \brief Start a Python script which opens a socket and does inference on data we send it. */
-static void py_inference()
-{   
-   if (!arwain::config.no_inference)
-   {   
-       std::string command = "PYTHONPATH=/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share INTEL_OPENVINO_DIR=/opt/intel/openvino OpenCV_DIR=/opt/intel/openvino/opencv/cmake LD_LIBRARY_PATH=/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l PATH=/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games /usr/bin/python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
-       system(command.c_str());
-   }
 }
 
 double unwrap_phase_radians(double new_angle, double previous_angle)
@@ -313,128 +295,39 @@ void arwain::setup(const InputParser& input)
     }
 }
 
-#if USE_REALSENSE == 1
-void rs2_reader()
-{
-    // Quit immediately if disabled by config.
-    if (!arwain::config.use_rs2)
-    {
-        return;
-    }
-    
-    T265 t265;
-
-
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
-    {
-        switch (arwain::system_mode)
-        {
-            case arwain::OperatingMode::DataCollection:
-            {
-                arwain::Logger log;
-                log.open(arwain::folder_date_string + "/position_t265.txt");
-                log << "time x y z\n";
-
-                while (arwain::system_mode == arwain::OperatingMode::DataCollection)
-                {
-                    Vector3 pos = t265.get_position();
-                    log << std::chrono::system_clock::now().time_since_epoch().count() << " "
-                        << pos.x << " "
-                        << pos.y << " "
-                        << pos.z << "\n";
-                }
-                break;
-            }
-            default:
-            {
-                sleep_ms(10);
-                break;
-            }
-        }
-    }
-}
-#endif
-
-#if USE_UUBLA == 1
-void uubla_fn()
-{
-    UUBLA::Network uubla{
-        arwain::config.uubla_serial_port,
-        arwain::config.uubla_baud_rate
-    };
-    arwain::uubla_handle = &uubla;
-
-    uubla.configure("force_z_zero", true);
-    uubla.configure("ewma_gain", 0.1);
-    uubla.add_node_callback = inform_new_uubla_node;
-    uubla.remove_node_callback = inform_remove_uubla_node;
-    uubla.start_reading(); // Start as in start reading the serial port. TODO investigate this function for possible leaks.
-    
-    std::thread solver_th{solver_fn, &uubla};
-
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
-    {
-        sleep_ms(100);
-    }
-
-    uubla.join();
-    solver_th.join();
-}
-#endif
-
 int arwain::execute_inference()
 {
     // Start worker threads.
-    // ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th");                   // Reading IMU data, updating orientation filters.
-    ImuProcessing::init();
-    PositionVelocityInference::init();
+    ImuProcessing::init();                      // Reading IMU data, updating orientation filters.
+    PositionVelocityInference::init();          // Velocity and position inference.
+    StanceDetection::init();                    // Stance, freefall, entanglement detection.
+    StatusReporting::init();                    // LoRa packet transmissions.
+    DebugPrints::init();                        // Prints useful output to std out.
+    Altimeter::init();                          // Uses the BMP384 sensor to determine altitude.
+    IndoorPositioningSystem::init();            // Floor, stair, corner snapping.
+    #if USE_UUBLA
+    UublaWrapper::init();                       // Enable this node to operate as an UUBLA master node.
+    #endif
+    #if USE_REALSENSE
+    CameraController::init();
+    #endif
+    ArwainCLI::init();                          // Simple command line interface for runtime mode switching.
 
-    // ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th");       // Velocity and position inference.
-    ArwainThread stance_detector_thread(stance_detector, "arwain_stnc_th");        // Stance, freefall, entanglement detection.
-    ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th");            // LoRa packet transmissions.
-    ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
-    ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
-    ArwainThread altimeter_thread(altimeter, "arwain_alt_th");                     // Uses the BMP384 sensor to determine altitude.
-    #if USE_NCS2
-        ArwainThread py_inference_thread{py_inference, "arwain_ncs2_th"};          // Temporary: Run Python script to handle velocity inference.
-    #endif
-    #if USE_UUBLA == 1
-        std::thread uubla_thread;
-        if (arwain::config.node_id == 2)
-        {
-            uubla_thread = std::thread{uubla_fn};
-        }
-    #endif
-    #if USE_REALSENSE == 1
-    ArwainThread rs2_thread{rs2_reader, "arwain_rs2_th"};
-    #endif
-    ArwainThread command_line_thread{command_line, "arwain_cmd_th"};                // Simple command line interface for runtime mode switching.
-
-    // Wait for all threads to terminate.
-    // imu_reader_thread.join();
+    // Wait for all jobs to terminate.
     ImuProcessing::join();
-
-    // predict_velocity_thread.join();
     PositionVelocityInference::join();
-    
-    stance_detector_thread.join();
-    transmit_lora_thread.join();
-    std_output_thread.join();
-    indoor_positioning_thread.join();
-    #if USE_NCS2
-    py_inference_thread.join();
+    StanceDetection::join();
+    StatusReporting::join();
+    DebugPrints::join();
+    Altimeter::join();
+    IndoorPositioningSystem::join();
+    #if USE_UUBLA
+    UublaWrapper::join();
     #endif
-    altimeter_thread.join();
-    #if USE_REALSENSE == 1
-    rs2_thread.join();
+    #if USE_REALSENSE
+    CameraController::join();
     #endif
-    #if USE_UUBLA == 1
-    if (arwain::config.node_id == 2)
-    {
-        uubla_thread.join();
-    }
-    #endif
-    command_line_thread.join();
+    ArwainCLI::join();
 
     return arwain::ExitCodes::Success;
 }
@@ -791,7 +684,7 @@ static void sigint_handler(int signal)
 /** \brief ARWAIN entry point. */
 int arwain_main(int argc, char **argv)
 {
-    #if USE_ROS == 1
+    #if USE_ROS
     ros::init(argc, argv, "arwain_node");
     #endif
 
@@ -874,13 +767,13 @@ int arwain_main(int argc, char **argv)
     }
     else if (input.contains("-testmag"))
     {
-        #if USE_ROS == 1
+        #if USE_ROS
         ret = arwain::test_mag(argc, argv);
         #else
         ret = arwain::test_mag();
         #endif
     }
-    #if USE_UUBLA == 1
+    #if USE_UUBLA
     else if (input.contains("-testuubla"))
     {
         ret = arwain::test_uubla_integration();

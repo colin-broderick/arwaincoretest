@@ -158,6 +158,7 @@ class LoRa
 		};
 
 	public: // Methods
+		LoRa() = default;
 		LoRa(const std::string& address, const bool as_receiver);
 		LoRa(const std::string &address, const bool as_receiver, const LoRa::Frequency frequency_mhz_, const LoRa::Bandwidth bandwidth_khz_, const LoRa::SpreadFactor spread_factor_);
         ~LoRa();

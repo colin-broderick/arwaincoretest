@@ -1,7 +1,13 @@
 #ifndef _ARWAIN_TRANSMIT_LORA_HPP
 #define _ARWAIN_TRANSMIT_LORA_HPP
 
-void transmit_lora();
+#include "arwain.hpp"
+
+namespace StatusReporting
+{
+	bool init();
+	void join();
+}
 
 namespace arwain
 {
@@ -67,7 +73,7 @@ namespace arwain
 			}
 	};
 
-    #if USE_UUBLA == 1
+    #if USE_UUBLA
 	struct BeaconPacket
 	{
 		uint8_t beacon_id = 0;
@@ -77,8 +83,8 @@ namespace arwain
 }
 
 std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet);
-#if USE_UUBLA == 1
-std::ostream& operator<<(std::ostream& stream, arwain::BeaconPacket packet);
+#if USE_UUBLA
+// std::ostream& operator<<(std::ostream& stream, arwain::BeaconPacket packet);
 void inform_new_uubla_node(const std::string& node_name);
 void inform_remove_uubla_node(const std::string& node_name);
 #endif

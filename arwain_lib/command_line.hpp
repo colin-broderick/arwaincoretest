@@ -2,6 +2,10 @@
 #define _ARWAIN_COMMAND_LINE_HPP
 
 /** \brief Receives input from stdin or equivalent socket and executes commands, switches modes, etc. */
-void command_line();
+namespace ArwainCLI
+{
+    void join();
+    bool init();
+}
 
 #endif
