@@ -294,7 +294,7 @@ namespace PositionVelocityInference
         // although only one of each of the following ever exist so not a real cause for concern.
         // delete context;
         // delete responder;
-        if (ncs2_thread.joinable)
+        if (ncs2_thread.joinable())
         {
             ncs2_thread.join();
         }
