@@ -6,88 +6,104 @@
 #include "arwain.hpp"
 #include "serial.hpp"
 #include "logger.hpp"
+#include "exceptions.hpp"
+#include "arwain_thread.hpp"
+#include "transmit_lora.hpp"
 
-namespace
+namespace UublaWrapper
 {
-    std::tuple<bool, double, double, double> extract_uwb_coords(const std::string& text)
+    namespace // private
     {
-        size_t first_index = text.find("est");
-        
-        if (first_index != std::string::npos)
+        void run_inference();
+
+        ArwainThread job_thread;
+        ArwainThread solver_th;
+        UUBLA::Network* uubla;
+
+        void core_setup()
         {
-            first_index += 4; // remove the text 'est['
-            int second_index = text.find("]", first_index);
-            std::string pos_string = text.substr(first_index, second_index - first_index);
-            std::replace(pos_string.begin(), pos_string.end(), ',', ' '); // To allow stringstream operations to follow.
-            std::istringstream ss{pos_string};
-            double x, y, z;
-            ss >> x >> y >> z;
-            return {true, x, y, z};
+            uubla = new UUBLA::Network{
+                arwain::config.uubla_serial_port,
+                arwain::config.uubla_baud_rate
+            };
         }
-        else
+
+        void run_idle()
         {
-            return {false, 0, 0, 0};
+            sleep_ms(10);
+        }
+
+        void run()
+        {
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
+            {
+                switch (arwain::system_mode)
+                {
+                    case arwain::OperatingMode::Inference:
+                        run_inference();
+                        break;
+                    default:
+                        run_idle();
+                        break;
+                }
+            }
+        }
+
+        void setup_inference()
+        {
+            uubla->configure("force_z_zero", true);
+            uubla->configure("ewma_gain", 0.1);
+            uubla->add_node_callback = inform_new_uubla_node;
+            uubla->remove_node_callback = inform_remove_uubla_node;
+            uubla->start_reading(); // Start as in start reading the serial port. TODO investigate this function for possible leaks.
+            solver_th = ArwainThread{solver_fn, "arwain_uub2_th", uubla};
+        }
+
+        void cleanup_inference()
+        {
+            uubla->join();
+            solver_th.join();
+        }
+
+        void run_inference()
+        {
+            setup_inference();
+            
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
+            {
+                sleep_ms(10);
+            }
+
+            cleanup_inference();
         }
     }
-}
 
-void uwb_reader(const std::string& port, const int baudrate)
-{
-    // Quit immediately if not enabled by configuration.
-    if (!arwain::config.use_uwb_positioning)
+    // Public
+
+    bool init()
     {
-        return;
+        // TODO Currently configured to act as an UUBLA master; need to generalize.
+        if (!arwain::config.use_uwb_positioning || arwain::config.node_id != 2)
+        {
+            return false;
+        }
+        core_setup();
+        job_thread = ArwainThread{UublaWrapper::run, "arwain_uubla_th"};
+        return true;
     }
 
-    ArwainSerial serial{port, baudrate};
-    serial.write("reset\r");
-    sleep_ms(1000);
-    serial.write("\r\r");
-    sleep_ms(1000);
-    serial.write("les\r");
-    sleep_ms(1000);
-
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    void join()
     {
-        switch (arwain::system_mode)
+        delete uubla;
+        if (job_thread.joinable())
         {
-            case arwain::OperatingMode::TestSerial:
-            {
-                serial.flush();
-                while (arwain::system_mode == arwain::OperatingMode::TestSerial)
-                {
-                    std::string message = serial.readline();
-                    std::cout << message << std::endl;
-                }
-                break;
-            }
-            case arwain::OperatingMode::Inference:
-            {
-                arwain::Logger uwb_log;
-                uwb_log.open(arwain::folder_date_string + "/uwb_log.txt");
-                uwb_log << "time x y z" << "\n";
-                serial.flush();
-
-                while (arwain::system_mode == arwain::OperatingMode::Inference)
-                {
-                    std::string message = serial.readline();
-
-                    // Only log data if the est[x,y,z] substring is found in the message.
-                    auto [found_position, x, y, z] = extract_uwb_coords(message);
-                    if (found_position)
-                    {
-                        std::cout << x << " " << y << " " << z << std::endl;
-                        auto time = std::chrono::system_clock::now();
-                        uwb_log << time.time_since_epoch().count() << " " << x << " " << y << " " << z << "\n";
-                    }
-                }
-                break;
-            }
-            default:
-            {
-                sleep_ms(100);
-                break;
-            }
+            job_thread.join();
         }
+        std::cout << "Successfully quit UublaWrapper\n";
+    }
+
+    double get_distance(const int position)
+    {
+        return uubla->get_distance(position);
     }
 }

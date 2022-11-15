@@ -2,11 +2,13 @@
 #define INDOOR_POSITIONING_WRAPPER_H
 
 #include "vector3.hpp"
+#include "arwain.hpp"
 
-void indoor_positioning();
-
-namespace arwain
+namespace IndoorPositioningSystem
 {
+    void join();
+    bool init();
+
     class IndoorPositioningWrapper
     {
         private:

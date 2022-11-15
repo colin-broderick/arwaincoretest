@@ -9,10 +9,14 @@
 
 #include "quaternion.hpp"
 #include "vector3.hpp"
-
-void stance_detector();
+#include "arwain.hpp"
 
 namespace arwain
+{
+    enum class OperatingMode;
+}
+
+namespace StanceDetection
 {
     class StanceDetector
     {
@@ -117,9 +121,17 @@ namespace arwain
             EntangleState getEntangledStatus();
             FallState getFallingStatus();
     };
+
+    bool init();
+    void join();
+
+    StanceDetection::StanceDetector::FallState get_falling_state();
+    StanceDetection::StanceDetector::EntangleState get_entangled_state();
+    StanceDetection::StanceDetector::Attitude get_attitude();
+    StanceDetection::StanceDetector::Stance get_stance();
 }
 
-arwain::StanceDetector::FallState operator|(const arwain::StanceDetector::FallState &stance1, const arwain::StanceDetector::FallState &stance2);
-arwain::StanceDetector::EntangleState operator|(const arwain::StanceDetector::EntangleState &stance1, const arwain::StanceDetector::EntangleState &stance2);
+StanceDetection::StanceDetector::FallState operator|(const StanceDetection::StanceDetector::FallState &stance1, const StanceDetection::StanceDetector::FallState &stance2);
+StanceDetection::StanceDetector::EntangleState operator|(const StanceDetection::StanceDetector::EntangleState &stance1, const StanceDetection::StanceDetector::EntangleState &stance2);
 
 #endif

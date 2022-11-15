@@ -60,21 +60,6 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "filesystem": "cpp",
-        "*.ipp": "cpp",
-        "csetjmp": "cpp",
-        "any": "cpp",
-        "strstream": "cpp",
-        "bit": "cpp",
-        "bitset": "cpp",
-        "cfenv": "cpp",
-        "forward_list": "cpp",
-        "list": "cpp",
-        "unordered_set": "cpp",
-        "regex": "cpp",
-        "future": "cpp",
-        "shared_mutex": "cpp",
-        "typeindex": "cpp",
-        "variant": "cpp"
+        "filesystem": "cpp"
     }
 }

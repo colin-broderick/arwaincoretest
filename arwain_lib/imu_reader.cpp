@@ -38,7 +38,6 @@ namespace ImuProcessing
 
         ArwainThread job_thread;
         ArwainThread quick_madgwick_convergence_thread;
-        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
         IMU_IIM42652 imu1;
         IMU_IIM42652 imu2;
         IMU_IIM42652 imu3;
@@ -92,9 +91,9 @@ namespace ImuProcessing
         /** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does idle sleep if in non-relevant mode. */
         void run()
         {
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
-                switch (mode)
+                switch (arwain::system_mode)
                 {
                     case arwain::OperatingMode::GyroscopeCalibration:
                         run_gyro_calibration();
@@ -171,17 +170,9 @@ namespace ImuProcessing
             imu2.enable_auto_calib();
             imu3.enable_auto_calib();
 
-            // Set mode back to idle
-            auto [success, message] = set_mode(arwain::OperatingMode::AutoCalibration);
-            if (!success)
-            {
-                throw std::logic_error{message};
-            }
-
             // Callback to be executed when active gyroscope calibration is complete.
             if (post_gyro_calib_callback)
             {
-                        // Callback to be executed when active gyroscope calibration is complete.
                 post_gyro_calib_callback();
             }
         }
@@ -241,10 +232,9 @@ namespace ImuProcessing
 
             std::cout << "Magnetometer calibration complete" << std::endl;
 
-            auto [success, message] = set_mode(arwain::OperatingMode::AutoCalibration);
-            if (!success)
+            if (post_gyro_calib_callback)
             {
-                throw std::logic_error{message};
+                post_gyro_calib_callback();
             }
         }
 
@@ -337,7 +327,7 @@ namespace ImuProcessing
             auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
             std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
 
-            while (mode == arwain::OperatingMode::Inference)
+            while (arwain::system_mode == arwain::OperatingMode::Inference)
             {
                 // TODO
                 timeCount = std::chrono::system_clock::now().time_since_epoch().count();
@@ -502,39 +492,22 @@ namespace ImuProcessing
         return true;
     }
 
-    /** \brief Sets the mode to terminate, which instructs the job thread to shutdown and clean up. */
-    bool shutdown()
+    void set_post_gyro_calibration_callback(std::function<void()> func)
     {
-        mode = arwain::OperatingMode::Terminate;
-        return true;
-    }
-
-    /** \brief Switches the mode to the specified new_mode, if there is a valid transition from current mode to new mode. 
-     * \param new_mode The operating mode to switch into.
-     * \return If the mode switch was allowed and successful, [true, success_message]. If the mode switch was not allowed
-     * or not susccessful, [false, failure_reason].
-    */
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
-    {
-        mode = new_mode;
-        return {true, "success"};
-    }
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode, std::function<void()> func)
-    {
-        // Callback to be executed when active gyroscope calibration is complete.
         post_gyro_calib_callback = func;
-        return set_mode(new_mode);
-    }
-
-    arwain::OperatingMode get_mode()
-    {
-        return mode;
     }
 
     /** \brief Block until the job thread can be joined. */
     void join()
     {
-        job_thread.join();
-        quick_madgwick_convergence_thread.join();
+        if (job_thread.joinable())
+        {
+            job_thread.join();
+        }
+        if (quick_madgwick_convergence_thread.joinable())
+        {
+            quick_madgwick_convergence_thread.join();
+        }
+        std::cout << "Successfully quit ImuProcessing\n";
     }
 }
