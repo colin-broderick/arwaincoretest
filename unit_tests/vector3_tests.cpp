@@ -15,19 +15,6 @@ namespace Random
         static std::uniform_real_distribution<double> dist(-10.0, 10.0);
         return dist(mt);
     }
-
-    /** \brief Generates a random double in the interval [lower_bound, upper_bound). 
-     * \param lower_bound Smallest value that can be returned.
-     * \param upper_bound Lowest upper bound on returnable values.
-     * \return Double in [lower_bound, upper_bound).
-     */
-    static double DoubleBetween(const double lower_bound, const double upper_bound)
-    {
-        static std::random_device rd;
-        static std::mt19937 mt(rd());
-        std::uniform_real_distribution<double> dist(lower_bound, upper_bound);
-        return dist(mt);
-    }
 }
 
 TEST(Vector3, Magnitude)

@@ -8,6 +8,7 @@
 namespace PositionVelocityInference
 {
     std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode);
+    arwain::OperatingMode get_mode();
     bool shutdown();
     void join();
     bool init();
