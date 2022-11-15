@@ -171,6 +171,8 @@ TEST(IMU_Reader, Init_success)
 {
     arwain::config.no_imu = false;
     EXPECT_TRUE(ImuProcessing::init());
+    ImuProcessing::shutdown();
+    ImuProcessing::join();
 }
 
 TEST(IMU_Reader, Init_failure)
