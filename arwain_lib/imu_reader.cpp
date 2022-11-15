@@ -500,7 +500,14 @@ namespace ImuProcessing
     /** \brief Block until the job thread can be joined. */
     void join()
     {
-        job_thread.join();
+        if (job_thread.joinable())
+        {
+            job_thread.join();
+        }
+        if (quick_madgwick_convergence_thread.joinable())
+        {
+            quick_madgwick_convergence_thread.join();
+        }
         quick_madgwick_convergence_thread.join();
         std::cout << "Successfully quit ImuProcessing\n";
     }

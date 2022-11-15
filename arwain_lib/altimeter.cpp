@@ -150,7 +150,10 @@ namespace Altimeter
 
     void join()
     {
-        job_thread.join();
+        if (job_thread.joinable())
+        {
+            job_thread.join();
+        }
         std::cout << "Successfully quit Altimeter\n";
     }
 }
