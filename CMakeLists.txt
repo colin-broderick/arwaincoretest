@@ -13,6 +13,7 @@ option(USE_REALSENSE        "Use the Realsense T265 camera for positioning" OFF)
 if(USE_REALSENSE)
     message("Using librealsense for T265 camera")
     find_package(realsense2 REQUIRED)
+    add_definitions(-DUSE_REALSENSE)
 endif()
 
 # TODO : Additional includes for tensorflow. These need to be tidied up.
@@ -67,7 +68,7 @@ if(USE_ROS)
 endif(USE_ROS)
 
 if(USE_REALSENSE)
-    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} ${realsense2_LIBRARY})
+    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} ${realsense2_LIBRARY} t265)
 endif()
 
 if(NUMCPP_NO_USE_BOOST)

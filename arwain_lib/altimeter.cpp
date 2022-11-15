@@ -25,7 +25,6 @@ namespace Altimeter
         const double CONSTANT_ROOM_TEMPERATURE = 21 + 273.15; // We are assuming constant ambient temperature in the hypsometric formula for now.
 
         ArwainThread job_thread;
-        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
         arwain::Logger pressure_log;
         BMP384 bmp384;
         arwain::Filters::SabatiniAltimeter sabatini_filter;
@@ -48,7 +47,7 @@ namespace Altimeter
             auto loopTime = std::chrono::system_clock::now();
             std::chrono::milliseconds interval{arwain::Intervals::ALTIMETER_INTERVAL};
 
-            while (mode == arwain::OperatingMode::Inference)
+            while (arwain::system_mode == arwain::OperatingMode::Inference)
             {
                 auto [pressure, temperature] = bmp384.read();
                 pressure = pressure - arwain::config.pressure_offset;
@@ -93,9 +92,9 @@ namespace Altimeter
 
         void run()
         {
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
-                switch (mode)
+                switch (arwain::system_mode)
                 {
                     case arwain::OperatingMode::Inference:
                         run_inference();
@@ -149,25 +148,8 @@ namespace Altimeter
         return true;
     }
 
-    bool shutdown()
-    {
-        mode = arwain::OperatingMode::Terminate;
-        return true;
-    }
-
     void join()
     {
         job_thread.join();
-    }
-
-    arwain::OperatingMode get_mode()
-    {
-        return mode;
-    }
-
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
-    {
-        mode = new_mode;
-        return {true, "success"};
     }
 }

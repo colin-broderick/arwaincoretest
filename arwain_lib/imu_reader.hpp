@@ -7,9 +7,7 @@
 
 namespace ImuProcessing
 {
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode, std::function<void()> func);
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode);
-    bool shutdown();
+    void set_post_gyro_calibration_callback(std::function<void()> func);
     void join();
     bool init();
 }

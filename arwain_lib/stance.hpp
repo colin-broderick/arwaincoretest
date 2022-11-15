@@ -123,9 +123,6 @@ namespace StanceDetection
     };
 
     bool init();
-    bool shutdown();
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode);
-    arwain::OperatingMode get_mode();
     void join();
 
     StanceDetection::StanceDetector::FallState get_falling_state();

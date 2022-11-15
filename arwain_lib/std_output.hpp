@@ -6,9 +6,7 @@
 namespace DebugPrints
 {
     bool init();
-    bool shutdown();
     void join();
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode);
 }
 
 #endif
