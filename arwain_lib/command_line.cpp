@@ -140,8 +140,8 @@ namespace ArwainCLI
             else
             {
                 std::cout << "Starting gyroscope calibration" << std::endl;
-                arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
                 ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
+                arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
             }
         }
 
@@ -155,6 +155,7 @@ namespace ArwainCLI
             else
             {
                 std::cout << "Starting magnetometer calibration" << std::endl;
+                ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
                 arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
             }
         }
