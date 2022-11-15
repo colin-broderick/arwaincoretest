@@ -10,6 +10,11 @@ option(USE_ROS              "Use ROS topics to publish diagnostic data"     OFF)
 option(USE_UUBLA            "Include the UUBLA ultra-wideband library"      OFF)
 option(USE_REALSENSE        "Use the Realsense T265 camera for positioning" OFF)
 
+if(USE_REALSENSE)
+    message("Using librealsense for T265 camera")
+    find_package(realsense2 REQUIRED)
+endif()
+
 # TODO : Additional includes for tensorflow. These need to be tidied up.
 include_directories(
     /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/onnxruntime/usr/include/onnxruntime/core/session
@@ -24,7 +29,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter uubla arwain_thread vector3)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
     
-include_directories(lora arwain_thread orientation iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384 uubla/include arwain_lib /opt/arwain/workspace/tensorflow_src)
+include_directories(lora arwain_thread orientation iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384 uubla/include arwain_lib /opt/arwain/workspace/tensorflow_src realsense_t265)
 
 if(USE_UUBLA)
     message("Compiling with UUBLA support")
@@ -47,6 +52,7 @@ add_subdirectory(bmp384)
 add_subdirectory(uubla)
 add_subdirectory(arwain_thread)
 add_subdirectory(arwain_lib)
+add_subdirectory(realsense_t265)
 
 ## Executables to build
 add_executable(${PROJECT_NAME} src/main.cpp)
@@ -59,6 +65,10 @@ if(USE_ROS)
     target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${roscpp_INCLUDE_DIRS})
     set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} ${roscpp_LIBRARIES})
 endif(USE_ROS)
+
+if(USE_REALSENSE)
+    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} ${realsense2_LIBRARY})
+endif()
 
 if(NUMCPP_NO_USE_BOOST)
     message("Compiling NumCpp without Boost")
