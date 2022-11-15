@@ -72,8 +72,7 @@ namespace PositionVelocityInference
         void core_setup()
         {
             // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
-            std::chrono::milliseconds presleep(1000);
-            std::this_thread::sleep_for(presleep*10);
+            std::this_thread::sleep_for(std::chrono::milliseconds{1000});
             
             #if USE_NCS2
             context = zmq_ctx_new();
@@ -287,6 +286,7 @@ namespace PositionVelocityInference
         std::cout << "stopping zmq\n";
         zmq_send(responder, "stop", strlen("stop"), 0);
         std::cout << "stopped zmq\n";
+
         // TODO Apparently, deletion of a void* is undefined, so not sure how to clean this up. Technically a memory leak, 
         // although only one of each of the following ever exist so not a real cause for concern.
         // delete context;
@@ -295,6 +295,7 @@ namespace PositionVelocityInference
         #else // USE_TF
         delete input;
         #endif
+        std::cout << "Successfully quit PositionVelocityInference\n";
     }
 }
 

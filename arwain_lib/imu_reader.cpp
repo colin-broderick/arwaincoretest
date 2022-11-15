@@ -502,5 +502,6 @@ namespace ImuProcessing
     {
         job_thread.join();
         quick_madgwick_convergence_thread.join();
+        std::cout << "Successfully quit ImuProcessing\n";
     }
 }
