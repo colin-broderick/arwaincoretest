@@ -24,16 +24,17 @@ include_directories(
     /opt/yocto/imx-yocto-bsp/build/tmp/work/armv8a-poky-linux/flatbuffers/1.12.0-r0/image/usr/include/
     /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/tensorflow-lite/usr/lib
 )
-    
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter uubla arwain_thread vector3)
+set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter arwain_thread vector3)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
-    
+
 include_directories(lora arwain_thread orientation iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384 uubla/include arwain_lib /opt/arwain/workspace/tensorflow_src realsense_t265)
 
 if(USE_UUBLA)
     message("Compiling with UUBLA support")
+    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} uubla)
     add_definitions(-DUSE_UUBLA)
 endif()
 
@@ -50,10 +51,14 @@ add_subdirectory(lis3mdl)
 add_subdirectory(minitrace)
 add_subdirectory(ips)
 add_subdirectory(bmp384)
+if(USE_UUBLA)
 add_subdirectory(uubla)
+endif()
 add_subdirectory(arwain_thread)
 add_subdirectory(arwain_lib)
+if(USE_REALSENSE)
 add_subdirectory(realsense_t265)
+endif()
 
 ## Executables to build
 add_executable(${PROJECT_NAME} src/main.cpp)
@@ -102,8 +107,8 @@ endif()
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -Wno-psabi -Wall -Wshadow -Wextra -ftest-coverage -fprofile-arcs)
-target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES}                                i2c zmq stdc++fs)
-target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --coverage GTest::gtest i2c zmq stdc++fs)
+target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES}                                i2c zmq stdc++fs pthread boost_system)
+target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --coverage GTest::gtest i2c zmq stdc++fs pthread boost_system)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)
