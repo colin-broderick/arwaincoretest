@@ -81,7 +81,10 @@ namespace CameraController
     void join()
     {
         delete camera;
-        job_thread.join();
+        if (job_thread.joinable())
+        {
+            job_thread.join();
+        }
         std::cout << "Successfully quit CameraController\n";
     }
 }

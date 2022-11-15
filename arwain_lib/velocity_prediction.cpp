@@ -280,7 +280,10 @@ namespace PositionVelocityInference
 
     void join()
     {
-        job_thread.join();
+        if (job_thread.joinable())
+        {
+            job_thread.join();
+        }
         // Instruct the NCS2 interface script to quit.
         #if USE_NCS2
         std::cout << "Stopping zmq thread\n";
@@ -291,7 +294,10 @@ namespace PositionVelocityInference
         // although only one of each of the following ever exist so not a real cause for concern.
         // delete context;
         // delete responder;
-        ncs2_thread.join();
+        if (ncs2_thread.joinable)
+        {
+            ncs2_thread.join();
+        }
         #else // USE_TF
         delete input;
         #endif
