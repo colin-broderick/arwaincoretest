@@ -17,7 +17,6 @@ namespace IndoorPositioningSystem
     namespace // private
     {
         ArwainThread job_thread;
-        arwain::OperatingMode mode = arwain::OperatingMode::AutoCalibration;
 
         arwain::Logger corner_log;
         arwain::Logger tracked_floor_log;
@@ -50,7 +49,7 @@ namespace IndoorPositioningSystem
             auto time = std::chrono::high_resolution_clock::now();
             std::chrono::milliseconds interval{arwain::Intervals::IPS_INTERVAL};
 
-            while (mode == arwain::OperatingMode::Inference)
+            while (arwain::system_mode == arwain::OperatingMode::Inference)
             {
                 Vector3 new_position;
                 new_position = arwain::Buffers::POSITION_BUFFER.back();
@@ -80,9 +79,9 @@ namespace IndoorPositioningSystem
 
         void run()
         {
-            while (mode != arwain::OperatingMode::Terminate)
+            while (arwain::system_mode != arwain::OperatingMode::Terminate)
             {
-                switch (mode)
+                switch (arwain::system_mode)
                 {
                 case arwain::OperatingMode::Inference:
                     run_inference();
@@ -109,26 +108,9 @@ namespace IndoorPositioningSystem
         return true;
     }
 
-    bool shutdown()
-    {
-        mode = arwain::OperatingMode::Terminate;
-        return true;
-    }
-
     void join()
     {
         job_thread.join();
-    }
-
-    std::tuple<bool, std::string> set_mode(arwain::OperatingMode new_mode)
-    {
-        mode = new_mode;
-        return {true, "success"};
-    }
-
-    arwain::OperatingMode get_mode()
-    {
-        return mode;
     }
 }
 
