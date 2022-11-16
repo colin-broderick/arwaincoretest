@@ -98,8 +98,8 @@ void PositionVelocityInference::run_inference()
     setup_inference();
 
     // Set up timing.
-    std::chrono::time_point<std::chrono::system_clock> last_time = std::chrono::system_clock::now();
-    std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
+    std::chrono::time_point<std::chrono::high_resolution_clock> last_time = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point<std::chrono::high_resolution_clock> time = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)

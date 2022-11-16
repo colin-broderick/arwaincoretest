@@ -11,6 +11,13 @@ option(USE_UUBLA            "Include the UUBLA ultra-wideband library"          
 option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"     OFF)
 option(UNIT_TESTS           "Make namespace functions public to enable testing" OFF)
 
+find_package(Eigen3 REQUIRED)
+include_directories(EIGEN3_INCLUDE_DIR)
+
+add_definitions(-DNUMCPP_NO_USE_BOOST)
+
+include_directories(/usr/local64/include)
+
 if(UNIT_TESTS)
     message("Building with all public class methods for test")
     add_definitions(-DTESTABLE=public)
@@ -114,9 +121,9 @@ endif()
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
-target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -Wno-psabi -Wall -Wshadow -Wextra -ftest-coverage -fprofile-arcs)
+target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -Wno-psabi -Wall -Wshadow -Wextra)
 target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES}                                i2c zmq stdc++fs pthread boost_system)
-target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --coverage GTest::gtest i2c zmq stdc++fs pthread boost_system)
+target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} GTest::gtest i2c zmq stdc++fs pthread boost_system)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)

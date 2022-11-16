@@ -5,6 +5,8 @@
 
 #include "lis3mdl.hpp"
 
+#define I2C_SLAVE 0x703
+
 static void sleep_ms(int ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
@@ -153,7 +155,8 @@ void LIS3MDL::i2c_init(const int address, const std::string &bus_name)
  */
 int LIS3MDL::i2c_read(int reg_addr, int bytes, uint8_t *buffer)
 {
-    return i2c_smbus_read_i2c_block_data(this->handle, reg_addr, bytes, buffer);
+    return 0;
+    // return i2c_smbus_read_i2c_block_data(this->handle, reg_addr, bytes, buffer);
 }
 
 /** \brief Writes a given number of bytes to a specified register address.
@@ -164,7 +167,8 @@ int LIS3MDL::i2c_read(int reg_addr, int bytes, uint8_t *buffer)
  */
 int LIS3MDL::i2c_write(int reg_addr, int bytes, uint8_t *buffer)
 {
-    return i2c_smbus_write_i2c_block_data(this->handle, reg_addr, bytes, buffer);
+    return 0;
+    // return i2c_smbus_write_i2c_block_data(this->handle, reg_addr, bytes, buffer);
 }
 
 double LIS3MDL::read_temp()

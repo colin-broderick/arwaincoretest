@@ -4,9 +4,9 @@
 
 #include "arwain_thread.hpp"
 #include "exceptions.hpp"
+#include "logger.hpp"
 #include "transmit_lora.hpp"
 #include "vector3.hpp"
-#include "logger.hpp"
 #include "arwain.hpp"
 #include "lora.hpp"
 #include "timers.hpp"
@@ -22,6 +22,13 @@ namespace UUBLAState
     UUBLA::AutoQueue<uint8_t> nearby_nodes;
 }
 #endif
+
+namespace arwain {
+std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet)
+{
+    stream << "Pose Packet: " << packet.x << " " << packet.y << " " << packet.z << " " << packet.alerts;
+    return stream;
+}}
 
 StatusReporting::StatusReporting()
 {
@@ -182,12 +189,6 @@ void StatusReporting::join()
         job_thread.join();
     }
     std::cout << "Successfully quit StatusReporting\n";
-}
-
-std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet)
-{
-    stream << "Pose Packet: " << packet.x << " " << packet.y << " " << packet.z << " " << packet.alerts;
-    return stream;
 }
 
 #if USE_UUBLA
