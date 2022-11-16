@@ -4,57 +4,9 @@
 
 #include "bmp384.hpp"
 
-#if FAKEI2C
-
-static void sleep_ms(int ms)
-{
-    std::this_thread::sleep_for(std::chrono::milliseconds{ms});
-}
-
-BMP384::BMP384(int bus_address, const std::string &bus_name)
-{
-    sleep_ms(10);
-}
-
-std::tuple<double, double> BMP384::read()
-{
-    // TODO
-    return {0.1, 0.1};
-}
-
-int BMP384::get_chip_id()
-{
-    // TODO
-    return 0;
-}
-
-double BMP384::calculate_altitude(const double pressure, const double temperature, const double sea_level_pressure)
-{
-    // TODO
-    return 20.0;
-}
-
-double BMP384::hypsometric_altitude(double pressure, double temperature, double sea_level_pressure)
-{
-    // TODO
-    return 20.0;
-}
-
-double BMP384::simple_altitude(double pressure, double sea_level_pressure)
-{
-    // TODO
-    return 20.0;
-}
-
-void BMP384::set_altitude_mode(Mode mode)
-{
-    // TODO
-}
-
-#else // REALI2C
-
-#include <iostream>
 #include <cmath>
+
+#define I2C_SLAVE 0x703
 
 static void sleep_ms(int ms)
 {
@@ -245,7 +197,8 @@ void BMP384::i2c_init(const int address, const std::string &bus_name)
  */
 int BMP384::i2c_read(int reg_addr, int bytes, uint8_t *buffer)
 {
-    return i2c_smbus_read_i2c_block_data(this->handle, reg_addr, bytes, buffer);
+    return 0;
+    // return i2c_smbus_read_i2c_block_data(this->handle, reg_addr, bytes, buffer);
 }
 
 /** \brief Writes a given number of bytes to a specified register address.
@@ -256,7 +209,8 @@ int BMP384::i2c_read(int reg_addr, int bytes, uint8_t *buffer)
  */
 int BMP384::i2c_write(int reg_addr, int bytes, uint8_t *buffer)
 {
-    return i2c_smbus_write_i2c_block_data(this->handle, reg_addr, bytes, buffer);
+    return 0;
+    // return i2c_smbus_write_i2c_block_data(this->handle, reg_addr, bytes, buffer);
 }
 
 int BMP384::get_chip_id()
@@ -326,5 +280,3 @@ void BMP384::set_altitude_mode(Mode mode)
     //     use_hyps = false;
     // }
 }
-
-#endif

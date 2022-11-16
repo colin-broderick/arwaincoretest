@@ -9,7 +9,9 @@
 #include <iomanip>
 
 #include "stance.hpp"
+#if USE_UUBLA
 #include "uubla.hpp"
+#endif
 #include "lora.hpp"
 #include "configuration.hpp"
 #include "global_buffer.hpp"

@@ -216,7 +216,7 @@ void IMU_IIM42652::i2c_init(const int address, const std::string &bus_name)
         std::cout << "Failed to open I2C bus" << std::endl;
     }
 
-    if (ioctl(this->handle, I2C_SLAVE, address) < 0)
+    if (ioctl(this->handle, 0x703, address) < 0)
     {
         std::cout << "Failed to connect to I2C address " << std::hex << address << std::endl;
     }
@@ -230,7 +230,8 @@ void IMU_IIM42652::i2c_init(const int address, const std::string &bus_name)
  */
 int IMU_IIM42652::i2c_read(int reg_addr, int bytes, uint8_t *buffer)
 {
-    return i2c_smbus_read_i2c_block_data(this->handle, reg_addr, bytes, buffer);
+    return 0;
+    // return i2c_smbus_read_i2c_block_data(this->handle, reg_addr, bytes, buffer);
 }
 
 /** \brief Writes a given number of bytes to a specified register address.
@@ -241,7 +242,8 @@ int IMU_IIM42652::i2c_read(int reg_addr, int bytes, uint8_t *buffer)
  */
 int IMU_IIM42652::i2c_write(int reg_addr, int bytes, uint8_t *buffer)
 {
-    return i2c_smbus_write_i2c_block_data(this->handle, reg_addr, bytes, buffer);
+    return 0;
+    // return i2c_smbus_write_i2c_block_data(this->handle, reg_addr, bytes, buffer);
 }
 
 /** \brief Reads the registers containing raw accelerometer and gyroscope data. */

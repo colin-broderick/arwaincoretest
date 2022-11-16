@@ -26,20 +26,17 @@
 #include <sys/ioctl.h>
 #include <string.h>
 
-#include <linux/spi/spidev.h>
-
 #include "spi.hpp"
-
 
 bool SPI::setBitPerWord(uint8_t p_bit){
 
     /* Set bits per word*/
-    if (ioctl(m_spifd, SPI_IOC_WR_BITS_PER_WORD, &p_bit) < 0) {
-        return false;
-    }
-    if (ioctl(m_spifd, SPI_IOC_RD_BITS_PER_WORD, &p_bit) < 0) {
-        return false;
-    }
+    // if (ioctl(m_spifd, SPI_IOC_WR_BITS_PER_WORD, &p_bit) < 0) {
+    //     return false;
+    // }
+    // if (ioctl(m_spifd, SPI_IOC_RD_BITS_PER_WORD, &p_bit) < 0) {
+    //     return false;
+    // }
 
     m_spiconfig.bits_per_word = p_bit;
    return true;
@@ -47,12 +44,12 @@ bool SPI::setBitPerWord(uint8_t p_bit){
 }
 bool SPI::setSpeed(uint32_t p_speed){
     /* Set SPI speed*/
-    if (ioctl(m_spifd, SPI_IOC_WR_MAX_SPEED_HZ, &p_speed) < 0) {
-        return false;
-    }
-    if (ioctl(m_spifd, SPI_IOC_RD_MAX_SPEED_HZ, &p_speed) < 0) {
-        return false;
-    }
+    // if (ioctl(m_spifd, SPI_IOC_WR_MAX_SPEED_HZ, &p_speed) < 0) {
+    //     return false;
+    // }
+    // if (ioctl(m_spifd, SPI_IOC_RD_MAX_SPEED_HZ, &p_speed) < 0) {
+    //     return false;
+    // }
 
    m_spiconfig.mode = p_speed;
 
@@ -63,12 +60,12 @@ bool SPI::setSpeed(uint32_t p_speed){
 
 bool SPI::setMode(uint8_t p_mode){
     /* Set SPI_POL and SPI_PHA */
-    if (ioctl(m_spifd, SPI_IOC_WR_MODE, &p_mode) < 0) {
-        return false;
-    }
-    if (ioctl(m_spifd, SPI_IOC_RD_MODE, &p_mode) < 0) {
-        return false;
-    }
+    // if (ioctl(m_spifd, SPI_IOC_WR_MODE, &p_mode) < 0) {
+    //     return false;
+    // }
+    // if (ioctl(m_spifd, SPI_IOC_RD_MODE, &p_mode) < 0) {
+    //     return false;
+    // }
 
     m_spiconfig.mode = p_mode;
     return true;
@@ -77,32 +74,35 @@ bool SPI::setMode(uint8_t p_mode){
 }
 
 int SPI::xfer(uint8_t *p_txbuffer, uint8_t p_txlen, uint8_t *p_rxbuffer, uint8_t p_rxlen){
-    struct spi_ioc_transfer spi_message[1];
-    memset(spi_message, 0, sizeof(spi_message));
+    return 0;
+    // struct spi_ioc_transfer spi_message[1];
+    // memset(spi_message, 0, sizeof(spi_message));
     
-    spi_message[0].rx_buf = (unsigned long)p_rxbuffer;
-    spi_message[0].tx_buf = (unsigned long)p_txbuffer;
-    spi_message[0].len = p_txlen;
-    return ioctl(m_spifd, SPI_IOC_MESSAGE(1), spi_message);
+    // spi_message[0].rx_buf = (unsigned long)p_rxbuffer;
+    // spi_message[0].tx_buf = (unsigned long)p_txbuffer;
+    // spi_message[0].len = p_txlen;
+    // return ioctl(m_spifd, SPI_IOC_MESSAGE(1), spi_message);
 }
 
 int SPI::write(uint8_t *p_txbuffer,uint8_t p_txlen){
-    struct spi_ioc_transfer spi_message[1];
-    memset(spi_message, 0, sizeof(spi_message));
-    spi_message[0].tx_buf = (unsigned long)p_txbuffer;
-    spi_message[0].len = p_txlen;
+    return 0;
+    // struct spi_ioc_transfer spi_message[1];
+    // memset(spi_message, 0, sizeof(spi_message));
+    // spi_message[0].tx_buf = (unsigned long)p_txbuffer;
+    // spi_message[0].len = p_txlen;
 
-    return ioctl(m_spifd, SPI_IOC_MESSAGE(1), spi_message);
+    // return ioctl(m_spifd, SPI_IOC_MESSAGE(1), spi_message);
 
 }
 
 int SPI::read(uint8_t *p_rxbuffer,uint8_t p_rxlen){
-    struct spi_ioc_transfer spi_message[1];
-    memset(spi_message, 0, sizeof(spi_message));
+    return 0;
+    // struct spi_ioc_transfer spi_message[1];
+    // memset(spi_message, 0, sizeof(spi_message));
     
-    spi_message[0].rx_buf = (unsigned long)p_rxbuffer;
-    spi_message[0].len = p_rxlen;
-    return ioctl(m_spifd, SPI_IOC_MESSAGE(1), spi_message);
+    // spi_message[0].rx_buf = (unsigned long)p_rxbuffer;
+    // spi_message[0].len = p_rxlen;
+    // return ioctl(m_spifd, SPI_IOC_MESSAGE(1), spi_message);
 }
 
 bool SPI::begin(){
@@ -117,34 +117,34 @@ bool SPI::begin(){
         return false;
     }
     /* Set SPI_POL and SPI_PHA */
-    if (ioctl(m_spifd, SPI_IOC_WR_MODE, &m_spiconfig.mode) < 0) {
-        close(m_spifd);
-        return false;
-    }
-    if (ioctl(m_spifd, SPI_IOC_RD_MODE, &m_spiconfig.mode) < 0) {
-        close(m_spifd);
-        return false;
-    }
+    // if (ioctl(m_spifd, SPI_IOC_WR_MODE, &m_spiconfig.mode) < 0) {
+    //     close(m_spifd);
+    //     return false;
+    // }
+    // if (ioctl(m_spifd, SPI_IOC_RD_MODE, &m_spiconfig.mode) < 0) {
+    //     close(m_spifd);
+    //     return false;
+    // }
 
-    /* Set bits per word*/
-    if (ioctl(m_spifd, SPI_IOC_WR_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0) {
-        close(m_spifd);
-        return false;
-    }
-    if (ioctl(m_spifd, SPI_IOC_RD_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0) {
-        close(m_spifd);
-        return false;
-    }
+    // /* Set bits per word*/
+    // if (ioctl(m_spifd, SPI_IOC_WR_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0) {
+    //     close(m_spifd);
+    //     return false;
+    // }
+    // if (ioctl(m_spifd, SPI_IOC_RD_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0) {
+    //     close(m_spifd);
+    //     return false;
+    // }
 
-    /* Set SPI speed*/
-    if (ioctl(m_spifd, SPI_IOC_WR_MAX_SPEED_HZ, &m_spiconfig.speed) < 0) {
-        close(m_spifd);
-        return false;
-    }
-    if (ioctl(m_spifd, SPI_IOC_RD_MAX_SPEED_HZ, &m_spiconfig.speed) < 0) {
-        close(m_spifd);
-        return false;
-    }
+    // /* Set SPI speed*/
+    // if (ioctl(m_spifd, SPI_IOC_WR_MAX_SPEED_HZ, &m_spiconfig.speed) < 0) {
+    //     close(m_spifd);
+    //     return false;
+    // }
+    // if (ioctl(m_spifd, SPI_IOC_RD_MAX_SPEED_HZ, &m_spiconfig.speed) < 0) {
+    //     close(m_spifd);
+    //     return false;
+    // }
 
     m_open = true;
 
@@ -197,34 +197,34 @@ bool SPI::setConfig(spi_config_t *p_spi_config){
 	memcpy(&m_spiconfig,p_spi_config,sizeof(spi_config_t));
         if (m_open){
          /* Set SPI_POL and SPI_PHA */
-          if (ioctl(m_spifd, SPI_IOC_WR_MODE, &m_spiconfig.mode) < 0) {
-            close(m_spifd);
-           return false;
-          }
-          if (ioctl(m_spifd, SPI_IOC_RD_MODE, &m_spiconfig.mode) < 0) {
-             close(m_spifd);
-          return false;
-          }
+        //   if (ioctl(m_spifd, SPI_IOC_WR_MODE, &m_spiconfig.mode) < 0) {
+        //     close(m_spifd);
+        //    return false;
+        //   }
+        //   if (ioctl(m_spifd, SPI_IOC_RD_MODE, &m_spiconfig.mode) < 0) {
+        //      close(m_spifd);
+        //   return false;
+        //   }
 
-        /* Set bits per word*/
-          if (ioctl(m_spifd, SPI_IOC_WR_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0) {
-             close(m_spifd);
-          return false;
-          }
-          if (ioctl(m_spifd, SPI_IOC_RD_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0) {
-             close(m_spifd);
-          return false;
-          }
+        // /* Set bits per word*/
+        //   if (ioctl(m_spifd, SPI_IOC_WR_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0) {
+        //      close(m_spifd);
+        //   return false;
+        //   }
+        //   if (ioctl(m_spifd, SPI_IOC_RD_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0) {
+        //      close(m_spifd);
+        //   return false;
+        //   }
   
         /* Set SPI speed*/
-          if (ioctl(m_spifd, SPI_IOC_WR_MAX_SPEED_HZ, &m_spiconfig.speed) < 0) {
-             close(m_spifd);
-          return false;
-          } 
-          if (ioctl(m_spifd, SPI_IOC_RD_MAX_SPEED_HZ, &m_spiconfig.speed) < 0) {
-             close(m_spifd);
-          return false;
-          }
+        //   if (ioctl(m_spifd, SPI_IOC_WR_MAX_SPEED_HZ, &m_spiconfig.speed) < 0) {
+        //      close(m_spifd);
+        //   return false;
+        //   } 
+        //   if (ioctl(m_spifd, SPI_IOC_RD_MAX_SPEED_HZ, &m_spiconfig.speed) < 0) {
+        //      close(m_spifd);
+        //   return false;
+        //   }
         return true;
         }
    }

@@ -4,11 +4,6 @@
 #include <string>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-extern "C"
-{
-    #include <linux/i2c-dev.h>
-    #include <i2c/smbus.h>
-}
 
 #include "vector3.hpp"
 #include "quaternion.hpp"
