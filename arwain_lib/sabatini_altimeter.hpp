@@ -23,6 +23,8 @@ namespace arwain::Filters
             Eigen::Matrix<double, 2, 1> C; // Velocity update matrix.
 
         public:
+            SabatiniAltimeter() = default;
+
             /** \brief Constructor.
              * 
              * If initial parameters are not well specified, the filter may take considerable

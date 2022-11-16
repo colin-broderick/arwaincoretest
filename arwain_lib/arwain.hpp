@@ -8,12 +8,15 @@
 #include <sstream>
 #include <iomanip>
 
-#include "build_config.hpp"
 #include "stance.hpp"
 #include "uubla.hpp"
 #include "lora.hpp"
 #include "configuration.hpp"
+#include "global_buffer.hpp"
 
+class StanceDetection;
+
+int arwain_main(int argc, char** argv);
 void sleep_ms(int ms);
 
 class Vector3;
@@ -70,6 +73,24 @@ class ActivityMetric
 double unwrap_phase_degrees(double new_angle, double previous_angle);
 double unwrap_phase_radians(double new_angle, double previous_angle);
 
+namespace arwain::BufferSizes
+{
+    inline const unsigned int POSITION_BUFFER_LEN = 200;
+    inline const unsigned int MAG_BUFFER_LEN = 200;
+    inline const unsigned int VELOCITY_BUFFER_LEN = 200;
+    inline const unsigned int ORIENTATION_BUFFER_LEN = 200;
+    inline const unsigned int IMU_BUFFER_LEN = 200;
+    inline const unsigned int IPS_BUFFER_LEN = 50;
+    inline const unsigned int LORA_MESSAGE_LENGTH = 11;
+    inline const unsigned int PRESSURE_BUFFER_LEN = 100;
+    inline const unsigned int MAG_ORIENTATION_BUFFER_LEN = 100;
+    inline const unsigned int MAG_EULER_BUFFER_LEN = 100;
+    
+    #if USE_UUBLA
+    inline const unsigned int LORA_BEACON_MESSAGE_LENGTH = 2;
+    #endif
+}
+
 struct euler_orientation_t
 {
     double roll;
@@ -118,7 +139,22 @@ inline std::ostream& operator<<(std::ostream& stream, arwain::OperatingMode toke
             stream << "Terminate";
             break;
         case arwain::OperatingMode::DataCollection:
-            stream << "DataCollection";
+            stream << "Data collection";
+            break;
+        case arwain::OperatingMode::GyroscopeCalibration:
+            stream << "Gyroscope calibration";
+            break;
+        case arwain::OperatingMode::MagnetometerCalibration:
+            stream << "Magnetometer calibration";
+            break;
+        case arwain::OperatingMode::AccelerometerCalibration:
+            stream << "Accelerometer calibration";
+            break;
+        case arwain::OperatingMode::TestSerial:
+            stream << "Test serial";
+            break;
+        case arwain::OperatingMode::TestStanceDetector:
+            stream << "Test stance detector";
             break;
         default:
             stream << "Mode not specified";
@@ -142,38 +178,24 @@ namespace arwain
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
     extern ActivityMetric activity_metric;
-    #if USE_UUBLA == 1
-    extern UUBLA::Network* uubla_handle;
-    #endif
-}
+    extern StanceDetection* stance_detection_handle;
 
-/** \brief Contains mutex locks for thread coordination. */
-namespace arwain::Locks
-{
-    extern std::mutex PRESSURE_BUFFER_LOCK;
-    extern std::mutex IMU_BUFFER_LOCK;
-    extern std::mutex MAG_BUFFER_LOCK;
-    extern std::mutex VELOCITY_BUFFER_LOCK;
-    extern std::mutex STATUS_FLAG_LOCK;
-    extern std::mutex POSITION_BUFFER_LOCK;
-    extern std::mutex ORIENTATION_BUFFER_LOCK;
-    extern std::mutex PRESSURE_BUFFER_LOCK;
 }
 
 namespace arwain::Buffers
 {
-    extern std::deque<Vector6> IMU_BUFFER;
-    extern std::deque<Vector6> IMU_WORLD_BUFFER;
-    extern std::deque<Vector3> VELOCITY_BUFFER;
-    extern std::deque<Vector3> POSITION_BUFFER;
-    extern std::deque<Vector3> MAG_BUFFER;
-    extern std::deque<Vector3> MAG_WORLD_BUFFER;
-    extern std::deque<Vector3> IPS_BUFFER;
-    extern std::deque<Vector3> PRESSURE_BUFFER;
-    extern std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER;
-    extern std::deque<Quaternion> QUAT_ORIENTATION_BUFFER;
-    extern std::deque<Quaternion> MAG_ORIENTATION_BUFFER;
-    extern std::deque<double> MAG_EULER_BUFFER;
+    extern GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
+    extern GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_WORLD_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::VELOCITY_BUFFER_LEN> VELOCITY_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::POSITION_BUFFER_LEN> POSITION_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_WORLD_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::IPS_BUFFER_LEN> IPS_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::PRESSURE_BUFFER_LEN> PRESSURE_BUFFER;
+    extern GlobalBuffer<euler_orientation_t, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> EULER_ORIENTATION_BUFFER;
+    extern GlobalBuffer<Quaternion, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> QUAT_ORIENTATION_BUFFER;
+    extern GlobalBuffer<Quaternion, arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN> MAG_ORIENTATION_BUFFER;
+    extern GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
 
 namespace arwain
@@ -214,23 +236,6 @@ namespace arwain::Intervals
     inline const unsigned int ALTIMETER_INTERVAL = 20;
 }
 
-namespace arwain::BufferSizes
-{
-    inline const unsigned int POSITION_BUFFER_LEN = 200;
-    inline const unsigned int MAG_BUFFER_LEN = 200;
-    inline const unsigned int VELOCITY_BUFFER_LEN = 200;
-    inline const unsigned int ORIENTATION_BUFFER_LEN = 200;
-    inline const unsigned int IMU_BUFFER_LEN = 200;
-    inline const unsigned int IPS_BUFFER_LEN = 50;
-    inline const unsigned int LORA_MESSAGE_LENGTH = 11;
-    inline const unsigned int PRESSURE_BUFFER_LEN = 100;
-    inline const unsigned int MAG_ORIENTATION_BUFFER_LEN = 100;
-    inline const unsigned int MAG_EULER_BUFFER_LEN = 100;
-    
-    #if USE_UUBLA == 1
-    inline const unsigned int LORA_BEACON_MESSAGE_LENGTH = 2;
-    #endif
-}
 
 namespace arwain::Errors
 {
@@ -255,10 +260,6 @@ namespace arwain
 {
     struct Status
     {
-        arwain::StanceDetector::Stance current_stance;
-        arwain::StanceDetector::Attitude attitude;
-        arwain::StanceDetector::EntangleState entangled;
-        arwain::StanceDetector::FallState falling;
         arwain::Errors::ErrorCondition errors;
         int IMUTemperature;
     };

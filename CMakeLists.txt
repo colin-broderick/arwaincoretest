@@ -4,34 +4,25 @@ project(arwain)
 
 find_package(GTest CONFIG REQUIRED)
 
-option(FAKEI2C "Simulating I2C devices" OFF)
-if(FAKEI2C)
-    add_definitions(-DFAKEI2C)
+option(USE_NCS2             "Use the Neural Compute Stick for inference"        OFF)
+option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"        OFF)
+option(USE_ROS              "Use ROS topics to publish diagnostic data"         OFF)
+option(USE_UUBLA            "Include the UUBLA ultra-wideband library"          OFF)
+option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"     OFF)
+option(UNIT_TESTS           "Make namespace functions public to enable testing" OFF)
+
+if(UNIT_TESTS)
+    message("Building with all public class methods for test")
+    add_definitions(-DTESTABLE=public)
+else()
+    add_definitions(-DTESTABLE=private)
 endif()
 
-## Set include and library source directories
-include_directories(
-    /usr/local/include
-    lora
-    arwain_thread
-    orientation
-    src
-    iim42652
-    orientation_fusion
-    quaternion
-    vector3
-    logger
-    kalman
-    input_parser
-    timers
-    lis3mdl
-    minitrace
-    ips
-    bmp384
-    uubla/include
-    /opt/arwain/workspace/tensorflow_src
-    # realsense_t265
-)
+if(USE_REALSENSE)
+    message("Using librealsense for T265 camera")
+    find_package(realsense2 REQUIRED)
+    add_definitions(-DUSE_REALSENSE)
+endif()
 
 # TODO : Additional includes for tensorflow. These need to be tidied up.
 include_directories(
@@ -42,45 +33,18 @@ include_directories(
     /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/tensorflow-lite/usr/lib
 )
 
-option(NUMCPP_NO_USE_BOOST "Build NumCpp without Boost as a dependency" OFF)
-if(NUMCPP_NO_USE_BOOST)
-    add_compile_definitions(NUMCPP_NO_USE_BOOST)
-    # TODO This should do find_package(boost) plus includes and links in the else() block.
-endif()
-
-option(USEROS "Use ROS topics to publish diagnostic data" OFF)
-if(USEROS)
-    message("Using ROS for diagnostic data topics")
-    add_definitions(-DUSEROS)
-    find_package(roscpp REQUIRED)
-    target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${roscpp_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} ${roscpp_LIBRARIES})
-endif(USEROS)
-
-
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
+set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter arwain_thread vector3)
+file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
-## Locate source files
-set(PROJECT_CPP_FILES
-    src/main.cpp
-    src/calibration.cpp
-    src/stance.cpp
-    src/velocity_prediction.cpp
-    src/altimeter.cpp
-    src/imu_reader.cpp
-    src/uwb_reader.cpp
-    src/std_output.cpp
-    src/transmit_lora.cpp
-    src/multi_imu.cpp
-    src/arwain.cpp
-    src/arwain_tests.cpp
-    src/command_line.cpp
-    src/configuration.cpp
-)
+include_directories(lora arwain_thread orientation iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384 uubla/include arwain_lib /opt/arwain/workspace/tensorflow_src realsense_t265)
+
+if(USE_UUBLA)
+    message("Compiling with UUBLA support")
+    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} uubla)
+    add_definitions(-DUSE_UUBLA)
+endif()
 
 add_subdirectory(iim42652)
 add_subdirectory(orientation)
@@ -95,37 +59,42 @@ add_subdirectory(lis3mdl)
 add_subdirectory(minitrace)
 add_subdirectory(ips)
 add_subdirectory(bmp384)
+if(USE_UUBLA)
 add_subdirectory(uubla)
+endif()
 add_subdirectory(arwain_thread)
-# add_subdirectory(realsense_t265)
+add_subdirectory(arwain_lib)
+if(USE_REALSENSE)
+add_subdirectory(realsense_t265)
+endif()
 
 ## Executables to build
-add_executable(${PROJECT_NAME} ${PROJECT_CPP_FILES})
-add_executable(${PROJECT_NAME}_cmdr src/lora_commander.cpp)
-add_executable(
-    ${PROJECT_NAME}_test
-    unit_tests/tests.cpp
-    unit_tests/quaternion_tests.cpp
-    unit_tests/input_parser_tests.cpp
-    unit_tests/logger_tests.cpp
-    unit_tests/madgwick_tests.cpp
-    unit_tests/vector3_tests.cpp
-    unit_tests/timers_tests.cpp
-    unit_tests/arwain_thread_tests.cpp
-    vector3/vector3.cpp
-    quaternion/quaternion.cpp
-    input_parser/input_parser.cpp
-    logger/logger.cpp
-    orientation/madgwick.cpp
-    timers/timers.cpp
-    arwain_thread/arwain_thread.cpp
-)
+add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME}_test ${UNIT_TEST_SOURCES})
 
-option(USENCS2 "Use the Neural Compute Stick for inference" OFF)
-if(USENCS2)
+if(USE_ROS)
+    message("Using ROS for diagnostic data topics")
+    add_definitions(-DUSE_ROS)
+    find_package(roscpp REQUIRED)
+    target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${roscpp_INCLUDE_DIRS})
+    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} ${roscpp_LIBRARIES})
+endif(USE_ROS)
+
+if(USE_REALSENSE)
+    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} ${realsense2_LIBRARY} t265)
+endif()
+
+if(NUMCPP_NO_USE_BOOST)
+    message("Compiling NumCpp without Boost")
+    add_definitions(-DNUMCPP_NO_USE_BOOST)
+else()
+    # TODO This should do find_package(boost) plus includes and links.
+endif()
+
+if(USE_NCS2)
     message("Using NCS2 for inference")
-    add_definitions(-DUSENCS2)
-    target_link_libraries(${PROJECT_NAME} zmq)
+    add_definitions(-DUSE_NCS2)
+    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} zmq)
 else()
     set(TENSORFLOW_SOURCE_DIR "/opt/arwain/workspace/tensorflow_src" CACHE PATH
     "Directory that contains the TensorFlow project" )
@@ -133,7 +102,6 @@ else()
     get_filename_component(TENSORFLOW_SOURCE_DIR
         "${CMAKE_CURRENT_LIST_DIR}/../../../../" ABSOLUTE)
     endif()
-
     if(NOT EXISTS "tfdone")  
         add_subdirectory(
             "${TENSORFLOW_SOURCE_DIR}/tensorflow/lite"
@@ -141,50 +109,14 @@ else()
         )
         execute_process(COMMAND touch tfdone)
     endif()
-
-    # FOr tensorflow
-    target_link_libraries(
-        ${PROJECT_NAME}
-        tensorflow-lite
-        flatbuffers
-    )
+    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} tensorflow-lite flatbuffers)
 endif()
 
 ## Set compiler flags
-target_compile_options(${PROJECT_NAME} PRIVATE -g -Wno-psabi -Wall -Wshadow)
-target_compile_options(${PROJECT_NAME}_cmdr PRIVATE -g -Wno-psabi -Wall -Wshadow)
-target_link_libraries(${PROJECT_NAME}_test -lgcov --coverage GTest::gtest)
-target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -ftest-coverage -fprofile-arcs)
-
-## Link libraries
-target_link_libraries(${PROJECT_NAME} boost_system madgwick_filter efaroe_filter -pthread dl stdc++fs i2c iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter uubla vector3)
-# FOr tensorflow
-target_link_libraries(
-    ${PROJECT_NAME}
-    boost_system
-    madgwick_filter
-    efaroe_filter
-    -pthread
-    dl
-    stdc++fs
-    i2c
-    iim42652_driver
-    quaternion
-    logger
-    input_parser
-    kalman
-    timers
-    lis3mdl
-    minitrace
-    ips
-    bmp384
-    lora
-    fusion_filter
-    uubla
-    arwain_thread
-)
-
-target_link_libraries(${PROJECT_NAME}_cmdr input_parser lora)
+target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
+target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -Wno-psabi -Wall -Wshadow -Wextra -ftest-coverage -fprofile-arcs)
+target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES}                                i2c zmq stdc++fs pthread boost_system)
+target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --coverage GTest::gtest i2c zmq stdc++fs pthread boost_system)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)

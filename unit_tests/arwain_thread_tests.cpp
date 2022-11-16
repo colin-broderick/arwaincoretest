@@ -12,12 +12,8 @@ namespace
 
     void test_func2(int i)
     {
+        i++;
         std::this_thread::sleep_for(std::chrono::milliseconds{13});
-    }
-
-    void test_func3(std::chrono::milliseconds ms)
-    {
-        std::this_thread::sleep_for(ms);
     }
 }
 

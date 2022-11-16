@@ -8,6 +8,8 @@
 class ArwainThread : public std::thread
 {
     public:
+        ArwainThread() = default;
+
         /** \brief Does exactly what std::thread does.
          * \param func A callable object (generally a function), which will be run in a new thread.
          */

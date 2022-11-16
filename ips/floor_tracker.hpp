@@ -22,7 +22,7 @@ namespace arwain
         public:
             FloorTracker(int window_size_, double drift_threshold_, double min_separation_);
             FloorTracker(int window_size_, double drift_threshold_, double min_separation_, const Vector3& initial_position_);
-            void update(const Vector3& position);
+            bool update(const Vector3& position);
             Vector3 tracked_position = {0, 0, 0};
 
         private:
