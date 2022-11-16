@@ -4,6 +4,7 @@
 
 TEST(Imu_driver, Constructor)
 {
+    EXPECT_NO_THROW(IMU_IIM42652());
     EXPECT_NO_THROW(IMU_IIM42652(1, "test_driver"));
 }
 
