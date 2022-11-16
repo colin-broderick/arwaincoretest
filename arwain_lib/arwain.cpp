@@ -50,6 +50,7 @@
 // General configuration data.
 namespace arwain
 {
+    StanceDetection* stance_detection_handle = nullptr;
     int shutdown = 0;
     OperatingMode system_mode = arwain::OperatingMode::AutoCalibration;
     double yaw_offset = 0;
@@ -298,36 +299,36 @@ void arwain::setup(const InputParser& input)
 int arwain::execute_inference()
 {
     // Start worker threads.
-    ImuProcessing::init();                      // Reading IMU data, updating orientation filters.
-    PositionVelocityInference::init();          // Velocity and position inference.
-    StanceDetection::init();                    // Stance, freefall, entanglement detection.
-    StatusReporting::init();                    // LoRa packet transmissions.
-    DebugPrints::init();                        // Prints useful output to std out.
-    Altimeter::init();                          // Uses the BMP384 sensor to determine altitude.
-    IndoorPositioningSystem::init();            // Floor, stair, corner snapping.
+    ImuProcessing imu_processor;                            // Reading IMU data, updating orientation filters.
+    PositionVelocityInference position_velocity_inference;  // Velocity and position inference.
+    StanceDetection stance_detection;                       // Stance, freefall, entanglement detection.
+    StatusReporting status_reporting;                       // LoRa packet transmissions.
+    DebugPrints debug_prints;
+    Altimeter altimeter;                                    // Uses the BMP384 sensor to determine altitude.
+    IndoorPositioningSystem indoor_positioning_system;      // Floor, stair, corner snapping.
     #if USE_UUBLA
-    UublaWrapper::init();                       // Enable this node to operate as an UUBLA master node.
+    UublaWrapper::init();                                   // Enable this node to operate as an UUBLA master node.
     #endif
     #if USE_REALSENSE
-    CameraController::init();
+    CameraController camera_controller;
     #endif
-    ArwainCLI::init();                          // Simple command line interface for runtime mode switching.
+    ArwainCLI arwain_cli;                                   // Simple command line interface for runtime mode switching.
 
     // Wait for all jobs to terminate.
-    ImuProcessing::join();
-    PositionVelocityInference::join();
-    StanceDetection::join();
-    StatusReporting::join();
-    DebugPrints::join();
-    Altimeter::join();
-    IndoorPositioningSystem::join();
+    imu_processor.join();
+    position_velocity_inference.join();
+    stance_detection.join();
+    status_reporting.join();
+    debug_prints.join();
+    altimeter.join();
+    indoor_positioning_system.join();
     #if USE_UUBLA
     UublaWrapper::join();
     #endif
     #if USE_REALSENSE
-    CameraController::join();
+    camera_controller.join();
     #endif
-    ArwainCLI::join();
+    arwain_cli.join();
 
     return arwain::ExitCodes::Success;
 }
