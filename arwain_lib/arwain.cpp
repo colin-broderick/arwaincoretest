@@ -1,3 +1,4 @@
+#include <csignal>
 #include <iostream>
 #include <filesystem>
 #include <iomanip>
@@ -5,8 +6,16 @@
 #include <cmath>
 #include <tuple>
 
+#if USE_ROS
+#include <ros/ros.h>
+#endif
+
+#if USE_REALSENSE
+#include "realsense.hpp"
+#endif
+
+#include "arwain_tests.hpp"
 #include "arwain_thread.hpp"
-#include "build_config.hpp"
 #include "arwain.hpp"
 #include "input_parser.hpp"
 #include "imu_reader.hpp"
@@ -23,14 +32,11 @@
 #include "bmp384.hpp"
 #include "calibration.hpp"
 #include "command_line.hpp"
-// #include "uwb_reader.hpp"
-#include "uubla.hpp"
+#include "std_output.hpp"
+#include "uwb_reader.hpp"
+#include "global_buffer.hpp"
 
-#if USE_REALSENSE == 1
-#include "t265.hpp"
-#endif
-
-#if USE_ROS == 1
+#if USE_ROS
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
@@ -44,6 +50,7 @@
 // General configuration data.
 namespace arwain
 {
+    StanceDetection* stance_detection_handle = nullptr;
     int shutdown = 0;
     OperatingMode system_mode = arwain::OperatingMode::AutoCalibration;
     double yaw_offset = 0;
@@ -58,53 +65,28 @@ namespace arwain
     unsigned int velocity_inference_rate = 20;
     RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
     ActivityMetric activity_metric{200, 20};
-    #if USE_UUBLA == 1
-    UUBLA::Network* uubla_handle = nullptr;
-    #endif
 }
 
 // Shared data buffers; mutex locks must be used when accessing.
 namespace arwain::Buffers
 {
-    std::deque<Vector6> IMU_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
-    std::deque<Vector6> IMU_WORLD_BUFFER{arwain::BufferSizes::IMU_BUFFER_LEN};
-    std::deque<Vector3> VELOCITY_BUFFER{arwain::BufferSizes::VELOCITY_BUFFER_LEN};
-    std::deque<Vector3> POSITION_BUFFER{arwain::BufferSizes::POSITION_BUFFER_LEN};
-    std::deque<Vector3> MAG_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
-    std::deque<Vector3> MAG_WORLD_BUFFER{arwain::BufferSizes::MAG_BUFFER_LEN};
-    std::deque<Vector3> IPS_BUFFER{arwain::BufferSizes::IPS_BUFFER_LEN};
-    std::deque<Vector3> PRESSURE_BUFFER{arwain::BufferSizes::PRESSURE_BUFFER_LEN};
-    std::deque<euler_orientation_t> EULER_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
-    std::deque<Quaternion> QUAT_ORIENTATION_BUFFER{arwain::BufferSizes::ORIENTATION_BUFFER_LEN};
-    std::deque<Quaternion> MAG_ORIENTATION_BUFFER{arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN};
-    std::deque<double> MAG_EULER_BUFFER{arwain::BufferSizes::MAG_EULER_BUFFER_LEN};
-}
-
-// Mutex locks for use when accessing shared buffers.
-namespace arwain::Locks
-{
-    std::mutex IMU_BUFFER_LOCK;
-    std::mutex MAG_BUFFER_LOCK;
-    std::mutex VELOCITY_BUFFER_LOCK;
-    std::mutex STATUS_FLAG_LOCK;
-    std::mutex POSITION_BUFFER_LOCK;
-    std::mutex ORIENTATION_BUFFER_LOCK;
-    std::mutex PRESSURE_BUFFER_LOCK;
+    GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
+    GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_WORLD_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::VELOCITY_BUFFER_LEN> VELOCITY_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::POSITION_BUFFER_LEN> POSITION_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_WORLD_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::IPS_BUFFER_LEN> IPS_BUFFER;
+    GlobalBuffer<Vector3, arwain::BufferSizes::PRESSURE_BUFFER_LEN> PRESSURE_BUFFER;
+    GlobalBuffer<euler_orientation_t, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> EULER_ORIENTATION_BUFFER;
+    GlobalBuffer<Quaternion, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> QUAT_ORIENTATION_BUFFER;
+    GlobalBuffer<Quaternion, arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN> MAG_ORIENTATION_BUFFER;
+    GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
 
 void sleep_ms(int ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds{ms});
-}
-
-/** \brief Start a Python script which opens a socket and does inference on data we send it. */
-static void py_inference()
-{   
-   if (!arwain::config.no_inference)
-   {   
-       std::string command = "PYTHONPATH=/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share INTEL_OPENVINO_DIR=/opt/intel/openvino OpenCV_DIR=/opt/intel/openvino/opencv/cmake LD_LIBRARY_PATH=/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l PATH=/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games /usr/bin/python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
-       system(command.c_str());
-   }
 }
 
 double unwrap_phase_radians(double new_angle, double previous_angle)
@@ -314,121 +296,39 @@ void arwain::setup(const InputParser& input)
     }
 }
 
-#if USE_REALSENSE == 1
-void rs2_reader()
-{
-    // Quit immediately if disabled by config.
-    if (!arwain::config.use_rs2)
-    {
-        return;
-    }
-    
-    T265 t265;
-
-
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
-    {
-        switch (arwain::system_mode)
-        {
-            case arwain::OperatingMode::DataCollection:
-            {
-                arwain::Logger log;
-                log.open(arwain::folder_date_string + "/position_t265.txt");
-                log << "time x y z\n";
-
-                while (arwain::system_mode == arwain::OperatingMode::DataCollection)
-                {
-                    Vector3 pos = t265.get_position();
-                    log << std::chrono::system_clock::now().time_since_epoch().count() << " "
-                        << pos.x << " "
-                        << pos.y << " "
-                        << pos.z << "\n";
-                }
-                break;
-            }
-            default:
-            {
-                sleep_ms(10);
-                break;
-            }
-        }
-    }
-}
-#endif
-
-#if USE_UUBLA == 1
-void uubla_fn()
-{
-    UUBLA::Network uubla{
-        arwain::config.uubla_serial_port,
-        arwain::config.uubla_baud_rate
-    };
-    arwain::uubla_handle = &uubla;
-
-    uubla.configure("force_z_zero", true);
-    uubla.configure("ewma_gain", 0.1);
-    uubla.add_node_callback = inform_new_uubla_node;
-    uubla.remove_node_callback = inform_remove_uubla_node;
-    uubla.start_reading(); // Start as in start reading the serial port. TODO investigate this function for possible leaks.
-    
-    std::thread solver_th{solver_fn, &uubla};
-
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
-    {
-        sleep_ms(100);
-    }
-
-    uubla.join();
-    solver_th.join();
-}
-#endif
-
 int arwain::execute_inference()
 {
     // Start worker threads.
-    ArwainThread imu_reader_thread(imu_reader, "arwain_imu_th");                   // Reading IMU data, updating orientation filters.
-    ArwainThread predict_velocity_thread(predict_velocity, "arwain_vel_th");       // Velocity and position inference.
-    ArwainThread stance_detector_thread(stance_detector, "arwain_stnc_th");        // Stance, freefall, entanglement detection.
-    ArwainThread transmit_lora_thread(transmit_lora, "arwain_lora_th");            // LoRa packet transmissions.
-    ArwainThread std_output_thread(std_output, "arwain_std_th");                   // Prints useful output to std out.
-    ArwainThread indoor_positioning_thread(indoor_positioning, "arwain_ips_th");   // Floor, stair, corner snapping.
-    ArwainThread altimeter_thread(altimeter, "arwain_alt_th");                     // Uses the BMP384 sensor to determine altitude.
-    #if USENCS2
-        ArwainThread py_inference_thread{py_inference, "arwain_ncs2_th"};          // Temporary: Run Python script to handle velocity inference.
+    ImuProcessing imu_processor;                            // Reading IMU data, updating orientation filters.
+    PositionVelocityInference position_velocity_inference;  // Velocity and position inference.
+    StanceDetection stance_detection;                       // Stance, freefall, entanglement detection.
+    StatusReporting status_reporting;                       // LoRa packet transmissions.
+    DebugPrints debug_prints;
+    Altimeter altimeter;                                    // Uses the BMP384 sensor to determine altitude.
+    IndoorPositioningSystem indoor_positioning_system;      // Floor, stair, corner snapping.
+    #if USE_UUBLA
+    UublaWrapper::init();                                   // Enable this node to operate as an UUBLA master node.
     #endif
-    #if USE_UUBLA == 1
-        std::thread uubla_thread;
-        if (arwain::config.node_id == 2)
-        {
-            uubla_thread = std::thread{uubla_fn};
-        }
+    #if USE_REALSENSE
+    CameraController camera_controller;
     #endif
-    #if USE_REALSENSE == 1
-    ArwainThread rs2_thread{rs2_reader, "arwain_rs2_th"};
-    #endif
-    ArwainThread command_line_thread{command_line, "arwain_cmd_th"};                // Simple command line interface for runtime mode switching.
+    ArwainCLI arwain_cli;                                   // Simple command line interface for runtime mode switching.
 
-    // Wait for all threads to terminate.
-    imu_reader_thread.join();
-    predict_velocity_thread.join();
-    stance_detector_thread.join();
-    transmit_lora_thread.join();
-    std_output_thread.join();
-    indoor_positioning_thread.join();
-    #if USENCS2
-    py_inference_thread.join();
+    // Wait for all jobs to terminate.
+    imu_processor.join();
+    position_velocity_inference.join();
+    stance_detection.join();
+    status_reporting.join();
+    debug_prints.join();
+    altimeter.join();
+    indoor_positioning_system.join();
+    #if USE_UUBLA
+    UublaWrapper::join();
     #endif
-    altimeter_thread.join();
-    #if USE_REALSENSE == 1
-    rs2_thread.join();
+    #if USE_REALSENSE
+    camera_controller.join();
     #endif
-    #if USE_UUBLA == 1
-    if (arwain::config.node_id == 2)
-    {
-        uubla_thread.join();
-    }
-    #endif
-    command_line_thread.join();
+    arwain_cli.join();
 
     return arwain::ExitCodes::Success;
 }
@@ -767,4 +667,131 @@ double ActivityMetric::read() const
         * ((gyro_roller->get_value() - gyro_mean) / gyro_stdv)
         / ((velo_roller->get_value() - velo_mean) / velo_stdv)
     );
+}
+
+/** \brief Capture the SIGINT signal for clean exit.
+ * Sets the system mode to Terminate, which instructs all threads to clean up and exit.
+ * \param signal The signal to capture.
+ */
+static void sigint_handler(int signal)
+{
+    if (signal == SIGINT)
+    {
+        std::cout << "\nReceived SIGINT - closing\n" << "\n";
+        arwain::system_mode = arwain::OperatingMode::Terminate;
+    }
+}
+
+/** \brief ARWAIN entry point. */
+int arwain_main(int argc, char **argv)
+{
+    #if USE_ROS
+    ros::init(argc, argv, "arwain_node");
+    #endif
+
+    int ret;
+
+    // Prepare keyboard interrupt signal handler to enable graceful exit.
+    std::signal(SIGINT, sigint_handler);
+
+    // Determine behaviour from command line arguments.
+    InputParser input{argc, argv};
+
+    // Output help text if requested.
+    if (input.contains("-h") || input.contains("-help"))
+    {
+        std::cout << arwain::help_text << std::endl;
+        return arwain::ExitCodes::Success;
+    }
+    if (input.contains("-version"))
+    {
+        std::cout << "ARWAIN executable version 0.1\n";
+        return arwain::ExitCodes::Success;
+    }
+
+    // Attempt to read the config file and quit if failed.
+    arwain::config = arwain::Configuration{input};
+    if ((ret = arwain::config.read_from_file()) != arwain::Configuration::ReturnCodes::OK)
+    {
+        std::cout << "Got an error when reading config file:\n";
+        std::cout << arwain::ErrorMessages[ret] << std::endl;
+    }
+
+    // Start IMU test mode. This returns so the program will quit when the test is stopped.
+    else if (input.contains("-testimu"))
+    {
+        ret = arwain::test_imu();
+    }
+
+    else if (input.contains("-testlorarx"))
+    {
+        ret = arwain::test_lora_rx();
+    }
+    else if (input.contains("-testloratx"))
+    {
+        ret = arwain::test_lora_tx();
+    }
+    else if (input.contains("-calibm"))
+    {
+        ret = arwain::calibrate_magnetometers();
+    }
+    else if (input.contains("-testpressure"))
+    {
+        ret = arwain::test_pressure();
+    }
+    else if (input.contains("-testori"))
+    {
+        int rate;
+        const char *rate_str = input.getCmdOption("-testori").c_str();
+        rate = std::atoi(rate_str);
+        ret = arwain::test_ori(rate);
+    }
+    else if (input.contains("-rerunori"))
+    {
+        ret = arwain::rerun_orientation_filter(input.getCmdOption("-rerunori"));
+    }
+    else if (input.contains("-rerunfloor"))
+    {
+        ret = arwain::rerun_floor_tracker(input.getCmdOption("-rerunfloor"));
+    }
+
+    // Perform quick calibration of gyroscopes and write to config file.
+    else if (input.contains("-calibg"))
+    {
+        ret = arwain::calibrate_gyroscopes();
+    }
+
+    // Perform quick calibration of gyroscopes and write to config file.
+    else if (input.contains("-caliba"))
+    {
+        ret = arwain::calibrate_accelerometers_simple();
+    }
+    else if (input.contains("-testmag"))
+    {
+        #if USE_ROS
+        ret = arwain::test_mag(argc, argv);
+        #else
+        ret = arwain::test_mag();
+        #endif
+    }
+    #if USE_UUBLA
+    else if (input.contains("-testuubla"))
+    {
+        ret = arwain::test_uubla_integration();
+    }
+    #endif
+
+    else
+    {
+        // Attempt to calibrate the gyroscope before commencing other activities.
+        if (input.contains("-calib"))
+        {
+            arwain::calibrate_gyroscopes();
+            arwain::config = arwain::Configuration{input}; // Reread the config file as it has now changed.
+        }
+        arwain::setup(input);
+        ret = arwain::execute_inference();
+    }
+
+    return ret;
 }

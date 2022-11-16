@@ -2,11 +2,34 @@
 #define INDOOR_POSITIONING_WRAPPER_H
 
 #include "vector3.hpp"
+#include "arwain.hpp"
+#include "corner_detector.hpp"
+#include "floor_tracker.hpp"
 
-void indoor_positioning();
-
-namespace arwain
+class IndoorPositioningSystem
 {
+    TESTABLE:
+        void core_setup();
+        void setup_inference();
+        void cleanup_inference();
+        void run_idle();
+        void run_inference();
+        void run();
+
+    private:
+        ArwainThread job_thread;
+        arwain::Logger corner_log;
+        arwain::Logger tracked_floor_log;
+        arwain::CornerDetector corner_detector{11, 115.0, 0.20}; // 11 * 0.2 means a window of 11 points separated by at least 20 cm each, so about 2 m total.
+        arwain::FloorTracker floor_tracker{5, 0.10, 0.20}; // UK stairs are gradient approx. 0.9.
+
+    public:
+        IndoorPositioningSystem();
+        void join();
+        bool init();
+
+    
+
     class IndoorPositioningWrapper
     {
         private:
@@ -23,6 +46,6 @@ namespace arwain
             double getY();
             double getZ();
     };
-}
+};
 
 #endif

@@ -41,9 +41,6 @@ TEST(Timers, ScopedTimerDestructor)
    }
 }
 
-
-
-
 TEST(Timers, CountDownTimerConstructor)
 {
    EXPECT_NO_THROW(arwain::Timers::CountdownTimer{1000});
@@ -67,8 +64,3 @@ TEST(Timers, CountDownTimerReset)
    std::this_thread::sleep_for(std::chrono::milliseconds{100});
    ASSERT_EQ(timer.finished(), true);
 }
-
-
-
-
-

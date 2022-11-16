@@ -1,7 +1,6 @@
 #include <thread>
 #include <chrono>
 
-#include "build_config.hpp"
 #include "arwain.hpp"
 #include "arwain_tests.hpp"
 #include "bmp384.hpp"
@@ -9,12 +8,12 @@
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
 
-#if USE_ROS == 1
+#if USE_ROS
 #include <ros/ros.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #endif
 
-#if USE_UUBLA == 1
+#if USE_UUBLA
 #include "uubla.hpp"
 #endif
 
@@ -27,7 +26,7 @@ static euler_orientation_t computer_euler_degrees(Quaternion& q)
     return euler;
 }
 
-#if USE_UUBLA == 1
+#if USE_UUBLA
 int arwain::test_uubla_integration()
 {
     std::cout << "Creating UUBLA network and running for 20 s" << "\n";
@@ -156,7 +155,7 @@ int arwain::test_lora_rx()
     return arwain::ExitCodes::Success;
 }
 
-#if USE_ROS == 1
+#if USE_ROS
 int arwain::test_mag(int argc, char **argv)
 {
     ros::NodeHandle nh;

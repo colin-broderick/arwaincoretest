@@ -1,9 +1,31 @@
 #ifndef _ARWAIN_TRANSMIT_LORA_HPP
 #define _ARWAIN_TRANSMIT_LORA_HPP
 
-#include "build_config.hpp"
+#include "arwain.hpp"
+#include "arwain_thread.hpp"
 
-void transmit_lora();
+class StatusReporting
+{
+	TESTABLE:
+        void core_setup();
+        void run();
+        void run_inference();
+        void run_idle();
+        void setup_inference();
+        void cleanup_inference();
+        void run_autocalibration();
+        std::chrono::time_point<std::chrono::high_resolution_clock> get_next_time_slot(int node_id);
+
+	private:
+        ArwainThread job_thread;
+        LoRa lora;
+        arwain::Logger lora_file;
+
+	public:
+		StatusReporting();
+		bool init();
+		void join();
+};
 
 namespace arwain
 {
@@ -69,7 +91,7 @@ namespace arwain
 			}
 	};
 
-    #if USE_UUBLA == 1
+    #if USE_UUBLA
 	struct BeaconPacket
 	{
 		uint8_t beacon_id = 0;
@@ -79,8 +101,8 @@ namespace arwain
 }
 
 std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet);
-#if USE_UUBLA == 1
-std::ostream& operator<<(std::ostream& stream, arwain::BeaconPacket packet);
+#if USE_UUBLA
+// std::ostream& operator<<(std::ostream& stream, arwain::BeaconPacket packet);
 void inform_new_uubla_node(const std::string& node_name);
 void inform_remove_uubla_node(const std::string& node_name);
 #endif

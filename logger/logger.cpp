@@ -1,11 +1,5 @@
 #include "logger.hpp"
 
-/** \brief Constructor which does not open a file. */
-arwain::Logger::Logger()
-{
-    
-}
-
 /** \brief Construct Logger and open the relevant file. */
 arwain::Logger::Logger(const std::string& file_name)
 {

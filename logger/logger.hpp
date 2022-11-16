@@ -11,7 +11,7 @@ namespace arwain
     class Logger
     {
         public:
-            Logger();
+            Logger() = default;
             Logger(const std::string& filename);
             ~Logger();
             bool open(const std::string& filename);
