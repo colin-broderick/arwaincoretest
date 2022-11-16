@@ -12,7 +12,7 @@
 
 namespace UublaWrapper
 {
-    namespace // private
+    namespace TESTABLE_NAMESPACE
     {
         void run_inference();
 
