@@ -2,12 +2,30 @@
 #define _ARWAIN_TRANSMIT_LORA_HPP
 
 #include "arwain.hpp"
+#include "arwain_thread.hpp"
 
-namespace StatusReporting
+class StatusReporting
 {
-	bool init();
-	void join();
-}
+	TESTABLE:
+        void core_setup();
+        void run();
+        void run_inference();
+        void run_idle();
+        void setup_inference();
+        void cleanup_inference();
+        void run_autocalibration();
+        std::chrono::time_point<std::chrono::high_resolution_clock> get_next_time_slot(int node_id);
+
+	private:
+        ArwainThread job_thread;
+        LoRa lora;
+        arwain::Logger lora_file;
+
+	public:
+		StatusReporting();
+		bool init();
+		void join();
+};
 
 namespace arwain
 {
