@@ -14,6 +14,8 @@
 #include "configuration.hpp"
 #include "global_buffer.hpp"
 
+class StanceDetection;
+
 int arwain_main(int argc, char** argv);
 void sleep_ms(int ms);
 
@@ -176,6 +178,8 @@ namespace arwain
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
     extern ActivityMetric activity_metric;
+    extern StanceDetection* stance_detection_handle;
+
 }
 
 namespace arwain::Buffers

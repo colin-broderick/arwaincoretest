@@ -16,203 +16,189 @@
 #include "arwain_thread.hpp"
 #include "exceptions.hpp"
 
-namespace StanceDetection
+StanceDetection::StanceDetection()
 {
-    namespace // private
+    init();
+}
+
+void StanceDetection::setup_inference()
+{
+    stance_file.open(arwain::folder_date_string + "/stance.txt");
+    stance_file << "time freefall entangled attitude stance\n";
+}
+
+void StanceDetection::cleanup_inference()
+{
+    stance_file.close();
+}
+
+void StanceDetection::run_inference()
+{
+    setup_inference();
+
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
+
+    while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
-        void run_idle();
-        void run_test_stance_detector();
+        imu_data = arwain::Buffers::IMU_BUFFER.get_data();
+        vel_data = arwain::Buffers::VELOCITY_BUFFER.get_data();
+        rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
 
-        ArwainThread job_thread;
+        // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
+        stance->update_attitude(rotation_quaternion);
+        stance->run(imu_data, vel_data);
 
-        arwain::Logger stance_file;
-
-        // Stance detector object.
-        StanceDetector stance{
-            arwain::config.freefall_sensitivity,
-            arwain::config.crawling_threshold,
-            arwain::config.running_threshold,
-            arwain::config.walking_threshold,
-            arwain::config.active_threshold,
-            arwain::config.struggle_threshold
-        };
-
-        std::deque<Vector6> imu_data;
-        std::deque<Vector3> vel_data;
-        Quaternion rotation_quaternion;
-
-        void setup_inference()
+        if (stance->seconds_since_last_freefall() > 5)
         {
-            stance_file.open(arwain::folder_date_string + "/stance.txt");
-            stance_file << "time freefall entangled attitude stance\n";
+            stance->clear_freefall_flag();
         }
 
-        void cleanup_inference()
-        {
-            stance_file.close();
-        }
+        // Log to file.
+        stance_file << time.time_since_epoch().count() << " "
+                    << StanceDetection::get_falling_state() << " "
+                    << StanceDetection::get_entangled_state() << " "
+                    << StanceDetection::get_attitude() << " "
+                    << StanceDetection::get_stance() << "\n";
 
-        void run_inference()
-        {
-            setup_inference();
-
-            // Set up timing.
-            auto time = std::chrono::system_clock::now();
-            std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
-
-            while (arwain::system_mode == arwain::OperatingMode::Inference)
-            {
-                imu_data = arwain::Buffers::IMU_BUFFER.get_data();
-                vel_data = arwain::Buffers::VELOCITY_BUFFER.get_data();
-                rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
-
-                // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
-                stance.update_attitude(rotation_quaternion);
-                stance.run(imu_data, vel_data);
-
-                if (stance.seconds_since_last_freefall() > 5)
-                {
-                    stance.clear_freefall_flag();
-                }
-
-                // Log to file.
-                stance_file << time.time_since_epoch().count() << " "
-                            << StanceDetection::get_falling_state() << " "
-                            << StanceDetection::get_entangled_state() << " "
-                            << StanceDetection::get_attitude() << " "
-                            << StanceDetection::get_stance() << "\n";
-
-                // Wait until the next tick.
-                time = time + interval;
-                std::this_thread::sleep_until(time);
-            }
-
-            cleanup_inference();
-        }
-
-        void run()
-        {
-            // A little presleep to give IMU data a chance to collect and orientation filter chance to converge.
-            std::this_thread::sleep_for(std::chrono::milliseconds{3000});
-            
-            while (arwain::system_mode != arwain::OperatingMode::Terminate)
-            {
-                switch (arwain::system_mode)
-                {
-                    case arwain::OperatingMode::Inference:
-                        run_inference();
-                        break;
-                    case arwain::OperatingMode::TestStanceDetector:
-                        run_test_stance_detector();
-                        break;
-                    default:
-                        run_idle();
-                        break;
-                }
-            }
-        }
-
-        void setup_test_stance_detector()
-        {
-            // Open file for freefall/entanglement logging
-            stance_file.open("stance_test.txt");
-            stance_file << "time freefall entanglement attitude stance" << "\n";
-        }
-
-        void cleanup_stance_detector()
-        {
-            stance_file.close();
-        }
-
-        void run_test_stance_detector()
-        {
-            // Set up timing.
-            auto time = std::chrono::system_clock::now();
-            std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
-
-            while (arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
-            {
-                // Get all relevant data.
-                // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
-                imu_data = arwain::Buffers::IMU_BUFFER.get_data();
-                vel_data = arwain::Buffers::VELOCITY_BUFFER.get_data();
-                rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
-
-                // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
-                stance.update_attitude(rotation_quaternion);
-                stance.run(imu_data, vel_data);
-                if (stance.seconds_since_last_freefall() > 5)
-                {
-                    stance.clear_freefall_flag();
-                }
-
-                // Log to file.
-                stance_file << time.time_since_epoch().count() << " "
-                            << StanceDetection::get_falling_state() << " "
-                            << StanceDetection::get_entangled_state() << " "
-                            << StanceDetection::get_attitude() << " "
-                            << StanceDetection::get_stance() << "\n";
-
-                // Wait until the next tick.
-                time = time + interval;
-                std::this_thread::sleep_until(time);
-            }
-        }
-
-        void run_autocalibration()
-        {
-            sleep_ms(10);
-        }
-
-        void run_idle()
-        {
-            run_autocalibration();
-        }
-
-        void core_setup()
-        {
-
-        }
+        // Wait until the next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
     }
 
-    // Public
+    cleanup_inference();
+}
 
-    bool init()
+void StanceDetection::run()
+{
+    // A little presleep to give IMU data a chance to collect and orientation filter chance to converge.
+    std::this_thread::sleep_for(std::chrono::milliseconds{3000});
+    
+    while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
-        core_setup();
-        job_thread = ArwainThread{StanceDetection::run, "arwain_stnc_th"};
-        return true;
-    }
-
-    StanceDetection::StanceDetector::FallState get_falling_state()
-    {
-        return stance.getFallingStatus();
-    }
-
-    StanceDetection::StanceDetector::EntangleState get_entangled_state()
-    {
-        return stance.getEntangledStatus();
-    }
-
-    StanceDetection::StanceDetector::Attitude get_attitude()
-    {
-        return stance.getAttitude();
-    }
-
-    StanceDetection::StanceDetector::Stance get_stance()
-    {
-        return stance.getStance();
-    }
-
-    void join()
-    {
-        if (job_thread.joinable())
+        switch (arwain::system_mode)
         {
-            job_thread.join();
+            case arwain::OperatingMode::Inference:
+                run_inference();
+                break;
+            case arwain::OperatingMode::TestStanceDetector:
+                run_test_stance_detector();
+                break;
+            default:
+                run_idle();
+                break;
         }
-        std::cout << "Successfully quit StanceDetection\n";
     }
 }
+
+void StanceDetection::setup_test_stance_detector()
+{
+    // Open file for freefall/entanglement logging
+    stance_file.open("stance_test.txt");
+    stance_file << "time freefall entanglement attitude stance" << "\n";
+}
+
+void StanceDetection::cleanup_stance_detector()
+{
+    stance_file.close();
+}
+
+void StanceDetection::run_test_stance_detector()
+{
+    // Set up timing.
+    auto time = std::chrono::system_clock::now();
+    std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
+
+    while (arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
+    {
+        // Get all relevant data.
+        // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.
+        imu_data = arwain::Buffers::IMU_BUFFER.get_data();
+        vel_data = arwain::Buffers::VELOCITY_BUFFER.get_data();
+        rotation_quaternion = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
+
+        // Update stance detector and get output. This can turn on but cannot turn off the falling and entangled flags.
+        stance->update_attitude(rotation_quaternion);
+        stance->run(imu_data, vel_data);
+        if (stance->seconds_since_last_freefall() > 5)
+        {
+            stance->clear_freefall_flag();
+        }
+
+        // Log to file.
+        stance_file << time.time_since_epoch().count() << " "
+                    << StanceDetection::get_falling_state() << " "
+                    << StanceDetection::get_entangled_state() << " "
+                    << StanceDetection::get_attitude() << " "
+                    << StanceDetection::get_stance() << "\n";
+
+        // Wait until the next tick.
+        time = time + interval;
+        std::this_thread::sleep_until(time);
+    }
+}
+
+void StanceDetection::run_autocalibration()
+{
+    sleep_ms(10);
+}
+
+void StanceDetection::run_idle()
+{
+    run_autocalibration();
+}
+
+void StanceDetection::core_setup()
+{
+    stance = new StanceDetector{
+        arwain::config.freefall_sensitivity,
+        arwain::config.crawling_threshold,
+        arwain::config.running_threshold,
+        arwain::config.walking_threshold,
+        arwain::config.active_threshold,
+        arwain::config.struggle_threshold
+    };
+}
+    
+bool StanceDetection::init()
+{
+    arwain::stance_detection_handle = this;
+    core_setup();
+    job_thread = ArwainThread{&StanceDetection::run, "arwain_stnc_th", this};
+    return true;
+}
+
+StanceDetector::FallState StanceDetection::get_falling_state()
+{
+    return stance->getFallingStatus();
+}
+
+StanceDetector::EntangleState StanceDetection::get_entangled_state()
+{
+    return stance->getEntangledStatus();
+}
+
+StanceDetector::Attitude StanceDetection::get_attitude()
+{
+    return stance->getAttitude();
+}
+
+StanceDetector::Stance StanceDetection::get_stance()
+{
+    return stance->getStance();
+}
+
+void StanceDetection::join()
+{
+    delete stance;
+    if (job_thread.joinable())
+    {
+        job_thread.join();
+    }
+    std::cout << "Successfully quit StanceDetection\n";
+}
+
 
 // Constructors -----------------------------------------------------------------------------------
 
@@ -223,7 +209,7 @@ namespace StanceDetection
  * \param walking_threshold Speed above which, if vertical, stance is detected as walking.
  * \param active_threshold Value of the internal activity metric above which an entanglement event is detected.
  */
-StanceDetection::StanceDetector::StanceDetector(double freefall_sensitivity, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold)
+StanceDetector::StanceDetector(double freefall_sensitivity, double crawling_threshold, double running_threshold, double walking_threshold, double active_threshold, double struggle_threshold)
 {
     m_freefall_sensitivity = freefall_sensitivity;
     m_crawling_threshold = crawling_threshold;
@@ -242,19 +228,19 @@ StanceDetection::StanceDetector::StanceDetector(double freefall_sensitivity, dou
 // General methods --------------------------------------------------------------------------------
 
 /** \brief Set the time of the most recent freefall event. */
-void StanceDetection::StanceDetector::register_freefall_event()
+void StanceDetector::register_freefall_event()
 {
     m_falling = Falling;
     this->last_freefall_detection = std::chrono::system_clock::now();
 }
 
-int StanceDetection::StanceDetector::seconds_since_last_freefall() const
+int StanceDetector::seconds_since_last_freefall() const
 {
     auto t = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - last_freefall_detection);
     return t.count();
 }
 
-void StanceDetection::StanceDetector::clear_freefall_flag()
+void StanceDetector::clear_freefall_flag()
 {
     m_falling = NotFalling;
 }
@@ -265,7 +251,7 @@ void StanceDetection::StanceDetector::clear_freefall_flag()
  * contains a freefall event, report a fall. If no window contains a freefall event,
  * report no fall.
  */
-void StanceDetection::StanceDetector::check_for_falls(const std::deque<Vector6>& imu_data)
+void StanceDetector::check_for_falls(const std::deque<Vector6>& imu_data)
 {
     RollingAverage roller{static_cast<unsigned int>(imu_data.size() / 10)};
 
@@ -301,7 +287,7 @@ void StanceDetection::StanceDetector::check_for_falls(const std::deque<Vector6>&
  * 
  * \param rotation_quaternion The current rotation quaternion of the device, as determined by some orientation filter.
  */
-void StanceDetection::StanceDetector::update_attitude(Quaternion rotation_quaternion)
+void StanceDetector::update_attitude(Quaternion rotation_quaternion)
 {
     auto rotated_device_z_component = (rotation_quaternion * Quaternion{0, 0, 0, 1} * rotation_quaternion.conjugate()).z;
 
@@ -319,7 +305,7 @@ void StanceDetection::StanceDetector::update_attitude(Quaternion rotation_quater
  * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
  * \param vel_data Pointer to deq<arr<double>> containing velocity data.
  */
-void StanceDetection::StanceDetector::run(const std::deque<Vector6> &imu_data, const std::deque<Vector3> &vel_data)
+void StanceDetector::run(const std::deque<Vector6> &imu_data, const std::deque<Vector3> &vel_data)
 {
     // Crunch the numbers ...
     std::vector<Vector3> accel_data;
@@ -410,7 +396,7 @@ void StanceDetection::StanceDetector::run(const std::deque<Vector6> &imu_data, c
  * \param arr Vector of e.g. 3-velocity, 3-acceleration, etc.
  * \return The index of the element with largest value.
  */
-StanceDetection::StanceDetector::Axis StanceDetection::StanceDetector::biggest_axis(const Vector3 &arr)
+StanceDetector::Axis StanceDetector::biggest_axis(const Vector3 &arr)
 {
     // This should be using absolute value, since large negative values are 'bigger' than small positive values.
     Axis axis;
@@ -436,7 +422,7 @@ StanceDetection::StanceDetector::Axis StanceDetection::StanceDetector::biggest_a
  * \param v Velocity magnitude.
  * \return Measure of intensity of activity.
  */
-double StanceDetection::StanceDetector::activity(double a, double g, double v)
+double StanceDetector::activity(double a, double g, double v)
 {
     // TODO Need to discover a decent metric of `activity`.
     // The metric should read high when accelerations are high,
@@ -454,7 +440,7 @@ double StanceDetection::StanceDetector::activity(double a, double g, double v)
  * \param values Vector of doubles.
  * \return Mean value of input vector.
  */
-double StanceDetection::StanceDetector::vector_mean(const std::vector<double> &values)
+double StanceDetector::vector_mean(const std::vector<double> &values)
 {
     double mean = 0;
     for (unsigned int i = 0; i < values.size(); i++)
@@ -469,7 +455,7 @@ double StanceDetection::StanceDetector::vector_mean(const std::vector<double> &v
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double StanceDetection::StanceDetector::buffer_mean_magnitude(const std::vector<Vector3> &buffer)
+double StanceDetector::buffer_mean_magnitude(const std::vector<Vector3> &buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -491,7 +477,7 @@ double StanceDetection::StanceDetector::buffer_mean_magnitude(const std::vector<
  * \param buffer Pointer to data buffer.
  * \return Mean magnitude as double.
  */
-double StanceDetection::StanceDetector::buffer_mean_magnitude(const std::deque<Vector3> &buffer)
+double StanceDetector::buffer_mean_magnitude(const std::deque<Vector3> &buffer)
 {
     double mean = 0.0;
     for (unsigned int i=0; i < buffer.size(); i++)
@@ -511,7 +497,7 @@ double StanceDetection::StanceDetector::buffer_mean_magnitude(const std::deque<V
 /** \brief Return the column-wise means of a size (x, 3) vector.
  * \param source_vector Pointer to source array.
  */
-Vector3 StanceDetection::StanceDetector::get_means(const std::vector<Vector3> &source_vector)
+Vector3 StanceDetector::get_means(const std::vector<Vector3> &source_vector)
 {
     Vector3 ret;
     unsigned int length = source_vector.size();
@@ -532,7 +518,7 @@ Vector3 StanceDetection::StanceDetector::get_means(const std::vector<Vector3> &s
  * \param source_vector Pointer to source array.
  * \return A 3-array containing the means.
  */
-Vector3 StanceDetection::StanceDetector::get_means(const std::deque<Vector3> &source_vector)
+Vector3 StanceDetector::get_means(const std::deque<Vector3> &source_vector)
 {
     Vector3 ret;
     unsigned int length = source_vector.size();
@@ -553,7 +539,7 @@ Vector3 StanceDetection::StanceDetector::get_means(const std::deque<Vector3> &so
  * \param source_vector Pointer to source array.
  * \return A 6-array containing the means.
  */
-std::array<double, 6> StanceDetection::StanceDetector::get_means(const std::deque<std::array<double, 6>> &source_vector)
+std::array<double, 6> StanceDetector::get_means(const std::deque<std::array<double, 6>> &source_vector)
 {
     std::array<double, 6> ret;
     unsigned int length = source_vector.size();
@@ -581,7 +567,7 @@ std::array<double, 6> StanceDetection::StanceDetector::get_means(const std::dequ
 /** \brief Returns string representing current stance.
  * \return Current stance.
  */
-StanceDetection::StanceDetector::Stance StanceDetection::StanceDetector::getStance()
+StanceDetector::Stance StanceDetector::getStance()
 {
     std::lock_guard<std::mutex> lock{m_stance_lock};
     Stance ret = m_stance;
@@ -591,7 +577,7 @@ StanceDetection::StanceDetector::Stance StanceDetection::StanceDetector::getStan
 /** \brief Gets the horizontal flag.
  * \return Integer bool.
  */
-StanceDetection::StanceDetector::Attitude StanceDetection::StanceDetector::getAttitude()
+StanceDetector::Attitude StanceDetector::getAttitude()
 {  
     std::lock_guard<std::mutex> lock{m_stance_lock};
     Attitude ret = m_attitude;
@@ -601,7 +587,7 @@ StanceDetection::StanceDetector::Attitude StanceDetection::StanceDetector::getAt
 /** \brief Check if entangled flag set.
  * \return Integer bool.
  */
-StanceDetection::StanceDetector::EntangleState StanceDetection::StanceDetector::getEntangledStatus()
+StanceDetector::EntangleState StanceDetector::getEntangledStatus()
 {
     std::lock_guard<std::mutex> lock{m_fall_lock};
     EntangleState ret = m_entangled;
@@ -612,7 +598,7 @@ StanceDetection::StanceDetector::EntangleState StanceDetection::StanceDetector::
 /** \brief Get current fall flag.
  * \return Integer bool.
  */
-StanceDetection::StanceDetector::FallState StanceDetection::StanceDetector::getFallingStatus()
+StanceDetector::FallState StanceDetector::getFallingStatus()
 {
     return m_falling;
 }
@@ -621,15 +607,15 @@ StanceDetection::StanceDetector::FallState StanceDetection::StanceDetector::getF
  * \param stance1 One of the stances to compare.
  * \param stance2 The other stance to compare.
  */
-StanceDetection::StanceDetector::FallState operator|(const StanceDetection::StanceDetector::FallState &stance1, const StanceDetection::StanceDetector::FallState &stance2)
+StanceDetector::FallState operator|(const StanceDetector::FallState &stance1, const StanceDetector::FallState &stance2)
 {
-    if (stance1 == StanceDetection::StanceDetector::Falling || stance2 == StanceDetection::StanceDetector::Falling)
+    if (stance1 == StanceDetector::Falling || stance2 == StanceDetector::Falling)
     {
-        return StanceDetection::StanceDetector::Falling;
+        return StanceDetector::Falling;
     }
     else
     {
-        return StanceDetection::StanceDetector::NotFalling;
+        return StanceDetector::NotFalling;
     }
 }
 
@@ -637,14 +623,14 @@ StanceDetection::StanceDetector::FallState operator|(const StanceDetection::Stan
  * \param stance1 One of the stances to compare.
  * \param stance2 The other stance to compare.
  */
-StanceDetection::StanceDetector::EntangleState operator|(const StanceDetection::StanceDetector::EntangleState &stance1, const StanceDetection::StanceDetector::EntangleState &stance2)
+StanceDetector::EntangleState operator|(const StanceDetector::EntangleState &stance1, const StanceDetector::EntangleState &stance2)
 {
-    if (stance1 == StanceDetection::StanceDetector::Entangled || stance2 == StanceDetection::StanceDetector::Entangled)
+    if (stance1 == StanceDetector::Entangled || stance2 == StanceDetector::Entangled)
     {
-        return StanceDetection::StanceDetector::Entangled;
+        return StanceDetector::Entangled;
     }
     else
     {
-        return StanceDetection::StanceDetector::NotEntangled;
+        return StanceDetector::NotEntangled;
     }
 }
