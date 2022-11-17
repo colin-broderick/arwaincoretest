@@ -27,7 +27,6 @@ endif()
 
 add_library(arwain_lib ${SRC_FILES})
 
-target_link_libraries(arwain_lib stdc++fs)
 include_directories(
     ../vector3
     ../quaternion

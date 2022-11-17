@@ -13,6 +13,7 @@ option(UNIT_TESTS           "Make namespace functions public to enable testing" 
 
 find_package(Eigen3 REQUIRED)
 include_directories(EIGEN3_INCLUDE_DIR)
+link_directories(/usr/local64/lib)
 
 add_definitions(-DNUMCPP_NO_USE_BOOST)
 
@@ -101,7 +102,7 @@ endif()
 if(USE_NCS2)
     message("Using NCS2 for inference")
     add_definitions(-DUSE_NCS2)
-    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} zmq)
+    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES})
 else()
     set(TENSORFLOW_SOURCE_DIR "/opt/arwain/workspace/tensorflow_src" CACHE PATH
     "Directory that contains the TensorFlow project" )
@@ -122,8 +123,8 @@ endif()
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -Wno-psabi -Wall -Wshadow -Wextra)
-target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES}                                i2c zmq stdc++fs pthread boost_system)
-target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} GTest::gtest i2c zmq stdc++fs pthread boost_system)
+target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES}              i2c zmq stdc++fs pthread boost_system)
+target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} GTest::gtest pthread zmq)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)
