@@ -15,6 +15,7 @@
 #endif
 
 #include "arwain_tests.hpp"
+#include "arwain_utils.hpp"
 #include "arwain_thread.hpp"
 #include "arwain.hpp"
 #include "input_parser.hpp"
@@ -83,20 +84,15 @@ namespace arwain::Buffers
     GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
 
-void sleep_ms(int ms)
-{
-    std::this_thread::sleep_for(std::chrono::milliseconds{ms});
-}
-
 double unwrap_phase_radians(double new_angle, double previous_angle)
 {
     while (new_angle - previous_angle > 3.14159)
     {
-        new_angle -= 2.0*3.14159;
+        new_angle -= 2.0 * 3.14159;
     }
     while (new_angle - previous_angle < -3.14159)
     {
-        new_angle += 2.0*3.14159;
+        new_angle += 2.0 * 3.14159;
     }
     return new_angle;
 }

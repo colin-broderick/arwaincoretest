@@ -15,7 +15,6 @@ class ImuProcessing
     TESTABLE:
         void run();
         void run_inference();
-        void pause();
         void setup_inference();
         void cleanup_inference();
         void run_gyro_calibration();

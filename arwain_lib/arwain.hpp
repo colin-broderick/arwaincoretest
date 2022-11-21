@@ -19,7 +19,6 @@
 class StanceDetection;
 
 int arwain_main(int argc, char** argv);
-void sleep_ms(int ms);
 
 class Vector3;
 class Vector6;

@@ -70,11 +70,6 @@ void Altimeter::run_idle()
     altitude_zero = altitude;
 }
 
-void Altimeter::pause()
-{
-    sleep_ms(10);
-}
-
 void Altimeter::run()
 {
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
@@ -88,7 +83,7 @@ void Altimeter::run()
                 run_idle();
                 break;
             default:
-                pause();
+                sleep_ms(10);
                 break;
         }
     }

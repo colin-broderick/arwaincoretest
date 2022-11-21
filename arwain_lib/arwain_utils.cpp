@@ -4,6 +4,11 @@
 #include "quaternion.hpp"
 #include "vector3.hpp"
 
+void sleep_ms(int ms)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds{ms});
+}
+
 /** \brief Converts a rotation quaternion to Euler angles, i.e. roll, pitch, and yaw.
  * \note The Euler angle representation should never be used for calculations; they are for display
  * and logging only.
