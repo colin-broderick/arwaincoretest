@@ -5,11 +5,13 @@
 #include "vector3.hpp"
 
 ActivityMetric::ActivityMetric(unsigned int ag_window_size_, unsigned int velo_window_size_)
-: ag_window_size(ag_window_size_), velo_window_size(velo_window_size_)
+: ag_window_size(ag_window_size_),
+  velo_window_size(velo_window_size_),
+  acce_roller(RollingAverage{ag_window_size_}),
+  gyro_roller(RollingAverage{ag_window_size_}),
+  velo_roller(RollingAverage{velo_window_size_})
 {
-    acce_roller = RollingAverage{ag_window_size_};
-    gyro_roller = RollingAverage{ag_window_size_};
-    velo_roller = RollingAverage{velo_window_size_};
+
 }
 
 ActivityMetric::~ActivityMetric()
@@ -34,7 +36,7 @@ void ActivityMetric::feed_velo(const Vector3& velo)
 
 double ActivityMetric::read()
 {
-    return 4 * std::abs(
+    return 4.0 * std::abs(
           ((acce_roller.get_value() - acce_mean) / acce_stdv)
         * ((gyro_roller.get_value() - gyro_mean) / gyro_stdv)
         / ((velo_roller.get_value() - velo_mean) / velo_stdv)
