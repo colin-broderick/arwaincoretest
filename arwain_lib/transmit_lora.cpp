@@ -73,11 +73,6 @@ void StatusReporting::cleanup_inference()
 
 void StatusReporting::run_idle()
 {
-    run_autocalibration();
-}
-
-void StatusReporting::run_autocalibration()
-{
     sleep_ms(10);
 }
 
