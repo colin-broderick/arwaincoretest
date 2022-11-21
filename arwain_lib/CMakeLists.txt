@@ -17,6 +17,8 @@ set(SRC_FILES
     arwain_tests.cpp
     command_line.cpp
     configuration.cpp
+    arwain_utils.cpp
+    activity_metric.cpp
 )
 if(USE_UUBLA)
 set(SRC_FILES ${SRC_FILES} uwb_reader.cpp)

@@ -16,12 +16,16 @@
  * \param[in] bus_name The bus on which the device is found, e.g. "/dev/i2c-1".
  */
 IMU_IIM42652::IMU_IIM42652(int bus_address, const std::string &bus_name)
+: address_(bus_address), bus_name_(bus_name)
 {
     // Default configuration.
     unsigned char accel_config = ACCEL_200HZ | ACCEL_FSR_16G;
     unsigned char gyro_config = GYRO_200HZ | GYRO_FSR_1000;
 
-    i2c_init(bus_address, bus_name);
+    if (!i2c_init(bus_address, bus_name))
+    {
+        throw std::runtime_error{"Could not connect IMU: " + bus_name + " " + std::to_string(bus_address)};
+    }
     soft_reset();
     std::this_thread::sleep_for(std::chrono::milliseconds{2});
     IMU_config(gyro_config, accel_config);
@@ -77,9 +81,9 @@ namespace
 
 Vector3 IMU_IIM42652::calibration_accel_sample()
 {
-    kalman_filter_constant_1d kfx{9.81, 1.0};
-    kalman_filter_constant_1d kfy{9.81, 1.0};
-    kalman_filter_constant_1d kfz{9.81, 1.0};
+    KalmanFilter1D kfx{9.81, 1.0};
+    KalmanFilter1D kfy{9.81, 1.0};
+    KalmanFilter1D kfz{9.81, 1.0};
     
     while (!kfx.converged && !kfy.converged && !kfz.converged)
     {
@@ -94,23 +98,19 @@ Vector3 IMU_IIM42652::calibration_accel_sample()
 }
 
 /** \brief Defines a procedure for calculating calibration offsets
- * for the gyroscope, then records those values in the appropriate
- * registers on the device.
+ * for the gyroscope.
  * 
- * We leave the device undistrubed for a set period of time, and
- * then compute the average value from each gyroscope axis during
- * that time. This number is zero in the ideal case. The actual
- * calculated value is the offset that should be applied to the
- * gyroscope readings.
+ * We take repeated gyroscope readings until a state estimator converges
+ * on a stable value for each gyroscope axis.
  * 
  * This procedure does not consider the change in offset as a
  * function of temperature.
  */
 Vector3 IMU_IIM42652::calibrate_gyroscope()
 {
-    kalman_filter_constant_1d kfx{0, 1};
-    kalman_filter_constant_1d kfy{0, 1};
-    kalman_filter_constant_1d kfz{0, 1};
+    KalmanFilter1D kfx{0, 1};
+    KalmanFilter1D kfy{0, 1};
+    KalmanFilter1D kfz{0, 1};
     while (!kfx.converged && !kfy.converged && !kfz.converged)
     {
         auto [accel, gyro] = this->read_IMU();
@@ -122,11 +122,22 @@ Vector3 IMU_IIM42652::calibrate_gyroscope()
     return {kfx.est, kfy.est, kfz.est};
 }
 
+int IMU_IIM42652::get_address() const
+{
+    return address_;
+}
+
+std::string IMU_IIM42652::get_bus() const
+{
+    return bus_name_;
+}
+
 /** \brief Sets up the I2C file handle and connects to a device on the I2C bus.
  * \param[in] address The address of the device on the I2C bus.
  * \param[in] bus_name The name of the bus to open, e.g. /dev/i2c-1.
+ * \return Boolean, true indicating successful opening of file handle, false indicating failure.
  */
-void IMU_IIM42652::i2c_init(const int address, const std::string &bus_name)
+[[nodiscard]] bool IMU_IIM42652::i2c_init(const int address, const std::string &bus_name)
 {
     //----- OPEN THE I2C BUS -----
     const char *filename = bus_name.c_str();
@@ -134,12 +145,16 @@ void IMU_IIM42652::i2c_init(const int address, const std::string &bus_name)
     {
         //ERROR HANDLING: you can check error number to see what went wrong
         std::cout << "Failed to open I2C bus" << std::endl;
+        return false;
     }
 
     if (ioctl(this->handle, I2C_SLAVE, address) < 0)
     {
         std::cout << "Failed to connect to I2C address " << std::hex << address << std::endl;
+        return false;
     }
+
+    return true;
 }
 
 /** \brief Reads a given number of bytes from a given register address.
@@ -241,6 +256,14 @@ double IMU_IIM42652::read_temperature()
     return this->temperature;
 }
 
+/** \brief Gives the current auto calibration state. 
+ * \return bool indiciating whether autocalibration is enabled; true for on, false for off.
+ */
+bool IMU_IIM42652::auto_calib_enabled() const
+{
+    return auto_calib_enabled_;
+}
+
 /** \brief Fetches raw IMU data and applies conversion factors to get correct units. Alters state. */
 Vector6 IMU_IIM42652::read_IMU()
 {
@@ -257,7 +280,7 @@ Vector6 IMU_IIM42652::read_IMU()
     gyroscope_z = gyroscope_z * gyro_resolution * PI_DIVIDED_BY_180 - gyro_bias_z;
 
     // Automatically update gyroscope bias when device static.
-    if (auto_calib_enabled)
+    if (auto_calib_enabled_)
     {
         this->update_gyro_bias();
     }
@@ -363,7 +386,7 @@ void IMU_IIM42652::set_correction_speed(double speed)
 
 void IMU_IIM42652::enable_auto_calib()
 {
-    auto_calib_enabled = true;
+    auto_calib_enabled_ = true;
 }
 
 void IMU_IIM42652::enable_auto_calib(double threshold)
@@ -374,5 +397,5 @@ void IMU_IIM42652::enable_auto_calib(double threshold)
 
 void IMU_IIM42652::disable_auto_calib()
 {
-    auto_calib_enabled = false;
+    auto_calib_enabled_ = false;
 }

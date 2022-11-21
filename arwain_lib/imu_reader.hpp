@@ -15,17 +15,15 @@ class ImuProcessing
     TESTABLE:
         void run();
         void run_inference();
-        void run_idle();
         void setup_inference();
         void cleanup_inference();
         void run_gyro_calibration();
         void run_magn_calibration();
         void core_setup();
         void run_accel_calibration();
-        void run_autocalibration();
+        void run_idle();
         void run_test_stance_detector();
         void run_self_test();
-        euler_orientation_t compute_euler(Quaternion& q);
         Vector3 world_align(const Vector3& vec, const Quaternion& rotation);
 
     private:
@@ -57,16 +55,8 @@ class ImuProcessing
     public:
         ImuProcessing();
         bool init();
-        void set_post_gyro_calibration_callback(std::function<void()> func);
         void join();
+        void set_post_gyro_calibration_callback(std::function<void()> func);
 };
-
-// namespace ImuProcessing
-// {
-//     void set_post_gyro_calibration_callback(std::function<void()> func);
-//     void join();
-//     bool init();
-// }
-
 
 #endif

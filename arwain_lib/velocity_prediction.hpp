@@ -8,7 +8,7 @@ class PositionVelocityInference
     TESTABLE:
         void run_inference();
         void run_idle();
-        void core_setup();
+        bool core_setup();
         void setup_inference();
         void run();
         void cleanup_inference();
@@ -17,6 +17,7 @@ class PositionVelocityInference
         #endif
 
     private:
+        bool ready_for_inference = false;
         #if USE_NCS2
         // Socket for comm with Python script to manage NCS2.
         const std::string inference_tcp_socket = "tcp://*:5555";
@@ -50,8 +51,9 @@ class PositionVelocityInference
 
     public:
         PositionVelocityInference();
-        void join();
+        bool ready();
         bool init();
+        void join();
 };
 
 #endif

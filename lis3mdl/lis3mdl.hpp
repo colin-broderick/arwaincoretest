@@ -26,7 +26,7 @@ class LIS3MDL
         Vector3 read();
         Quaternion read_orientation();
         double read_temp();
-        void set_calibration(Vector3 bias_, Vector3 scale_, Vector3 cross_scale_);
+        void set_calibration_parameters(Vector3 bias_, Vector3 scale_, Vector3 cross_scale_);
 
     private: // Methods
         void soft_reset();
@@ -34,7 +34,7 @@ class LIS3MDL
         void set_fsr(FSR fsr_selection);
         void set_odr(ODR odr_selection);
 
-        void i2c_init(const int address, const std::string &bus_name);
+        [[nodiscard]] bool i2c_init(const int address, const std::string &bus_name);
         int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
         int i2c_write(int reg_addr, int bytes, uint8_t *buffer);
 

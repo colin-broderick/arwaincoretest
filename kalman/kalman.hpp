@@ -8,10 +8,10 @@
 using Eigen::MatrixXd;
 
 //kalman filter class
-class kalman_filter
+class KalmanFilter
 {
 public:
-    kalman_filter(MatrixXd X, MatrixXd P, int dt, MatrixXd u, MatrixXd a, MatrixXd c, MatrixXd m, MatrixXd r, MatrixXd h, MatrixXd i, MatrixXd w, MatrixXd q)
+    KalmanFilter(MatrixXd X, MatrixXd P, int dt, MatrixXd u, MatrixXd a, MatrixXd c, MatrixXd m, MatrixXd r, MatrixXd h, MatrixXd i, MatrixXd w, MatrixXd q)
     {
         state_matrix = X;
         state_covariance_matrix = P;
@@ -54,7 +54,7 @@ private:
     MatrixXd process_noise_covariancce_matrix;
 };
 
-class kalman_filter_constant_1d
+class KalmanFilter1D
 {
     public:
         double est = 0;
@@ -66,7 +66,7 @@ class kalman_filter_constant_1d
         double E_mea = 0;
 
     public:
-        kalman_filter_constant_1d(double initial_estimate, double initial_estimate_error);
+        KalmanFilter1D(double initial_estimate, double initial_estimate_error);
         void update(const double measurement, const double measurement_error);
         double get_gain() const;
 

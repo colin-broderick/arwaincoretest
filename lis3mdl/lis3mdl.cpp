@@ -33,7 +33,10 @@ void LIS3MDL::power_up()
 
 LIS3MDL::LIS3MDL(const int i2c_address, const std::string& i2c_bus)
 {
-    i2c_init(i2c_address, i2c_bus);
+    if (!i2c_init(i2c_address, i2c_bus))
+    {
+        throw std::runtime_error{"Could not connect magnetometer: " + i2c_bus + " " + std::to_string(i2c_address)};
+    }
     soft_reset();
     power_up();
     set_fsr(FSR::FSR_4);
@@ -129,7 +132,7 @@ void LIS3MDL::set_fsr(LIS3MDL::FSR fsr_selection)
  * \param[in] address The address of the device on the I2C bus.
  * \param[in] bus_name The name of the bus to open, e.g. /dev/i2c-1.
  */
-void LIS3MDL::i2c_init(const int address, const std::string &bus_name)
+[[nodiscard]] bool LIS3MDL::i2c_init(const int address, const std::string &bus_name)
 {
     //----- OPEN THE I2C BUS -----
     const char *filename = bus_name.c_str();
@@ -137,12 +140,16 @@ void LIS3MDL::i2c_init(const int address, const std::string &bus_name)
     {
         //ERROR HANDLING: you can check error number to see what went wrong
         std::cout << "Failed to open I2C bus" << std::endl;
+        return false;
     }
 
     if (ioctl(this->handle, I2C_SLAVE, address) < 0)
     {
         std::cout << "Failed to connect to I2C address " << std::hex << address << std::endl;
+        return false;
     }
+
+    return true;
 }
 
 /** \brief Reads a given number of bytes from a given register address.
@@ -209,7 +216,7 @@ Vector3 LIS3MDL::read()
  * \param scale_ Vector3 representing scale of axes.
  * \param cross_scale_ Vector3 representing the cross-correlation between axes, in the order xz, yz, xz.
  */
-void LIS3MDL::set_calibration(Vector3 bias_, Vector3 scale_, Vector3 cross_scale_)
+void LIS3MDL::set_calibration_parameters(Vector3 bias_, Vector3 scale_, Vector3 cross_scale_)
 {
     this->bias = bias_;
     this->scale = scale_;

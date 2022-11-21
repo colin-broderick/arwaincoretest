@@ -50,12 +50,12 @@ void Altimeter::run_inference()
     cleanup_inference();
 }
 
-void Altimeter::run_autocalibration()
+void Altimeter::run_idle()
 {
     auto loopTime = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::ALTIMETER_INTERVAL}; // Lower data collection rate in Idle/Autocalibration mode.
+    std::chrono::milliseconds interval{arwain::Intervals::ALTIMETER_INTERVAL}; // Lower data collection rate in Idle mode.
 
-    while (arwain::system_mode == arwain::OperatingMode::AutoCalibration)
+    while (arwain::system_mode == arwain::OperatingMode::Idle)
     {
         auto [pressure, temperature] = bmp384.read();
         pressure = pressure - arwain::config.pressure_offset;
@@ -70,11 +70,6 @@ void Altimeter::run_autocalibration()
     altitude_zero = altitude;
 }
 
-void Altimeter::run_idle()
-{
-    sleep_ms(10);
-}
-
 void Altimeter::run()
 {
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
@@ -84,11 +79,11 @@ void Altimeter::run()
             case arwain::OperatingMode::Inference:
                 run_inference();
                 break;
-            case arwain::OperatingMode::AutoCalibration:
-                run_autocalibration();
+            case arwain::OperatingMode::Idle:
+                run_idle();
                 break;
             default:
-                run_idle();
+                sleep_ms(10);
                 break;
         }
     }

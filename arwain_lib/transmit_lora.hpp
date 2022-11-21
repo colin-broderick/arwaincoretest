@@ -4,6 +4,8 @@
 #include "arwain.hpp"
 #include "arwain_thread.hpp"
 
+class StanceDetection;
+
 class StatusReporting
 {
 	TESTABLE:
@@ -13,16 +15,17 @@ class StatusReporting
         void run_idle();
         void setup_inference();
         void cleanup_inference();
-        void run_autocalibration();
         std::chrono::time_point<std::chrono::high_resolution_clock> get_next_time_slot(int node_id);
 
 	private:
+	    StanceDetection* stance_detection_handle = nullptr;
         ArwainThread job_thread;
         LoRa lora;
         arwain::Logger lora_file;
 
 	public:
 		StatusReporting();
+		bool set_stance_detection_pointer(StanceDetection* stance);
 		bool init();
 		void join();
 };

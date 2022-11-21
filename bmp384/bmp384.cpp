@@ -12,7 +12,10 @@ static void sleep_ms(int ms)
 
 BMP384::BMP384(int bus_address, const std::string &bus_name)
 {
-    i2c_init(bus_address, bus_name);
+    if(!i2c_init(bus_address, bus_name))
+    {
+        throw std::runtime_error{"Could not connect pressure sensor: " + bus_name + " " + std::to_string(bus_address)};
+    }
 
     soft_reset();
 
@@ -170,8 +173,9 @@ void BMP384::set_iir_filter(uint8_t coefficient)
 /** \brief Sets up the I2C file handle and connects to a device on the I2C bus.
  * \param[in] address The address of the device on the I2C bus.
  * \param[in] bus_name The name of the bus to open, e.g. /dev/i2c-1.
+ * \return Boolean; true for successful opening of file handle, false for failure.
  */
-void BMP384::i2c_init(const int address, const std::string &bus_name)
+[[nodiscard]] bool BMP384::i2c_init(const int address, const std::string &bus_name)
 {
     //----- OPEN THE I2C BUS -----
     const char *filename = bus_name.c_str();
@@ -179,12 +183,16 @@ void BMP384::i2c_init(const int address, const std::string &bus_name)
     {
         //ERROR HANDLING: you can check error number to see what went wrong
         std::cout << "Failed to open I2C bus" << std::endl;
+        return false;
     }
 
     if (ioctl(this->handle, I2C_SLAVE, address) < 0)
     {
         std::cout << "Failed to connect to I2C address " << std::hex << address << std::endl;
+        return false;
     }
+
+    return true;
 }
 
 /** \brief Reads a given number of bytes from a given register address.

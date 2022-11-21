@@ -43,6 +43,13 @@ void DebugPrints::cleanup_inference()
 
 }
 
+bool DebugPrints::set_stance_detection_pointer(StanceDetection* stance)
+{
+    // TODO Should I delete the pointer first?
+    this->stance_detection_handle = stance;
+    return true;
+}
+
 void DebugPrints::run_inference()
 {
     setup_inference();
@@ -64,10 +71,13 @@ void DebugPrints::run_inference()
         ss << "Orientation (Q):   " << quat << "\n";
 
         // Add stance to the string stream.
-        ss << "Stance flag:       " << arwain::stance_detection_handle->get_stance() << "\n";
-        ss << "Horizontal:        " << arwain::stance_detection_handle->get_attitude() << "\n";
-        ss << "Fall flag:         " << arwain::stance_detection_handle->get_falling_state() << "\n";
-        ss << "Entangled flag:    " << arwain::stance_detection_handle->get_entangled_state() << "\n";
+        if (stance_detection_handle != nullptr)
+        {
+            ss << "Stance flag:       " << this->stance_detection_handle->get_stance() << "\n";
+            ss << "Horizontal:        " << this->stance_detection_handle->get_attitude() << "\n";
+            ss << "Fall flag:         " << this->stance_detection_handle->get_falling_state() << "\n";
+            ss << "Entangled flag:    " << this->stance_detection_handle->get_entangled_state() << "\n";
+        }
 
         ss << "Magnetic ori (Q):  " << arwain::Buffers::MAG_ORIENTATION_BUFFER.back() << "\n";
 

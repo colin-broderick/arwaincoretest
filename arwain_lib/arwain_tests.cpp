@@ -17,9 +17,9 @@
 #include "uubla.hpp"
 #endif
 
-static euler_orientation_t computer_euler_degrees(Quaternion& q)
+static EulerOrientation computer_euler_degrees(Quaternion& q)
 {
-    euler_orientation_t euler;
+    EulerOrientation euler;
     euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y)  * 180.0 / 3.14159;
 	euler.pitch = std::asin(-2.0 * (q.x*q.z - q.w*q.y))  * 180.0 / 3.14159;
 	euler.yaw = std::atan2(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z)  * 180.0 / 3.14159;
@@ -62,7 +62,7 @@ int arwain::test_uubla_integration()
 }
 #endif
 
-int arwain::test_pressure()
+arwain::ReturnCode arwain::test_pressure()
 {
     BMP384 bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
 
@@ -96,12 +96,12 @@ int arwain::test_pressure()
         std::this_thread::sleep_until(loopTime);
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
 /** \brief Utility functional for checking that the IMU is operational.
  */
-int arwain::test_imu()
+arwain::ReturnCode arwain::test_imu()
 {
     // Initialize the IMU.
     IMU_IIM42652 imu{0x68, "/dev/i2c-1"};
@@ -129,10 +129,10 @@ int arwain::test_imu()
 
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
-int arwain::test_lora_rx()
+arwain::ReturnCode arwain::test_lora_rx()
 {
     LoRa lora{arwain::config.lora_address, true};
 
@@ -152,11 +152,11 @@ int arwain::test_lora_rx()
         }
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
 #if USE_ROS
-int arwain::test_mag(int argc, char **argv)
+arwain::ReturnCode arwain::test_mag(int argc, char **argv)
 {
     ros::NodeHandle nh;
     auto pub = nh.advertise<geometry_msgs::Vector3Stamped>("/imu/mag", 1000);
@@ -175,14 +175,14 @@ int arwain::test_mag(int argc, char **argv)
         sleep_ms(20);
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 #else
 /** \brief Checks that the correct chip ID can be read from the magnetometer. If so, reads and prints orientation until interrupted. */
-int arwain::test_mag()
+arwain::ReturnCode arwain::test_mag()
 {
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
-    magn.set_calibration(
+    magn.set_calibration_parameters(
         arwain::config.mag_bias,
         arwain::config.mag_scale,
         {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}    
@@ -192,7 +192,7 @@ int arwain::test_mag()
     if (id != 0x3D)
     {
         std::cout << "Chip ID incorrect: should be 0x3D, got " <<std::hex << std::showbase << id << std::endl;
-        return arwain::ExitCodes::FailedMagnetometer;
+        return arwain::ReturnCode::FailedMagnetometer;
     }
     std::cout << "Chip ID: " << std::hex << std::showbase << magn.test_chip() << std::dec << std::endl;
 
@@ -203,11 +203,11 @@ int arwain::test_mag()
         std::this_thread::sleep_for(std::chrono::milliseconds{100});
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 #endif
 
-int arwain::test_lora_tx()
+arwain::ReturnCode arwain::test_lora_tx()
 {
     LoRa lora{arwain::config.lora_address, false};
 
@@ -228,10 +228,10 @@ int arwain::test_lora_tx()
         std::this_thread::sleep_for(std::chrono::milliseconds{1000});
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
-int arwain::test_ori(int frequency)
+arwain::ReturnCode arwain::test_ori(int frequency)
 {
     IMU_IIM42652 imu{config.imu1_address, config.imu1_bus};
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
@@ -242,7 +242,7 @@ int arwain::test_ori(int frequency)
     auto time = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds interval{1000/frequency};
     int count = 0;
-    euler_orientation_t euler;
+    EulerOrientation euler;
     Quaternion quat;
 
     std::cout << "Starting orientation filter at " << frequency << " Hz" << std::endl;
@@ -268,5 +268,5 @@ int arwain::test_ori(int frequency)
         }
     }
     
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
