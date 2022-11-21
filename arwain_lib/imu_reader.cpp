@@ -210,14 +210,11 @@ void ImuProcessing::run_accel_calibration()
 
 void ImuProcessing::run_idle()
 {
-    // Set up timing.
-    auto loop_time = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
-    auto time_count = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
-    std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL};
 
     while (arwain::system_mode == arwain::OperatingMode::Idle || arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
     {
-        time_count = std::chrono::system_clock::now().time_since_epoch().count();
+        int64_t time_count = loop_scheduler.count();
 
         auto [accel_data1, gyro_data1] = imu1.read_IMU();
         // Force approximate alignment of the IMUs.
@@ -259,8 +256,7 @@ void ImuProcessing::run_idle()
         }
 
         // Wait until the next tick.
-        loop_time = loop_time + interval;
-        std::this_thread::sleep_until(loop_time);
+        loop_scheduler.await();
     }
 }
 
@@ -281,11 +277,11 @@ void ImuProcessing::run_inference()
     setup_inference();
 
     // Set up timing.
-    arwain::JobInterval<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
-        int64_t time_count = std::chrono::high_resolution_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
+        int64_t time_count = loop_scheduler.count(); // Provides an accurate count of milliseconds passed since last loop iteration.
 
         auto [accel_data1, gyro_data1] = imu1.read_IMU();
 
@@ -360,19 +356,30 @@ void ImuProcessing::setup_inference()
 }
 
 /** \brief Closes file handles for arwain::Logger objects. */
-void ImuProcessing::cleanup_inference()
+arwain::ReturnCode ImuProcessing::cleanup_inference()
 {
-    ori_diff_file.close();
-    acce_file_1.close();
-    world_acce_file_1.close();
-    gyro_file_1.close();
-    world_gyro_file_1.close();
-    madgwick_euler_file_1.close();
-    madgwick_quat_file_1.close();
-    madgwick_euler_mag_file_1.close();
-    imu_calib_file_1.close();
-    imu_calib_file_2.close();
-    imu_calib_file_3.close();
+    bool closed_files = true;
+
+    closed_files |= ori_diff_file.close();
+    closed_files |= acce_file_1.close();
+    closed_files |= world_acce_file_1.close();
+    closed_files |= gyro_file_1.close();
+    closed_files |= world_gyro_file_1.close();
+    closed_files |= madgwick_euler_file_1.close();
+    closed_files |= madgwick_quat_file_1.close();
+    closed_files |= madgwick_euler_mag_file_1.close();
+    closed_files |= imu_calib_file_1.close();
+    closed_files |= imu_calib_file_2.close();
+    closed_files |= imu_calib_file_3.close();
+
+    if (closed_files)
+    {
+        return arwain::ReturnCode::Success;
+    }
+    else
+    {
+        return arwain::ReturnCode::IOError;
+    }
 }
 
 void ImuProcessing::core_setup()
@@ -405,8 +412,8 @@ void ImuProcessing::core_setup()
     );
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
-    madgwick_filter_1 = arwain::Madgwick{1000.0/(double)(arwain::Intervals::IMU_READING_INTERVAL), 0.1};
-    madgwick_filter_mag_1 = arwain::Madgwick{1000.0/(double)(arwain::Intervals::IMU_READING_INTERVAL), arwain::config.madgwick_beta_conv};
+    madgwick_filter_1 = arwain::Madgwick{1000.0/static_cast<double>(arwain::Intervals::IMU_READING_INTERVAL), 0.1};
+    madgwick_filter_mag_1 = arwain::Madgwick{1000.0/static_cast<double>(arwain::Intervals::IMU_READING_INTERVAL), arwain::config.madgwick_beta_conv};
     
     // After the specificed period has passed, set the magnetic filter gain to the standard value.
     // This thread is joined when the namespace is joined, to simulate a destructor cleanup.

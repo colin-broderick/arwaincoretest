@@ -51,14 +51,12 @@
 // General configuration data.
 namespace arwain
 {
-    int shutdown = 0;
     OperatingMode system_mode = arwain::OperatingMode::Idle;
     double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
     std::string folder_date_string_suffix;
     arwain::Logger error_log;
-    bool reset_position = false;
     unsigned int velocity_inference_rate = 20;
     RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
     ActivityMetric activity_metric{200, 20};
@@ -281,9 +279,9 @@ arwain::ReturnCode arwain::execute_inference()
     ArwainCLI arwain_cli;                                   // Simple command line interface for runtime mode switching.
 
     // Set pointers ...
-    status_reporting.set_stance_detection_pointer(&stance_detection);
-    debug_prints.set_stance_detection_pointer(&stance_detection);
-    arwain_cli.set_velocity_inference_pointer(&position_velocity_inference);
+    status_reporting.set_stance_detection_pointer(stance_detection);
+    debug_prints.set_stance_detection_pointer(stance_detection);
+    arwain_cli.set_velocity_inference_pointer(position_velocity_inference);
 
     // Wait for all jobs to terminate.
     imu_processor.join();

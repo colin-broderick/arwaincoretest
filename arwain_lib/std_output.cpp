@@ -8,6 +8,7 @@
 #include "vector3.hpp"
 #include "quaternion.hpp"
 #include "arwain_thread.hpp"
+#include "timers.hpp"
 #include "filter.hpp"
 #include "exceptions.hpp"
 #include "std_output.hpp"
@@ -43,10 +44,10 @@ void DebugPrints::cleanup_inference()
 
 }
 
-bool DebugPrints::set_stance_detection_pointer(StanceDetection* stance)
+bool DebugPrints::set_stance_detection_pointer(StanceDetection& stance)
 {
     // TODO Should I delete the pointer first?
-    this->stance_detection_handle = stance;
+    this->stance_detection_handle = &stance;
     return true;
 }
 
@@ -55,9 +56,7 @@ void DebugPrints::run_inference()
     setup_inference();
 
     // Set up timing, including pause while IMU warms up.
-    std::chrono::milliseconds interval{arwain::Intervals::STD_OUT_INTERVAL};
-    std::this_thread::sleep_for(interval*3);
-    auto time = std::chrono::system_clock::now();
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STD_OUT_INTERVAL};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
@@ -93,8 +92,7 @@ void DebugPrints::run_inference()
         ss.str("");
 
         // Wait until next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+        loop_scheduler.await();
     }
 
     cleanup_inference();

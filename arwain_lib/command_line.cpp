@@ -75,10 +75,10 @@ void ArwainCLI::switch_to_exit_mode()
 }
 
 
-bool ArwainCLI::set_velocity_inference_pointer(PositionVelocityInference* velocity)
+bool ArwainCLI::set_velocity_inference_pointer(PositionVelocityInference& velocity)
 {
     // TODO Should I delete the pointer first?
-    this->velocity_inference_handle = velocity;
+    this->velocity_inference_handle = &velocity;
     return true;
 }
 
@@ -207,14 +207,6 @@ void ArwainCLI::set_folder_name(const std::string& input)
     }
 }
 
-/** \brief Sets the most recent entry in the world position buffer equal to (0, 0, 0). A flag is raised
- * which causes the velocity inference loop to set the position to zero at the next iteration of the loop.
-*/
-void ArwainCLI::set_position_zero()
-{
-    arwain::reset_position = true;
-}
-
 void ArwainCLI::parse_cli_input(const std::string& input)
 {
     switch (s2i(input.c_str()))
@@ -248,9 +240,6 @@ void ArwainCLI::parse_cli_input(const std::string& input)
             break;
         case s2i("help"):
             std::cout << arwain::help_text << "\n";
-            break;
-        case s2i("zeropos"):
-            set_position_zero();
             break;
         default:
             std::cout << "ERROR: Command not recognised: " << input << std::endl;

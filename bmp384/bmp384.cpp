@@ -53,18 +53,18 @@ std::tuple<double, double> BMP384::read()
 
 double BMP384::compensate_temperature(uint32_t temperature_uncompensated)
 {
-    double partial_data1 = (double)(temperature_uncompensated - calib_data.par_t1);
-    double partial_data2 = (double)(partial_data1 * calib_data.par_t2);
+    double partial_data1 = static_cast<double>(temperature_uncompensated - calib_data.par_t1);
+    double partial_data2 = static_cast<double>(partial_data1 * calib_data.par_t2);
 
     calib_data.t_lin = partial_data2 + (partial_data1 * partial_data1) * calib_data.par_t3;
 
     if (calib_data.t_lin < BMP384::min_temp)
     {
-        calib_data.t_lin = (double)(BMP384::min_temp);
+        calib_data.t_lin = static_cast<double>(BMP384::min_temp);
     }
     if (calib_data.t_lin > BMP384::max_temp)
     {
-        calib_data.t_lin = (double)(BMP384::max_temp);
+        calib_data.t_lin = static_cast<double>(BMP384::max_temp);
     }
 
     return calib_data.t_lin;
@@ -85,12 +85,12 @@ double BMP384::compensate_pressure(uint32_t pressure_uncompensated)
     partial_data1 = calib_data.par_p2 * calib_data.t_lin;
     partial_data2 = calib_data.par_p3 * calib_data.t_lin * calib_data.t_lin;
     partial_data3 = calib_data.par_p4 * calib_data.t_lin * calib_data.t_lin * calib_data.t_lin;
-    partial_out2 = (double)pressure_uncompensated * (calib_data.par_p1 + partial_data1 + partial_data2 + partial_data3);
+    partial_out2 = static_cast<double>(pressure_uncompensated) * (calib_data.par_p1 + partial_data1 + partial_data2 + partial_data3);
 
-    partial_data1 = (double)pressure_uncompensated * (double)pressure_uncompensated;
+    partial_data1 = static_cast<double>(pressure_uncompensated) * static_cast<double>(pressure_uncompensated);
     partial_data2 = calib_data.par_p9 + calib_data.par_p10 * calib_data.t_lin;
     partial_data3 = partial_data1 * partial_data2;
-    partial_data4 = partial_data3 + (double)pressure_uncompensated * (double)pressure_uncompensated * (double)pressure_uncompensated * calib_data.par_p11;
+    partial_data4 = partial_data3 + static_cast<double>(pressure_uncompensated) * static_cast<double>(pressure_uncompensated) * static_cast<double>(pressure_uncompensated) * calib_data.par_p11;
 
     compensated_pressure = partial_out1 + partial_out2 + partial_data4;
 
@@ -101,20 +101,20 @@ void BMP384::get_calib_data()
 {
     uint8_t bf[21];
     i2c_read(ADDR_CALIB_DATA, 21, bf);
-    this->calib_data.par_t1 = (double)(((uint16_t)(bf[1]) << 8) | (uint16_t)(bf[0])) / std::pow(2, -8);
-    this->calib_data.par_t2 = (double)(((uint16_t)(bf[3]) << 8) | (uint16_t)(bf[2])) / std::pow(2, 30);
-    this->calib_data.par_t3 = (double)((int8_t)(bf[4])) / std::pow(2, 48);
-    this->calib_data.par_p1 = ((double)((int16_t)(bf[6] << 8) | (int16_t)(bf[5])) - std::pow(2, 14)) / std::pow(2, 20);
-    this->calib_data.par_p2 = ((double)((int16_t)(bf[8] << 8) | (int16_t)(bf[7])) - std::pow(2, 14)) / std::pow(2, 29);
-    this->calib_data.par_p3 = (double)((int8_t)(bf[9])) / std::pow(2, 32);
-    this->calib_data.par_p4 = (double)((int8_t)(bf[10])) / std::pow(2, 37);
-    this->calib_data.par_p5 = (double)((uint16_t)(bf[12] << 8) | (uint16_t)(bf[11])) / std::pow(2, -3);
-    this->calib_data.par_p6 = (double)((uint16_t)(bf[14] << 8) | (uint16_t)(bf[13])) / std::pow(2, 6);
-    this->calib_data.par_p7 = (double)((int8_t)(bf[15])) / std::pow(2, 8);
-    this->calib_data.par_p8 = (double)((int8_t)(bf[16])) / std::pow(2, 15);
-    this->calib_data.par_p9 = (double)((int16_t)(bf[18] << 8) | (int16_t)(bf[17])) / std::pow(2, 48);
-    this->calib_data.par_p10 = (double)((int8_t)(bf[19])) / std::pow(2, 48);
-    this->calib_data.par_p11 = (double)((int8_t)(bf[20])) / std::pow(2, 65);
+    this->calib_data.par_t1 = static_cast<double>(((uint16_t)(bf[1]) << 8) | (uint16_t)(bf[0])) / std::pow(2, -8);
+    this->calib_data.par_t2 = static_cast<double>(((uint16_t)(bf[3]) << 8) | (uint16_t)(bf[2])) / std::pow(2, 30);
+    this->calib_data.par_t3 = static_cast<double>((int8_t)(bf[4])) / std::pow(2, 48);
+    this->calib_data.par_p1 = (static_cast<double>((int16_t)(bf[6] << 8) | (int16_t)(bf[5])) - std::pow(2, 14)) / std::pow(2, 20);
+    this->calib_data.par_p2 = (static_cast<double>((int16_t)(bf[8] << 8) | (int16_t)(bf[7])) - std::pow(2, 14)) / std::pow(2, 29);
+    this->calib_data.par_p3 = static_cast<double>((int8_t)(bf[9])) / std::pow(2, 32);
+    this->calib_data.par_p4 = static_cast<double>((int8_t)(bf[10])) / std::pow(2, 37);
+    this->calib_data.par_p5 = static_cast<double>((uint16_t)(bf[12] << 8) | (uint16_t)(bf[11])) / std::pow(2, -3);
+    this->calib_data.par_p6 = static_cast<double>((uint16_t)(bf[14] << 8) | (uint16_t)(bf[13])) / std::pow(2, 6);
+    this->calib_data.par_p7 = static_cast<double>((int8_t)(bf[15])) / std::pow(2, 8);
+    this->calib_data.par_p8 = static_cast<double>((int8_t)(bf[16])) / std::pow(2, 15);
+    this->calib_data.par_p9 = static_cast<double>((int16_t)(bf[18] << 8) | (int16_t)(bf[17])) / std::pow(2, 48);
+    this->calib_data.par_p10 = static_cast<double>((int8_t)(bf[19])) / std::pow(2, 48);
+    this->calib_data.par_p11 = static_cast<double>((int8_t)(bf[20])) / std::pow(2, 65);
     sleep_ms(2);
 }
 

@@ -24,7 +24,7 @@ class DebugPrints
         ArwainThread job_thread;
 
     public:
-        bool set_stance_detection_pointer(StanceDetection* stance);
+        bool set_stance_detection_pointer(StanceDetection& stance);
         DebugPrints();
         bool init();
         void join();

@@ -179,7 +179,7 @@ double LIS3MDL::read_temp()
     uint8_t read_buffer[2];
     i2c_read(ADDR_TEMP_OUT_L, 2, read_buffer);
     int8_t temp_int = (read_buffer[1] << 8) | read_buffer[0];
-    return (double)temp_int / 8.0;
+    return static_cast<double>(temp_int) / 8.0;
 }
 
 /** \brief Read the data from the sensor. The returned values have been calibrated

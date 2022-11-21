@@ -155,9 +155,9 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> arwain::Magnet
         if (region_sample_count[i] != 0)
         {
             xyz = nc::stack({xyz, {
-                region_sample_value[i].x / (double)(region_sample_count[i]),
-                region_sample_value[i].y / (double)(region_sample_count[i]),
-                region_sample_value[i].z / (double)(region_sample_count[i])
+                region_sample_value[i].x / static_cast<double>(region_sample_count[i]),
+                region_sample_value[i].y / static_cast<double>(region_sample_count[i]),
+                region_sample_value[i].z / static_cast<double>(region_sample_count[i])
             }}, nc::Axis::ROW);
         }
     }
