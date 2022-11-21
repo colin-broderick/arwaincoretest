@@ -52,7 +52,7 @@ namespace arwain
 {
     StanceDetection* stance_detection_handle = nullptr;
     int shutdown = 0;
-    OperatingMode system_mode = arwain::OperatingMode::AutoCalibration;
+    OperatingMode system_mode = arwain::OperatingMode::Idle;
     double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
@@ -60,7 +60,6 @@ namespace arwain
     arwain::Status status;
     arwain::Logger error_log;
     bool reset_position = false;
-    bool request_gyro_calib = false;
     bool ready_for_inference = false;
     unsigned int velocity_inference_rate = 20;
     RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
@@ -78,7 +77,7 @@ namespace arwain::Buffers
     GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_WORLD_BUFFER;
     GlobalBuffer<Vector3, arwain::BufferSizes::IPS_BUFFER_LEN> IPS_BUFFER;
     GlobalBuffer<Vector3, arwain::BufferSizes::PRESSURE_BUFFER_LEN> PRESSURE_BUFFER;
-    GlobalBuffer<euler_orientation_t, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> EULER_ORIENTATION_BUFFER;
+    GlobalBuffer<EulerOrientation, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> EULER_ORIENTATION_BUFFER;
     GlobalBuffer<Quaternion, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> QUAT_ORIENTATION_BUFFER;
     GlobalBuffer<Quaternion, arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN> MAG_ORIENTATION_BUFFER;
     GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
@@ -113,6 +112,17 @@ double unwrap_phase_degrees(double new_angle, double previous_angle)
         new_angle += 360.0;
     }
     return new_angle;
+}
+/** \brief Gives the current time and a duration object of user's specification.
+ * \param milliseconds Integer number of milliseconds defining the duration object.
+ * \return tuple{Current time as ::time_point, duration in milliseconds}
+ */
+std::tuple<std::chrono::high_resolution_clock::time_point, std::chrono::milliseconds> arwain::create_job_interval(unsigned int milliseconds)
+{
+    return {
+        std::chrono::high_resolution_clock::now(), // Controls the timing of loop iteration.
+        std::chrono::milliseconds{arwain::Intervals::IMU_READING_INTERVAL} // Interval between loop iterations.
+    };
 }
 
 /** \brief Reads the position.txt file from the given location, and 

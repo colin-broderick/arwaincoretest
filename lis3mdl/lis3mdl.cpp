@@ -209,7 +209,7 @@ Vector3 LIS3MDL::read()
  * \param scale_ Vector3 representing scale of axes.
  * \param cross_scale_ Vector3 representing the cross-correlation between axes, in the order xz, yz, xz.
  */
-void LIS3MDL::set_calibration(Vector3 bias_, Vector3 scale_, Vector3 cross_scale_)
+void LIS3MDL::set_calibration_parameters(Vector3 bias_, Vector3 scale_, Vector3 cross_scale_)
 {
     this->bias = bias_;
     this->scale = scale_;

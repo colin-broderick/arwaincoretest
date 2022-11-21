@@ -5,7 +5,7 @@
 using Eigen::MatrixXd;
 
 //kalman filter class functions
-void kalman_filter::kalman_gain()
+void KalmanFilter::kalman_gain()
 {
     MatrixXd H_transpose = H.transpose();
     MatrixXd temp1;
@@ -22,17 +22,17 @@ void kalman_filter::kalman_gain()
 }
 
 //produces the new estimate value of what ever is being measured
-void kalman_filter::new_state_estimate()
+void KalmanFilter::new_state_estimate()
 {
     state_matrix = state_matrix + (KG * (Y - (H * state_matrix)));
 }
-void kalman_filter::new_estimate_error()
+void KalmanFilter::new_estimate_error()
 {
     state_covariance_matrix = (I - (KG * H)) * state_covariance_matrix;
 }
 
 //sets up the B matrix  - might need to change for a more complex filter(> 2-D)
-void kalman_filter::set_B(double dt)
+void KalmanFilter::set_B(double dt)
 {
     B(0, 0) = pow(dt, 2.00);
     B(0, 0) = B(0, 0) * 0.5;
@@ -40,23 +40,23 @@ void kalman_filter::set_B(double dt)
 }
 
 //Equation: X = AX +BU +W
-void kalman_filter::new_predicted_state()
+void KalmanFilter::new_predicted_state()
 {
     state_matrix = (A * state_matrix) + (B * control_variable_matrix) + predicted_state_noise_matrix;
 }
 
-void kalman_filter::new_state_covariance_matrix()
+void KalmanFilter::new_state_covariance_matrix()
 {
     MatrixXd A_transpose = A.transpose();
     state_covariance_matrix = (A * state_covariance_matrix * A_transpose) + process_noise_covariancce_matrix;
 }
 
-void kalman_filter::measurement_matrix_prep()
+void KalmanFilter::measurement_matrix_prep()
 {
     Y = (C * Y) + measurement_noice;
 }
 
-MatrixXd kalman_filter::kalman_one_cycle(MatrixXd observation, MatrixXd U)
+MatrixXd KalmanFilter::kalman_one_cycle(MatrixXd observation, MatrixXd U)
 {
     control_variable_matrix = U;
     Y = observation;
@@ -71,13 +71,13 @@ MatrixXd kalman_filter::kalman_one_cycle(MatrixXd observation, MatrixXd U)
     return state_matrix;
 }
 
-kalman_filter_constant_1d::kalman_filter_constant_1d(double initial_estimate, double initial_estimate_error)
+KalmanFilter1D::KalmanFilter1D(double initial_estimate, double initial_estimate_error)
 {
     est = initial_estimate;
     E_est = initial_estimate_error;
 }
 
-void kalman_filter_constant_1d::update(const double measurement, const double measurement_error)
+void KalmanFilter1D::update(const double measurement, const double measurement_error)
 {
     if (converged)
     {
@@ -88,12 +88,12 @@ void kalman_filter_constant_1d::update(const double measurement, const double me
     update_estimate_error();
 }
 
-void kalman_filter_constant_1d::update_gain(const double measurement_error)
+void KalmanFilter1D::update_gain(const double measurement_error)
 {
     KG = E_est / (E_est + measurement_error);
 }
 
-void kalman_filter_constant_1d::update_estimate(const double measurement)
+void KalmanFilter1D::update_estimate(const double measurement)
 {
     est = est + KG * (measurement - est);
     if (KG < 0.005)
@@ -102,19 +102,19 @@ void kalman_filter_constant_1d::update_estimate(const double measurement)
     }
 }
 
-void kalman_filter_constant_1d::update_estimate_error()
+void KalmanFilter1D::update_estimate_error()
 {
     E_est = (1 - KG) * E_est;
 }
 
-double kalman_filter_constant_1d::get_gain() const
+double KalmanFilter1D::get_gain() const
 {
     return this->KG;
 }
 
 // int main()
 // {
-//     kalman_filter_constant_1d kf{68, 2};
+//     KalmanFilter1D kf{68, 2};
 //     kf.update(75, 4);
 //     std::cout << kf.est << std::endl;
 //     kf.update(71, 4);
@@ -193,7 +193,7 @@ int main()
     i(0, 1) = 0;
     i(1, 1) = 1;
 
-    kalman_filter filter(X, P, 1, U, A, C, m, r, h, i, w, q);
+    KalmanFilter filter(X, P, 1, U, A, C, m, r, h, i, w, q);
 
     //example sensor data
     MatrixXd observations[4];
