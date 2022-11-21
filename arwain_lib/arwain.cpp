@@ -265,7 +265,7 @@ void arwain::setup_log_folder_name_suffix(const InputParser& input)
     }
 }
 
-arwain::ReturnCode arwain::execute_inference()
+arwain::ReturnCode arwain::execute_jobs()
 {
     // Start worker threads.
     ImuProcessing imu_processor;                            // Reading IMU data, updating orientation filters.
@@ -682,7 +682,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
             arwain::config = arwain::Configuration{input}; // Reread the config file as it has now changed.
         }
         arwain::setup_log_folder_name_suffix(input);
-        ret = arwain::execute_inference();
+        ret = arwain::execute_jobs();
     }
 
     return ret;
