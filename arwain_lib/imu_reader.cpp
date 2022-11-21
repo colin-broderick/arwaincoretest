@@ -58,16 +58,10 @@ void ImuProcessing::run()
                 run_self_test();
                 break;
             default:
-                pause();
+                sleep_ms(10);
                 break;
         }
     }
-}
-
-/** \brief Performs a small sleep for ARWAIN job threads in sleep mode. */
-void ImuProcessing::pause()
-{
-    sleep_ms(10);
 }
 
 /** \brief Runs three calibration passes on the gyroscope for the given IMU. Runtime bias parameters are updated for the IMU,

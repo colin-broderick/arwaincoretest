@@ -4,6 +4,8 @@
 #include <chrono>
 #include <thread>
 
+void sleep_ms(int ms);
+
 class Quaternion;
 class Vector3;
 

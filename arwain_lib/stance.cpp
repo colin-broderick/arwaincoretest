@@ -139,14 +139,9 @@ void StanceDetection::run_test_stance_detector()
     }
 }
 
-void StanceDetection::run_autocalibration()
-{
-    sleep_ms(10);
-}
-
 void StanceDetection::run_idle()
 {
-    run_autocalibration();
+    sleep_ms(10);
 }
 
 void StanceDetection::core_setup()

@@ -14,7 +14,6 @@ class Altimeter
         void core_setup();
         void run_inference();
         void run_idle();
-        void pause();
         void setup_inference();
         void cleanup_inference();
 
