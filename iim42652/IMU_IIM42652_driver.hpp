@@ -108,6 +108,9 @@ public:
     double get_gyro_calib_x();
     double get_gyro_calib_y();
     double get_gyro_calib_z();
+    int get_address() const;
+    std::string get_bus() const;
+    bool auto_calib_enabled() const;
 
 private:
     double accel_resolution = 0;
@@ -137,11 +140,14 @@ private:
     double auto_calib_timer = 0;
     int calib_time = 200;
     double auto_calib_threshold = 0.025;
-    bool auto_calib_enabled = false;
+    bool auto_calib_enabled_ = false;
     double correction_speed = 0.995;
 
+    int address_ = 0;
+    std::string bus_name_;
+
 private:
-    void i2c_init(const int address, const std::string& bus_name);
+    [[nodiscard]] bool i2c_init(const int address, const std::string& bus_name);
     void enable();
     int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
     int i2c_write(int reg_addr, int bytes, uint8_t *buffer);

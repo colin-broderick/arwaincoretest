@@ -80,7 +80,7 @@ void kalman()
 
     double dt = 0.1;
 
-    kalman_filter filter(state_matrix, P, 0.1, U, A, blank_2d, m, r, blank_2d, blank_2d, w, q); //parameters to determine
+    KalmanFilter filter(state_matrix, P, 0.1, U, A, blank_2d, m, r, blank_2d, blank_2d, w, q); //parameters to determine
 
     while (!SHUTDOWN)
     {

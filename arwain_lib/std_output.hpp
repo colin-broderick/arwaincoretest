@@ -3,6 +3,8 @@
 
 #include <tuple>
 
+class StanceDetection;
+
 /** \brief Periodically logs status messages to stdout.
  * Useful for debugging or testing, but probably not wanted at runtime.
  * Output is of a form that can be easily piped to other processes.
@@ -18,9 +20,11 @@ class DebugPrints
         void core_setup();
         
     private:
+        StanceDetection* stance_detection_handle = nullptr;
         ArwainThread job_thread;
 
     public:
+        bool set_stance_detection_pointer(StanceDetection* stance);
         DebugPrints();
         bool init();
         void join();

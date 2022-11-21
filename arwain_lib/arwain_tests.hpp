@@ -3,18 +3,20 @@
 
 namespace arwain
 {
-    int test_imu();
-    int test_lora_tx();
-    int test_lora_rx();
+    enum class ReturnCode;
+
+    arwain::ReturnCode test_imu();
+    arwain::ReturnCode test_lora_tx();
+    arwain::ReturnCode test_lora_rx();
     #if USE_ROS
     int test_mag(int argc, char **argv);
     #else
-    int test_mag();
+    arwain::ReturnCode test_mag();
     #endif
-    int test_pressure();
-    int test_ori(int rate);
+    arwain::ReturnCode test_pressure();
+    arwain::ReturnCode test_ori(int rate);
     #if USE_UUBLA
-    int test_uubla_integration();
+    arwain::ReturnCode test_uubla_integration();
     #endif
 }
 

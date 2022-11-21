@@ -7,6 +7,7 @@
 #include <thread>
 #include <functional>
 
+#include "arwain_utils.hpp"
 #include "imu_reader.hpp"
 #include "multi_imu.hpp"
 #include "madgwick.hpp"
@@ -18,38 +19,17 @@
 #include "arwain_thread.hpp"
 #include "exceptions.hpp"
 
-
-euler_orientation_t ImuProcessing::compute_euler(Quaternion& q)
-{
-    euler_orientation_t euler;
-    euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5 - q.x*q.x - q.y*q.y);
-    euler.pitch = std::asin(-2.0 * (q.x*q.z - q.w*q.y));
-    euler.yaw = std::atan2(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z);
-    return euler;
-}
-
-/** \brief Rotates a 3-vector according to a quaternion orientation.
- * \param vec The 3-vector to rotate.
- * \param orientation The rotation to apply to the 3-vector.
+/** \brief Rotates a Vector3 according to a quaternion orientation.
+ * \param vec The Vector3 to rotate.
+ * \param orientation The rotation to apply to the Vector3.
+ * \return Rotated Vector3.
  */
 Vector3 ImuProcessing::world_align(const Vector3& vec, const Quaternion& rotation)
 {
-    // Convert the 3-vector into a quaternion.
-    Quaternion quat_vec{0, vec.x, vec.y, vec.z};
-    Quaternion quat_ori{rotation.w, rotation.x, rotation.y, rotation.z};
-
-    // Compute the rotated vector as a quaternion.
-    Quaternion rotated_quaternion_vector = quat_ori * quat_vec * quat_ori.conjugate();
-
-    // Cast the rotated quaternion back into a 3-vector.
-    return Vector3{
-        (double)rotated_quaternion_vector.x,
-        (double)rotated_quaternion_vector.y,
-        (double)rotated_quaternion_vector.z
-    };
+    return arwain::apply_quat_rotor_to_vector3(vec, rotation);
 }
 
-/** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does idle sleep if in non-relevant mode. */
+/** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does sleep if in non-relevant mode. */
 void ImuProcessing::run()
 {
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
@@ -68,8 +48,8 @@ void ImuProcessing::run()
             case arwain::OperatingMode::Inference:
                 run_inference();
                 break;
-            case arwain::OperatingMode::AutoCalibration:
-                run_autocalibration();
+            case arwain::OperatingMode::Idle:
+                run_idle();
                 break;
             case arwain::OperatingMode::TestStanceDetector:
                 run_test_stance_detector();
@@ -78,55 +58,78 @@ void ImuProcessing::run()
                 run_self_test();
                 break;
             default:
-                run_idle();
+                sleep_ms(10);
                 break;
         }
     }
 }
 
+/** \brief Runs three calibration passes on the gyroscope for the given IMU. Runtime bias parameters are updated for the IMU,
+ * and the results are written to the arwain configuration file.
+ * This function assumes that autocalibration is disabled for the IMU in question.
+ * \param imu The IMU device with the gyroscope to be calibrated.
+ * \return Will return false if autocalibration is turned onm, and calibration could not be performed. Return true if calibration
+ * is performed.
+ */
+bool calibrate_gyroscope(IMU_IIM42652& imu)
+{
+    if (imu.auto_calib_enabled())
+    {
+        return false;
+    }
+
+    std::cout << "Calibrating gyro on I2C: " << imu.get_bus() << " " << imu.get_address() << std::endl;
+    
+    Vector3 results = arwain::average(
+        imu.calibrate_gyroscope(),
+        imu.calibrate_gyroscope(),
+        imu.calibrate_gyroscope()
+    );
+    
+    arwain::config.gyro1_bias = results;
+    arwain::config.replace("gyro1_bias_x", results.x);
+    arwain::config.replace("gyro1_bias_y", results.y);
+    arwain::config.replace("gyro1_bias_z", results.z);
+    
+    imu.set_gyro_bias(
+        arwain::config.gyro1_bias.x,
+        arwain::config.gyro1_bias.y,
+        arwain::config.gyro1_bias.z
+    );
+    
+    std::cout << "Calibration of gyro complete" << std::endl;
+
+    return true;
+}
+
+/** \brief Runs a gyroscope calibration on all active IMUs.
+ * \exception Can throw a runtime error if gyro autocalibration is turned on while calibration is running.
+*/
 void ImuProcessing::run_gyro_calibration()
 {
-    // Give other threads time to settle out of previous mode
-    sleep_ms(1000);
-
     Vector3 results;
 
     imu1.disable_auto_calib();
     imu2.disable_auto_calib();
     imu3.disable_auto_calib();
+    
     imu1.set_gyro_bias(0, 0, 0);
     imu2.set_gyro_bias(0, 0, 0);
     imu3.set_gyro_bias(0, 0, 0);
     
-    // Do the calibration procedure for each gyro and write result to file and into config struct in memory.
-    std::cout << "Calibrating gyro 1" << std::endl;
-    results = (imu1.calibrate_gyroscope() + imu1.calibrate_gyroscope() + imu1.calibrate_gyroscope()) / 3.0;
-    arwain::config.gyro1_bias = results;
-    arwain::config.replace("gyro1_bias_x", results.x);
-    arwain::config.replace("gyro1_bias_y", results.y);
-    arwain::config.replace("gyro1_bias_z", results.z);
-    std::cout << "Calibration of gyro 1 complete" << std::endl;
+    bool success = calibrate_gyroscope(imu1);
+    success |= calibrate_gyroscope(imu2);
+    success |= calibrate_gyroscope(imu3);
 
-    std::cout << "Calibrating gyro 2" << std::endl;
-    results = (imu2.calibrate_gyroscope() + imu2.calibrate_gyroscope() + imu2.calibrate_gyroscope()) / 3.0;
-    arwain::config.gyro2_bias = results;
-    arwain::config.replace("gyro2_bias_x", results.x);
-    arwain::config.replace("gyro2_bias_y", results.y);
-    arwain::config.replace("gyro2_bias_z", results.z);
-    std::cout << "Calibration of gyro 2 complete" << std::endl;
-
-    std::cout << "Calibrating gyro 3" << std::endl;
-    results = (imu3.calibrate_gyroscope() + imu3.calibrate_gyroscope() + imu3.calibrate_gyroscope()) / 3.0;
-    arwain::config.gyro3_bias = results;
-    arwain::config.replace("gyro3_bias_x", results.x);
-    arwain::config.replace("gyro3_bias_y", results.y);
-    arwain::config.replace("gyro3_bias_z", results.z);
-    std::cout << "Calibration of gyro 3 complete" << std::endl;
+    // The ARWAIN application uses several threads. It is possible in principle for the autocalibration state
+    // to be changed before active calibration has finished. This should not be allowed as invalid calibration
+    // parameters will result and all gyroscope readings will be suspect.
+    if (!success)
+    {
+        throw std::runtime_error{"Gyroscope calibration could not be performed because autocalibration was not disabled."};
+    }
 
     // Reset calibration parameters and re-enable autocalibration.
-    imu1.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
-    imu2.set_gyro_bias(arwain::config.gyro2_bias.x, arwain::config.gyro2_bias.y, arwain::config.gyro2_bias.z);
-    imu3.set_gyro_bias(arwain::config.gyro3_bias.x, arwain::config.gyro3_bias.y, arwain::config.gyro3_bias.z);
     imu1.enable_auto_calib();
     imu2.enable_auto_calib();
     imu3.enable_auto_calib();
@@ -140,26 +143,26 @@ void ImuProcessing::run_gyro_calibration()
 
 void ImuProcessing::run_magn_calibration()
 {
-    // Unset current calibration config.
-    magnetometer.set_calibration(
+    // Unset current calibration parameters.
+    magnetometer.set_calibration_parameters(
         {0, 0, 0},
         {1, 1, 1},
         {0, 0, 0}
     );
 
     // Perform magnetometer calibration procedure.
-    arwain::MagnetometerCalibrator clbr;
+    arwain::MagnetometerCalibrator calibrator;
     std::cout << "About to start magnetometer calibration" << std::endl;
-    std::cout << "Move the device through all orientations" << std::endl;
+    std::cout << "Randomly move the device through all orientations" << std::endl;
     sleep_ms(1000);
     std::cout << "Calibration started ..." << std::endl;
 
-    while (clbr.get_sphere_coverage_quality() < 60)
+    while (calibrator.get_sphere_coverage_quality() < 60)
     {
-        clbr.feed(magnetometer.read());
+        calibrator.feed(magnetometer.read());
         sleep_ms(100);
     }
-    auto [bias, scale] = clbr.solve();
+    auto [bias, scale] = calibrator.solve();
 
     std::cout << "Bias: " << bias[0] << " " << bias[1] << " " << bias[2] << "\n";
     std::cout << "Scale:\n";
@@ -185,7 +188,7 @@ void ImuProcessing::run_magn_calibration()
     arwain::config.mag_scale_yz = scale[1][2];
 
     // Enable new calibration parameters.
-    magnetometer.set_calibration(
+    magnetometer.set_calibration_parameters(
         arwain::config.mag_bias,
         arwain::config.mag_scale,
         {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}
@@ -205,16 +208,16 @@ void ImuProcessing::run_accel_calibration()
     throw NotImplemented{__FUNCTION__};
 }
 
-void ImuProcessing::run_autocalibration()
+void ImuProcessing::run_idle()
 {
     // Set up timing.
-    auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
-    auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
+    auto loop_time = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
+    auto time_count = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
     std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
 
-    while (arwain::system_mode == arwain::OperatingMode::AutoCalibration || arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
+    while (arwain::system_mode == arwain::OperatingMode::Idle || arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
     {
-        timeCount = std::chrono::system_clock::now().time_since_epoch().count();
+        time_count = std::chrono::system_clock::now().time_since_epoch().count();
 
         auto [accel_data1, gyro_data1] = imu1.read_IMU();
         // Force approximate alignment of the IMUs.
@@ -223,24 +226,18 @@ void ImuProcessing::run_autocalibration()
         arwain::activity_metric.feed_acce(accel_data1);
         arwain::activity_metric.feed_gyro(gyro_data1);
 
-        if (arwain::request_gyro_calib)
-        {
-            std::cout << imu1.get_gyro_calib() << std::endl;
-            arwain::request_gyro_calib = false;
-        }
-
         Vector3 magnet = magnetometer.read();
         magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
         arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
 
-        madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
-        madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
+        madgwick_filter_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
+        madgwick_filter_mag_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
 
         // Extract Euler orientation from filters.
         Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
         Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
-        [[maybe_unused]] euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
+        [[maybe_unused]] EulerOrientation madgwick_euler_mag_data1 = arwain::compute_euler(madgwick_quaternion_mag_data1);
 
         arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
 
@@ -262,14 +259,14 @@ void ImuProcessing::run_autocalibration()
         }
 
         // Wait until the next tick.
-        loopTime = loopTime + interval;
-        std::this_thread::sleep_until(loopTime);
+        loop_time = loop_time + interval;
+        std::this_thread::sleep_until(loop_time);
     }
 }
 
 void ImuProcessing::run_test_stance_detector()
 {
-    run_autocalibration();
+    run_idle();
 }
 
 void ImuProcessing::run_self_test()
@@ -284,36 +281,27 @@ void ImuProcessing::run_inference()
     setup_inference();
 
     // Set up timing.
-    auto loopTime = std::chrono::system_clock::now(); // Controls the timing of loop iteration.
-    auto timeCount = std::chrono::system_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
-    std::chrono::milliseconds interval{arwain::Intervals::IMU_READING_INTERVAL}; // Interval between loop iterations.
+    arwain::JobInterval<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
-        // TODO
-        timeCount = std::chrono::system_clock::now().time_since_epoch().count();
+        int64_t time_count = std::chrono::high_resolution_clock::now().time_since_epoch().count(); // Provides an accurate count of milliseconds passed since last loop iteration.
 
         auto [accel_data1, gyro_data1] = imu1.read_IMU();
-
-        if (arwain::request_gyro_calib)
-        {
-            std::cout << imu1.get_gyro_calib() << std::endl;
-            arwain::request_gyro_calib = false;
-        }
 
         Vector3 magnet = magnetometer.read();
         magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
 
         arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
 
-        madgwick_filter_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
-        madgwick_filter_mag_1.update(timeCount, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
+        madgwick_filter_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
+        madgwick_filter_mag_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
 
         // Extract Euler orientation from filters.
         Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
         Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
-        euler_orientation_t madgwick_euler_data1 = compute_euler(madgwick_quaternion_data1);
-        euler_orientation_t madgwick_euler_mag_data1 = compute_euler(madgwick_quaternion_mag_data1);
+        EulerOrientation madgwick_euler_data1 = arwain::compute_euler(madgwick_quaternion_data1);
+        EulerOrientation madgwick_euler_mag_data1 = arwain::compute_euler(madgwick_quaternion_mag_data1);
 
         arwain::Buffers::EULER_ORIENTATION_BUFFER.push_back(madgwick_euler_data1);
         arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
@@ -325,30 +313,23 @@ void ImuProcessing::run_inference()
         arwain::rolling_average_accel_z_for_altimeter.feed(world_accel_data1.z);
 
         // Write all log files.
-        ori_diff_file << timeCount << " " << arwain::yaw_offset << "\n";
-        acce_file_1 << timeCount << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
-        gyro_file_1 << timeCount << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
-        world_acce_file_1 << timeCount << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
-        world_gyro_file_1 << timeCount << " " << world_gyro_data1.x << " " << world_gyro_data1.y << " " << world_gyro_data1.z << "\n";
-        madgwick_euler_file_1 << timeCount << " " << madgwick_euler_data1.roll << " " << madgwick_euler_data1.pitch << " " << madgwick_euler_data1.yaw << "\n";
-        madgwick_euler_mag_file_1 << timeCount << " " << madgwick_euler_mag_data1.roll << " " << madgwick_euler_mag_data1.pitch << " " << madgwick_euler_mag_data1.yaw << "\n";
-        madgwick_quat_file_1 << timeCount << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
-        imu_calib_file_1 << timeCount << " " << imu1.get_gyro_calib_x() << " " << imu1.get_gyro_calib_y() << " " << imu1.get_gyro_calib_z() << "\n";
+        acce_file_1 << time_count << " " << accel_data1.x << " " << accel_data1.y << " " << accel_data1.z << "\n";
+        gyro_file_1 << time_count << " " << gyro_data1.x << " " << gyro_data1.y << " " << gyro_data1.z << "\n";
+        world_acce_file_1 << time_count << " " << world_accel_data1.x << " " << world_accel_data1.y << " " << world_accel_data1.z << "\n";
+        world_gyro_file_1 << time_count << " " << world_gyro_data1.x << " " << world_gyro_data1.y << " " << world_gyro_data1.z << "\n";
+        madgwick_euler_file_1 << time_count << " " << madgwick_euler_data1.roll << " " << madgwick_euler_data1.pitch << " " << madgwick_euler_data1.yaw << "\n";
+        madgwick_euler_mag_file_1 << time_count << " " << madgwick_euler_mag_data1.roll << " " << madgwick_euler_mag_data1.pitch << " " << madgwick_euler_mag_data1.yaw << "\n";
+        madgwick_quat_file_1 << time_count << " " << madgwick_quaternion_data1.w << " " << madgwick_quaternion_data1.x << " " << madgwick_quaternion_data1.y << " " << madgwick_quaternion_data1.z << "\n";
+        imu_calib_file_1 << time_count << " " << imu1.get_gyro_calib_x() << " " << imu1.get_gyro_calib_y() << " " << imu1.get_gyro_calib_z() << "\n";
 
         // Wait until the next tick.
-        loopTime = loopTime + interval;
-        std::this_thread::sleep_until(loopTime);
+        loop_scheduler.await();
     }
 
     cleanup_inference();
 }
 
-/** \brief Does an idle sleep while the mode is Idle. */
-void ImuProcessing::run_idle()
-{
-    run_autocalibration();
-}
-
+/** \brief Opens file handles for arwain::Logger and writes appropriate headers to the files. */
 void ImuProcessing::setup_inference()
 {
     // Open file handles.
@@ -378,6 +359,7 @@ void ImuProcessing::setup_inference()
     imu_calib_file_3 << "time gx_bias gy_bias gz_bias" << "\n";
 }
 
+/** \brief Closes file handles for arwain::Logger objects. */
 void ImuProcessing::cleanup_inference()
 {
     ori_diff_file.close();
@@ -394,49 +376,49 @@ void ImuProcessing::cleanup_inference()
 }
 
 void ImuProcessing::core_setup()
+{
+    // Configure IMUs.
+    imu1 = IMU_IIM42652{arwain::config.imu1_address, arwain::config.imu1_bus};
+    imu1.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
+    imu1.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
+    imu1.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
+    imu1.enable_auto_calib();
+
+    imu2 = IMU_IIM42652{arwain::config.imu2_address, arwain::config.imu2_bus};
+    imu2.set_gyro_bias(arwain::config.gyro2_bias.x, arwain::config.gyro2_bias.y, arwain::config.gyro2_bias.z);
+    imu2.set_accel_bias(arwain::config.accel2_bias.x, arwain::config.accel2_bias.y, arwain::config.accel2_bias.z);
+    imu2.set_accel_scale(arwain::config.accel2_scale.x, arwain::config.accel2_scale.y, arwain::config.accel2_scale.z);
+    imu2.enable_auto_calib();
+
+    imu3 = IMU_IIM42652{arwain::config.imu3_address, arwain::config.imu3_bus};
+    imu3.set_gyro_bias(arwain::config.gyro3_bias.x, arwain::config.gyro3_bias.y, arwain::config.gyro3_bias.z);
+    imu3.set_accel_bias(arwain::config.accel3_bias.x, arwain::config.accel3_bias.y, arwain::config.accel3_bias.z);
+    imu3.set_accel_scale(arwain::config.accel3_scale.x, arwain::config.accel3_scale.y, arwain::config.accel3_scale.z);
+    imu3.enable_auto_calib();
+
+    // Configure magnetometer.
+    magnetometer = LIS3MDL{arwain::config.magn_address, arwain::config.magn_bus};
+    magnetometer.set_calibration_parameters(
+        arwain::config.mag_bias,
+        arwain::config.mag_scale,
+        {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}
+    );
+
+    // Choose an orientation filter depending on configuration, with Madgwick as default.
+    madgwick_filter_1 = arwain::Madgwick{1000.0/(double)(arwain::Intervals::IMU_READING_INTERVAL), 0.1};
+    madgwick_filter_mag_1 = arwain::Madgwick{1000.0/(double)(arwain::Intervals::IMU_READING_INTERVAL), arwain::config.madgwick_beta_conv};
+    
+    // After the specificed period has passed, set the magnetic filter gain to the standard value.
+    // This thread is joined when the namespace is joined, to simulate a destructor cleanup.
+    // TODO Note that this may not be thread safe; if the program exists before this thread finishes, I'm not sure of destruction order. Investigate.
+    quick_madgwick_convergence_thread = ArwainThread{
+        [this]()
         {
-            // Configure IMUs.
-            imu1 = IMU_IIM42652{arwain::config.imu1_address, arwain::config.imu1_bus};
-            imu1.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
-            imu1.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
-            imu1.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
-            imu1.enable_auto_calib();
-
-            imu2 = IMU_IIM42652{arwain::config.imu2_address, arwain::config.imu2_bus};
-            imu2.set_gyro_bias(arwain::config.gyro2_bias.x, arwain::config.gyro2_bias.y, arwain::config.gyro2_bias.z);
-            imu2.set_accel_bias(arwain::config.accel2_bias.x, arwain::config.accel2_bias.y, arwain::config.accel2_bias.z);
-            imu2.set_accel_scale(arwain::config.accel2_scale.x, arwain::config.accel2_scale.y, arwain::config.accel2_scale.z);
-            imu2.enable_auto_calib();
-
-            imu3 = IMU_IIM42652{arwain::config.imu3_address, arwain::config.imu3_bus};
-            imu3.set_gyro_bias(arwain::config.gyro3_bias.x, arwain::config.gyro3_bias.y, arwain::config.gyro3_bias.z);
-            imu3.set_accel_bias(arwain::config.accel3_bias.x, arwain::config.accel3_bias.y, arwain::config.accel3_bias.z);
-            imu3.set_accel_scale(arwain::config.accel3_scale.x, arwain::config.accel3_scale.y, arwain::config.accel3_scale.z);
-            imu3.enable_auto_calib();
-
-            // Configure magnetometer.
-            magnetometer = LIS3MDL{arwain::config.magn_address, arwain::config.magn_bus};
-            magnetometer.set_calibration(
-                arwain::config.mag_bias,
-                arwain::config.mag_scale,
-                {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}
-            );
-
-            // Choose an orientation filter depending on configuration, with Madgwick as default.
-            madgwick_filter_1 = arwain::Madgwick{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
-            madgwick_filter_mag_1 = arwain::Madgwick{1000.0/arwain::Intervals::IMU_READING_INTERVAL, arwain::config.madgwick_beta_conv};
-            
-            // After the specificed period has passed, set the magnetic filter gain to the standard value.
-            // This thread is joined when the namespace is joined, to simulate a destructor cleanup.
-            // TODO Note that this may not be thread safe; if the program exists before this thread finishes, I'm not sure of destruction order. Investigate.
-            quick_madgwick_convergence_thread = ArwainThread{
-                [this]()
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds{5000});
-                    this->madgwick_filter_mag_1.set_beta(arwain::config.madgwick_beta);
-                }
-            };
+            std::this_thread::sleep_for(std::chrono::milliseconds{5000});
+            this->madgwick_filter_mag_1.set_beta(arwain::config.madgwick_beta);
         }
+    };
+}
 
 ImuProcessing::ImuProcessing()
 {

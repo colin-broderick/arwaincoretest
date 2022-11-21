@@ -13,7 +13,6 @@ class Altimeter
         void run();
         void core_setup();
         void run_inference();
-        void run_autocalibration();
         void run_idle();
         void setup_inference();
         void cleanup_inference();

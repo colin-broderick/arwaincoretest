@@ -15,6 +15,7 @@
 #endif
 
 #include "arwain_tests.hpp"
+#include "arwain_utils.hpp"
 #include "arwain_thread.hpp"
 #include "arwain.hpp"
 #include "input_parser.hpp"
@@ -50,17 +51,14 @@
 // General configuration data.
 namespace arwain
 {
-    StanceDetection* stance_detection_handle = nullptr;
     int shutdown = 0;
-    OperatingMode system_mode = arwain::OperatingMode::AutoCalibration;
+    OperatingMode system_mode = arwain::OperatingMode::Idle;
     double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
     std::string folder_date_string_suffix;
-    arwain::Status status;
     arwain::Logger error_log;
     bool reset_position = false;
-    bool request_gyro_calib = false;
     bool ready_for_inference = false;
     unsigned int velocity_inference_rate = 20;
     RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
@@ -78,47 +76,16 @@ namespace arwain::Buffers
     GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_WORLD_BUFFER;
     GlobalBuffer<Vector3, arwain::BufferSizes::IPS_BUFFER_LEN> IPS_BUFFER;
     GlobalBuffer<Vector3, arwain::BufferSizes::PRESSURE_BUFFER_LEN> PRESSURE_BUFFER;
-    GlobalBuffer<euler_orientation_t, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> EULER_ORIENTATION_BUFFER;
+    GlobalBuffer<EulerOrientation, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> EULER_ORIENTATION_BUFFER;
     GlobalBuffer<Quaternion, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> QUAT_ORIENTATION_BUFFER;
     GlobalBuffer<Quaternion, arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN> MAG_ORIENTATION_BUFFER;
     GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
 
-void sleep_ms(int ms)
-{
-    std::this_thread::sleep_for(std::chrono::milliseconds{ms});
-}
-
-double unwrap_phase_radians(double new_angle, double previous_angle)
-{
-    while (new_angle - previous_angle > 3.14159)
-    {
-        new_angle -= 2.0*3.14159;
-    }
-    while (new_angle - previous_angle < -3.14159)
-    {
-        new_angle += 2.0*3.14159;
-    }
-    return new_angle;
-}
-
-double unwrap_phase_degrees(double new_angle, double previous_angle)
-{
-    while (new_angle - previous_angle > 180.0)
-    {
-        new_angle -= 360.0;
-    }
-    while (new_angle - previous_angle < -180.0)
-    {
-        new_angle += 360.0;
-    }
-    return new_angle;
-}
-
 /** \brief Reads the position.txt file from the given location, and 
  * runs the floor tracking algorithm against that data.
  */
-int arwain::rerun_floor_tracker(const std::string& data_location)
+arwain::ReturnCode arwain::rerun_floor_tracker(const std::string& data_location)
 {
     std::cout << "Reprocessing floor tracker on dataset \"" << data_location << "\"" << std::endl;
 
@@ -148,13 +115,13 @@ int arwain::rerun_floor_tracker(const std::string& data_location)
 
     std::cout << "Reprocessing complete" << std::endl;
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
 /** \brief Reads the acce.txt and gyro.txt files from the given location, 
  * and reruns the selected orientation filter(s) against that data.
  */
-int arwain::rerun_orientation_filter(const std::string& data_location)
+arwain::ReturnCode arwain::rerun_orientation_filter(const std::string& data_location)
 {
     std::cout << "Reprocessing orientation filter on dataset \"" << data_location << "\"" << std::endl;
 
@@ -252,7 +219,7 @@ int arwain::rerun_orientation_filter(const std::string& data_location)
 
     std::cout << "Reprocessing complete" << std::endl;
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
 void arwain::setup_log_directory()
@@ -296,7 +263,7 @@ void arwain::setup(const InputParser& input)
     }
 }
 
-int arwain::execute_inference()
+arwain::ReturnCode arwain::execute_inference()
 {
     // Start worker threads.
     ImuProcessing imu_processor;                            // Reading IMU data, updating orientation filters.
@@ -314,6 +281,10 @@ int arwain::execute_inference()
     #endif
     ArwainCLI arwain_cli;                                   // Simple command line interface for runtime mode switching.
 
+    // Set pointers ...
+    status_reporting.set_stance_detection_pointer(&stance_detection);
+    debug_prints.set_stance_detection_pointer(&stance_detection);
+
     // Wait for all jobs to terminate.
     imu_processor.join();
     position_velocity_inference.join();
@@ -330,25 +301,7 @@ int arwain::execute_inference()
     #endif
     arwain_cli.join();
 
-    return arwain::ExitCodes::Success;
-}
-
-float arwain::getPiCPUTemp()
-{
-    float ret;
-    std::array<char, 32> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("vcgencmd measure_temp", "r"), pclose);
-    if (!pipe)
-    {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
-    {
-        result += buffer.data();
-    }
-    std::stringstream{result.substr(5, 4)} >> ret;
-    return ret;
+    return arwain::ReturnCode::Success;
 }
 
 /** \brief Get the current system datetime as a string.
@@ -421,9 +374,7 @@ std::string arwain::datetimestring()
     return ss.str();
 }
 
-std::tuple<std::vector<double>, std::vector<std::vector<double>>> magcal(const std::vector<Vector3>& input_data);
-
-int arwain::calibrate_magnetometers()
+arwain::ReturnCode arwain::calibrate_magnetometers()
 {
     LIS3MDL magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
     arwain::MagnetometerCalibrator clbr;
@@ -457,10 +408,10 @@ int arwain::calibrate_magnetometers()
     arwain::config.replace("mag_scale_yz", scale[1][2]);
 
     std::cout << "Magnetometer calibration complete" << std::endl;
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
-int arwain::calibrate_gyroscopes()
+arwain::ReturnCode arwain::calibrate_gyroscopes()
 {
     Vector3 results;
 
@@ -508,7 +459,7 @@ int arwain::calibrate_gyroscopes()
 
     std::cout << std::dec;
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
 std::tuple<Vector3, Vector3> deduce_calib_params(const std::vector<Vector3>& readings)
@@ -520,7 +471,7 @@ std::tuple<Vector3, Vector3> deduce_calib_params(const std::vector<Vector3>& rea
     double z_min = 1e6;
     double z_max = -1e6;
     
-    for (auto& vec : readings)
+    for (const Vector3& vec : readings)
     {
         x_min = vec.x < x_min ? vec.x : x_min;
         x_max = vec.x > x_max ? vec.x : x_max;
@@ -542,7 +493,7 @@ std::tuple<Vector3, Vector3> deduce_calib_params(const std::vector<Vector3>& rea
     return {bias_, scale_};
 }
 
-int arwain::calibrate_accelerometers_simple()
+arwain::ReturnCode arwain::calibrate_accelerometers_simple()
 {
     std::cout << "Calibrating the following accelerometers:" << std::endl;
     std::cout << "\t" << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << std::endl;
@@ -574,7 +525,6 @@ int arwain::calibrate_accelerometers_simple()
     }
     
     // TODO Detect and remove outliers.
-    
 
     // Compute centre offsets; this assumes outliers have been successfully removed.
     auto [bias_1, scale_1] = deduce_calib_params(readings_1);
@@ -605,68 +555,7 @@ int arwain::calibrate_accelerometers_simple()
 
     std::cout << "Calibration complete and logged to config file" << std::endl;
 
-    return arwain::ExitCodes::Success;
-}
-
-RollingAverage::RollingAverage(unsigned int window_size_) : window_size(window_size_)
-{
-}
-bool RollingAverage::ready()
-{
-    return stack.size() == window_size;
-}
-void RollingAverage::feed(double value)
-{
-    current_average += value;
-    stack.push_back(value);
-    if (stack.size() > window_size)
-    {
-        current_average -= stack.front() ;
-        stack.pop_front();
-    }
-}
-double RollingAverage::get_value()
-{
-    return current_average / static_cast<double>(window_size);
-}
-
-ActivityMetric::ActivityMetric(unsigned int ag_window_size_, unsigned int velo_window_size_)
-: ag_window_size(ag_window_size_), velo_window_size(velo_window_size_)
-{
-    acce_roller = new RollingAverage{ag_window_size_};
-    gyro_roller = new RollingAverage{ag_window_size_};
-    velo_roller = new RollingAverage{velo_window_size_};
-}
-
-ActivityMetric::~ActivityMetric()
-{
-    delete acce_roller;
-    delete gyro_roller;
-    delete velo_roller;
-}
-
-void ActivityMetric::feed_gyro(const Vector3& gyro)
-{
-    gyro_roller->feed(gyro.magnitude());
-}
-
-void ActivityMetric::feed_acce(const Vector3& acce)
-{
-    acce_roller->feed(acce.magnitude());
-}
-
-void ActivityMetric::feed_velo(const Vector3& velo)
-{
-    velo_roller->feed(velo.magnitude());
-}
-
-double ActivityMetric::read() const
-{
-    return 4 * std::abs<double>(
-          ((acce_roller->get_value() - acce_mean) / acce_stdv)
-        * ((gyro_roller->get_value() - gyro_mean) / gyro_stdv)
-        / ((velo_roller->get_value() - velo_mean) / velo_stdv)
-    );
+    return arwain::ReturnCode::Success;
 }
 
 /** \brief Capture the SIGINT signal for clean exit.
@@ -683,13 +572,13 @@ static void sigint_handler(int signal)
 }
 
 /** \brief ARWAIN entry point. */
-int arwain_main(int argc, char **argv)
+arwain::ReturnCode arwain_main(int argc, char **argv)
 {
     #if USE_ROS
     ros::init(argc, argv, "arwain_node");
     #endif
 
-    int ret;
+    arwain::ReturnCode ret;
 
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
@@ -701,17 +590,17 @@ int arwain_main(int argc, char **argv)
     if (input.contains("-h") || input.contains("-help"))
     {
         std::cout << arwain::help_text << std::endl;
-        return arwain::ExitCodes::Success;
+        return arwain::ReturnCode::Success;
     }
     if (input.contains("-version"))
     {
         std::cout << "ARWAIN executable version 0.1\n";
-        return arwain::ExitCodes::Success;
+        return arwain::ReturnCode::Success;
     }
 
     // Attempt to read the config file and quit if failed.
     arwain::config = arwain::Configuration{input};
-    if ((ret = arwain::config.read_from_file()) != arwain::Configuration::ReturnCodes::OK)
+    if ((ret = arwain::config.read_from_file()) != arwain::ReturnCode::Success)
     {
         std::cout << "Got an error when reading config file:\n";
         std::cout << arwain::ErrorMessages[ret] << std::endl;
