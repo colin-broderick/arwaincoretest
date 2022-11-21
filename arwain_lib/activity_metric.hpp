@@ -1,8 +1,9 @@
 #ifndef _ARWAIN_ACTIVITY_METRIC_HPP
 #define _ARWAIN_ACTIVITY_METRIC_HPP
 
+#include "arwain_utils.hpp"
+
 class Vector3;
-namespace arwain { class RollingAverage; }
 
 class ActivityMetric
 {
@@ -19,13 +20,13 @@ class ActivityMetric
         void feed_gyro(const Vector3& acce);
         void feed_acce(const Vector3& gyro);
         void feed_velo(const Vector3& velo);
-        double read() const;
+        double read();
     private:
         unsigned int ag_window_size;
         unsigned int velo_window_size;
-        arwain::RollingAverage* acce_roller;
-        arwain::RollingAverage* gyro_roller;
-        arwain::RollingAverage* velo_roller;
+        RollingAverage acce_roller;
+        RollingAverage gyro_roller;
+        RollingAverage velo_roller;
 };
 
 #endif

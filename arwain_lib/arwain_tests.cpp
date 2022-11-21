@@ -3,6 +3,7 @@
 
 #include "arwain.hpp"
 #include "arwain_tests.hpp"
+#include "timers.hpp"
 #include "bmp384.hpp"
 #include "IMU_IIM42652_driver.hpp"
 #include "lis3mdl.hpp"
@@ -67,8 +68,7 @@ arwain::ReturnCode arwain::test_pressure()
     BMP384 bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
 
     // Set up timing.
-    auto loopTime = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{50};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50};
 
     double altitude = 100;
     double factor = arwain::config.altitude_filter_weight;
@@ -92,8 +92,7 @@ arwain::ReturnCode arwain::test_pressure()
         std::cout << std::endl;
 
         // Wait until next tick.
-        loopTime = loopTime + interval;
-        std::this_thread::sleep_until(loopTime);
+        loop_scheduler.await();
     }
 
     return arwain::ReturnCode::Success;
@@ -110,8 +109,7 @@ arwain::ReturnCode arwain::test_imu()
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
 
     // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{10};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{10};
 
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
@@ -121,11 +119,10 @@ arwain::ReturnCode arwain::test_imu()
         accel_data.z = (accel_data.z - arwain::config.accel1_bias.z) * arwain::config.accel1_scale.z;
 
         // Display IMU data.
-        std::cout << time.time_since_epoch().count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";
+        std::cout << loop_scheduler.count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";
 
         // Wait until the next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+        loop_scheduler.await();
 
     }
 
@@ -239,8 +236,7 @@ arwain::ReturnCode arwain::test_ori(int frequency)
     arwain::Madgwick filter{static_cast<double>(frequency), config.madgwick_beta};
     // arwain::eFaroe filter{{1, 0, 0, 0}, config.gyro1_bias, 0, config.efaroe_beta, config.efaroe_zeta};
 
-    auto time = std::chrono::high_resolution_clock::now();
-    std::chrono::milliseconds interval{1000/frequency};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{static_cast<unsigned int>(1000/frequency)};
     int count = 0;
     EulerOrientation euler;
     Quaternion quat;
@@ -249,14 +245,13 @@ arwain::ReturnCode arwain::test_ori(int frequency)
 
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
-        time += interval;
-        auto timeCount = time.time_since_epoch().count();
-        std::this_thread::sleep_until(time);
+        loop_scheduler.await();
+        auto time_count = loop_scheduler.count();
 
         auto [accel, gyro] = imu.read_IMU();
         accel = accel - config.accel1_bias;
         
-        filter.update(timeCount, gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
+        filter.update(time_count, gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
 
         count++;
         if (count % frequency == 0)

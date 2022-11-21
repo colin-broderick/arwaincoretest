@@ -25,7 +25,7 @@ class StatusReporting
 
 	public:
 		StatusReporting();
-		bool set_stance_detection_pointer(StanceDetection* stance);
+		bool set_stance_detection_pointer(StanceDetection& stance);
 		bool init();
 		void join();
 };

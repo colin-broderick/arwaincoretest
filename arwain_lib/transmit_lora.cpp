@@ -76,19 +76,16 @@ void StatusReporting::run_idle()
     sleep_ms(10);
 }
 
-bool StatusReporting::set_stance_detection_pointer(StanceDetection* stance)
+bool StatusReporting::set_stance_detection_pointer(StanceDetection& stance)
 {
     // TODO Should I delete the pointer first?
-    this->stance_detection_handle = stance;
+    this->stance_detection_handle = &stance;
     return true;
 }
 
 void StatusReporting::run_inference()
 {
     setup_inference();
-
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::LORA_TRANSMISSION_INTERVAL};
 
     std::this_thread::sleep_until(get_next_time_slot(arwain::config.node_id));
 
@@ -152,7 +149,6 @@ void StatusReporting::run_inference()
         lora_file << std::chrono::high_resolution_clock::now().time_since_epoch().count() << " " << pose_message << "\n";
 
         std::this_thread::sleep_until(get_next_time_slot(arwain::config.node_id));
-
     }
 
     cleanup_inference();

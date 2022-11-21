@@ -46,18 +46,18 @@ Vector3 arwain::apply_quat_rotor_to_vector3(const Vector3& vector, const Quatern
     };
 }
 
-arwain::RollingAverage::RollingAverage(unsigned int window_size_)
+RollingAverage::RollingAverage(unsigned int window_size_)
 : window_size(window_size_)
 {
 
 }
 
-bool arwain::RollingAverage::ready()
+bool RollingAverage::ready()
 {
     return stack.size() == window_size;
 }
 
-void arwain::RollingAverage::feed(double value)
+void RollingAverage::feed(double value)
 {
     current_average += value;
     stack.push_back(value);
@@ -68,7 +68,7 @@ void arwain::RollingAverage::feed(double value)
     }
 }
 
-double arwain::RollingAverage::get_value()
+double RollingAverage::get_value()
 {
     return current_average / static_cast<double>(window_size);
 }

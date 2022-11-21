@@ -15,7 +15,7 @@ namespace arwain
             Logger(const std::string& filename);
             ~Logger();
             bool open(const std::string& filename);
-            void close();
+            bool close();
             bool is_open() const;
             std::string get_filename() const;
 

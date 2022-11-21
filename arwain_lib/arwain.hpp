@@ -133,7 +133,6 @@ namespace arwain
     extern std::string folder_date_string_suffix;
     extern arwain::Configuration config;
     extern arwain::Logger error_log;
-    extern bool reset_position;
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
     extern ActivityMetric activity_metric;
@@ -195,6 +194,5 @@ namespace arwain::Buffers
     extern GlobalBuffer<Quaternion, arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN> MAG_ORIENTATION_BUFFER;
     extern GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
-
 
 #endif

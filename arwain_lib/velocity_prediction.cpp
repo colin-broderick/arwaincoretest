@@ -100,7 +100,7 @@ void PositionVelocityInference::run_inference()
     setup_inference();
 
     // Set up timing.
-    // TODO Use JobInterval
+    // TODO Use JobInterval if possible; the timing here is different to other threads.
     std::chrono::time_point<std::chrono::system_clock> last_time = std::chrono::system_clock::now();
     std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};

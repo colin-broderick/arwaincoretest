@@ -20,9 +20,8 @@ class ArwainCLI
         void switch_to_accel_calib_mode();
         void switch_to_data_collection_mode();
         void set_folder_name(const std::string& input);
-        void set_position_zero();
         void parse_cli_input(const std::string& input);
-        bool set_velocity_inference_pointer(PositionVelocityInference* velocity);
+        bool set_velocity_inference_pointer(PositionVelocityInference& velocity);
 
     private:
         PositionVelocityInference* velocity_inference_handle = nullptr;

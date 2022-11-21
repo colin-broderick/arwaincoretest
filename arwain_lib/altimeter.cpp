@@ -8,6 +8,8 @@
 #include "exceptions.hpp"
 #include "sabatini_altimeter.hpp"
 #include "altimeter.hpp"
+#include "arwain_utils.hpp"
+#include "timers.hpp"
 
 Altimeter::Altimeter()
 {
@@ -29,8 +31,7 @@ void Altimeter::run_inference()
 {
     setup_inference();
 
-    auto loopTime = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::ALTIMETER_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
@@ -40,11 +41,10 @@ void Altimeter::run_inference()
         altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
         arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
 
-        pressure_log << loopTime.time_since_epoch().count() << " " << pressure << " " << temperature << " " << altitude << "\n";
+        pressure_log << loop_scheduler.count() << " " << pressure << " " << temperature << " " << altitude << "\n";
 
         // Wait until next tick.
-        loopTime = loopTime + interval;
-        std::this_thread::sleep_until(loopTime);
+        loop_scheduler.await();
     }
 
     cleanup_inference();
@@ -52,8 +52,7 @@ void Altimeter::run_inference()
 
 void Altimeter::run_idle()
 {
-    auto loopTime = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::ALTIMETER_INTERVAL}; // Lower data collection rate in Idle mode.
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL};
 
     while (arwain::system_mode == arwain::OperatingMode::Idle)
     {
@@ -64,8 +63,7 @@ void Altimeter::run_idle()
         arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
 
         // Wait until next tick.
-        loopTime = loopTime + interval;
-        std::this_thread::sleep_until(loopTime);
+        loop_scheduler.await();
     }
     altitude_zero = altitude;
 }
