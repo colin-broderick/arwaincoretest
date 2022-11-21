@@ -134,7 +134,6 @@ namespace arwain
     extern arwain::Configuration config;
     extern arwain::Logger error_log;
     extern bool reset_position;
-    extern bool ready_for_inference;
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
     extern ActivityMetric activity_metric;

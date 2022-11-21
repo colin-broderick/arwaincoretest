@@ -74,6 +74,14 @@ void ArwainCLI::switch_to_exit_mode()
     arwain::system_mode = arwain::OperatingMode::Terminate;
 }
 
+
+bool ArwainCLI::set_velocity_inference_pointer(PositionVelocityInference* velocity)
+{
+    // TODO Should I delete the pointer first?
+    this->velocity_inference_handle = velocity;
+    return true;
+}
+
 /** \brief Switches the system to Inference mode. Can only be entered from Idle mode. */
 void ArwainCLI::switch_to_inference_mode()
 {
@@ -81,7 +89,7 @@ void ArwainCLI::switch_to_inference_mode()
     {
         std::cout << "Already in inference mode" << std::endl;
     }
-    else if (!arwain::ready_for_inference)
+    else if (this->velocity_inference_handle->ready())
     {
         std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
     }
