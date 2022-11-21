@@ -141,7 +141,6 @@ namespace arwain
     arwain::ReturnCode execute_jobs();
     arwain::ReturnCode rerun_orientation_filter(const std::string& data_location);
     arwain::ReturnCode rerun_floor_tracker(const std::string& data_location);
-    std::string datetimestring();
     void setup_log_directory();
     arwain::ReturnCode calibrate_gyroscopes();
     arwain::ReturnCode calibrate_accelerometers();
