@@ -13,6 +13,7 @@ class Vector3;
 
 double unwrap_phase_degrees(double new_angle, double previous_angle);
 double unwrap_phase_radians(double new_angle, double previous_angle);
+std::string date_time_string();
 
 struct EulerOrientation
 {
@@ -48,7 +49,6 @@ namespace arwain
 {
     EulerOrientation compute_euler(Quaternion& quaternion_rotor);
     Vector3 apply_quat_rotor_to_vector3(const Vector3& vector, const Quaternion& quaternion);
-    
 
     enum class ReturnCode
     {

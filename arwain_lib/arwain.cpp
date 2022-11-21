@@ -227,11 +227,11 @@ void arwain::setup_log_directory()
     }
     if (arwain::folder_date_string_suffix != "")
     {
-        arwain::folder_date_string = "./data_" + arwain::datetimestring() + "_" + arwain::folder_date_string_suffix;
+        arwain::folder_date_string = "./data_" + date_time_string() + "_" + arwain::folder_date_string_suffix;
     }
     else
     {
-        arwain::folder_date_string = "./data_" + arwain::datetimestring();
+        arwain::folder_date_string = "./data_" + date_time_string();
     }
     if (!std::filesystem::is_directory(arwain::folder_date_string))
     {
@@ -265,6 +265,10 @@ void arwain::setup_log_folder_name_suffix(const InputParser& input)
     }
 }
 
+/** \brief Creates the ARWAIN job threads and then blocks until those threads are ended by settings
+ * the global arwain::system_mode to arwain::OperatingMode::Terminate.
+ * \return ARWAIN return code indiciating success or failure.
+*/
 arwain::ReturnCode arwain::execute_jobs()
 {
     // Start worker threads.
@@ -305,76 +309,6 @@ arwain::ReturnCode arwain::execute_jobs()
     arwain_cli.join();
 
     return arwain::ReturnCode::Success;
-}
-
-/** \brief Get the current system datetime as a string.
- * \return Datetime as string.
- */
-std::string arwain::datetimestring()
-{
-    std::time_t now = std::time(0);
-    std::tm *ltm = localtime(&now);
-    std::stringstream ss;
-
-    // Year
-    ss << ltm->tm_year+1900;
-    ss << "_";
-
-    // Month
-    if (ltm->tm_mon+1 < 10)
-    {
-        ss << '0' << ltm->tm_mon+1;
-    }
-    else
-    {
-        ss << ltm->tm_mon+1;
-    }
-    ss << "_";
-
-    // Date
-    if (ltm->tm_mday < 10)
-    {
-        ss << '0' << ltm->tm_mday;
-    }
-    else
-    {
-        ss << ltm->tm_mday;
-    }
-    ss << "_";
-    
-    // Hour
-    if (ltm->tm_hour < 10)
-    {
-        ss << '0' << ltm->tm_hour;
-    }
-    else
-    {
-        ss << ltm->tm_hour;
-    }
-    ss << "_";
-
-    // Minute
-    if (ltm->tm_min < 10)
-    {
-        ss << '0' << ltm->tm_min;
-    }
-    else
-    {
-        ss << ltm->tm_min;
-    }
-    ss << "_";
-
-    // Second
-    if (ltm->tm_sec < 10)
-    {
-        ss << '0' << ltm->tm_sec;
-    }
-    else
-    {
-        ss << ltm->tm_sec;
-    }
-
-    return ss.str();
 }
 
 arwain::ReturnCode arwain::calibrate_magnetometers()
