@@ -248,7 +248,12 @@ void arwain::setup_log_directory()
     arwain::error_log << "time event" << "\n";
 }
 
-void arwain::setup(const InputParser& input)
+/** \brief If the input parser contains -name and a parameter to go with it, sets the global 
+ * arwain::folder_date_string_suffix to the value of the parameter. If the input parser does
+ * not contain -name, the folder_date_string_suffix is set to an empty string.
+ * \param input An InputParser object which may or may not contain the -name parameter.
+ */
+void arwain::setup_log_folder_name_suffix(const InputParser& input)
 {
     if (input.contains("-name"))
     {
@@ -676,7 +681,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
             arwain::calibrate_gyroscopes();
             arwain::config = arwain::Configuration{input}; // Reread the config file as it has now changed.
         }
-        arwain::setup(input);
+        arwain::setup_log_folder_name_suffix(input);
         ret = arwain::execute_inference();
     }
 
