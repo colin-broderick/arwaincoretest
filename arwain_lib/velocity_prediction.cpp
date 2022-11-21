@@ -35,7 +35,7 @@ void PositionVelocityInference::py_inference()
 }
 #endif
 
-void PositionVelocityInference::core_setup()
+bool PositionVelocityInference::core_setup()
 {
     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
     std::this_thread::sleep_for(std::chrono::milliseconds{1000});
@@ -59,7 +59,7 @@ void PositionVelocityInference::core_setup()
     input = interpreter->typed_input_tensor<float>(0);
     #endif
 
-    arwain::ready_for_inference = true;
+    return true;
 }
 
 void PositionVelocityInference::run()
@@ -229,13 +229,18 @@ void PositionVelocityInference::cleanup_inference()
     velocity_file.close();
 }
 
+bool PositionVelocityInference::ready()
+{
+    return ready_for_inference;
+}
+
 bool PositionVelocityInference::init()
 {
     if (arwain::config.no_inference)
     {
         return false;
     }
-    core_setup();
+    this->ready_for_inference = core_setup();
     job_thread = ArwainThread{&PositionVelocityInference::run, "arwain_infr_th", this};
     #if USE_NCS2
     ncs2_thread = ArwainThread{&PositionVelocityInference::py_inference, "arwain_ncs2_th", this};          // Temporary: Run Python script to handle velocity inference.

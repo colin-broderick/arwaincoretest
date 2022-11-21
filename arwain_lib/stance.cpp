@@ -155,10 +155,9 @@ void StanceDetection::core_setup()
         arwain::config.struggle_threshold
     };
 }
-    
+
 bool StanceDetection::init()
 {
-    arwain::stance_detection_handle = this;
     core_setup();
     job_thread = ArwainThread{&StanceDetection::run, "arwain_stnc_th", this};
     return true;
@@ -248,7 +247,7 @@ void StanceDetector::clear_freefall_flag()
  */
 void StanceDetector::check_for_falls(const std::deque<Vector6>& imu_data)
 {
-    RollingAverage roller{static_cast<unsigned int>(imu_data.size() / 10)};
+    arwain::RollingAverage roller{static_cast<unsigned int>(imu_data.size() / 10)};
 
     for (auto& imu : imu_data)
     {

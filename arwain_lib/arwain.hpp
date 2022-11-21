@@ -15,63 +15,20 @@
 #include "lora.hpp"
 #include "configuration.hpp"
 #include "global_buffer.hpp"
+#include "activity_metric.hpp"
 
 class StanceDetection;
 
-int arwain_main(int argc, char** argv);
+namespace arwain
+{
+    enum class ReturnCode;
+}
+
+arwain::ReturnCode arwain_main(int argc, char** argv);
 
 class Vector3;
 class Vector6;
 class InputParser;
-
-/** \brief Computes a true rolling average as values are fed in.
- * 
- * Averages will be produced and can be obtained before the window is filled,
- * although this will likely not be a useful value before the averaging window
- * is filled. The method .ready() can be called to confirm that the roller has
- * been fed enough values to fill the window and the average value is therefore
- * valid.
- */
-class RollingAverage
-{
-    public:
-        RollingAverage(unsigned int window_size_);
-        bool ready();
-        void feed(double value);
-        double get_value();
-
-    private:
-        unsigned int window_size;
-        double current_average = 0;
-        std::deque<double> stack;
-};
-
-class ActivityMetric
-{
-    constexpr static double acce_mean = 10.017;
-    constexpr static double acce_stdv = 2.399;
-    constexpr static double gyro_mean = 0.569;
-    constexpr static double gyro_stdv = 0.647;
-    constexpr static double velo_mean = 0.510;
-    constexpr static double velo_stdv = 0.485;
-
-    public:
-        ActivityMetric(unsigned int ag_window_size, unsigned int velo_window_size);
-        ~ActivityMetric();
-        void feed_gyro(const Vector3& acce);
-        void feed_acce(const Vector3& gyro);
-        void feed_velo(const Vector3& velo);
-        double read() const;
-    private:
-        unsigned int ag_window_size;
-        unsigned int velo_window_size;
-        RollingAverage* acce_roller;
-        RollingAverage* gyro_roller;
-        RollingAverage* velo_roller;
-};
-
-double unwrap_phase_degrees(double new_angle, double previous_angle);
-double unwrap_phase_radians(double new_angle, double previous_angle);
 
 namespace arwain::BufferSizes
 {
@@ -93,8 +50,6 @@ namespace arwain::BufferSizes
 
 namespace arwain
 {
-    class Configuration;
-    class Status;
     class Logger;
 }
 
@@ -170,25 +125,6 @@ namespace arwain::Intervals
     inline const unsigned int ALTIMETER_INTERVAL = 20;
 }
 
-namespace arwain::Errors
-{
-    enum class ErrorCondition
-    {
-        AllOk,
-        IMUReadError,
-        OtherError
-    };
-}
-
-namespace arwain::ExitCodes
-{
-    inline const int Success = 0;
-    inline const int FailedIMU = -1;
-    inline const int FailedConfiguration = -2;
-    inline const int InferenceXMLMissing = -3;
-    inline const int FailedMagnetometer = -4;
-}
-
 namespace arwain
 {
     extern double yaw_offset;
@@ -196,39 +132,23 @@ namespace arwain
     extern std::string folder_date_string;
     extern std::string folder_date_string_suffix;
     extern arwain::Configuration config;
-    extern arwain::Status status;
     extern arwain::Logger error_log;
     extern bool reset_position;
     extern bool ready_for_inference;
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
     extern ActivityMetric activity_metric;
-    extern StanceDetection* stance_detection_handle;
 
     void setup(const InputParser& input);
-    int execute_inference();
-    int rerun_orientation_filter(const std::string& data_location);
-    int rerun_floor_tracker(const std::string& data_location);
+    arwain::ReturnCode execute_inference();
+    arwain::ReturnCode rerun_orientation_filter(const std::string& data_location);
+    arwain::ReturnCode rerun_floor_tracker(const std::string& data_location);
     std::string datetimestring();
-    float getPiCPUTemp();
     void setup_log_directory();
-    int calibrate_gyroscopes();
-    int calibrate_accelerometers();
-    int calibrate_accelerometers_simple();
-    int calibrate_magnetometers();
-    std::tuple<std::chrono::high_resolution_clock::time_point, std::chrono::milliseconds> create_job_interval(unsigned int milliseconds);
-
-    inline std::map<int, std::string> ErrorMessages = {
-        {arwain::ExitCodes::InferenceXMLMissing, "Inference model XML file not found."},
-        {arwain::ExitCodes::FailedIMU, "Could not communicate with IMU."},
-        {arwain::ExitCodes::FailedConfiguration, "Configuration file not found."},
-    };
-
-    struct Status
-    {
-        arwain::Errors::ErrorCondition errors;
-        int IMUTemperature;
-    };
+    arwain::ReturnCode calibrate_gyroscopes();
+    arwain::ReturnCode calibrate_accelerometers();
+    arwain::ReturnCode calibrate_accelerometers_simple();
+    arwain::ReturnCode calibrate_magnetometers();
 
     const std::string help_text = "Run without arguments for no logging\n"
         "\n"
@@ -277,11 +197,5 @@ namespace arwain::Buffers
     extern GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
 
-namespace arwain::ExitCodes::Calibration
-{
-    inline const int CalibrationApplied = -5;
-    inline const int CalibrationNotApplied = -6;
-    inline const int NotEnoughData = -7;
-}
 
 #endif

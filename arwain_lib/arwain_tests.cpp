@@ -62,7 +62,7 @@ int arwain::test_uubla_integration()
 }
 #endif
 
-int arwain::test_pressure()
+arwain::ReturnCode arwain::test_pressure()
 {
     BMP384 bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
 
@@ -96,12 +96,12 @@ int arwain::test_pressure()
         std::this_thread::sleep_until(loopTime);
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
 /** \brief Utility functional for checking that the IMU is operational.
  */
-int arwain::test_imu()
+arwain::ReturnCode arwain::test_imu()
 {
     // Initialize the IMU.
     IMU_IIM42652 imu{0x68, "/dev/i2c-1"};
@@ -129,10 +129,10 @@ int arwain::test_imu()
 
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
-int arwain::test_lora_rx()
+arwain::ReturnCode arwain::test_lora_rx()
 {
     LoRa lora{arwain::config.lora_address, true};
 
@@ -152,11 +152,11 @@ int arwain::test_lora_rx()
         }
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
 #if USE_ROS
-int arwain::test_mag(int argc, char **argv)
+arwain::ReturnCode arwain::test_mag(int argc, char **argv)
 {
     ros::NodeHandle nh;
     auto pub = nh.advertise<geometry_msgs::Vector3Stamped>("/imu/mag", 1000);
@@ -175,11 +175,11 @@ int arwain::test_mag(int argc, char **argv)
         sleep_ms(20);
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 #else
 /** \brief Checks that the correct chip ID can be read from the magnetometer. If so, reads and prints orientation until interrupted. */
-int arwain::test_mag()
+arwain::ReturnCode arwain::test_mag()
 {
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
     magn.set_calibration_parameters(
@@ -192,7 +192,7 @@ int arwain::test_mag()
     if (id != 0x3D)
     {
         std::cout << "Chip ID incorrect: should be 0x3D, got " <<std::hex << std::showbase << id << std::endl;
-        return arwain::ExitCodes::FailedMagnetometer;
+        return arwain::ReturnCode::FailedMagnetometer;
     }
     std::cout << "Chip ID: " << std::hex << std::showbase << magn.test_chip() << std::dec << std::endl;
 
@@ -203,11 +203,11 @@ int arwain::test_mag()
         std::this_thread::sleep_for(std::chrono::milliseconds{100});
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 #endif
 
-int arwain::test_lora_tx()
+arwain::ReturnCode arwain::test_lora_tx()
 {
     LoRa lora{arwain::config.lora_address, false};
 
@@ -228,10 +228,10 @@ int arwain::test_lora_tx()
         std::this_thread::sleep_for(std::chrono::milliseconds{1000});
     }
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 
-int arwain::test_ori(int frequency)
+arwain::ReturnCode arwain::test_ori(int frequency)
 {
     IMU_IIM42652 imu{config.imu1_address, config.imu1_bus};
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
@@ -268,5 +268,5 @@ int arwain::test_ori(int frequency)
         }
     }
     
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }

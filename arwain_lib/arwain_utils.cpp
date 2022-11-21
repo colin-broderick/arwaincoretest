@@ -45,3 +45,56 @@ Vector3 arwain::apply_quat_rotor_to_vector3(const Vector3& vector, const Quatern
         rotated_quaternion_vector.z
     };
 }
+
+arwain::RollingAverage::RollingAverage(unsigned int window_size_)
+: window_size(window_size_)
+{
+
+}
+
+bool arwain::RollingAverage::ready()
+{
+    return stack.size() == window_size;
+}
+
+void arwain::RollingAverage::feed(double value)
+{
+    current_average += value;
+    stack.push_back(value);
+    if (stack.size() > window_size)
+    {
+        current_average -= stack.front() ;
+        stack.pop_front();
+    }
+}
+
+double arwain::RollingAverage::get_value()
+{
+    return current_average / static_cast<double>(window_size);
+}
+
+double unwrap_phase_radians(double new_angle, double previous_angle)
+{
+    while (new_angle - previous_angle > 3.14159)
+    {
+        new_angle -= 2.0 * 3.14159;
+    }
+    while (new_angle - previous_angle < -3.14159)
+    {
+        new_angle += 2.0 * 3.14159;
+    }
+    return new_angle;
+}
+
+double unwrap_phase_degrees(double new_angle, double previous_angle)
+{
+    while (new_angle - previous_angle > 180.0)
+    {
+        new_angle -= 360.0;
+    }
+    while (new_angle - previous_angle < -180.0)
+    {
+        new_angle += 360.0;
+    }
+    return new_angle;
+}
