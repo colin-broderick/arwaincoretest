@@ -13,7 +13,6 @@ class StatusReporting
         void run_idle();
         void setup_inference();
         void cleanup_inference();
-        void run_autocalibration();
         std::chrono::time_point<std::chrono::high_resolution_clock> get_next_time_slot(int node_id);
 
 	private:

@@ -128,7 +128,6 @@ class StanceDetection
         void run();
         void setup_test_stance_detector();
         void cleanup_stance_detector();
-        void run_autocalibration();
         void run_idle();
         void core_setup();
 
