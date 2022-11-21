@@ -11,6 +11,7 @@
 #include "input_parser.hpp"
 #include "vector3.hpp"
 #include "lora.hpp"
+#include "arwain_utils.hpp"
 
 /** \brief Configuration struct for whole programme. */
 namespace arwain
@@ -20,8 +21,7 @@ namespace arwain
     public:
         Configuration(){};
         Configuration(const InputParser &input);
-        int read_from_file();
-        enum ReturnCodes { OK, NoFile, NoInferenceXML };
+        arwain::ReturnCode read_from_file();
 
     public:
         double active_threshold;     // Heuristic parameter used to distinguish types of motion at similar speeds. NOT YET WELL DEFINED.
@@ -131,7 +131,7 @@ namespace arwain
          * \return ARWAIN exist code indiciating success or error.
          */
         template <typename T>
-        int read_option(const std::map<std::string, std::string> &options, const std::string &option, T &storage)
+        arwain::ReturnCode read_option(const std::map<std::string, std::string> &options, const std::string &option, T &storage)
         {
             try
             {
@@ -142,7 +142,7 @@ namespace arwain
                 std::cout << "Failed to read option from configuration file\n";
                 throw std::invalid_argument{option};
             }
-            return ReturnCodes::OK;
+            return arwain::ReturnCode::Success;
         }
     };
 } // end namespace arwain

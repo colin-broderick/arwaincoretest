@@ -1,16 +1,17 @@
 #include "configuration.hpp"
+#include "arwain.hpp"
 
 /** \brief Create a configuration object based on supplied filename.
  * \param filename The location of the configuration file to read.
  * \return int return code.
  */
-int arwain::Configuration::read_from_file()
+arwain::ReturnCode arwain::Configuration::read_from_file()
 {
     // Open the configuration file name.
     std::ifstream file(this->config_file);
     if (!file.is_open())
     {
-        return ReturnCodes::NoFile;
+        return arwain::ReturnCode::NoConfigurationFile;
     }
 
     // A map to store key value pairs from the configuration file.
@@ -92,7 +93,7 @@ int arwain::Configuration::read_from_file()
     read_option(options, "inference_model_xml", this->inference_model_xml);
     if (!std::filesystem::exists(this->inference_model_xml))
     {
-        return ReturnCodes::NoInferenceXML;
+        return arwain::ReturnCode::NoInferenceXML;
     }
 
     read_option(options, "sea_level_pressure", this->sea_level_pressure);
@@ -201,7 +202,7 @@ int arwain::Configuration::read_from_file()
         std::cout << "Configuration file read successfully\n";
     }
 
-    return ReturnCodes::OK;
+    return arwain::ReturnCode::Success;
 }
 
 arwain::Configuration::Configuration(const InputParser& input)

@@ -76,6 +76,13 @@ void StatusReporting::run_idle()
     sleep_ms(10);
 }
 
+bool StatusReporting::set_stance_detection_pointer(StanceDetection* stance)
+{
+    // TODO Should I delete the pointer first?
+    this->stance_detection_handle = stance;
+    return true;
+}
+
 void StatusReporting::run_inference()
 {
     setup_inference();
@@ -100,10 +107,18 @@ void StatusReporting::run_inference()
         pose_message.other = static_cast<uint8_t>(act >= 7 ? 7 : act);
 
         // Create alerts flags.
-        pose_message.alerts = arwain::stance_detection_handle->get_falling_state()
-                                | (arwain::stance_detection_handle->get_entangled_state() << 1)
-                                | (arwain::stance_detection_handle->get_attitude() << 2)
-                                | (arwain::stance_detection_handle->get_stance() << 3);
+        if (stance_detection_handle != nullptr)
+        {
+            pose_message.alerts = stance_detection_handle->get_falling_state()
+                               | (stance_detection_handle->get_entangled_state() << 1)
+                               | (stance_detection_handle->get_attitude() << 2)
+                               | (stance_detection_handle->get_stance() << 3);
+        }
+        else
+        {
+            // TODO return arwain code for early exit
+            throw std::exception{};
+        }
 
         #if USE_UUBLA
         // As written, only one piece of beacon info can be sent at a time.
