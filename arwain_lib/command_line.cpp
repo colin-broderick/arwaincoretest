@@ -19,7 +19,7 @@ ArwainCLI::ArwainCLI()
 
 void ArwainCLI::force_switch_to_idle_autocal_mode()
 {
-    arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+    arwain::system_mode = arwain::OperatingMode::Idle;
 }
 
 void ArwainCLI::run()
@@ -74,7 +74,7 @@ void ArwainCLI::switch_to_exit_mode()
     arwain::system_mode = arwain::OperatingMode::Terminate;
 }
 
-/** \brief Switches the system to Inference mode. Can only be entered from Idle/Autocalibration mode. */
+/** \brief Switches the system to Inference mode. Can only be entered from Idle mode. */
 void ArwainCLI::switch_to_inference_mode()
 {
     if (arwain::system_mode == arwain::OperatingMode::Inference)
@@ -85,7 +85,7 @@ void ArwainCLI::switch_to_inference_mode()
     {
         std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
     }
-    else if (arwain::system_mode == arwain::OperatingMode::AutoCalibration)
+    else if (arwain::system_mode == arwain::OperatingMode::Idle)
     {
         std::cout << "Entering inference mode" << std::endl;
         arwain::setup_log_directory();
@@ -107,19 +107,19 @@ void ArwainCLI::switch_to_idle_autocal_mode()
 {
     if (arwain::system_mode == arwain::OperatingMode::Inference)
     {
-        std::cout << "Entering autocalibration mode" << std::endl;
-        arwain::system_mode = arwain::OperatingMode::AutoCalibration;
+        std::cout << "Entering idle mode" << std::endl;
+        arwain::system_mode = arwain::OperatingMode::Idle;
     }
     else
     {
-        fail_to_switch_to(arwain::OperatingMode::AutoCalibration);
+        fail_to_switch_to(arwain::OperatingMode::Idle);
     }
 }
 
 /** \brief Switch to active gyro calibration mode. Only reachable from Idle/Autocal modes. */
 void ArwainCLI::switch_to_gyro_calib_mode()
 {
-    if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+    if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::GyroscopeCalibration);
     }
@@ -134,7 +134,7 @@ void ArwainCLI::switch_to_gyro_calib_mode()
 /** \brief Switch to active magnetometer calibration mode. Only reachable from Idle/Autocal modes. */
 void ArwainCLI::switch_to_mag_calib_mode()
 {
-    if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+    if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::MagnetometerCalibration);
     }
@@ -149,7 +149,7 @@ void ArwainCLI::switch_to_mag_calib_mode()
 /** \brief Switch to active accelerometer calibration mode. Only reachable from Idle/Autocal modes. */
 void ArwainCLI::switch_to_accel_calib_mode()
 {
-    if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+    if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::AccelerometerCalibration);
     }
@@ -162,7 +162,7 @@ void ArwainCLI::switch_to_accel_calib_mode()
 
 void ArwainCLI::switch_to_data_collection_mode()
 {
-    if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+    if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::DataCollection);
     }
@@ -177,9 +177,9 @@ void ArwainCLI::switch_to_data_collection_mode()
 
 void ArwainCLI::set_folder_name(const std::string& input)
 {
-    if (arwain::system_mode != arwain::OperatingMode::AutoCalibration)
+    if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
-        std::cout << "Folder name can only be changed from idle/autocalibration modes" << std::endl;
+        std::cout << "Folder name can only be changed from idle mode" << std::endl;
         report_current_mode();
     }
     else

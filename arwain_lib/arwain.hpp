@@ -8,6 +8,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include "arwain_utils.hpp"
+#include "quaternion.hpp"
 #include "stance.hpp"
 #include "uubla.hpp"
 #include "lora.hpp"
@@ -21,7 +23,6 @@ void sleep_ms(int ms);
 
 class Vector3;
 class Vector6;
-class Quaternion;
 class InputParser;
 
 /** \brief Computes a true rolling average as values are fed in.
@@ -91,13 +92,6 @@ namespace arwain::BufferSizes
     #endif
 }
 
-struct euler_orientation_t
-{
-    double roll;
-    double pitch;
-    double yaw;
-};
-
 namespace arwain
 {
     class Configuration;
@@ -111,7 +105,7 @@ namespace arwain
     {
         Terminate,
         Inference,
-        AutoCalibration,
+        Idle,
         SelfTest,
         GyroscopeCalibration,
         MagnetometerCalibration,
@@ -129,7 +123,7 @@ inline std::ostream& operator<<(std::ostream& stream, arwain::OperatingMode toke
         case arwain::OperatingMode::Inference:
             stream << "Inference";
             break;
-        case arwain::OperatingMode::AutoCalibration:
+        case arwain::OperatingMode::Idle:
             stream << "Idle/autocalibrating";
             break;
         case arwain::OperatingMode::SelfTest:
@@ -163,65 +157,6 @@ inline std::ostream& operator<<(std::ostream& stream, arwain::OperatingMode toke
     return stream;
 }
 
-namespace arwain
-{
-    extern double yaw_offset;
-    extern OperatingMode system_mode;
-    extern std::string folder_date_string;
-    extern std::string folder_date_string_suffix;
-    extern arwain::Configuration config;
-    extern arwain::Status status;
-    extern arwain::Logger error_log;
-    extern bool reset_position;
-    extern bool request_gyro_calib;
-    extern bool ready_for_inference;
-    extern unsigned int velocity_inference_rate;
-    extern RollingAverage rolling_average_accel_z_for_altimeter;
-    extern ActivityMetric activity_metric;
-    extern StanceDetection* stance_detection_handle;
-
-}
-
-namespace arwain::Buffers
-{
-    extern GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
-    extern GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_WORLD_BUFFER;
-    extern GlobalBuffer<Vector3, arwain::BufferSizes::VELOCITY_BUFFER_LEN> VELOCITY_BUFFER;
-    extern GlobalBuffer<Vector3, arwain::BufferSizes::POSITION_BUFFER_LEN> POSITION_BUFFER;
-    extern GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_BUFFER;
-    extern GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_WORLD_BUFFER;
-    extern GlobalBuffer<Vector3, arwain::BufferSizes::IPS_BUFFER_LEN> IPS_BUFFER;
-    extern GlobalBuffer<Vector3, arwain::BufferSizes::PRESSURE_BUFFER_LEN> PRESSURE_BUFFER;
-    extern GlobalBuffer<euler_orientation_t, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> EULER_ORIENTATION_BUFFER;
-    extern GlobalBuffer<Quaternion, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> QUAT_ORIENTATION_BUFFER;
-    extern GlobalBuffer<Quaternion, arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN> MAG_ORIENTATION_BUFFER;
-    extern GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
-}
-
-namespace arwain
-{
-    void setup(const InputParser& input);
-    int execute_inference();
-    int rerun_orientation_filter(const std::string& data_location);
-    int rerun_floor_tracker(const std::string& data_location);
-}
-
-namespace arwain::ExitCodes
-{
-    inline const int Success = 0;
-    inline const int FailedIMU = -1;
-    inline const int FailedConfiguration = -2;
-    inline const int InferenceXMLMissing = -3;
-    inline const int FailedMagnetometer = -4;
-}
-
-namespace arwain::ExitCodes::Calibration
-{
-    inline const int CalibrationApplied = -5;
-    inline const int CalibrationNotApplied = -6;
-    inline const int NotEnoughData = -7;
-}
-
 namespace arwain::Intervals
 {
     // Time intervals, all in milliseconds.
@@ -236,7 +171,6 @@ namespace arwain::Intervals
     inline const unsigned int ALTIMETER_INTERVAL = 20;
 }
 
-
 namespace arwain::Errors
 {
     enum class ErrorCondition
@@ -247,26 +181,35 @@ namespace arwain::Errors
     };
 }
 
-namespace arwain
+namespace arwain::ExitCodes
 {
-    inline std::map<int, std::string> ErrorMessages = {
-        {arwain::ExitCodes::InferenceXMLMissing, "Inference model XML file not found."},
-        {arwain::ExitCodes::FailedIMU, "Could not communicate with IMU."},
-        {arwain::ExitCodes::FailedConfiguration, "Configuration file not found."},
-    };
+    inline const int Success = 0;
+    inline const int FailedIMU = -1;
+    inline const int FailedConfiguration = -2;
+    inline const int InferenceXMLMissing = -3;
+    inline const int FailedMagnetometer = -4;
 }
 
 namespace arwain
 {
-    struct Status
-    {
-        arwain::Errors::ErrorCondition errors;
-        int IMUTemperature;
-    };
-}
+    extern double yaw_offset;
+    extern OperatingMode system_mode;
+    extern std::string folder_date_string;
+    extern std::string folder_date_string_suffix;
+    extern arwain::Configuration config;
+    extern arwain::Status status;
+    extern arwain::Logger error_log;
+    extern bool reset_position;
+    extern bool ready_for_inference;
+    extern unsigned int velocity_inference_rate;
+    extern RollingAverage rolling_average_accel_z_for_altimeter;
+    extern ActivityMetric activity_metric;
+    extern StanceDetection* stance_detection_handle;
 
-namespace arwain
-{
+    void setup(const InputParser& input);
+    int execute_inference();
+    int rerun_orientation_filter(const std::string& data_location);
+    int rerun_floor_tracker(const std::string& data_location);
     std::string datetimestring();
     float getPiCPUTemp();
     void setup_log_directory();
@@ -274,10 +217,20 @@ namespace arwain
     int calibrate_accelerometers();
     int calibrate_accelerometers_simple();
     int calibrate_magnetometers();
-}
+    std::tuple<std::chrono::high_resolution_clock::time_point, std::chrono::milliseconds> create_job_interval(unsigned int milliseconds);
 
-namespace arwain
-{
+    inline std::map<int, std::string> ErrorMessages = {
+        {arwain::ExitCodes::InferenceXMLMissing, "Inference model XML file not found."},
+        {arwain::ExitCodes::FailedIMU, "Could not communicate with IMU."},
+        {arwain::ExitCodes::FailedConfiguration, "Configuration file not found."},
+    };
+
+    struct Status
+    {
+        arwain::Errors::ErrorCondition errors;
+        int IMUTemperature;
+    };
+
     const std::string help_text = "Run without arguments for no logging\n"
         "\n"
         "Arguments:\n"
@@ -307,6 +260,29 @@ namespace arwain
         "    -1             IMU failed to start\n"
         "    -2             Problem reading configuration file\n"
         "    -3             Inference model XML not found";
+}
+
+namespace arwain::Buffers
+{
+    extern GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
+    extern GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_WORLD_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::VELOCITY_BUFFER_LEN> VELOCITY_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::POSITION_BUFFER_LEN> POSITION_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_WORLD_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::IPS_BUFFER_LEN> IPS_BUFFER;
+    extern GlobalBuffer<Vector3, arwain::BufferSizes::PRESSURE_BUFFER_LEN> PRESSURE_BUFFER;
+    extern GlobalBuffer<EulerOrientation, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> EULER_ORIENTATION_BUFFER;
+    extern GlobalBuffer<Quaternion, arwain::BufferSizes::ORIENTATION_BUFFER_LEN> QUAT_ORIENTATION_BUFFER;
+    extern GlobalBuffer<Quaternion, arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN> MAG_ORIENTATION_BUFFER;
+    extern GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
+}
+
+namespace arwain::ExitCodes::Calibration
+{
+    inline const int CalibrationApplied = -5;
+    inline const int CalibrationNotApplied = -6;
+    inline const int NotEnoughData = -7;
 }
 
 #endif

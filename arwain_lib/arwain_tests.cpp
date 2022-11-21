@@ -17,9 +17,9 @@
 #include "uubla.hpp"
 #endif
 
-static euler_orientation_t computer_euler_degrees(Quaternion& q)
+static EulerOrientation computer_euler_degrees(Quaternion& q)
 {
-    euler_orientation_t euler;
+    EulerOrientation euler;
     euler.roll = std::atan2(q.w*q.x + q.y*q.z, 0.5f - q.x*q.x - q.y*q.y)  * 180.0 / 3.14159;
 	euler.pitch = std::asin(-2.0 * (q.x*q.z - q.w*q.y))  * 180.0 / 3.14159;
 	euler.yaw = std::atan2(q.x*q.y + q.w*q.z, 0.5 - q.y*q.y - q.z*q.z)  * 180.0 / 3.14159;
@@ -182,7 +182,7 @@ int arwain::test_mag(int argc, char **argv)
 int arwain::test_mag()
 {
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
-    magn.set_calibration(
+    magn.set_calibration_parameters(
         arwain::config.mag_bias,
         arwain::config.mag_scale,
         {arwain::config.mag_scale_xy, arwain::config.mag_scale_yz, arwain::config.mag_scale_xz}    
@@ -242,7 +242,7 @@ int arwain::test_ori(int frequency)
     auto time = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds interval{1000/frequency};
     int count = 0;
-    euler_orientation_t euler;
+    EulerOrientation euler;
     Quaternion quat;
 
     std::cout << "Starting orientation filter at " << frequency << " Hz" << std::endl;
