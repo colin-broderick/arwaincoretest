@@ -138,7 +138,7 @@ namespace arwain
     extern ActivityMetric activity_metric;
 
     void setup_log_folder_name_suffix(const InputParser& input);
-    arwain::ReturnCode execute_inference();
+    arwain::ReturnCode execute_jobs();
     arwain::ReturnCode rerun_orientation_filter(const std::string& data_location);
     arwain::ReturnCode rerun_floor_tracker(const std::string& data_location);
     std::string datetimestring();
