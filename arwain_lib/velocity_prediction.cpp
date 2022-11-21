@@ -93,11 +93,14 @@ void PositionVelocityInference::setup_inference()
     position_file << "time x y z" << "\n";
 }
 
+// TODO Split NCS2 stuff into deprecated function
+
 void PositionVelocityInference::run_inference()
 {
     setup_inference();
 
     // Set up timing.
+    // TODO Use JobInterval
     std::chrono::time_point<std::chrono::system_clock> last_time = std::chrono::system_clock::now();
     std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
@@ -130,7 +133,6 @@ void PositionVelocityInference::run_inference()
         zmq_recv(responder, response_buffer, 50, 0);
         std::cout << "Received AI response by socket\n";
         request.str("");
-
 
         // Process the answer buffer into local velocity buffers.
         // Assume a comma-separated list of three floats.
@@ -231,7 +233,7 @@ void PositionVelocityInference::cleanup_inference()
 
 bool PositionVelocityInference::ready()
 {
-    return ready_for_inference;
+    return this->ready_for_inference;
 }
 
 bool PositionVelocityInference::init()

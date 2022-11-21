@@ -1,6 +1,8 @@
 #ifndef _ARWAIN_COMMAND_LINE_HPP
 #define _ARWAIN_COMMAND_LINE_HPP
 
+class PositionVelocityInference;
+
 class ArwainCLI
 {
     TESTABLE:
@@ -20,8 +22,10 @@ class ArwainCLI
         void set_folder_name(const std::string& input);
         void set_position_zero();
         void parse_cli_input(const std::string& input);
+        bool set_velocity_inference_pointer(PositionVelocityInference* velocity);
 
     private:
+        PositionVelocityInference* velocity_inference_handle = nullptr;
         ArwainThread job_thread;
 
     public:
