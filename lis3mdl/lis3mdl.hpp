@@ -34,7 +34,7 @@ class LIS3MDL
         void set_fsr(FSR fsr_selection);
         void set_odr(ODR odr_selection);
 
-        void i2c_init(const int address, const std::string &bus_name);
+        [[nodiscard]] bool i2c_init(const int address, const std::string &bus_name);
         int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
         int i2c_write(int reg_addr, int bytes, uint8_t *buffer);
 

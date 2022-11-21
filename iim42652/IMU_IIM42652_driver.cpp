@@ -22,7 +22,10 @@ IMU_IIM42652::IMU_IIM42652(int bus_address, const std::string &bus_name)
     unsigned char accel_config = ACCEL_200HZ | ACCEL_FSR_16G;
     unsigned char gyro_config = GYRO_200HZ | GYRO_FSR_1000;
 
-    i2c_init(bus_address, bus_name);
+    if (!i2c_init(bus_address, bus_name))
+    {
+        throw std::runtime_error{"Could not connect IMU: " + bus_name + " " + std::to_string(bus_address)};
+    }
     soft_reset();
     std::this_thread::sleep_for(std::chrono::milliseconds{2});
     IMU_config(gyro_config, accel_config);
@@ -132,8 +135,9 @@ std::string IMU_IIM42652::get_bus() const
 /** \brief Sets up the I2C file handle and connects to a device on the I2C bus.
  * \param[in] address The address of the device on the I2C bus.
  * \param[in] bus_name The name of the bus to open, e.g. /dev/i2c-1.
+ * \return Boolean, true indicating successful opening of file handle, false indicating failure.
  */
-void IMU_IIM42652::i2c_init(const int address, const std::string &bus_name)
+[[nodiscard]] bool IMU_IIM42652::i2c_init(const int address, const std::string &bus_name)
 {
     //----- OPEN THE I2C BUS -----
     const char *filename = bus_name.c_str();
@@ -141,12 +145,16 @@ void IMU_IIM42652::i2c_init(const int address, const std::string &bus_name)
     {
         //ERROR HANDLING: you can check error number to see what went wrong
         std::cout << "Failed to open I2C bus" << std::endl;
+        return false;
     }
 
     if (ioctl(this->handle, I2C_SLAVE, address) < 0)
     {
         std::cout << "Failed to connect to I2C address " << std::hex << address << std::endl;
+        return false;
     }
+
+    return true;
 }
 
 /** \brief Reads a given number of bytes from a given register address.

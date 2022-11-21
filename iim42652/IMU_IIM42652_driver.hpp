@@ -147,7 +147,7 @@ private:
     std::string bus_name_;
 
 private:
-    void i2c_init(const int address, const std::string& bus_name);
+    [[nodiscard]] bool i2c_init(const int address, const std::string& bus_name);
     void enable();
     int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
     int i2c_write(int reg_addr, int bytes, uint8_t *buffer);
