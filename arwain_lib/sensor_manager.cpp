@@ -8,7 +8,7 @@
 #include <functional>
 
 #include "arwain_utils.hpp"
-#include "imu_reader.hpp"
+#include "sensor_manager.hpp"
 #include "multi_imu.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
@@ -24,13 +24,13 @@
  * \param orientation The rotation to apply to the Vector3.
  * \return Rotated Vector3.
  */
-Vector3 ImuProcessing::world_align(const Vector3& vec, const Quaternion& rotation)
+Vector3 SensorManager::world_align(const Vector3& vec, const Quaternion& rotation)
 {
     return arwain::apply_quat_rotor_to_vector3(vec, rotation);
 }
 
 /** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does sleep if in non-relevant mode. */
-void ImuProcessing::run()
+void SensorManager::run()
 {
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
@@ -64,14 +64,14 @@ void ImuProcessing::run()
     }
 }
 
-/** \brief Runs three calibration passes on the gyroscope for the given IMU. Runtime bias parameters are updated for the IMU,
- * and the results are written to the arwain configuration file.
- * This function assumes that autocalibration is disabled for the IMU in question.
+/** \brief Runs a calibration pass on the gyroscope for the given IMU. Runtime bias parameters are
+ * updated for the IMU, and the results are written to the arwain configuration file. This
+ * function requires that autocalibration is disabled for the IMU in question.
  * \param imu The IMU device with the gyroscope to be calibrated.
- * \return Will return false if autocalibration is turned onm, and calibration could not be performed. Return true if calibration
- * is performed.
+ * \return Will return false if autocalibration is turned onm, and calibration could not be
+ * performed. Return true if calibration is performed.
  */
-bool calibrate_gyroscope(IMU_IIM42652& imu)
+bool calibrate_gyroscope_bias(IMU_IIM42652& imu)
 {
     if (imu.auto_calib_enabled())
     {
@@ -79,17 +79,19 @@ bool calibrate_gyroscope(IMU_IIM42652& imu)
     }
 
     std::cout << "Calibrating gyro on I2C: " << imu.get_bus() << " " << imu.get_address() << std::endl;
-    
-    Vector3 results = arwain::average(
-        imu.calibrate_gyroscope(),
-        imu.calibrate_gyroscope(),
-        imu.calibrate_gyroscope()
-    );
-    
-    arwain::config.gyro1_bias = results;
-    arwain::config.replace("gyro1_bias_x", results.x);
-    arwain::config.replace("gyro1_bias_y", results.y);
-    arwain::config.replace("gyro1_bias_z", results.z);
+
+    // Create a calibrator and feed in gyroscope readings until it converges.    
+    GyroscopeCalibrator calibrator;
+    while (!calibrator.is_converged())
+    {
+        calibrator.feed(imu.read_IMU().gyro);
+    }
+    Vector3 gyroscope_bias = calibrator.get_params();
+
+    arwain::config.gyro1_bias = gyroscope_bias;
+    arwain::config.replace("gyro1_bias_x", gyroscope_bias.x);
+    arwain::config.replace("gyro1_bias_y", gyroscope_bias.y);
+    arwain::config.replace("gyro1_bias_z", gyroscope_bias.z);
     
     imu.set_gyro_bias(
         arwain::config.gyro1_bias.x,
@@ -105,7 +107,7 @@ bool calibrate_gyroscope(IMU_IIM42652& imu)
 /** \brief Runs a gyroscope calibration on all active IMUs.
  * \exception Can throw a runtime error if gyro autocalibration is turned on while calibration is running.
 */
-void ImuProcessing::run_gyro_calibration()
+void SensorManager::run_gyro_calibration()
 {
     Vector3 results;
 
@@ -117,9 +119,9 @@ void ImuProcessing::run_gyro_calibration()
     imu2.set_gyro_bias(0, 0, 0);
     imu3.set_gyro_bias(0, 0, 0);
     
-    bool success = calibrate_gyroscope(imu1);
-    success |= calibrate_gyroscope(imu2);
-    success |= calibrate_gyroscope(imu3);
+    bool success = calibrate_gyroscope_bias(imu1);
+    success |= calibrate_gyroscope_bias(imu2);
+    success |= calibrate_gyroscope_bias(imu3);
 
     // The ARWAIN application uses several threads. It is possible in principle for the autocalibration state
     // to be changed before active calibration has finished. This should not be allowed as invalid calibration
@@ -141,7 +143,7 @@ void ImuProcessing::run_gyro_calibration()
     }
 }
 
-void ImuProcessing::run_magn_calibration()
+void SensorManager::run_magn_calibration()
 {
     // Unset current calibration parameters.
     magnetometer.set_calibration_parameters(
@@ -151,7 +153,7 @@ void ImuProcessing::run_magn_calibration()
     );
 
     // Perform magnetometer calibration procedure.
-    arwain::MagnetometerCalibrator calibrator;
+    MagnetometerCalibrator calibrator;
     std::cout << "About to start magnetometer calibration" << std::endl;
     std::cout << "Randomly move the device through all orientations" << std::endl;
     sleep_ms(1000);
@@ -202,13 +204,13 @@ void ImuProcessing::run_magn_calibration()
     }
 }
 
-void ImuProcessing::run_accel_calibration()
+void SensorManager::run_accel_calibration()
 {
     // TODO
     throw NotImplemented{__FUNCTION__};
 }
 
-void ImuProcessing::run_idle()
+void SensorManager::run_idle()
 {
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL};
 
@@ -260,19 +262,19 @@ void ImuProcessing::run_idle()
     }
 }
 
-void ImuProcessing::run_test_stance_detector()
+void SensorManager::run_test_stance_detector()
 {
     run_idle();
 }
 
-void ImuProcessing::run_self_test()
+void SensorManager::run_self_test()
 {
     // TODO
     throw NotImplemented{__FUNCTION__};
 }
 
 /** \brief Executes the inference mode job thread. */
-void ImuProcessing::run_inference()
+void SensorManager::run_inference()
 {
     setup_inference();
 
@@ -326,7 +328,7 @@ void ImuProcessing::run_inference()
 }
 
 /** \brief Opens file handles for arwain::Logger and writes appropriate headers to the files. */
-void ImuProcessing::setup_inference()
+void SensorManager::setup_inference()
 {
     // Open file handles.
     ori_diff_file.open(arwain::folder_date_string + "/ori_diff.txt");
@@ -356,7 +358,7 @@ void ImuProcessing::setup_inference()
 }
 
 /** \brief Closes file handles for arwain::Logger objects. */
-arwain::ReturnCode ImuProcessing::cleanup_inference()
+arwain::ReturnCode SensorManager::cleanup_inference()
 {
     bool closed_files = true;
 
@@ -382,7 +384,7 @@ arwain::ReturnCode ImuProcessing::cleanup_inference()
     }
 }
 
-void ImuProcessing::core_setup()
+void SensorManager::core_setup()
 {
     // Configure IMUs.
     imu1 = IMU_IIM42652{arwain::config.imu1_address, arwain::config.imu1_bus};
@@ -427,30 +429,30 @@ void ImuProcessing::core_setup()
     };
 }
 
-ImuProcessing::ImuProcessing()
+SensorManager::SensorManager()
 {
     init();
 }
 
 /** \brief Does overall initialization and sets up the job thread. */
-bool ImuProcessing::init()
+bool SensorManager::init()
 {
     if (arwain::config.no_imu)
     {
         return false;
     }
     core_setup();
-    job_thread = ArwainThread{&ImuProcessing::run, "arwain_imu_th", this};
+    job_thread = ArwainThread{&SensorManager::run, "arwain_imu_th", this};
     return true;
 }
 
-void ImuProcessing::set_post_gyro_calibration_callback(std::function<void()> func)
+void SensorManager::set_post_gyro_calibration_callback(std::function<void()> func)
 {
     post_gyro_calib_callback = func;
 }
 
 /** \brief Block until the job thread can be joined. */
-void ImuProcessing::join()
+void SensorManager::join()
 {
     if (job_thread.joinable())
     {
@@ -460,5 +462,5 @@ void ImuProcessing::join()
     {
         quick_madgwick_convergence_thread.join();
     }
-    std::cout << "Successfully quit ImuProcessing\n";
+    std::cout << "Successfully quit SensorManager\n";
 }

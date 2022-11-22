@@ -1,5 +1,6 @@
 #include <thread>
 #include <chrono>
+#include <sstream>
 #include <iostream>
 #include <cmath>
 
@@ -14,7 +15,13 @@ BMP384::BMP384(int bus_address, const std::string &bus_name)
 {
     if(!i2c_init(bus_address, bus_name))
     {
-        throw std::runtime_error{"Could not connect pressure sensor: " + bus_name + " " + std::to_string(bus_address)};
+        std::stringstream ss;
+        ss << "Could not connect pressure sensor: ";
+        ss << bus_name;
+        ss << std::hex;
+        ss << " 0x";
+        ss << bus_address;
+        throw std::runtime_error{ss.str()};
     }
 
     soft_reset();

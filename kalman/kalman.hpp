@@ -66,6 +66,7 @@ class KalmanFilter1D
         double E_mea = 0;
 
     public:
+        KalmanFilter1D() = default;
         KalmanFilter1D(double initial_estimate, double initial_estimate_error);
         void update(const double measurement, const double measurement_error);
         double get_gain() const;

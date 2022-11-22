@@ -1,6 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <sstream>
 #include <vector>
 
 #include "lis3mdl.hpp"
@@ -35,7 +36,13 @@ LIS3MDL::LIS3MDL(const int i2c_address, const std::string& i2c_bus)
 {
     if (!i2c_init(i2c_address, i2c_bus))
     {
-        throw std::runtime_error{"Could not connect magnetometer: " + i2c_bus + " " + std::to_string(i2c_address)};
+        std::stringstream ss;
+        ss << "Could not connect magnetometer: ";
+        ss << i2c_bus;
+        ss << std::hex;
+        ss << " 0x";
+        ss << i2c_address;
+        throw std::runtime_error{ss.str()};
     }
     soft_reset();
     power_up();

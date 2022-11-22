@@ -11,7 +11,7 @@
 #include "madgwick.hpp"
 #include "arwain_utils.hpp"
 
-class ImuProcessing
+class SensorManager
 {
     TESTABLE:
         void run();
@@ -56,7 +56,7 @@ class ImuProcessing
         RollingAverage rolling_average_accel_z_for_altimeter;
 
     public:
-        ImuProcessing();
+        SensorManager();
         bool init();
         void join();
         void set_post_gyro_calibration_callback(std::function<void()> func);
