@@ -97,7 +97,7 @@ class StanceDetector
         Vector3 get_means(const std::vector<Vector3> &source_vector);
         Vector3 get_means(const std::deque<Vector3> &source_vector);
         std::array<double, 6> get_means(const std::deque<std::array<double, 6>> &source_vector);
-        void check_for_falls(const std::deque<Vector6>& imu_data);
+        void check_for_falls(const std::deque<ImuData>& imu_data);
         void register_freefall_event();
     
     public:
@@ -107,7 +107,7 @@ class StanceDetector
 
         // General methods.
         void update_attitude(Quaternion rotation_quaternion);
-        void run(const std::deque<Vector6> &imu_data, const std::deque<Vector3> &vel_data);
+        void run(const std::deque<ImuData> &imu_data, const std::deque<Vector3> &vel_data);
         void clear_freefall_flag();
         int seconds_since_last_freefall() const;
 
@@ -139,7 +139,7 @@ class StanceDetection
         // Stance detector object.
         StanceDetector* stance;
 
-        std::deque<Vector6> imu_data;
+        std::deque<ImuData> imu_data;
         std::deque<Vector3> vel_data;
         Quaternion rotation_quaternion;
 

@@ -57,7 +57,7 @@ std::ostream& operator<<(std::ostream& stream, const Quaternion& quat);
  * \param quat The quaternion to multiply.
  * \return The new quaternion after multiplication.
  */
-template<typename Scalar>
+template <typename Scalar>
 Quaternion operator*(const Scalar scalar, const Quaternion& quat)
 {
     return Quaternion{
@@ -73,7 +73,7 @@ Quaternion operator*(const Scalar scalar, const Quaternion& quat)
  * \param scalar The scalar value by which to multiply.
  * \return The new quaternion after multiplication.
  */
-template<typename Scalar>
+template <typename Scalar>
 Quaternion operator*(const Quaternion& quat, const Scalar scalar)
 {
     return scalar * quat;
@@ -84,7 +84,7 @@ Quaternion operator*(const Quaternion& quat, const Scalar scalar)
  * \param divisor The scalar value by which to divide.
  * \return The new quaternion after division.
  */
-template<typename Divisor>
+template <typename Divisor>
 Quaternion operator/(const Quaternion& quat, const Divisor divisor)
 {
     return (1.0/divisor) * quat;

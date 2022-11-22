@@ -74,7 +74,8 @@ namespace arwain
     };
     
     /** \brief Compute the average value of an indeterminiate number of objects. */
-    template <class T, class... Args> T average(T first, Args... args)
+    template <class T, class... Args>
+    T average(T first, Args... args)
     {
         double count = 1.0;
         for (const auto& arg : {args...})

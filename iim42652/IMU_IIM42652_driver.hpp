@@ -93,7 +93,7 @@ public:
     void soft_reset();
     int IMU_config(uint8_t gyro_config, uint8_t accel_config);
     void set_resolutions(double accel, double gyro);
-    Vector6 read_IMU();
+    ImuData read_IMU();
     double read_temperature();
     // Vector3 calibrate_gyroscope();
     Vector3 calibration_accel_sample();
@@ -159,7 +159,7 @@ private:
  * \param[in] data An iterable ArrayType of 1 dimension containing doubles.
  * \return The mean of the double values in the data array.
  */
-template<typename ArrayType>
+template <typename ArrayType>
 static double array_mean_1d(const ArrayType& data)
 {
     double total = 0;

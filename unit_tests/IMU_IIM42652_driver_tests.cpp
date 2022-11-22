@@ -22,8 +22,8 @@ TEST(Imu_driver, set_resolutions)
 TEST(Imu_driver, read_IMU)
 {
     IMU_IIM42652 driver(1, "test_driver");
-    Vector6 data;
-    Vector6 expected_data{0,0,0,0,0,0};
+    ImuData data;
+    ImuData expected_data{0,0,0,0,0,0};
     data = driver.read_IMU();
     EXPECT_EQ(expected_data.acce, data.acce);
     EXPECT_EQ(expected_data.gyro, data.gyro);
