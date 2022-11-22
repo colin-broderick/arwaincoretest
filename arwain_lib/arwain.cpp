@@ -551,7 +551,6 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     {
         ret = arwain::test_imu();
     }
-
     else if (input.contains("-testlorarx"))
     {
         ret = arwain::test_lora_rx();
