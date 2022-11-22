@@ -103,7 +103,6 @@ void IndoorPositioningSystem::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit IndoorPositioningSystem\n";
 }
 
 void IndoorPositioningSystem::IndoorPositioningWrapper::update(const double &time, const double &x, const double &y, const double &z)

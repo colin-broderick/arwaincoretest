@@ -124,5 +124,4 @@ void DebugPrints::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit DebugPrints\n";
 }

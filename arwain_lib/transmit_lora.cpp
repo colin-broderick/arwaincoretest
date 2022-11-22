@@ -194,7 +194,6 @@ void StatusReporting::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit StatusReporting\n";
 }
 
 std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet)

@@ -21,13 +21,13 @@ class ArwainCLI
         void switch_to_data_collection_mode();
         void set_folder_name(const std::string& input);
         void parse_cli_input(const std::string& input);
-        bool set_velocity_inference_pointer(PositionVelocityInference& velocity);
 
     private:
         PositionVelocityInference* velocity_inference_handle = nullptr;
         ArwainThread job_thread;
 
     public:
+        bool set_velocity_inference_pointer(PositionVelocityInference& velocity);
         ArwainCLI();
         bool init();
         void join();
