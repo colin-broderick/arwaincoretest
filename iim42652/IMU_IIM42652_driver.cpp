@@ -24,7 +24,13 @@ IMU_IIM42652::IMU_IIM42652(int bus_address, const std::string &bus_name)
 
     if (!i2c_init(bus_address, bus_name))
     {
-        throw std::runtime_error{"Could not connect IMU: " + bus_name + " " + std::to_string(bus_address)};
+        std::stringstream ss;
+        ss << "Could not connect IMU: ";
+        ss << bus_name;
+        ss << std::hex;
+        ss << " 0x";
+        ss << bus_address;
+        throw std::runtime_error{ss.str()};
     }
     soft_reset();
     std::this_thread::sleep_for(std::chrono::milliseconds{2});
@@ -97,30 +103,30 @@ Vector3 IMU_IIM42652::calibration_accel_sample()
     return {kfx.est, kfy.est, kfz.est};
 }
 
-/** \brief Defines a procedure for calculating calibration offsets
- * for the gyroscope.
- * 
- * We take repeated gyroscope readings until a state estimator converges
- * on a stable value for each gyroscope axis.
- * 
- * This procedure does not consider the change in offset as a
- * function of temperature.
- */
-Vector3 IMU_IIM42652::calibrate_gyroscope()
-{
-    KalmanFilter1D kfx{0, 1};
-    KalmanFilter1D kfy{0, 1};
-    KalmanFilter1D kfz{0, 1};
-    while (!kfx.converged && !kfy.converged && !kfz.converged)
-    {
-        auto [accel, gyro] = this->read_IMU();
-        kfx.update(gyro.x, 0.02);
-        kfy.update(gyro.y, 0.02);
-        kfz.update(gyro.z, 0.02);
-        std::this_thread::sleep_for(std::chrono::milliseconds{10});
-    }
-    return {kfx.est, kfy.est, kfz.est};
-}
+// /** \brief Defines a procedure for calculating calibration offsets
+//  * for the gyroscope.
+//  * 
+//  * We take repeated gyroscope readings until a state estimator converges
+//  * on a stable value for each gyroscope axis.
+//  * 
+//  * This procedure does not consider the change in offset as a
+//  * function of temperature.
+//  */
+// Vector3 IMU_IIM42652::calibrate_gyroscope()
+// {
+//     KalmanFilter1D kfx{0, 1};
+//     KalmanFilter1D kfy{0, 1};
+//     KalmanFilter1D kfz{0, 1};
+//     while (!kfx.converged && !kfy.converged && !kfz.converged)
+//     {
+//         auto [accel, gyro] = this->read_IMU();
+//         kfx.update(gyro.x, 0.02);
+//         kfy.update(gyro.y, 0.02);
+//         kfz.update(gyro.z, 0.02);
+//         std::this_thread::sleep_for(std::chrono::milliseconds{10});
+//     }
+//     return {kfx.est, kfy.est, kfz.est};
+// }
 
 int IMU_IIM42652::get_address() const
 {

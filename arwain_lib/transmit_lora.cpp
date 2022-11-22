@@ -83,6 +83,13 @@ bool StatusReporting::set_stance_detection_pointer(StanceDetection& stance)
     return true;
 }
 
+bool StatusReporting::set_uubla_wrapper_handle(UublaWrapper& uubla)
+{
+    // TODO Should I delete the pointer first?
+    this->uubla_wrapper_handle = &uubla;
+    return true;
+}
+
 void StatusReporting::run_inference()
 {
     setup_inference();
@@ -135,8 +142,8 @@ void StatusReporting::run_inference()
         }
         if (arwain::config.node_id == 2)
         {
-            pose_message.partner_distance = static_cast<int8_t>(UublaWrapper::get_distance(0) * 2.0);
-            std::cout << "Partner distance f = " << UublaWrapper::get_distance(0) << "\n";
+            pose_message.partner_distance = static_cast<int8_t>(uubla_wrapper_handle->get_distance(0) * 2.0);
+            std::cout << "Partner distance f = " << uubla_wrapper_handle->get_distance(0) << "\n";
             std::cout << "Partner distance i = " << static_cast<int>(pose_message.partner_distance) << "\n";
             std::cout << "\n";
         }

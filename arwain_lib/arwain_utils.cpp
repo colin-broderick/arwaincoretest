@@ -101,7 +101,7 @@ double unwrap_phase_degrees(double new_angle, double previous_angle)
 }
 
 /** \brief Get the current system datetime as a string.
- * \return Datetime as string.
+ * \return Datetime as string in the format yyyy_mm_dd_hh_mm_ss.
  */
 std::string date_time_string()
 {

@@ -92,7 +92,7 @@ static int sphere_region(double x, double y, double z)
     return region;
 }
 
-void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
+void MagnetometerCalibrator::feed(const Vector3& reading)
 {
     static double x_bias = 0;
     static double y_bias = 0;
@@ -139,12 +139,12 @@ void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
     std::cout << "Coverage quality: " << this->sphere_coverage_quality << std::endl;
 }
 
-int arwain::MagnetometerCalibrator::get_sphere_coverage_quality()
+int MagnetometerCalibrator::get_sphere_coverage_quality()
 {
     return this->sphere_coverage_quality;
 }
 
-std::tuple<std::vector<double>, std::vector<std::vector<double>>> arwain::MagnetometerCalibrator::solve()
+std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCalibrator::solve()
 {
     // TODO Make sure there are enough data samples
     // TODO Make sure there is good sphere coverage

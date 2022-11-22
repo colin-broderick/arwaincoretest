@@ -3,7 +3,7 @@
 
 #include "arwain.hpp"
 #include "exceptions.hpp"
-#include "imu_reader.hpp"
+#include "sensor_manager.hpp"
 #include "transmit_lora.hpp"
 #include "altimeter.hpp"
 #include "std_output.hpp"

@@ -142,7 +142,7 @@ namespace arwain
     arwain::ReturnCode rerun_orientation_filter(const std::string& data_location);
     arwain::ReturnCode rerun_floor_tracker(const std::string& data_location);
     void setup_log_directory();
-    arwain::ReturnCode calibrate_gyroscopes();
+    arwain::ReturnCode calibrate_gyroscopes_offline();
     arwain::ReturnCode calibrate_accelerometers();
     arwain::ReturnCode calibrate_accelerometers_simple();
     arwain::ReturnCode calibrate_magnetometers();
