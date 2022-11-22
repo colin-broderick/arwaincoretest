@@ -4,6 +4,12 @@
 #include "arwain_utils.hpp"
 #include "vector3.hpp"
 
+/** \brief Constructor. 
+ * \param ag_window_size_ How many accelerometer and gyro readings over which to calculate the
+ * rolling average acceleration and gyration.
+ * \param velo_window_size_ How many velocity readings over which to calcualte the rolling average
+ * velocity.
+*/
 ActivityMetric::ActivityMetric(unsigned int ag_window_size_, unsigned int velo_window_size_)
 : ag_window_size(ag_window_size_),
   velo_window_size(velo_window_size_),
@@ -14,26 +20,33 @@ ActivityMetric::ActivityMetric(unsigned int ag_window_size_, unsigned int velo_w
 
 }
 
-ActivityMetric::~ActivityMetric()
-{
-    
-}
-
+/** \brief Update the activity metric with new gyroscope data.
+ * \param gyro A Vector3 of gyro data in the order x, y, z.
+ */
 void ActivityMetric::feed_gyro(const Vector3& gyro)
 {
     gyro_roller.feed(gyro.magnitude());
 }
 
+/** \brief Update the activity metric with new accelerometer data.
+ * \param gyro A Vector3 of accelerometer data in the order x, y, z.
+ */
 void ActivityMetric::feed_acce(const Vector3& acce)
 {
     acce_roller.feed(acce.magnitude());
 }
 
-void ActivityMetric::feed_velo(const Vector3& velo)
+/** \brief Update the activity metric with new world-frame velocity data.
+ * \param velocity A Vector3 of world-frame velocity data in the order x, y, z.
+ */
+void ActivityMetric::feed_velocity(const Vector3& velocity)
 {
-    velo_roller.feed(velo.magnitude());
+    velo_roller.feed(velocity.magnitude());
 }
 
+/** \brief Read out the current value of the activity metric.
+ * \return Number representing activity intensity.
+ */
 double ActivityMetric::read()
 {
     return 4.0 * std::abs(
