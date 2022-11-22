@@ -527,15 +527,20 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     InputParser input{argc, argv};
 
     // Output help text if requested.
-    if (input.contains("-h") || input.contains("-help"))
+    if (input.contains("--help") || input.contains("-h"))
     {
         std::cout << arwain::help_text << std::endl;
         return arwain::ReturnCode::Success;
     }
-    if (input.contains("-version"))
+    if (input.contains("--version") || input.contains("-v"))
     {
         std::cout << "ARWAIN executable version 0.1\n";
         return arwain::ReturnCode::Success;
+    }
+    if (input.contains("--fulltest") || input.contains("-f"))
+    {
+        std::cout << "Entering interactive test mode\n";
+        return arwain::interactive_test();
     }
 
     // Attempt to read the config file and quit if failed.
@@ -547,9 +552,9 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     }
 
     // Start IMU test mode. This returns so the program will quit when the test is stopped.
-    else if (input.contains("-testimu"))
+    else if (input.contains("--testimu"))
     {
-        ret = arwain::test_imu();
+        ret = arwain::test_imu("/dev/i2c-1", 0x68);
     }
     else if (input.contains("-testlorarx"))
     {

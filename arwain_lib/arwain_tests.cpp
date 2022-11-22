@@ -69,6 +69,7 @@ arwain::ReturnCode arwain::test_pressure()
 
     // Set up timing.
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50};
+    Timers::CountdownTimer loop_timer{5000};
 
     double altitude = 100;
     double factor = arwain::config.altitude_filter_weight;
@@ -79,7 +80,7 @@ arwain::ReturnCode arwain::test_pressure()
 
     sleep_ms(50);
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (!loop_timer.finished())
     {
         auto [new_pressure, new_temperature] = bmp384.read();
         new_pressure = new_pressure - arwain::config.pressure_offset;
@@ -100,18 +101,18 @@ arwain::ReturnCode arwain::test_pressure()
 
 /** \brief Utility functional for checking that the IMU is operational.
  */
-arwain::ReturnCode arwain::test_imu()
+arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_address)
 {
     // Initialize the IMU.
-    IMU_IIM42652 imu{0x68, "/dev/i2c-1"};
+    IMU_IIM42652 imu{i2c_address, i2c_bus};
     imu.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
     imu.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
 
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{10};
+    Timers::CountdownTimer loop_timer{5000};
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (!loop_timer.finished())
     {
         auto [accel_data, gyro_data] = imu.read_IMU();
         accel_data.x = (accel_data.x - arwain::config.accel1_bias.x) * arwain::config.accel1_scale.x;
@@ -119,11 +120,10 @@ arwain::ReturnCode arwain::test_imu()
         accel_data.z = (accel_data.z - arwain::config.accel1_bias.z) * arwain::config.accel1_scale.z;
 
         // Display IMU data.
-        std::cout << loop_scheduler.count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";
+        std::cout << std::chrono::high_resolution_clock::now().time_since_epoch().count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";
 
         // Wait until the next tick.
-        loop_scheduler.await();
-
+        sleep_ms(10);
     }
 
     return arwain::ReturnCode::Success;
@@ -148,6 +148,42 @@ arwain::ReturnCode arwain::test_lora_rx()
             std::cout << message << std::endl;
         }
     }
+
+    return arwain::ReturnCode::Success;
+}
+
+arwain::ReturnCode arwain::interactive_test()
+{
+    arwain::ReturnCode ret = arwain::ReturnCode::Success;
+    std::string response;
+
+    // IMU reads looks normal
+    ret = arwain::test_imu("/dev/i2c-1", 0x68);
+    std::cout << "\n";
+    std::cout << "Did you see the expected output from the IMU?\n";
+    std::cin >> response;
+    if (response == "n" || response == "N")
+    {
+        return arwain::ReturnCode::IMUReadError;
+    }
+
+    // TODO Pressure reads look normal
+    ret = arwain::test_pressure();
+    std::cout << "\n";
+    std::cout << "Did you see the expected output from the pressure sensor?";
+    std::cin >> response;
+    if (response == "n" || response == "N")
+    {
+        return arwain::ReturnCode::PressureReadError;
+    }
+
+    // TODO Magnetometer reads look normal
+
+
+    // TODO Velocity estimation looks normal
+
+    // TODO 
+
 
     return arwain::ReturnCode::Success;
 }

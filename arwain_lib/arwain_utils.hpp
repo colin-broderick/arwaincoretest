@@ -59,7 +59,8 @@ namespace arwain
         NoConfigurationFile = -4,
         NoInferenceXML = -5,
         IMUReadError = -6,
-        IOError = -7
+        IOError = -7,
+        PressureReadError = -8
     };
 
     inline std::map<arwain::ReturnCode, std::string> ErrorMessages = {
@@ -70,7 +71,8 @@ namespace arwain
         {arwain::ReturnCode::NoConfigurationFile, "Could not find configuration file."},
         {arwain::ReturnCode::NoInferenceXML, "Inference model XML file not found."},
         {arwain::ReturnCode::IMUReadError, "Encountered error reading IMU."},
-        {arwain::ReturnCode::IOError, "Problem with file access."}
+        {arwain::ReturnCode::IOError, "Problem with file access."},
+        {arwain::ReturnCode::PressureReadError, "Encountered error reading pressure sensor."},
     };
     
     /** \brief Compute the average value of an indeterminiate number of objects. */
