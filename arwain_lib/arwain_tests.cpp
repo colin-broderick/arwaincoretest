@@ -28,7 +28,7 @@ static EulerOrientation computer_euler_degrees(Quaternion& q)
 }
 
 #if USE_UUBLA
-int arwain::test_uubla_integration()
+arwain::ReturnCode arwain::test_uubla_integration()
 {
     std::cout << "Creating UUBLA network and running for 20 s" << "\n";
 
@@ -59,7 +59,7 @@ int arwain::test_uubla_integration()
     uubla.stop();
     solver_th.join();
 
-    return arwain::ExitCodes::Success;
+    return arwain::ReturnCode::Success;
 }
 #endif
 
