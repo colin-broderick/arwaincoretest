@@ -129,5 +129,4 @@ void Altimeter::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit Altimeter\n";
 }

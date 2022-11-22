@@ -537,11 +537,6 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
         std::cout << "ARWAIN executable version 0.1\n";
         return arwain::ReturnCode::Success;
     }
-    if (input.contains("--fulltest") || input.contains("-f"))
-    {
-        std::cout << "Entering interactive test mode\n";
-        return arwain::interactive_test();
-    }
 
     // Attempt to read the config file and quit if failed.
     arwain::config = arwain::Configuration{input};
@@ -549,6 +544,12 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     {
         std::cout << "Got an error when reading config file:\n";
         std::cout << arwain::ErrorMessages[ret] << std::endl;
+    }
+    
+    if (input.contains("--fulltest") || input.contains("-f"))
+    {
+        std::cout << "Entering interactive test mode\n";
+        return arwain::interactive_test();
     }
 
     // Start IMU test mode. This returns so the program will quit when the test is stopped.

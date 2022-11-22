@@ -129,17 +129,15 @@ void PositionVelocityInference::run_inference()
         std::string fromStream = request.str();
         const char *str = fromStream.c_str();
         zmq_send(responder, str, strlen(str), 0);
-        std::cout << "Sent AI query by socket\n";
         zmq_recv(responder, response_buffer, 50, 0);
-        std::cout << "Received AI response by socket\n";
         request.str("");
 
         // Process the answer buffer into local velocity buffers.
         // Assume a comma-separated list of three floats.
         std::string answer{response_buffer};
-        std::cout << answer << "\n";
         if (answer == "accept")
         {
+            ready_for_inference = true;
             continue;
         }
         int delimiter = answer.find(",");
@@ -242,7 +240,8 @@ bool PositionVelocityInference::init()
     {
         return false;
     }
-    this->ready_for_inference = core_setup();
+    // this->ready_for_inference = core_setup();
+    core_setup();
     job_thread = ArwainThread{&PositionVelocityInference::run, "arwain_infr_th", this};
     #if USE_NCS2
     ncs2_thread = ArwainThread{&PositionVelocityInference::py_inference, "arwain_ncs2_th", this};          // Temporary: Run Python script to handle velocity inference.
@@ -258,9 +257,7 @@ void PositionVelocityInference::join()
     }
     // Instruct the NCS2 interface script to quit.
     #if USE_NCS2
-    std::cout << "stopping zmq\n";
     zmq_send(responder, "stop", strlen("stop"), 0);
-    std::cout << "stopped zmq\n";
 
     // TODO Apparently, deletion of a void* is undefined, so not sure how to clean this up. Technically a memory leak, 
     // although only one of each of the following ever exist so not a real cause for concern.
@@ -273,7 +270,6 @@ void PositionVelocityInference::join()
     #else // USE_TF
     delete input;
     #endif
-    std::cout << "Successfully quit PositionVelocityInference\n";
 }
 
 /** \brief Estimate the hidden state of a system given a physical model and occasional measurements.

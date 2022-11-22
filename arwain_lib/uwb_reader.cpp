@@ -92,7 +92,6 @@ void UublaWrapper::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit UublaWrapper\n";
 }
 
 double UublaWrapper::get_distance(const int position)

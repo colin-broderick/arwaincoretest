@@ -60,7 +60,10 @@ namespace arwain
         NoInferenceXML = -5,
         IMUReadError = -6,
         IOError = -7,
-        PressureReadError = -8
+        PressureReadError = -8,
+        MagnetometerReadError = -9,
+        InferenceError = -10,
+        GeneralError = -11
     };
 
     inline std::map<arwain::ReturnCode, std::string> ErrorMessages = {
@@ -73,6 +76,9 @@ namespace arwain
         {arwain::ReturnCode::IMUReadError, "Encountered error reading IMU."},
         {arwain::ReturnCode::IOError, "Problem with file access."},
         {arwain::ReturnCode::PressureReadError, "Encountered error reading pressure sensor."},
+        {arwain::ReturnCode::MagnetometerReadError, "Encountered error reading magnetometer."},
+        {arwain::ReturnCode::InferenceError, "AI engine failed to run."},
+        {arwain::ReturnCode::GeneralError, "Undefined error state."}
     };
     
     /** \brief Compute the average value of an indeterminiate number of objects. */

@@ -8,6 +8,8 @@
 #include "IMU_IIM42652_driver.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
+#include "sensor_manager.hpp"
+#include "velocity_prediction.hpp"
 
 #if USE_ROS
 #include <ros/ros.h>
@@ -69,7 +71,7 @@ arwain::ReturnCode arwain::test_pressure()
 
     // Set up timing.
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50};
-    Timers::CountdownTimer loop_timer{5000};
+    Timers::CountdownTimer loop_timer{3000};
 
     double altitude = 100;
     double factor = arwain::config.altitude_filter_weight;
@@ -110,7 +112,8 @@ arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_ad
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
 
     // Set up timing.
-    Timers::CountdownTimer loop_timer{5000};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50};
+    Timers::CountdownTimer loop_timer{3000};
 
     while (!loop_timer.finished())
     {
@@ -123,7 +126,7 @@ arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_ad
         std::cout << std::chrono::high_resolution_clock::now().time_since_epoch().count() << std::fixed << std::right << std::setprecision(3) << "\t" << accel_data.x << "\t" << accel_data.y << "\t" << accel_data.z << "\t" << gyro_data.x << "\t" << gyro_data.y << "\t" << gyro_data.z << "\n";
 
         // Wait until the next tick.
-        sleep_ms(10);
+        loop_scheduler.await();
     }
 
     return arwain::ReturnCode::Success;
@@ -152,38 +155,91 @@ arwain::ReturnCode arwain::test_lora_rx()
     return arwain::ReturnCode::Success;
 }
 
+arwain::ReturnCode arwain::test_inference()
+{
+    SensorManager sensor_manager;
+    PositionVelocityInference inferrer;
+
+    arwain::system_mode = arwain::OperatingMode::Inference;
+
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50};
+
+    std::cout << "Waiting for the AI engine to become ready...\n";
+    while (!inferrer.ready())
+    {
+        loop_scheduler.await();
+    }
+    std::cout << "AI engine ready\n";
+    loop_scheduler.await();
+
+    Timers::CountdownTimer loop_timer{3000};
+    while (!loop_timer.finished())
+    {
+        std::cout << "Velocity: " << std::setprecision(6) << arwain::Buffers::VELOCITY_BUFFER.back() << "\n";
+        loop_scheduler.await();
+    }
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    sensor_manager.join();
+    inferrer.join();
+
+    return arwain::ReturnCode::Success;
+}
+
 arwain::ReturnCode arwain::interactive_test()
 {
     arwain::ReturnCode ret = arwain::ReturnCode::Success;
     std::string response;
 
-    // IMU reads looks normal
+    // Test IMU reads looks normal
     ret = arwain::test_imu("/dev/i2c-1", 0x68);
     std::cout << "\n";
-    std::cout << "Did you see the expected output from the IMU?\n";
+    std::cout << "Did you see the expected output from the IMU (y/n)?\n";
     std::cin >> response;
     if (response == "n" || response == "N")
     {
         return arwain::ReturnCode::IMUReadError;
     }
 
-    // TODO Pressure reads look normal
+    // Test pressure reads look normal
     ret = arwain::test_pressure();
     std::cout << "\n";
-    std::cout << "Did you see the expected output from the pressure sensor?";
+    std::cout << "Did you see the expected output from the pressure sensor (y/n)?\n";
     std::cin >> response;
     if (response == "n" || response == "N")
     {
         return arwain::ReturnCode::PressureReadError;
     }
 
-    // TODO Magnetometer reads look normal
+    // Test magnetometer reads look normal
+    ret = arwain::test_mag();
+    std::cout << "\n";
+    std::cout << "Did you see the expected output from the magnetometer (y/n)?\n";
+    std::cin >> response;
+    if (response == "n" || response == "N")
+    {
+        return arwain::ReturnCode::MagnetometerReadError;
+    }
 
+    // Test velocity estimation looks normal
+    ret = arwain::test_inference();
+    std::cout << "\n";
+    std::cout << "Did you see the expected output from the AI engine (y/n)?\n";
+    std::cin >> response;
+    if (response == "n" || response == "N")
+    {
+        return arwain::ReturnCode::InferenceError;
+    }
 
-    // TODO Velocity estimation looks normal
-
-    // TODO 
-
+    // Test orientation filter looks normal
+    ret = arwain::test_ori(50);
+    std::cout << "\n";
+    std::cout << "Did you see the expected output from the orientation filter (y/n)?\n";
+    std::cin >> response;
+    if (response == "n" || response == "N")
+    {
+        return arwain::ReturnCode::InferenceError;
+    }
 
     return arwain::ReturnCode::Success;
 }
@@ -229,7 +285,9 @@ arwain::ReturnCode arwain::test_mag()
     }
     std::cout << "Chip ID: " << std::hex << std::showbase << magn.test_chip() << std::dec << std::endl;
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    Timers::CountdownTimer loop_timer{3000};
+
+    while (!loop_timer.finished())
     {
         Vector3 reading = magn.read();
         std::cout << "Magnetometer readings: " << reading << " .... " << reading.magnitude() << std::endl;
@@ -273,13 +331,14 @@ arwain::ReturnCode arwain::test_ori(int frequency)
     // arwain::eFaroe filter{{1, 0, 0, 0}, config.gyro1_bias, 0, config.efaroe_beta, config.efaroe_zeta};
 
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{static_cast<unsigned int>(1000/frequency)};
-    int count = 0;
     EulerOrientation euler;
     Quaternion quat;
 
     std::cout << "Starting orientation filter at " << frequency << " Hz" << std::endl;
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    Timers::CountdownTimer loop_timer{3000};
+
+    while (!loop_timer.finished())
     {
         loop_scheduler.await();
         auto time_count = loop_scheduler.count();
@@ -289,14 +348,10 @@ arwain::ReturnCode arwain::test_ori(int frequency)
         
         filter.update(time_count, gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
 
-        count++;
-        if (count % frequency == 0)
-        {
-            quat = {filter.getW(), filter.getX(), filter.getY(), filter.getZ()};
-            euler = computer_euler_degrees(quat);
-            std::cout << "Quaternion: " << std::fixed << std::showpos << filter.getW() << " " << filter.getX() << " " << filter.getY() << " " << filter.getZ() << "\t\t";
-            std::cout << "Euler: " << std::fixed << std::showpos << euler.roll << " " << euler.pitch << " " << euler.yaw << "\n";
-        }
+        quat = {filter.getW(), filter.getX(), filter.getY(), filter.getZ()};
+        euler = computer_euler_degrees(quat);
+        std::cout << "Quaternion: " << std::fixed << std::showpos << filter.getW() << " " << filter.getX() << " " << filter.getY() << " " << filter.getZ() << "\t\t";
+        std::cout << "Euler: " << std::fixed << std::showpos << euler.roll << " " << euler.pitch << " " << euler.yaw << "\n";
     }
     
     return arwain::ReturnCode::Success;
