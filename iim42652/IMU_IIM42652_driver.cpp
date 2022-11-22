@@ -271,7 +271,7 @@ bool IMU_IIM42652::auto_calib_enabled() const
 }
 
 /** \brief Fetches raw IMU data and applies conversion factors to get correct units. Alters state. */
-Vector6 IMU_IIM42652::read_IMU()
+ImuData IMU_IIM42652::read_IMU()
 {
     read_IMU_raw_data();
 

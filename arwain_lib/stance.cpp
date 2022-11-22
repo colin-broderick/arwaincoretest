@@ -242,7 +242,7 @@ void StanceDetector::clear_freefall_flag()
  * contains a freefall event, report a fall. If no window contains a freefall event,
  * report no fall.
  */
-void StanceDetector::check_for_falls(const std::deque<Vector6>& imu_data)
+void StanceDetector::check_for_falls(const std::deque<ImuData>& imu_data)
 {
     RollingAverage roller{static_cast<unsigned int>(imu_data.size() / 10)};
 
@@ -296,7 +296,7 @@ void StanceDetector::update_attitude(Quaternion rotation_quaternion)
  * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
  * \param vel_data Pointer to deq<arr<double>> containing velocity data.
  */
-void StanceDetector::run(const std::deque<Vector6> &imu_data, const std::deque<Vector3> &vel_data)
+void StanceDetector::run(const std::deque<ImuData> &imu_data, const std::deque<Vector3> &vel_data)
 {
     // Crunch the numbers ...
     std::vector<Vector3> accel_data;

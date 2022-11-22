@@ -34,7 +34,7 @@ class PositionVelocityInference
         #endif
 
         // Local copy of IMU buffer data.
-        std::deque<Vector6> imu;
+        std::deque<ImuData> imu;
 
         Vector3 position;
         Vector3 velocity;
