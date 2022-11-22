@@ -173,7 +173,7 @@ void PositionVelocityInference::run_inference()
         }
 
         // Feed the activity metrix.
-        arwain::activity_metric.feed_velo(velocity);
+        arwain::activity_metric.feed_velocity(velocity);
 
         Vector3 average_acceleration{0, 0, 0};
         for (std::deque<Vector6>::iterator it = imu.end() - 10; it != imu.end(); ++it)
