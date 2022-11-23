@@ -212,7 +212,7 @@ void SensorManager::run_accel_calibration()
 
 void SensorManager::run_idle()
 {
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL, "arwain_sensor_manager_run_idle"};
 
     while (arwain::system_mode == arwain::OperatingMode::Idle || arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
     {
@@ -279,7 +279,7 @@ void SensorManager::run_inference()
     setup_inference();
 
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL, "arwain_sensor_manager_run_infer"};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {

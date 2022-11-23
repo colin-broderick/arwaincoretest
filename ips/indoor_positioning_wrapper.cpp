@@ -40,7 +40,7 @@ void IndoorPositioningSystem::run_inference()
 {
     setup_inference();
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IPS_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IPS_INTERVAL, "arwain_ips_run_infer"};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
