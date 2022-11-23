@@ -69,8 +69,6 @@ arwain::ReturnCode arwain::test_pressure()
     BMP384 bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
 
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50};
-    Timers::CountdownTimer loop_timer{3000};
 
     double altitude = 100;
     double factor = arwain::config.altitude_filter_weight;
@@ -80,6 +78,9 @@ arwain::ReturnCode arwain::test_pressure()
     altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
 
     sleep_ms(50);
+
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50, "arwain_test_pressure"};
+    Timers::CountdownTimer loop_timer{3000};
 
     while (!loop_timer.finished())
     {
@@ -111,7 +112,7 @@ arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_ad
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
 
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50, "arwain_test_imu"};
     Timers::CountdownTimer loop_timer{3000};
 
     while (!loop_timer.finished())
@@ -161,7 +162,7 @@ arwain::ReturnCode arwain::test_inference()
 
     arwain::system_mode = arwain::OperatingMode::Inference;
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50, "arwain_test_infer"};
 
     std::cout << "Waiting for the AI engine to become ready...\n";
     while (!inferrer.ready())
@@ -251,7 +252,7 @@ arwain::ReturnCode arwain::interactive_test()
 
     ret = arwain::test_lora_tx();
     std::cout << "\n";
-    std::cout << "Did you receive the expected LoRa messages on the rx side (y/n)?";
+    std::cout << "Did you receive the expected LoRa messages on the rx side (y/n)?\n";
     std::cin >> response;
     if (response == "n" || response == "N")
     {
@@ -329,7 +330,7 @@ arwain::ReturnCode arwain::test_lora_tx()
 
     int i = 0;
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{1000};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{1000, "arwain_test_lora_tx"};
     Timers::CountdownTimer loop_timer{5000};
 
     while (!loop_timer.finished())
@@ -352,7 +353,7 @@ arwain::ReturnCode arwain::test_ori(int frequency)
     arwain::Madgwick filter{static_cast<double>(frequency), config.madgwick_beta};
     // arwain::eFaroe filter{{1, 0, 0, 0}, config.gyro1_bias, 0, config.efaroe_beta, config.efaroe_zeta};
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{static_cast<unsigned int>(1000/frequency)};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{static_cast<unsigned int>(1000/frequency), "arwain_test_ori"};
     EulerOrientation euler;
     Quaternion quat;
 

@@ -38,7 +38,7 @@ void StanceDetection::run_inference()
     setup_inference();
 
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_infer"};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
@@ -106,7 +106,7 @@ void StanceDetection::cleanup_stance_detector()
 void StanceDetection::run_test_stance_detector()
 {
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_idle"};
 
     while (arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
     {

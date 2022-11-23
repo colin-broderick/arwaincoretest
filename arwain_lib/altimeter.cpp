@@ -31,7 +31,7 @@ void Altimeter::run_inference()
 {
     setup_inference();
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL, "altimeter_infer"};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
@@ -52,7 +52,7 @@ void Altimeter::run_inference()
 
 void Altimeter::run_idle()
 {
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL, "altimeter_idle"};
 
     while (arwain::system_mode == arwain::OperatingMode::Idle)
     {
