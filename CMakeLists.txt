@@ -4,12 +4,12 @@ project(arwain)
 
 find_package(GTest CONFIG REQUIRED)
 
-option(USE_NCS2             "Use the Neural Compute Stick for inference"        OFF)
-option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"        OFF)
-option(USE_ROS              "Use ROS topics to publish diagnostic data"         OFF)
-option(USE_UUBLA            "Include the UUBLA ultra-wideband library"          OFF)
-option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"     OFF)
-option(UNIT_TESTS           "Make namespace functions public to enable testing" OFF)
+option(USE_NCS2             "Use the Neural Compute Stick for inference"          OFF)
+option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"          OFF)
+option(USE_ROS              "Use ROS topics to publish diagnostic data"           OFF)
+option(USE_UUBLA            "Include the UUBLA ultra-wideband library"            OFF)
+option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"       OFF)
+option(UNIT_TESTS           "Make private class methods public to enable testing" OFF)
 
 if(UNIT_TESTS)
     message("Building with all public class methods for test")
@@ -56,7 +56,7 @@ add_subdirectory(input_parser)
 add_subdirectory(kalman)
 add_subdirectory(timers)
 add_subdirectory(lis3mdl)
-add_subdirectory(minitrace)
+add_subdirectory(minitrace) # Adds performance profiling tools which generate reports viewable in Chrome.
 add_subdirectory(ips)
 add_subdirectory(bmp384)
 if(USE_UUBLA)
@@ -96,11 +96,12 @@ if(USE_NCS2)
     add_definitions(-DUSE_NCS2)
     set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} zmq)
 else()
-    set(TENSORFLOW_SOURCE_DIR "/opt/arwain/workspace/tensorflow_src" CACHE PATH
+    message("Compiling with tensorflow support")
+    set(TENSORFLOW_SOURCE_DIR "/home/pi/tensorflow" CACHE PATH
     "Directory that contains the TensorFlow project" )
     if(NOT TENSORFLOW_SOURCE_DIR)
-    get_filename_component(TENSORFLOW_SOURCE_DIR
-        "${CMAKE_CURRENT_LIST_DIR}/../../../../" ABSOLUTE)
+        get_filename_component(TENSORFLOW_SOURCE_DIR
+            "${CMAKE_CURRENT_LIST_DIR}/../../../../" ABSOLUTE)
     endif()
     if(NOT EXISTS "tfdone")  
         add_subdirectory(

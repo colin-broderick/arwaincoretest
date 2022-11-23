@@ -9,15 +9,6 @@
 #include "exceptions.hpp"
 #include "arwain_thread.hpp"
 
-#if USE_NCS2
-    #include <zmq.h>
-#else // Using tflite inference
-    #include "tensorflow/lite/interpreter.h"
-    #include "tensorflow/lite/kernels/register.h"
-    #include "tensorflow/lite/model.h"
-    #include "tensorflow/lite/tools/gen_op_registration.h"
-#endif
-
 PositionVelocityInference::PositionVelocityInference()
 {
     init();

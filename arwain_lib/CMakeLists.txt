@@ -5,7 +5,6 @@ add_definitions(-DUSE_NCS2)
 set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB SRC_FILES CONFIGURE_DEPENDS "*.cpp")
-message(${SRC_FILES})
 list(REMOVE_ITEM SRC_FILES "/home/pi/arwain_inference_core/arwain_lib/realsense.cpp")
 
 if(USE_UUBLA)
