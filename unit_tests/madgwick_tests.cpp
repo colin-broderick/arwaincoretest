@@ -32,28 +32,28 @@ TEST(Madgwick, Get_Beta)
 TEST(Madgwick, Get_W)
 {
     arwain::Madgwick mad;
-    double w = mad.getW();
+    double w = mad.get_w();
     EXPECT_TRUE(w == 1.0);
 }
 
 TEST(Madgwick, Get_X)
 {
     arwain::Madgwick mad;
-    double x = mad.getX();
+    double x = mad.get_x();
     EXPECT_TRUE(x == 0.0);
 }
 
 TEST(Madgwick, Get_Y)
 {
     arwain::Madgwick mad;
-    double y = mad.getY();
+    double y = mad.get_y();
     EXPECT_TRUE(y == 0.0);
 }
 
 TEST(Madgwick, Get_Z)
 {
     arwain::Madgwick mad;
-    double z = mad.getZ();
+    double z = mad.get_z();
     EXPECT_TRUE(z == 0.0);
 }
 
@@ -62,11 +62,11 @@ TEST(Madgwick, Get_roll)
     arwain::Madgwick mad;
 
     // Roll should be initially be zero.
-    EXPECT_EQ(mad.getRoll(), 0);
+    EXPECT_EQ(mad.get_roll(), 0);
 
     // After some noisy data updates, roll should be non-zero.
     mad.update(0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
-    EXPECT_NE(mad.getRoll(), 0);
+    EXPECT_NE(mad.get_roll(), 0);
 
     // After many gravity-aligned updates, roll should be close to zero;
     // we check it is less than 1 degree.
@@ -74,15 +74,15 @@ TEST(Madgwick, Get_roll)
     {
         mad.update(0, 0, 0, 0, 0, 10);
     }
-    EXPECT_LT(mad.getRoll(), 1.0);
+    EXPECT_LT(mad.get_roll(), 1.0);
 
     // After many anti-gravity-aligned updates, roll should be close to 180 degrees.
     for (int i = 0; i < 50000; i++)
     {
         mad.update(0, 0, 0, 0, 0, -10);
     }
-    EXPECT_GT(std::abs(mad.getRoll()), 179.0);
-    EXPECT_LT(std::abs(mad.getRoll()), 180.0);
+    EXPECT_GT(std::abs(mad.get_roll()), 179.0);
+    EXPECT_LT(std::abs(mad.get_roll()), 180.0);
 }
 
 TEST(Madgwick, Get_pitch)
@@ -90,11 +90,11 @@ TEST(Madgwick, Get_pitch)
     arwain::Madgwick mad;
 
     // Pitch should be initially be zero.
-    EXPECT_EQ(mad.getPitch(), 0);
+    EXPECT_EQ(mad.get_pitch(), 0);
 
     // After some noisy data updates, pitch should be non-zero.
     mad.update(0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
-    EXPECT_NE(mad.getPitch(), 0);
+    EXPECT_NE(mad.get_pitch(), 0);
 
     // After many gravity-aligned updates, pitch should be close to zero;
     // we check it is less than 1 degree.
@@ -102,21 +102,21 @@ TEST(Madgwick, Get_pitch)
     {
         mad.update(0, 0, 0, 0, 0, 10);
     }
-    EXPECT_LT(mad.getPitch(), 1.0);
+    EXPECT_LT(mad.get_pitch(), 1.0);
 
     // After many anti-gravity-aligned updates, pitch should be close to 0 degrees.
     for (int i = 0; i < 50000; i++)
     {
         mad.update(0, 0, 0, 0, 0, -10);
     }
-    EXPECT_GT(std::abs(mad.getPitch()), 0.0);
-    EXPECT_LT(std::abs(mad.getPitch()), 1.0);
+    EXPECT_GT(std::abs(mad.get_pitch()), 0.0);
+    EXPECT_LT(std::abs(mad.get_pitch()), 1.0);
 }
 
 TEST(Madgwick, Get_yaw)
 {
     arwain::Madgwick mad;
-    double pitch = mad.getYaw();
+    double pitch = mad.get_yaw();
     //EXPECT_TRUE(yaw == 0.0);
     FAIL();
 }
@@ -124,7 +124,7 @@ TEST(Madgwick, Get_yaw)
 TEST(Madgwick, Get_roll_radians)
 {
     arwain::Madgwick mad;
-    double roll_radians = mad.getRollRadians();
+    double roll_radians = mad.get_roll_radians();
     //EXPECT_TRUE(roll_radians == 0.0);
     FAIL();
 }
@@ -132,7 +132,7 @@ TEST(Madgwick, Get_roll_radians)
 TEST(Madgwick, Get_pitch_radians)
 {
     arwain::Madgwick mad;
-    double pitch_radians = mad.getPitchRadians();
+    double pitch_radians = mad.get_pitch_radians();
     //EXPECT_TRUE(pitch_radians == 0.0);
     FAIL();
 }
@@ -140,19 +140,19 @@ TEST(Madgwick, Get_pitch_radians)
 TEST(Madgwick, Get_pitch_yaw)
 {
     arwain::Madgwick mad;
-    double yaw_radians = mad.getYawRadians();
+    double yaw_radians = mad.get_yaw_radians();
     //EXPECT_TRUE(yaw_radians == 0.0);
     FAIL();
 }
 
-TEST(Madgwick, setQ)
+TEST(Madgwick, set_q)
 {
     arwain::Madgwick mad;
-    mad.setQ(1.0, 2.0, 3.0, 4.0);
-    EXPECT_TRUE(mad.getW() == 1.0);
-    EXPECT_TRUE(mad.getX() == 2.0);
-    EXPECT_TRUE(mad.getY() == 3.0);
-    EXPECT_TRUE(mad.getZ() == 4.0);
+    mad.set_q(1.0, 2.0, 3.0, 4.0);
+    EXPECT_TRUE(mad.get_w() == 1.0);
+    EXPECT_TRUE(mad.get_x() == 2.0);
+    EXPECT_TRUE(mad.get_y() == 3.0);
+    EXPECT_TRUE(mad.get_z() == 4.0);
 }
 
 TEST(Madgwick, set_beta)
