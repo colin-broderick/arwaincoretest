@@ -58,6 +58,12 @@ namespace Timers
 
             }
 
+            IntervalTimer(unsigned int time_count, const std::string& name)
+            : IntervalTimer(time_count)
+            {
+                stored_name = name;
+            }
+
             /** \brief Increments the stored time by the stored interval,
              * then does a blocking sleep until that time is reached.
              * \return Boolean true if a sleep was performed. Boolean false if the target
@@ -68,6 +74,7 @@ namespace Timers
                 time = time + interval;
                 if (time < std::chrono::high_resolution_clock::now())
                 {
+                    std::cout << "WARNING: Interval timer named \"" << stored_name << "\" appears to be running slow\n";
                     return false;
                 }
                 else
@@ -88,6 +95,7 @@ namespace Timers
         private:
             std::chrono::high_resolution_clock::time_point time;
             DurationType interval;
+            std::string stored_name = "no_name_set";
     };
 }
 
