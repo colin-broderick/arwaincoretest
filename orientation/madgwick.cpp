@@ -33,7 +33,9 @@
 
 // Constructors -----------------------------------------------------------------------------------
 
-/** \brief Constructor using default sample frequency.
+/** \brief Default constructor.
+ * Sets the initial quaternion q = (1, 0, 0, 0). Sets the inverse_sample_frequency as reciprocal of
+ * sample_frequency_default. Sets angles_computed flag to 0. Sets beta equal to beta_default.
  */
 arwain::Madgwick::Madgwick()
 {
@@ -315,21 +317,67 @@ void arwain::Madgwick::compute_angles()
 
 // Getters ----------------------------------------------------------------------------------------
 
+/** \brief Check whether a new reading has been received since the Euler angles were last calculated.
+ * \return True if no new reading has been received; false if a new reading has been received.
+ */
+bool arwain::Madgwick::angles_updated() const
+{
+	return angles_computed == 0 ? false : true;
+}
+
+/** \brief Gives the inverse sample frequency in 1/Hz, i.e., the assumed time between updates in seconds.
+ * \return Expected time between samples in seconds.
+ */
+double arwain::Madgwick::get_inverse_sample_frequency() const
+{
+	return inverse_sample_frequency;
+}
+
+/** \brief Gives the inverse sample frequency in 1/Hz, i.e., the assumed time between updates in seconds.
+ * \return Expected time between samples in seconds.
+ */
+double arwain::Madgwick::get_dt() const
+{
+	return get_inverse_sample_frequency();
+}
+
+/** \brief Reports the frequency in Hz at which the filter expects to receive new data. Note that frequency is not stored;
+ * when requested, it is computed as 1.0 / inverse_sample_frequency. Therefore there may be some precision lost due
+ * to floating point error.
+ * \return Expected data update frequency.
+ */
+double arwain::Madgwick::get_frequency() const
+{
+	return 1.0 / inverse_sample_frequency;
+}
+
+/** \brief Returns w, also called q0; the real quaternion component.
+ * \return The real part of the quaternion rotation operator.
+ */
 double arwain::Madgwick::get_w() const
 {
 	return w;
 }
 
+/** \brief Returns x, also called q1; the ith complex quaternion component.
+ * \return The ith complex quaternion component.
+ */
 double arwain::Madgwick::get_x() const
 {
 	return x;
 }
 
+/** \brief Returns y, also called q2; the jth complex quaternion component.
+ * \return The jth complex quaternion component.
+ */
 double arwain::Madgwick::get_y() const
 {
 	return y;
 }
 
+/** \brief Returns z, also called q3; the kth complex quaternion component.
+ * \return The kth complex quaternion component.
+ */
 double arwain::Madgwick::get_z() const
 {
 	return z;
