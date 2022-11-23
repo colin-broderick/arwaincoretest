@@ -9,14 +9,15 @@
 #include "IMU_IIM42652_driver.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
+#include "arwain_utils.hpp"
 
-class ImuProcessing
+class SensorManager
 {
     TESTABLE:
         void run();
         void run_inference();
         void setup_inference();
-        void cleanup_inference();
+        arwain::ReturnCode cleanup_inference();
         void run_gyro_calibration();
         void run_magn_calibration();
         void core_setup();
@@ -52,8 +53,10 @@ class ImuProcessing
         arwain::Logger imu_calib_file_2;
         arwain::Logger imu_calib_file_3;
 
+        RollingAverage rolling_average_accel_z_for_altimeter;
+
     public:
-        ImuProcessing();
+        SensorManager();
         bool init();
         void join();
         void set_post_gyro_calibration_callback(std::function<void()> func);

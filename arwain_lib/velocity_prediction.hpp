@@ -3,6 +3,15 @@
 
 #include "arwain.hpp"
 
+#if USE_NCS2
+    #include <zmq.h>
+#else // Using tflite inference
+    #include "tensorflow/lite/interpreter.h"
+    #include "tensorflow/lite/kernels/register.h"
+    #include "tensorflow/lite/model.h"
+    #include "tensorflow/lite/tools/gen_op_registration.h"
+#endif
+
 class PositionVelocityInference
 {
     TESTABLE:
@@ -34,7 +43,7 @@ class PositionVelocityInference
         #endif
 
         // Local copy of IMU buffer data.
-        std::deque<Vector6> imu;
+        std::deque<ImuData> imu;
 
         Vector3 position;
         Vector3 velocity;

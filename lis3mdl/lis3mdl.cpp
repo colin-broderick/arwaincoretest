@@ -1,6 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <sstream>
 #include <vector>
 
 #include "lis3mdl.hpp"
@@ -35,7 +36,13 @@ LIS3MDL::LIS3MDL(const int i2c_address, const std::string& i2c_bus)
 {
     if (!i2c_init(i2c_address, i2c_bus))
     {
-        throw std::runtime_error{"Could not connect magnetometer: " + i2c_bus + " " + std::to_string(i2c_address)};
+        std::stringstream ss;
+        ss << "Could not connect magnetometer: ";
+        ss << i2c_bus;
+        ss << std::hex;
+        ss << " 0x";
+        ss << i2c_address;
+        throw std::runtime_error{ss.str()};
     }
     soft_reset();
     power_up();
@@ -179,7 +186,7 @@ double LIS3MDL::read_temp()
     uint8_t read_buffer[2];
     i2c_read(ADDR_TEMP_OUT_L, 2, read_buffer);
     int8_t temp_int = (read_buffer[1] << 8) | read_buffer[0];
-    return (double)temp_int / 8.0;
+    return static_cast<double>(temp_int) / 8.0;
 }
 
 /** \brief Read the data from the sensor. The returned values have been calibrated

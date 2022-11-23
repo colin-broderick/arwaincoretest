@@ -79,5 +79,4 @@ void CameraController::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit CameraController\n";
 }

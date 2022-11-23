@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "imu_reader.hpp"
+#include "sensor_manager.hpp"
 
 TEST(IMU_Reader, Join)
 {
-    ImuProcessing reader;
+    SensorManager reader;
     arwain::system_mode = arwain::OperatingMode::Terminate;
     EXPECT_NO_THROW(reader.join());
 }
@@ -12,7 +12,7 @@ TEST(IMU_Reader, Join)
 TEST(IMU_Reader, Init_success)
 {
    /* arwain::config.no_imu = false;
-    ImuProcessing reader;
+    SensorManager reader;
     EXPECT_TRUE(reader.init());
     arwain::system_mode = arwain::OperatingMode::Terminate;
     reader.join();
@@ -24,7 +24,7 @@ TEST(IMU_Reader, Init_failure)
 {
     /*
     arwain::config.no_imu = true;
-    ImuProcessing reader;
+    SensorManager reader;
     EXPECT_FALSE(reader.init());
     arwain::system_mode = arwain::OperatingMode::Terminate;
     reader.join();

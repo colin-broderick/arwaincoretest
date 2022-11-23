@@ -5,7 +5,7 @@
 #include <mutex>
 
 class Vector3;
-class Vector6;
+class ImuData;
 
 template <class DataType, int BufferSize>
 class GlobalBuffer
@@ -13,19 +13,7 @@ class GlobalBuffer
     public:
         GlobalBuffer()
         {
-            // bool type_ok = (
-            //     std::is_same<DataType, Vector3>::value
-            //     && std::is_same<DataType, Vector6>::value
-            // );
-
-            // if (type_ok)
-            // {
-                data = std::deque<DataType>(BufferSize);
-            // }
-            // else
-            // {
-            //     throw std::invalid_argument{"GlobalBuffer template using with invalid template type"};
-            // }
+            data = std::deque<DataType>(BufferSize);
         }
 
         std::deque<DataType> get_data()

@@ -76,19 +76,23 @@ void StatusReporting::run_idle()
     sleep_ms(10);
 }
 
-bool StatusReporting::set_stance_detection_pointer(StanceDetection* stance)
+bool StatusReporting::set_stance_detection_pointer(StanceDetection& stance)
 {
     // TODO Should I delete the pointer first?
-    this->stance_detection_handle = stance;
+    this->stance_detection_handle = &stance;
+    return true;
+}
+
+bool StatusReporting::set_uubla_wrapper_handle(UublaWrapper& uubla)
+{
+    // TODO Should I delete the pointer first?
+    this->uubla_wrapper_handle = &uubla;
     return true;
 }
 
 void StatusReporting::run_inference()
 {
     setup_inference();
-
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::LORA_TRANSMISSION_INTERVAL};
 
     std::this_thread::sleep_until(get_next_time_slot(arwain::config.node_id));
 
@@ -138,8 +142,8 @@ void StatusReporting::run_inference()
         }
         if (arwain::config.node_id == 2)
         {
-            pose_message.partner_distance = static_cast<int8_t>(UublaWrapper::get_distance(0) * 2.0);
-            std::cout << "Partner distance f = " << UublaWrapper::get_distance(0) << "\n";
+            pose_message.partner_distance = static_cast<int8_t>(uubla_wrapper_handle->get_distance(0) * 2.0);
+            std::cout << "Partner distance f = " << uubla_wrapper_handle->get_distance(0) << "\n";
             std::cout << "Partner distance i = " << static_cast<int>(pose_message.partner_distance) << "\n";
             std::cout << "\n";
         }
@@ -152,7 +156,6 @@ void StatusReporting::run_inference()
         lora_file << std::chrono::high_resolution_clock::now().time_since_epoch().count() << " " << pose_message << "\n";
 
         std::this_thread::sleep_until(get_next_time_slot(arwain::config.node_id));
-
     }
 
     cleanup_inference();
@@ -191,7 +194,6 @@ void StatusReporting::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit StatusReporting\n";
 }
 
 std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet)

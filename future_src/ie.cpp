@@ -7,7 +7,8 @@
 using namespace InferenceEngine;
 
 
-template <typename T> std::ostream & operator << (std::ostream & stream, const std::vector<T> & v)
+template <typename T>
+std::ostream & operator << (std::ostream & stream, const std::vector<T> & v)
 {
     stream << "[ ";
     for (auto && value : v)

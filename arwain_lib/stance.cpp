@@ -14,6 +14,7 @@
 #include "vector3.hpp"
 #include "arwain.hpp"
 #include "arwain_thread.hpp"
+#include "timers.hpp"
 #include "exceptions.hpp"
 
 StanceDetection::StanceDetection()
@@ -37,8 +38,7 @@ void StanceDetection::run_inference()
     setup_inference();
 
     // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_infer"};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
@@ -56,15 +56,14 @@ void StanceDetection::run_inference()
         }
 
         // Log to file.
-        stance_file << time.time_since_epoch().count() << " "
+        stance_file << loop_scheduler.count() << " "
                     << StanceDetection::get_falling_state() << " "
                     << StanceDetection::get_entangled_state() << " "
                     << StanceDetection::get_attitude() << " "
                     << StanceDetection::get_stance() << "\n";
 
         // Wait until the next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+        loop_scheduler.await();
     }
 
     cleanup_inference();
@@ -107,8 +106,7 @@ void StanceDetection::cleanup_stance_detector()
 void StanceDetection::run_test_stance_detector()
 {
     // Set up timing.
-    auto time = std::chrono::system_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::STANCE_DETECTION_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_idle"};
 
     while (arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
     {
@@ -127,15 +125,14 @@ void StanceDetection::run_test_stance_detector()
         }
 
         // Log to file.
-        stance_file << time.time_since_epoch().count() << " "
+        stance_file << loop_scheduler.count() << " "
                     << StanceDetection::get_falling_state() << " "
                     << StanceDetection::get_entangled_state() << " "
                     << StanceDetection::get_attitude() << " "
                     << StanceDetection::get_stance() << "\n";
 
         // Wait until the next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+        loop_scheduler.await();
     }
 }
 
@@ -190,7 +187,6 @@ void StanceDetection::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit StanceDetection\n";
 }
 
 
@@ -245,9 +241,9 @@ void StanceDetector::clear_freefall_flag()
  * contains a freefall event, report a fall. If no window contains a freefall event,
  * report no fall.
  */
-void StanceDetector::check_for_falls(const std::deque<Vector6>& imu_data)
+void StanceDetector::check_for_falls(const std::deque<ImuData>& imu_data)
 {
-    arwain::RollingAverage roller{static_cast<unsigned int>(imu_data.size() / 10)};
+    RollingAverage roller{static_cast<unsigned int>(imu_data.size() / 10)};
 
     for (auto& imu : imu_data)
     {
@@ -299,7 +295,7 @@ void StanceDetector::update_attitude(Quaternion rotation_quaternion)
  * \param imu_data Pointer to deq<arr<double>> containging acceleration and gyro data.
  * \param vel_data Pointer to deq<arr<double>> containing velocity data.
  */
-void StanceDetector::run(const std::deque<Vector6> &imu_data, const std::deque<Vector3> &vel_data)
+void StanceDetector::run(const std::deque<ImuData> &imu_data, const std::deque<Vector3> &vel_data)
 {
     // Crunch the numbers ...
     std::vector<Vector3> accel_data;
