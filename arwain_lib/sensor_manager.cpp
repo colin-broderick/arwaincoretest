@@ -234,8 +234,8 @@ void SensorManager::run_idle()
         madgwick_filter_mag_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
 
         // Extract Euler orientation from filters.
-        Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
-        Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
+        Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.get_w(), madgwick_filter_1.get_x(), madgwick_filter_1.get_y(), madgwick_filter_1.get_z()};
+        Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.get_w(), madgwick_filter_mag_1.get_x(), madgwick_filter_mag_1.get_y(), madgwick_filter_mag_1.get_z()};
         [[maybe_unused]] EulerOrientation madgwick_euler_mag_data1 = arwain::compute_euler(madgwick_quaternion_mag_data1);
 
         arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back(madgwick_quaternion_data1);
@@ -247,7 +247,7 @@ void SensorManager::run_idle()
         arwain::rolling_average_accel_z_for_altimeter.feed(world_accel_data1.z);
 
         // Compute the new correction based on magnetometer/gyro filter diffs.
-        double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.getYawRadians() - madgwick_filter_1.getYawRadians(), arwain::yaw_offset);
+        double new_yaw_offset = unwrap_phase_radians(madgwick_filter_mag_1.get_yaw_radians() - madgwick_filter_1.get_yaw_radians(), arwain::yaw_offset);
         if (arwain::yaw_offset == 0)
         {
             arwain::yaw_offset = new_yaw_offset;
@@ -296,8 +296,8 @@ void SensorManager::run_inference()
         madgwick_filter_mag_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
 
         // Extract Euler orientation from filters.
-        Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.getW(), madgwick_filter_1.getX(), madgwick_filter_1.getY(), madgwick_filter_1.getZ()};
-        Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.getW(), madgwick_filter_mag_1.getX(), madgwick_filter_mag_1.getY(), madgwick_filter_mag_1.getZ()};
+        Quaternion madgwick_quaternion_data1 = {madgwick_filter_1.get_w(), madgwick_filter_1.get_x(), madgwick_filter_1.get_y(), madgwick_filter_1.get_z()};
+        Quaternion madgwick_quaternion_mag_data1 = {madgwick_filter_mag_1.get_w(), madgwick_filter_mag_1.get_x(), madgwick_filter_mag_1.get_y(), madgwick_filter_mag_1.get_z()};
         EulerOrientation madgwick_euler_data1 = arwain::compute_euler(madgwick_quaternion_data1);
         EulerOrientation madgwick_euler_mag_data1 = arwain::compute_euler(madgwick_quaternion_mag_data1);
 
