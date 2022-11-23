@@ -22,10 +22,14 @@ TEST(Madgwick, Constructor)
 {
     arwain::Madgwick mad(2.0, 1.0);
     
-    EXPECT_TRUE(mad.get_beta() == 1.0);
-    //sample frequency can't be verified - NEEDS TO BE VERIFIED!!!
-    //all other parts of the constructor can't be verified due to being private with no getters.
-    FAIL();
+    EXPECT_EQ(mad.get_beta(), 1.0);
+    EXPECT_EQ(mad.get_w(), 1);
+    EXPECT_EQ(mad.get_x(), 0);
+    EXPECT_EQ(mad.get_y(), 0);
+    EXPECT_EQ(mad.get_z(), 0);
+    EXPECT_NEAR(mad.get_frequency(), 2.0, 0.00001);
+    EXPECT_NEAR(mad.get_inverse_sample_frequency(), 1.0 / 2.0, 0.00001);
+    EXPECT_FALSE(mad.angles_updated());
 }
 
 TEST(Madgwick, Get_Beta)
