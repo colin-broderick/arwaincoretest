@@ -226,11 +226,127 @@ TEST(Madgwick, set_beta)
     EXPECT_TRUE(mad.get_beta() == 1.0);
 }
 
-TEST(Madgwick, update)
+TEST(Madgwick, update_6)
 {
+    /* The state that a Madgwick filter should move to after an update is quite a complex question, and in my 
+    opinion not something it is realistic to duplicate in a small unit test. What we can say is that after an update,
+    certain properties should definitely be different and certain properties should definitely no unchanged. More
+    detailed testing is the domain of functional/system tests. */
+
+    // Testing void update(double gx, double gy, double gz, double ax, double ay, double az);
+
     arwain::Madgwick mad;
+
+    double pre_w = mad.get_w();
+    double pre_x = mad.get_x();
+    double pre_y = mad.get_y();
+    double pre_z = mad.get_z();
+    double pre_beta = mad.get_beta();
+    double pre_freq = mad.get_frequency();
+    
     mad.update(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
-    //mad.set_beta(1.0);
-    //EXPECT_TRUE(mad.get_beta() == 1.0);
-    FAIL();
+    
+    double post_w = mad.get_w();
+    double post_x = mad.get_x();
+    double post_y = mad.get_y();
+    double post_z = mad.get_z();
+    double post_beta = mad.get_beta();
+    double post_freq = mad.get_frequency();
+
+    EXPECT_NE(pre_w, post_w);
+    EXPECT_NE(pre_x, post_x);
+    EXPECT_NE(pre_y, post_y);
+    EXPECT_NE(pre_z, post_z);
+    EXPECT_EQ(pre_beta, post_beta);
+    EXPECT_EQ(pre_freq, post_freq);    
+}
+
+TEST(Madgwick, update_7)
+{
+    // Testing void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az);
+    
+    arwain::Madgwick mad;
+
+    double pre_w = mad.get_w();
+    double pre_x = mad.get_x();
+    double pre_y = mad.get_y();
+    double pre_z = mad.get_z();
+    double pre_beta = mad.get_beta();
+    double pre_freq = mad.get_frequency();
+    
+    mad.update(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+    
+    double post_w = mad.get_w();
+    double post_x = mad.get_x();
+    double post_y = mad.get_y();
+    double post_z = mad.get_z();
+    double post_beta = mad.get_beta();
+    double post_freq = mad.get_frequency();
+
+    EXPECT_NE(pre_w, post_w);
+    EXPECT_NE(pre_x, post_x);
+    EXPECT_NE(pre_y, post_y);
+    EXPECT_NE(pre_z, post_z);
+    EXPECT_EQ(pre_beta, post_beta);
+    EXPECT_EQ(pre_freq, post_freq);
+}
+
+TEST(Madgwick, update_9)
+{
+    // Testing void update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
+    
+    arwain::Madgwick mad;
+
+    double pre_w = mad.get_w();
+    double pre_x = mad.get_x();
+    double pre_y = mad.get_y();
+    double pre_z = mad.get_z();
+    double pre_beta = mad.get_beta();
+    double pre_freq = mad.get_frequency();
+    
+    mad.update(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+    
+    double post_w = mad.get_w();
+    double post_x = mad.get_x();
+    double post_y = mad.get_y();
+    double post_z = mad.get_z();
+    double post_beta = mad.get_beta();
+    double post_freq = mad.get_frequency();
+
+    EXPECT_NE(pre_w, post_w);
+    EXPECT_NE(pre_x, post_x);
+    EXPECT_NE(pre_y, post_y);
+    EXPECT_NE(pre_z, post_z);
+    EXPECT_EQ(pre_beta, post_beta);
+    EXPECT_EQ(pre_freq, post_freq);
+}
+
+TEST(Madgwick, update_10)
+{
+    // Testing void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
+    
+    arwain::Madgwick mad;
+
+    double pre_w = mad.get_w();
+    double pre_x = mad.get_x();
+    double pre_y = mad.get_y();
+    double pre_z = mad.get_z();
+    double pre_beta = mad.get_beta();
+    double pre_freq = mad.get_frequency();
+    
+    mad.update(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+    
+    double post_w = mad.get_w();
+    double post_x = mad.get_x();
+    double post_y = mad.get_y();
+    double post_z = mad.get_z();
+    double post_beta = mad.get_beta();
+    double post_freq = mad.get_frequency();
+
+    EXPECT_NE(pre_w, post_w);
+    EXPECT_NE(pre_x, post_x);
+    EXPECT_NE(pre_y, post_y);
+    EXPECT_NE(pre_z, post_z);
+    EXPECT_EQ(pre_beta, post_beta);
+    EXPECT_EQ(pre_freq, post_freq);
 }
