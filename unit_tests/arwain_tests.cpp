@@ -22,7 +22,7 @@ TEST(Arwain, Setup_No_Name)
     char* input_array[3] = {program.data(),command.data(), paramater.data()};
     InputParser parser(j, input_array);
 
-    arwain::setup(parser);
+    arwain::setup_log_folder_name_suffix(parser);
     std::string empty = "";
 
     EXPECT_EQ(empty, arwain::folder_date_string_suffix);
@@ -37,7 +37,7 @@ TEST(Arwain, Setup_Name)
     char* input_array[3] = {program.data(),command.data(), paramater.data()};
     InputParser parser(j, input_array);
 
-    arwain::setup(parser);
+    arwain::setup_log_folder_name_suffix(parser);
     std::string name = "example";
     EXPECT_EQ(name, arwain::folder_date_string_suffix);
 }
