@@ -30,8 +30,6 @@ namespace arwain
 {
     class Madgwick : OrientationFilter
     {
-        constexpr static double sample_frequency_default = 512.0;
-        constexpr static double beta_default = 0.1;
 
         private:
             double beta;	// algorithm gain
@@ -46,6 +44,8 @@ namespace arwain
             char angles_computed;
             
         TESTABLE:
+            constexpr static double sample_frequency_default = 512.0;
+            constexpr static double beta_default = 0.1;
             void compute_angles();
             static double inverse_sqrt(double x);
 
@@ -72,6 +72,10 @@ namespace arwain
             double get_roll_radians();
             double get_pitch_radians();
             double get_yaw_radians();
+            double get_inverse_sample_frequency() const;
+            double get_dt() const;
+            double get_frequency() const;
+            bool angles_updated() const;
 
             // Setters
             void set_q(double w, double x, double y, double z);
