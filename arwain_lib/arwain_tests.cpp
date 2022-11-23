@@ -371,9 +371,9 @@ arwain::ReturnCode arwain::test_ori(int frequency)
         
         filter.update(time_count, gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
 
-        quat = {filter.getW(), filter.getX(), filter.getY(), filter.getZ()};
+        quat = {filter.get_w(), filter.get_x(), filter.get_y(), filter.get_z()};
         euler = computer_euler_degrees(quat);
-        std::cout << "Quaternion: " << std::fixed << std::showpos << filter.getW() << " " << filter.getX() << " " << filter.getY() << " " << filter.getZ() << "\t\t";
+        std::cout << "Quaternion: " << std::fixed << std::showpos << filter.get_w() << " " << filter.get_x() << " " << filter.get_y() << " " << filter.get_z() << "\t\t";
         std::cout << "Euler: " << std::fixed << std::showpos << euler.roll << " " << euler.pitch << " " << euler.yaw << "\n";
     }
     

@@ -169,20 +169,20 @@ arwain::ReturnCode arwain::rerun_orientation_filter(const std::string& data_loca
 
         if (slow_yaw.empty())
         {
-            slow_yaw.push_back(slow_filter.getYaw());
+            slow_yaw.push_back(slow_filter.get_yaw());
         }
         else
         {
-            slow_yaw.push_back(unwrap_phase_degrees(slow_filter.getYaw(), slow_yaw.back()));
+            slow_yaw.push_back(unwrap_phase_degrees(slow_filter.get_yaw(), slow_yaw.back()));
         }
 
         if (fast_yaw.empty())
         {
-            fast_yaw.push_back(fast_filter.getYaw());
+            fast_yaw.push_back(fast_filter.get_yaw());
         }
         else
         {
-            fast_yaw.push_back(unwrap_phase_degrees(fast_filter.getYaw(), fast_yaw.back()));
+            fast_yaw.push_back(unwrap_phase_degrees(fast_filter.get_yaw(), fast_yaw.back()));
         }
 
         if (fusion_yaw.empty())
