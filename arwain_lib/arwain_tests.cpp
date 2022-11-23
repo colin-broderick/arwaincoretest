@@ -32,7 +32,8 @@ static EulerOrientation computer_euler_degrees(Quaternion& q)
 #if USE_UUBLA
 arwain::ReturnCode arwain::test_uubla_integration()
 {
-    std::cout << "Creating UUBLA network and running for 20 s" << "\n";
+    std::cout << "Creating UUBLA network and running for 10 seconds\n";
+    std::cout << "Connect an UUBLA node and observe output\n";
 
     // Create and configure the UUBLA network.
     UUBLA::Network uubla{
@@ -51,10 +52,8 @@ arwain::ReturnCode arwain::test_uubla_integration()
     // Start the solver and run for 20 seconds.
     uubla.start_reading();
     std::thread solver_th{solver_fn, &uubla};
-    for (int i = 0; i < 200; i++)
-    {
-        sleep_ms(100);
-    }
+    
+    sleep_ms(10000);
 
     // Cleanup and exit.
     std::cout << "Stopping UUBLA network" << "\n";
@@ -238,7 +237,25 @@ arwain::ReturnCode arwain::interactive_test()
     std::cin >> response;
     if (response == "n" || response == "N")
     {
-        return arwain::ReturnCode::InferenceError;
+        return arwain::ReturnCode::GeneralError;
+    }
+
+    ret = arwain::test_uubla_integration();
+    std::cout << "\n";
+    std::cout << "Did you see the expected UUBLA output (y/n)?\n";
+    std::cin >> response;
+    if (response == "n" || response == "N")
+    {
+        return arwain::ReturnCode::GeneralError;
+    }
+
+    ret = arwain::test_lora_tx();
+    std::cout << "\n";
+    std::cout << "Did you receive the expected LoRa messages on the rx side (y/n)?";
+    std::cin >> response;
+    if (response == "n" || response == "N")
+    {
+        return arwain::ReturnCode::GeneralError;
     }
 
     return arwain::ReturnCode::Success;
@@ -311,12 +328,17 @@ arwain::ReturnCode arwain::test_lora_tx()
     std::cout << "Transmitting message \"" << message << ".x\" at 1 Hz ..." << std::endl;
 
     int i = 0;
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{1000};
+    Timers::CountdownTimer loop_timer{5000};
+
+    while (!loop_timer.finished())
     {
         i++;
         std::string msg = message + "." + std::to_string(i);
         lora.send_message(msg);
-        std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+        std::cout << "Sent message: " << msg << "\n";
+        loop_scheduler.await();
     }
 
     return arwain::ReturnCode::Success;
