@@ -27,7 +27,7 @@ namespace arwain
 arwain::ReturnCode arwain_main(int argc, char** argv);
 
 class Vector3;
-class Vector6;
+class ImuData;
 class InputParser;
 
 namespace arwain::BufferSizes
@@ -133,19 +133,16 @@ namespace arwain
     extern std::string folder_date_string_suffix;
     extern arwain::Configuration config;
     extern arwain::Logger error_log;
-    extern bool reset_position;
-    extern bool ready_for_inference;
     extern unsigned int velocity_inference_rate;
     extern RollingAverage rolling_average_accel_z_for_altimeter;
     extern ActivityMetric activity_metric;
 
-    void setup(const InputParser& input);
-    arwain::ReturnCode execute_inference();
+    void setup_log_folder_name_suffix(const InputParser& input);
+    arwain::ReturnCode execute_jobs();
     arwain::ReturnCode rerun_orientation_filter(const std::string& data_location);
     arwain::ReturnCode rerun_floor_tracker(const std::string& data_location);
-    std::string datetimestring();
     void setup_log_directory();
-    arwain::ReturnCode calibrate_gyroscopes();
+    arwain::ReturnCode calibrate_gyroscopes_offline();
     arwain::ReturnCode calibrate_accelerometers();
     arwain::ReturnCode calibrate_accelerometers_simple();
     arwain::ReturnCode calibrate_magnetometers();
@@ -183,8 +180,8 @@ namespace arwain
 
 namespace arwain::Buffers
 {
-    extern GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
-    extern GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_WORLD_BUFFER;
+    extern GlobalBuffer<ImuData, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
+    extern GlobalBuffer<ImuData, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_WORLD_BUFFER;
     extern GlobalBuffer<Vector3, arwain::BufferSizes::VELOCITY_BUFFER_LEN> VELOCITY_BUFFER;
     extern GlobalBuffer<Vector3, arwain::BufferSizes::POSITION_BUFFER_LEN> POSITION_BUFFER;
     extern GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_BUFFER;
@@ -196,6 +193,5 @@ namespace arwain::Buffers
     extern GlobalBuffer<Quaternion, arwain::BufferSizes::MAG_ORIENTATION_BUFFER_LEN> MAG_ORIENTATION_BUFFER;
     extern GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
-
 
 #endif

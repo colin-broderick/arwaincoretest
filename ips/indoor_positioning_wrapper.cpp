@@ -6,6 +6,7 @@
 #include "indoor_positioning_wrapper.hpp"
 #include "floor_tracker.hpp"
 #include "corner_detector.hpp"
+#include "timers.hpp"
 #include "logger.hpp"
 #include "vector3.hpp"
 #include "exceptions.hpp"
@@ -39,8 +40,7 @@ void IndoorPositioningSystem::run_inference()
 {
     setup_inference();
 
-    auto time = std::chrono::high_resolution_clock::now();
-    std::chrono::milliseconds interval{arwain::Intervals::IPS_INTERVAL};
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IPS_INTERVAL, "arwain_ips_run_infer"};
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
@@ -49,7 +49,7 @@ void IndoorPositioningSystem::run_inference()
 
         if (corner_detector.update(new_position))
         {
-            corner_log << time.time_since_epoch().count() << " "
+            corner_log << loop_scheduler.count() << " "
                         << corner_detector.detection_location.x << " "
                         << corner_detector.detection_location.y << " "
                         << corner_detector.detection_location.z << "\n";
@@ -58,8 +58,7 @@ void IndoorPositioningSystem::run_inference()
         floor_tracker.update(new_position);
 
         // Wait until next tick.
-        time = time + interval;
-        std::this_thread::sleep_until(time);
+        loop_scheduler.await();
     }
 
     cleanup_inference();
@@ -104,7 +103,6 @@ void IndoorPositioningSystem::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit IndoorPositioningSystem\n";
 }
 
 void IndoorPositioningSystem::IndoorPositioningWrapper::update(const double &time, const double &x, const double &y, const double &z)

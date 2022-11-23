@@ -4,22 +4,9 @@ project(arwain_lib)
 add_definitions(-DUSE_NCS2)
 set(CMAKE_CXX_STANDARD 17)
 
-set(SRC_FILES
-    calibration.cpp
-    stance.cpp
-    velocity_prediction.cpp
-    altimeter.cpp
-    imu_reader.cpp
-    std_output.cpp
-    transmit_lora.cpp
-    multi_imu.cpp
-    arwain.cpp
-    arwain_tests.cpp
-    command_line.cpp
-    configuration.cpp
-    arwain_utils.cpp
-    activity_metric.cpp
-)
+file(GLOB SRC_FILES CONFIGURE_DEPENDS "*.cpp")
+list(REMOVE_ITEM SRC_FILES "/home/pi/arwain_inference_core/arwain_lib/realsense.cpp")
+
 if(USE_UUBLA)
 set(SRC_FILES ${SRC_FILES} uwb_reader.cpp)
 endif()

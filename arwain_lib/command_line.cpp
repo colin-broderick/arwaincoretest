@@ -3,7 +3,7 @@
 
 #include "arwain.hpp"
 #include "exceptions.hpp"
-#include "imu_reader.hpp"
+#include "sensor_manager.hpp"
 #include "transmit_lora.hpp"
 #include "altimeter.hpp"
 #include "std_output.hpp"
@@ -74,6 +74,14 @@ void ArwainCLI::switch_to_exit_mode()
     arwain::system_mode = arwain::OperatingMode::Terminate;
 }
 
+
+bool ArwainCLI::set_velocity_inference_pointer(PositionVelocityInference& velocity)
+{
+    // TODO Should I delete the pointer first?
+    this->velocity_inference_handle = &velocity;
+    return true;
+}
+
 /** \brief Switches the system to Inference mode. Can only be entered from Idle mode. */
 void ArwainCLI::switch_to_inference_mode()
 {
@@ -81,7 +89,7 @@ void ArwainCLI::switch_to_inference_mode()
     {
         std::cout << "Already in inference mode" << std::endl;
     }
-    else if (!arwain::ready_for_inference)
+    else if (this->velocity_inference_handle->ready())
     {
         std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
     }
@@ -199,14 +207,6 @@ void ArwainCLI::set_folder_name(const std::string& input)
     }
 }
 
-/** \brief Sets the most recent entry in the world position buffer equal to (0, 0, 0). A flag is raised
- * which causes the velocity inference loop to set the position to zero at the next iteration of the loop.
-*/
-void ArwainCLI::set_position_zero()
-{
-    arwain::reset_position = true;
-}
-
 void ArwainCLI::parse_cli_input(const std::string& input)
 {
     switch (s2i(input.c_str()))
@@ -241,9 +241,6 @@ void ArwainCLI::parse_cli_input(const std::string& input)
         case s2i("help"):
             std::cout << arwain::help_text << "\n";
             break;
-        case s2i("zeropos"):
-            set_position_zero();
-            break;
         default:
             std::cout << "ERROR: Command not recognised: " << input << std::endl;
             break;
@@ -267,5 +264,4 @@ void ArwainCLI::join()
     {
         job_thread.join();
     }
-    std::cout << "Successfully quit ArwainCLI\n";
 }

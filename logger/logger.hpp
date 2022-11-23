@@ -15,7 +15,7 @@ namespace arwain
             Logger(const std::string& filename);
             ~Logger();
             bool open(const std::string& filename);
-            void close();
+            bool close();
             bool is_open() const;
             std::string get_filename() const;
 
@@ -23,7 +23,8 @@ namespace arwain
             std::mutex guard;
             std::string filename;
             std::ofstream output_file;
-            template<typename T> friend arwain::Logger& operator<<(arwain::Logger& stream, const T& thing)
+            template <typename T>
+            friend arwain::Logger& operator<<(arwain::Logger& stream, const T& thing)
             {
                 std::lock_guard<std::mutex> lock{stream.guard};
                 stream.output_file << thing;

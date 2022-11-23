@@ -9,15 +9,6 @@
 #include "exceptions.hpp"
 #include "arwain_thread.hpp"
 
-#if USE_NCS2
-    #include <zmq.h>
-#else // Using tflite inference
-    #include "tensorflow/lite/interpreter.h"
-    #include "tensorflow/lite/kernels/register.h"
-    #include "tensorflow/lite/model.h"
-    #include "tensorflow/lite/tools/gen_op_registration.h"
-#endif
-
 PositionVelocityInference::PositionVelocityInference()
 {
     init();
@@ -93,11 +84,14 @@ void PositionVelocityInference::setup_inference()
     position_file << "time x y z" << "\n";
 }
 
+// TODO Split NCS2 stuff into deprecated function
+
 void PositionVelocityInference::run_inference()
 {
     setup_inference();
 
     // Set up timing.
+    // TODO Use JobInterval if possible; the timing here is different to other threads.
     std::chrono::time_point<std::chrono::system_clock> last_time = std::chrono::system_clock::now();
     std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
     std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
@@ -126,18 +120,15 @@ void PositionVelocityInference::run_inference()
         std::string fromStream = request.str();
         const char *str = fromStream.c_str();
         zmq_send(responder, str, strlen(str), 0);
-        std::cout << "Sent AI query by socket\n";
         zmq_recv(responder, response_buffer, 50, 0);
-        std::cout << "Received AI response by socket\n";
         request.str("");
-
 
         // Process the answer buffer into local velocity buffers.
         // Assume a comma-separated list of three floats.
         std::string answer{response_buffer};
-        std::cout << answer << "\n";
         if (answer == "accept")
         {
+            ready_for_inference = true;
             continue;
         }
         int delimiter = answer.find(",");
@@ -171,10 +162,10 @@ void PositionVelocityInference::run_inference()
         }
 
         // Feed the activity metrix.
-        arwain::activity_metric.feed_velo(velocity);
+        arwain::activity_metric.feed_velocity(velocity);
 
         Vector3 average_acceleration{0, 0, 0};
-        for (std::deque<Vector6>::iterator it = imu.end() - 10; it != imu.end(); ++it)
+        for (std::deque<ImuData>::iterator it = imu.end() - 10; it != imu.end(); ++it)
         {
             average_acceleration = average_acceleration + (*it).acce;
         }
@@ -231,7 +222,7 @@ void PositionVelocityInference::cleanup_inference()
 
 bool PositionVelocityInference::ready()
 {
-    return ready_for_inference;
+    return this->ready_for_inference;
 }
 
 bool PositionVelocityInference::init()
@@ -240,7 +231,8 @@ bool PositionVelocityInference::init()
     {
         return false;
     }
-    this->ready_for_inference = core_setup();
+    // this->ready_for_inference = core_setup();
+    core_setup();
     job_thread = ArwainThread{&PositionVelocityInference::run, "arwain_infr_th", this};
     #if USE_NCS2
     ncs2_thread = ArwainThread{&PositionVelocityInference::py_inference, "arwain_ncs2_th", this};          // Temporary: Run Python script to handle velocity inference.
@@ -256,9 +248,7 @@ void PositionVelocityInference::join()
     }
     // Instruct the NCS2 interface script to quit.
     #if USE_NCS2
-    std::cout << "stopping zmq\n";
     zmq_send(responder, "stop", strlen("stop"), 0);
-    std::cout << "stopped zmq\n";
 
     // TODO Apparently, deletion of a void* is undefined, so not sure how to clean this up. Technically a memory leak, 
     // although only one of each of the following ever exist so not a real cause for concern.
@@ -271,7 +261,6 @@ void PositionVelocityInference::join()
     #else // USE_TF
     delete input;
     #endif
-    std::cout << "Successfully quit PositionVelocityInference\n";
 }
 
 /** \brief Estimate the hidden state of a system given a physical model and occasional measurements.

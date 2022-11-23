@@ -19,7 +19,7 @@
 #include "arwain_thread.hpp"
 #include "arwain.hpp"
 #include "input_parser.hpp"
-#include "imu_reader.hpp"
+#include "sensor_manager.hpp"
 #include "velocity_prediction.hpp"
 #include "transmit_lora.hpp"
 #include "std_output.hpp"
@@ -51,15 +51,12 @@
 // General configuration data.
 namespace arwain
 {
-    int shutdown = 0;
     OperatingMode system_mode = arwain::OperatingMode::Idle;
     double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
     std::string folder_date_string_suffix;
     arwain::Logger error_log;
-    bool reset_position = false;
-    bool ready_for_inference = false;
     unsigned int velocity_inference_rate = 20;
     RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
     ActivityMetric activity_metric{200, 20};
@@ -68,8 +65,8 @@ namespace arwain
 // Shared data buffers; mutex locks must be used when accessing.
 namespace arwain::Buffers
 {
-    GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
-    GlobalBuffer<Vector6, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_WORLD_BUFFER;
+    GlobalBuffer<ImuData, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_BUFFER;
+    GlobalBuffer<ImuData, arwain::BufferSizes::IMU_BUFFER_LEN> IMU_WORLD_BUFFER;
     GlobalBuffer<Vector3, arwain::BufferSizes::VELOCITY_BUFFER_LEN> VELOCITY_BUFFER;
     GlobalBuffer<Vector3, arwain::BufferSizes::POSITION_BUFFER_LEN> POSITION_BUFFER;
     GlobalBuffer<Vector3, arwain::BufferSizes::MAG_BUFFER_LEN> MAG_BUFFER;
@@ -162,13 +159,13 @@ arwain::ReturnCode arwain::rerun_orientation_filter(const std::string& data_loca
 
         slow_filter.update(t, gx, gy, gz, ax, ay, az);
         fast_filter.update(t, gx, gy, gz, ax, ay, az);
+
         FusionAhrsUpdateWithoutMagnetometer(
             &fusionAhrs, 
             {(float)(gx*180.0/3.14159), (float)(gy*180.0/3.14159), (float)(gz*180.0/3.14159)},
             {(float)(ax/9.81), (float)(ay/9.81), (float)(az/9.81)},
             0.005
         );
-
 
         if (slow_yaw.empty())
         {
@@ -230,11 +227,11 @@ void arwain::setup_log_directory()
     }
     if (arwain::folder_date_string_suffix != "")
     {
-        arwain::folder_date_string = "./data_" + arwain::datetimestring() + "_" + arwain::folder_date_string_suffix;
+        arwain::folder_date_string = "./data_" + date_time_string() + "_" + arwain::folder_date_string_suffix;
     }
     else
     {
-        arwain::folder_date_string = "./data_" + arwain::datetimestring();
+        arwain::folder_date_string = "./data_" + date_time_string();
     }
     if (!std::filesystem::is_directory(arwain::folder_date_string))
     {
@@ -251,7 +248,12 @@ void arwain::setup_log_directory()
     arwain::error_log << "time event" << "\n";
 }
 
-void arwain::setup(const InputParser& input)
+/** \brief If the input parser contains -name and a parameter to go with it, sets the global 
+ * arwain::folder_date_string_suffix to the value of the parameter. If the input parser does
+ * not contain -name, the folder_date_string_suffix is set to an empty string.
+ * \param input An InputParser object which may or may not contain the -name parameter.
+ */
+void arwain::setup_log_folder_name_suffix(const InputParser& input)
 {
     if (input.contains("-name"))
     {
@@ -263,10 +265,14 @@ void arwain::setup(const InputParser& input)
     }
 }
 
-arwain::ReturnCode arwain::execute_inference()
+/** \brief Creates the ARWAIN job threads and then blocks until those threads are ended by settings
+ * the global arwain::system_mode to arwain::OperatingMode::Terminate.
+ * \return ARWAIN return code indiciating success or failure.
+*/
+arwain::ReturnCode arwain::execute_jobs()
 {
     // Start worker threads.
-    ImuProcessing imu_processor;                            // Reading IMU data, updating orientation filters.
+    SensorManager sensor_manager;                            // Reading IMU data, updating orientation filters.
     PositionVelocityInference position_velocity_inference;  // Velocity and position inference.
     StanceDetection stance_detection;                       // Stance, freefall, entanglement detection.
     StatusReporting status_reporting;                       // LoRa packet transmissions.
@@ -274,7 +280,7 @@ arwain::ReturnCode arwain::execute_inference()
     Altimeter altimeter;                                    // Uses the BMP384 sensor to determine altitude.
     IndoorPositioningSystem indoor_positioning_system;      // Floor, stair, corner snapping.
     #if USE_UUBLA
-    UublaWrapper::init();                                   // Enable this node to operate as an UUBLA master node.
+    UublaWrapper uubla_wrapper;                                   // Enable this node to operate as an UUBLA master node.
     #endif
     #if USE_REALSENSE
     CameraController camera_controller;
@@ -282,11 +288,12 @@ arwain::ReturnCode arwain::execute_inference()
     ArwainCLI arwain_cli;                                   // Simple command line interface for runtime mode switching.
 
     // Set pointers ...
-    status_reporting.set_stance_detection_pointer(&stance_detection);
-    debug_prints.set_stance_detection_pointer(&stance_detection);
+    status_reporting.set_stance_detection_pointer(stance_detection);
+    debug_prints.set_stance_detection_pointer(stance_detection);
+    arwain_cli.set_velocity_inference_pointer(position_velocity_inference);
 
     // Wait for all jobs to terminate.
-    imu_processor.join();
+    sensor_manager.join();
     position_velocity_inference.join();
     stance_detection.join();
     status_reporting.join();
@@ -294,7 +301,7 @@ arwain::ReturnCode arwain::execute_inference()
     altimeter.join();
     indoor_positioning_system.join();
     #if USE_UUBLA
-    UublaWrapper::join();
+    uubla_wrapper.join();
     #endif
     #if USE_REALSENSE
     camera_controller.join();
@@ -304,80 +311,10 @@ arwain::ReturnCode arwain::execute_inference()
     return arwain::ReturnCode::Success;
 }
 
-/** \brief Get the current system datetime as a string.
- * \return Datetime as string.
- */
-std::string arwain::datetimestring()
-{
-    std::time_t now = std::time(0);
-    std::tm *ltm = localtime(&now);
-    std::stringstream ss;
-
-    // Year
-    ss << ltm->tm_year+1900;
-    ss << "_";
-
-    // Month
-    if (ltm->tm_mon+1 < 10)
-    {
-        ss << '0' << ltm->tm_mon+1;
-    }
-    else
-    {
-        ss << ltm->tm_mon+1;
-    }
-    ss << "_";
-
-    // Date
-    if (ltm->tm_mday < 10)
-    {
-        ss << '0' << ltm->tm_mday;
-    }
-    else
-    {
-        ss << ltm->tm_mday;
-    }
-    ss << "_";
-    
-    // Hour
-    if (ltm->tm_hour < 10)
-    {
-        ss << '0' << ltm->tm_hour;
-    }
-    else
-    {
-        ss << ltm->tm_hour;
-    }
-    ss << "_";
-
-    // Minute
-    if (ltm->tm_min < 10)
-    {
-        ss << '0' << ltm->tm_min;
-    }
-    else
-    {
-        ss << ltm->tm_min;
-    }
-    ss << "_";
-
-    // Second
-    if (ltm->tm_sec < 10)
-    {
-        ss << '0' << ltm->tm_sec;
-    }
-    else
-    {
-        ss << ltm->tm_sec;
-    }
-
-    return ss.str();
-}
-
 arwain::ReturnCode arwain::calibrate_magnetometers()
 {
     LIS3MDL magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
-    arwain::MagnetometerCalibrator clbr;
+    MagnetometerCalibrator calibrator;
     std::cout << "About to start magnetometer calibration." << std::endl;
     std::cout << "Move the device through all orientations; press Ctrl+C when done." << std::endl;
     sleep_ms(3000);
@@ -385,10 +322,11 @@ arwain::ReturnCode arwain::calibrate_magnetometers()
 
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
-        clbr.feed(magnetometer.read());
+        calibrator.feed(magnetometer.read());
         sleep_ms(100);
     }
-    auto [bias, scale] = clbr.solve();
+    
+    auto [bias, scale] = calibrator.solve();
 
     std::cout << "Bias: " << bias[0] << " " << bias[1] << " " << bias[2] << "\n";
     std::cout << "Scale:\n";
@@ -411,53 +349,55 @@ arwain::ReturnCode arwain::calibrate_magnetometers()
     return arwain::ReturnCode::Success;
 }
 
-arwain::ReturnCode arwain::calibrate_gyroscopes()
+/** \brief Initializes IMUs based on the address/bus pairs specified in arwain.conf, and
+ * calibrates the bias offset for all gyroscopes, then stores the result in arwain.conf.
+ * \return ARWAIN return code.
+*/
+arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
 {
     Vector3 results;
 
     IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
-    std::cout << "Calibrating gyroscope on " << arwain::config.imu1_bus << " at 0x" << std::hex << arwain::config.imu1_address << "; please wait" << std::endl;
-    results = imu1.calibrate_gyroscope();
-    std::cout << "Completed pass 1 on gyro 1" << std::endl;
-    results = results + imu1.calibrate_gyroscope();
-    std::cout << "Completed pass 2 on gyro 1" << std::endl;
-    results = results + imu1.calibrate_gyroscope();
-    std::cout << "Completed pass 3 on gyro 1" << std::endl;
-    results = results / 3.0;
+    std::cout << "Calibrating gyroscope on " << imu1.get_bus() << " at 0x" << std::hex << imu1.get_address() << "; please wait\n";
+    GyroscopeCalibrator calibrator1;
+    while (!calibrator1.is_converged())
+    {
+        calibrator1.feed(imu1.read_IMU().gyro);
+        sleep_ms(5);
+    }
+    results = calibrator1.get_params();
     arwain::config.replace("gyro1_bias_x", results.x);
     arwain::config.replace("gyro1_bias_y", results.y);
     arwain::config.replace("gyro1_bias_z", results.z);
-    std::cout << "Calibration complete" << std::endl;
 
-    IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
-    std::cout << "Calibrating gyroscope on " << arwain::config.imu2_bus << " at 0x" << std::hex << arwain::config.imu2_address << "; please wait" << std::endl;
-    results = imu2.calibrate_gyroscope();
-    std::cout << "Completed pass 1 on gyro 2" << std::endl;
-    results = results + imu2.calibrate_gyroscope();
-    std::cout << "Completed pass 2 on gyro 2" << std::endl;
-    results = results + imu2.calibrate_gyroscope();
-    std::cout << "Completed pass 3 on gyro 2" << std::endl;
-    results = results / 3.0;
-    std::cout << "Calibration complete" << std::endl;
+    IMU_IIM42652 imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
+    std::cout << "Calibrating gyroscope on " << imu2.get_bus() << " at 0x" << std::hex << imu2.get_address() << "; please wait\n";
+    GyroscopeCalibrator calibrator2;
+    while (!calibrator2.is_converged())
+    {
+        calibrator2.feed(imu2.read_IMU().gyro);
+        sleep_ms(5);
+    }
+    results = calibrator2.get_params();
     arwain::config.replace("gyro2_bias_x", results.x);
     arwain::config.replace("gyro2_bias_y", results.y);
     arwain::config.replace("gyro2_bias_z", results.z);
 
-    IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
-    std::cout << "Calibrating gyroscope on " << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << "; please wait" << std::endl;
-    results = imu3.calibrate_gyroscope();
-    std::cout << "Completed pass 1 on gyro 3" << std::endl;
-    results = results + imu3.calibrate_gyroscope();
-    std::cout << "Completed pass 2 on gyro 3" << std::endl;
-    results = results + imu3.calibrate_gyroscope();
-    std::cout << "Completed pass 3 on gyro 3" << std::endl;
-    results = results / 3.0;
-    std::cout << "Calibration complete" << std::endl;
+    IMU_IIM42652 imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
+    std::cout << "Calibrating gyroscope on " << imu3.get_bus() << " at 0x" << std::hex << imu3.get_address() << "; please wait\n";
+    GyroscopeCalibrator calibrator3;
+    while (!calibrator3.is_converged())
+    {
+        calibrator3.feed(imu3.read_IMU().gyro);
+        sleep_ms(5);
+    }
+    results = calibrator3.get_params();
     arwain::config.replace("gyro3_bias_x", results.x);
     arwain::config.replace("gyro3_bias_y", results.y);
     arwain::config.replace("gyro3_bias_z", results.z);
 
     std::cout << std::dec;
+    std::cout << "Gyroscope calibration complete.\n";
 
     return arwain::ReturnCode::Success;
 }
@@ -587,12 +527,12 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     InputParser input{argc, argv};
 
     // Output help text if requested.
-    if (input.contains("-h") || input.contains("-help"))
+    if (input.contains("--help") || input.contains("-h"))
     {
         std::cout << arwain::help_text << std::endl;
         return arwain::ReturnCode::Success;
     }
-    if (input.contains("-version"))
+    if (input.contains("--version") || input.contains("-v"))
     {
         std::cout << "ARWAIN executable version 0.1\n";
         return arwain::ReturnCode::Success;
@@ -605,13 +545,18 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
         std::cout << "Got an error when reading config file:\n";
         std::cout << arwain::ErrorMessages[ret] << std::endl;
     }
-
-    // Start IMU test mode. This returns so the program will quit when the test is stopped.
-    else if (input.contains("-testimu"))
+    
+    if (input.contains("--fulltest") || input.contains("-f"))
     {
-        ret = arwain::test_imu();
+        std::cout << "Entering interactive test mode\n";
+        return arwain::interactive_test();
     }
 
+    // Start IMU test mode. This returns so the program will quit when the test is stopped.
+    else if (input.contains("--testimu"))
+    {
+        ret = arwain::test_imu("/dev/i2c-1", 0x68);
+    }
     else if (input.contains("-testlorarx"))
     {
         ret = arwain::test_lora_rx();
@@ -647,7 +592,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     // Perform quick calibration of gyroscopes and write to config file.
     else if (input.contains("-calibg"))
     {
-        ret = arwain::calibrate_gyroscopes();
+        ret = arwain::calibrate_gyroscopes_offline();
     }
 
     // Perform quick calibration of gyroscopes and write to config file.
@@ -675,11 +620,11 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
         // Attempt to calibrate the gyroscope before commencing other activities.
         if (input.contains("-calib"))
         {
-            arwain::calibrate_gyroscopes();
+            arwain::calibrate_gyroscopes_offline();
             arwain::config = arwain::Configuration{input}; // Reread the config file as it has now changed.
         }
-        arwain::setup(input);
-        ret = arwain::execute_inference();
+        arwain::setup_log_folder_name_suffix(input);
+        ret = arwain::execute_jobs();
     }
 
     return ret;

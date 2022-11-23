@@ -5,7 +5,8 @@ namespace arwain
 {
     enum class ReturnCode;
 
-    arwain::ReturnCode test_imu();
+    arwain::ReturnCode test_imu(const std::string& i2c_bus, const int i2c_address);
+    arwain::ReturnCode test_inference();
     arwain::ReturnCode test_lora_tx();
     arwain::ReturnCode test_lora_rx();
     #if USE_ROS
@@ -18,6 +19,7 @@ namespace arwain
     #if USE_UUBLA
     arwain::ReturnCode test_uubla_integration();
     #endif
+    arwain::ReturnCode interactive_test();
 }
 
 #endif

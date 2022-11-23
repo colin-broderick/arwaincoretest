@@ -5,12 +5,15 @@
 #include "calibration.hpp"
 #include "vector3.hpp"
 
-static int sphere_coverage(int region_sample_count[100])
+/** \brief Computes the coverage percentage of a sphere by counting the number of non-zero
+ * entries in the coverage array.
+*/
+int MagnetometerCalibrator::sphere_coverage(const std::array<int, 100>& region_sample_count) const
 {
     int coverage = 0;
-    for (int i = 0; i < 100; i++)
+    for (const int value : region_sample_count)
     {
-        coverage += (region_sample_count[i] > 0);
+        coverage += (value > 0);
     }
     return coverage;
 }
@@ -24,7 +27,7 @@ static int sphere_coverage(int region_sample_count[100])
  * \param z The z component of the 3-vector.
  * \return Integer corresponding to a sphere region label.
  */
-static int sphere_region(double x, double y, double z)
+int MagnetometerCalibrator::sphere_region(const double x, const double y, const double z) const
 {
     double latitude, longitude;
     int region;
@@ -92,7 +95,19 @@ static int sphere_region(double x, double y, double z)
     return region;
 }
 
-void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
+/** \brief Continually feed magnetometer readings into this function while randomly tumbling
+ * the device around all axes. This function assumes that the first 100 readings will give 
+ * sufficient sphere coverage to provide a reasonable estimate of bias parameters.
+ * For that reason, there should be a short delay between each reading.
+ * 
+ * By 'reasonable' estimate of bias parameters, we here mean that, after calculation and
+ * application of those bias parameters, the origin of the coordinate system is contained
+ * within the sphere surface. If the bias parameters are not sufficiently accurate for this
+ * purpose, later stages of the calibration will likely fail. After the first 100 readings,
+ * subsequent readings will be used to accumulate sphere coverage with respect to the
+ * newly-acquired bias parameters.
+*/
+void MagnetometerCalibrator::feed(const Vector3& reading)
 {
     static double x_bias = 0;
     static double y_bias = 0;
@@ -108,7 +123,7 @@ void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
     // sphere coverage can be accurately measured.
     if (feed_count < 100)
     {
-        std::cout << "Determining bias parameters " << feed_count+1 << std::endl;
+        std::cout << "Determining bias parameters " << feed_count+1 << "\n";
         if (reading.x < x_min) x_min = reading.x;
         if (reading.x > x_max) x_max = reading.x;
         if (reading.y < y_min) y_min = reading.y;
@@ -124,7 +139,7 @@ void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
 
     if (feed_count == 100)
     {
-        std::cout << std::endl;
+        std::cout << "\n";
         feed_count++;
     }
 
@@ -139,12 +154,21 @@ void arwain::MagnetometerCalibrator::feed(const Vector3& reading)
     std::cout << "Coverage quality: " << this->sphere_coverage_quality << std::endl;
 }
 
-int arwain::MagnetometerCalibrator::get_sphere_coverage_quality()
+int MagnetometerCalibrator::get_sphere_coverage_quality() const
 {
     return this->sphere_coverage_quality;
 }
 
-std::tuple<std::vector<double>, std::vector<std::vector<double>>> arwain::MagnetometerCalibrator::solve()
+/** \brief Generates magnetometer calibration parameters if enough data has been collected.
+ * \return A tuple of vectors, where:
+ * the first vector is the bias parameters in the order x, y, z;
+ * the second vector is the scale parameters in the arrangement
+ *    {x      xy cross    xz cross},
+ *    {.      y           yz cross},
+ *    {.      .           z       },
+ * The blank entries can be ignored.
+*/
+std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCalibrator::solve()
 {
     // TODO Make sure there are enough data samples
     // TODO Make sure there is good sphere coverage
@@ -155,9 +179,9 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> arwain::Magnet
         if (region_sample_count[i] != 0)
         {
             xyz = nc::stack({xyz, {
-                region_sample_value[i].x / (double)(region_sample_count[i]),
-                region_sample_value[i].y / (double)(region_sample_count[i]),
-                region_sample_value[i].z / (double)(region_sample_count[i])
+                region_sample_value[i].x / static_cast<double>(region_sample_count[i]),
+                region_sample_value[i].y / static_cast<double>(region_sample_count[i]),
+                region_sample_value[i].z / static_cast<double>(region_sample_count[i])
             }}, nc::Axis::ROW);
         }
     }
@@ -218,10 +242,10 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> arwain::Magnet
 
     return {
         {
-            x0(0, 0), x0(0, 1), x0(0, 2)
+            x0(0, 0), x0(0, 1), x0(0, 2)  // bias parameters.
         },
         {
-            {L(0, 0), L(0, 1), L(0, 2)},
+            {L(0, 0), L(0, 1), L(0, 2)},  // scale parameters.
             {L(1, 0), L(1, 1), L(1, 2)},
             {L(2, 0), L(2, 1), L(2, 2)},
         }

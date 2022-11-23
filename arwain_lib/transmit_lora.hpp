@@ -1,10 +1,13 @@
 #ifndef _ARWAIN_TRANSMIT_LORA_HPP
 #define _ARWAIN_TRANSMIT_LORA_HPP
 
-#include "arwain.hpp"
-#include "arwain_thread.hpp"
+#include "lora.hpp"
+#include "logger.hpp"
 
 class StanceDetection;
+class UublaWrapper;
+class ArwainThread;
+class LoRa;
 
 class StatusReporting
 {
@@ -19,13 +22,15 @@ class StatusReporting
 
 	private:
 	    StanceDetection* stance_detection_handle = nullptr;
+		UublaWrapper* uubla_wrapper_handle = nullptr;
         ArwainThread job_thread;
         LoRa lora;
         arwain::Logger lora_file;
 
 	public:
 		StatusReporting();
-		bool set_stance_detection_pointer(StanceDetection* stance);
+		bool set_stance_detection_pointer(StanceDetection& stance);
+		bool set_uubla_wrapper_handle(UublaWrapper& uubla);
 		bool init();
 		void join();
 };

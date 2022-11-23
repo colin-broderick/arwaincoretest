@@ -16,7 +16,7 @@ int main()
 
     while (true)
     {
-        Vector6 imu1_data = imu1.read_IMU();
+        ImuData imu1_data = imu1.read_IMU();
         filter1.update(
             imu1_data.gyro.x,
             imu1_data.gyro.y,
@@ -26,7 +26,7 @@ int main()
             imu1_data.acce.z
         );
 
-        Vector6 imu2_data = imu2.read_IMU();
+        ImuData imu2_data = imu2.read_IMU();
         filter2.update(
             imu2_data.gyro.x,
             imu2_data.gyro.y,
@@ -36,7 +36,7 @@ int main()
             imu2_data.acce.z
         );
 
-        Vector6 imu3_data = imu3.read_IMU();
+        ImuData imu3_data = imu3.read_IMU();
         filter3.update(
             imu3_data.gyro.x,
             imu3_data.gyro.y,
