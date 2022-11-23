@@ -60,9 +60,29 @@ TEST(Madgwick, Get_Z)
 TEST(Madgwick, Get_roll)
 {
     arwain::Madgwick mad;
-    double roll = mad.getRoll();
-    //EXPECT_TRUE(roll == 0.0);
-    FAIL();
+
+    // Roll should be initially be zero.
+    EXPECT_EQ(mad.getRoll(), 0);
+
+    // After some noisy data updates, roll should be non-zero.
+    mad.update(0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+    EXPECT_NE(mad.getRoll(), 0);
+
+    // After many gravity-aligned updates, roll should again close to zero;
+    // we check it is less than 1 degree.
+    for (int i = 0; i < 50000; i++)
+    {
+        mad.update(0, 0, 0, 0, 0, 10);
+    }
+    EXPECT_LT(mad.getRoll(), 1.0);
+
+    // After many anti-gravity-aligned updates, roll should be close to 180 degrees.
+    for (int i = 0; i < 50000; i++)
+    {
+        mad.update(0, 0, 0, 0, 0, -10);
+    }
+    EXPECT_GT(std::abs(mad.getRoll()), 179.0);
+    EXPECT_LT(std::abs(mad.getRoll()), 180.0);
 }
 
 TEST(Madgwick, Get_pitch)
