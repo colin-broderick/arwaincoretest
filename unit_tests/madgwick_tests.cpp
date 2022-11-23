@@ -8,8 +8,14 @@ TEST(Madgwick, Default_Constructor)
 {
     arwain::Madgwick mad;
     
-    EXPECT_TRUE(mad.get_beta() == 0.1);
-    //all other parts of the constructor can't be verified due to being private with no getters.
+    EXPECT_TRUE(mad.get_beta() == arwain::Madgwick::beta_default);
+    EXPECT_EQ(mad.get_w(), 1);
+    EXPECT_EQ(mad.get_x(), 0);
+    EXPECT_EQ(mad.get_y(), 0);
+    EXPECT_EQ(mad.get_z(), 0);
+    EXPECT_NEAR(mad.get_frequency(), arwain::Madgwick::sample_frequency_default, 0.00001);
+    EXPECT_NEAR(mad.get_inverse_sample_frequency(), 1.0 / arwain::Madgwick::sample_frequency_default, 0.00001);
+    EXPECT_FALSE(mad.angles_updated());
 }
 
 TEST(Madgwick, Constructor)
@@ -115,34 +121,88 @@ TEST(Madgwick, Get_pitch)
 
 TEST(Madgwick, Get_yaw)
 {
+    /* Yaw is a bit tricky to test as it's one of the biggest theoretical problems faced by ARWAIN.
+    It responds 'unpredictably' to sensor data and therefore we do only simple tests on its getter.
+    */
     arwain::Madgwick mad;
-    double pitch = mad.get_yaw();
-    //EXPECT_TRUE(yaw == 0.0);
-    FAIL();
+
+    // Yaw should initially be zero.
+    EXPECT_EQ(mad.get_yaw(), 0.0);
+
+    // After updates, it will be different to zero, and will probably never quite be zero again.
+    mad.update(0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+    EXPECT_NE(mad.get_yaw(), 0.0);
 }
 
-TEST(Madgwick, Get_roll_radians)
+TEST(Madgwick, get_roll_radians)
 {
     arwain::Madgwick mad;
-    double roll_radians = mad.get_roll_radians();
-    //EXPECT_TRUE(roll_radians == 0.0);
-    FAIL();
+
+    // Roll should be initially be zero.
+    EXPECT_EQ(mad.get_roll_radians(), 0);
+
+    // After some noisy data updates, roll should be non-zero.
+    mad.update(0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+    EXPECT_NE(mad.get_roll_radians(), 0);
+
+    // After many gravity-aligned updates, roll should be close to zero;
+    // we check it is less than 0.02 radians.
+    for (int i = 0; i < 50000; i++)
+    {
+        mad.update(0, 0, 0, 0, 0, 10);
+    }
+    EXPECT_LT(mad.get_roll_radians(), 0.02);
+
+    // After many anti-gravity-aligned updates, roll should be close to pi radians.
+    for (int i = 0; i < 50000; i++)
+    {
+        mad.update(0, 0, 0, 0, 0, -10);
+    }
+    EXPECT_GT(std::abs(mad.get_roll_radians()), (1.0 - 1.0/180.0) * 3.141593);
+    EXPECT_LT(std::abs(mad.get_roll_radians()), 3.141593);
 }
 
-TEST(Madgwick, Get_pitch_radians)
+TEST(Madgwick, get_pitch_radians)
 {
     arwain::Madgwick mad;
-    double pitch_radians = mad.get_pitch_radians();
-    //EXPECT_TRUE(pitch_radians == 0.0);
-    FAIL();
+
+    // Pitch should be initially be zero.
+    EXPECT_EQ(mad.get_pitch_radians(), 0);
+
+    // After some noisy data updates, pitch should be non-zero.
+    mad.update(0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+    EXPECT_NE(mad.get_pitch_radians(), 0);
+
+    // After many gravity-aligned updates, pitch should be close to zero;
+    // we check it is less than 0.02 radians.
+    for (int i = 0; i < 50000; i++)
+    {
+        mad.update(0, 0, 0, 0, 0, 10);
+    }
+    EXPECT_LT(mad.get_pitch_radians(), 0.02);
+
+    // After many anti-gravity-aligned updates, pitch should be close to 0 radians.
+    for (int i = 0; i < 50000; i++)
+    {
+        mad.update(0, 0, 0, 0, 0, -10);
+    }
+    EXPECT_GT(std::abs(mad.get_pitch_radians()), 0.0);
+    EXPECT_LT(std::abs(mad.get_pitch_radians()), 1.0 / 180.0 * 3.141593);
 }
 
-TEST(Madgwick, Get_pitch_yaw)
+TEST(Madgwick, get_yaw_radians)
 {
+    /* Yaw is a bit tricky to test as it's one of the biggest theoretical problems faced by ARWAIN.
+    It responds 'unpredictably' to sensor data and therefore we do only simple tests on its getter.
+    */
     arwain::Madgwick mad;
-    double yaw_radians = mad.get_yaw_radians();
-    //EXPECT_TRUE(yaw_radians == 0.0);
-    FAIL();
+
+    // Yaw should initially be zero.
+    EXPECT_EQ(mad.get_yaw_radians(), 0.0);
+
+    // After updates, it will be different to zero, and will probably never quite be zero again.
+    mad.update(0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+    EXPECT_NE(mad.get_yaw_radians(), 0.0);
 }
 
 TEST(Madgwick, set_q)
