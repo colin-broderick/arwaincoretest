@@ -221,7 +221,7 @@ void arwain::eFaroe::update(double timestamp, double gx, double gy, double gz,  
 /** \brief Get the real component of the orientation quaternion.
  * \return Real quaternion component.
  */
-double arwain::eFaroe::getW()
+double arwain::eFaroe::get_w() const
 {
     return m_quaternion.w;
 }
@@ -229,7 +229,7 @@ double arwain::eFaroe::getW()
 /** \brief Get the i/x component of the orientation quaternion.
  * \return i/x component of the orientation quaternion.
  */
-double arwain::eFaroe::getX()
+double arwain::eFaroe::get_x() const
 {
     return m_quaternion.x;
 }
@@ -237,7 +237,7 @@ double arwain::eFaroe::getX()
 /** \brief Get the j/y component of the orientation quaternion.
  * \return j/y component of the orientation quaternion.
  */
-double arwain::eFaroe::getY()
+double arwain::eFaroe::get_y() const
 {
     return m_quaternion.y;
 }
@@ -245,7 +245,7 @@ double arwain::eFaroe::getY()
 /** \brief Get the k/z component of the orientation quaternion.
  * \return k/z component of the orientation quaternion.
  */
-double arwain::eFaroe::getZ()
+double arwain::eFaroe::get_z() const
 {
     return m_quaternion.z;
 }
@@ -253,11 +253,11 @@ double arwain::eFaroe::getZ()
 /** \brief Get the pitch Euler angle.
  * \return Pitch Euler angle.
  */
-double arwain::eFaroe::getPitch()
+double arwain::eFaroe::get_pitch()
 {
     if (!computed_angles)
     {
-        computeAngles();
+        compute_angles();
     }
     return pitch * degrees_per_radian;
 }
@@ -265,11 +265,11 @@ double arwain::eFaroe::getPitch()
 /** \brief Get the yaw Euler angle.
  * \return Yaw Euler angle.
  */
-double arwain::eFaroe::getYaw()
+double arwain::eFaroe::get_yaw()
 {
     if (!computed_angles)
     {
-        computeAngles();
+        compute_angles();
     }
     return yaw * degrees_per_radian + 180.0;
 }
@@ -277,11 +277,11 @@ double arwain::eFaroe::getYaw()
 /** \brief Get the roll Euler angle.
  * \return Roll Euler angle.
  */
-double arwain::eFaroe::getRoll()
+double arwain::eFaroe::get_roll()
 {
     if (!computed_angles)
     {
-        computeAngles();
+        compute_angles();
     }
     return roll * degrees_per_radian;
 }
@@ -289,7 +289,7 @@ double arwain::eFaroe::getRoll()
 /** \brief Get the full orientation quaternion.
  * \return Full orientation quaternion.
  */
-Quaternion arwain::eFaroe::getQuat()
+Quaternion arwain::eFaroe::get_q()
 {
     return m_quaternion;
 }
@@ -298,7 +298,7 @@ Quaternion arwain::eFaroe::getQuat()
  * For performance reasons these angles are only updated when they are requested.
  * \return Nothing; updates internal state.
  */
-void arwain::eFaroe::computeAngles()
+void arwain::eFaroe::compute_angles()
 {
     Quaternion& q = m_quaternion;
     roll = atan2f(q.w*q.x + q.y*q.z, 0.5 - q.x*q.x - q.y*q.y);
@@ -310,16 +310,16 @@ void arwain::eFaroe::computeAngles()
  * If the internally stored angles are not up to date, they will be updated before returning..
  * \return Euler angles in degrees, in the order roll, pitch, yaw.
  */
-std::array<double, 3> arwain::eFaroe::getEuler()
+std::array<double, 3> arwain::eFaroe::get_euler()
 {
     if (!computed_angles)
     {
-        computeAngles();
+        compute_angles();
     }
     return std::array<double, 3>{roll, pitch, yaw};
 }
 
-void arwain::eFaroe::setQ(double w, double x, double y, double z)
+void arwain::eFaroe::set_q(double w, double x, double y, double z)
 {	
 	m_quaternion = Quaternion{w, x, y, z};
 }

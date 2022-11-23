@@ -115,7 +115,7 @@ int main(int argc, char **argv)
         
         // Update the orientation filter and write the result to the output file.
         filter.update(1.0/frequency*1e9, (data_line[0]-x_bias)/180*PI, (data_line[1]-y_bias)/180*PI, (data_line[2]-z_bias)/180*PI, data_line[3], data_line[4], data_line[5]);
-        outputfile << filter.getRoll() << "," << filter.getPitch() << "," << filter.getYaw() << "\n";
+        outputfile << filter.get_roll() << "," << filter.get_pitch() << "," << filter.get_yaw() << "\n";
     }
 
     std::cout << "Read " << count << " total lines\n";

@@ -65,7 +65,7 @@ void DebugPrints::run_inference()
         ss << "Position:    " << arwain::Buffers::POSITION_BUFFER.back() << "\n";
         // Add Euler and Quaternion orientations to the string stream.
         Quaternion quat = arwain::Buffers::QUAT_ORIENTATION_BUFFER.back();
-        auto euler_angles = arwain::Filter::getEulerAnglesDegrees(quat.w, quat.x, quat.y, quat.z);
+        auto euler_angles = arwain::OrientationFilter::get_euler_angles_degrees(quat.w, quat.x, quat.y, quat.z);
         ss << "Orientation (E):   " << "R:" << euler_angles[0] << ", " << "P:" << euler_angles[1] << ", " << "Y:" << euler_angles[2] << "\n";;
         ss << "Orientation (Q):   " << quat << "\n";
 
