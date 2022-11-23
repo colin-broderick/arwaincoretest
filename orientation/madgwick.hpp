@@ -28,23 +28,27 @@
 
 namespace arwain
 {
-    class Madgwick : public Filter
+    class Madgwick : OrientationFilter
     {
+        constexpr static double sample_frequency_default = 512.0;
+        constexpr static double beta_default = 0.1;
+
         private:
-            
-            double m_beta;	// algorithm gain
-            double q0;
-            double q1;
-            double q2;
-            double q3;      // quaternion of sensor frame relative to auxiliary frame
-            double invSampleFreq;
+            double beta;	// algorithm gain
+            double w;
+            double x;
+            double y;
+            double z;      // quaternion of sensor frame relative to auxiliary frame
+            double inverse_sample_frequency;
             double roll;
             double pitch;
             double yaw;
-            char anglesComputed;
+            char angles_computed;
             
-            void computeAngles();
-            static double invSqrt(double x);
+        TESTABLE:
+            void compute_angles();
+            static double inverse_sqrt(double x);
+
         public:
             // Constructors
             Madgwick(void);
@@ -57,20 +61,20 @@ namespace arwain
             void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az);
 
             // Getters
-            double getW();
-            double getX();
-            double getY();
-            double getZ();
-            double getRoll();
-            double getPitch();
-            double getYaw();
+            double get_w() const;
+            double get_x() const;
+            double get_y() const;
+            double get_z() const;
+            double get_roll();
+            double get_pitch();
+            double get_yaw();
             double get_beta() const;
-            double getRollRadians();
-            double getPitchRadians();
-            double getYawRadians();
+            double get_roll_radians();
+            double get_pitch_radians();
+            double get_yaw_radians();
 
             // Setters
-            void setQ(double, double, double, double);
+            void set_q(double w, double x, double y, double z);
             void set_beta(double beta);
     };
 }

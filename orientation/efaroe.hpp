@@ -23,7 +23,7 @@ https://www.sciencedirect.com/science/article/pii/S0888327019303012
 
 namespace arwain
 {
-    class eFaroe : public Filter
+    class eFaroe : public OrientationFilter
     {
         public:
             // Constructors.
@@ -59,22 +59,22 @@ namespace arwain
             ) ;
 
             // Orientation getters.
-            double getW() ;
-            double getX() ;
-            double getY() ;
-            double getZ() ;
-            double getPitch() ;
-            double getRoll() ;
-            double getYaw() ;
-            Quaternion getQuat();
-            std::array<double, 3> getEuler();
+            double get_w() const;
+            double get_x() const;
+            double get_y() const;
+            double get_z() const;
+            double get_pitch() ;
+            double get_roll() ;
+            double get_yaw() ;
+            Quaternion get_q();
+            std::array<double, 3> get_euler();
 
             // Setters
-            void setQ(double, double, double, double);
+            void set_q(double, double, double, double);
         
         private:
-            const double degrees_per_radian = 57.295779513082320876798154814105;
-            const double radians_per_degree = 0.01745329251994329576923690768489;
+            constexpr static double degrees_per_radian = 57.295779513082320876798154814105;
+            constexpr static double radians_per_degree = 0.01745329251994329576923690768489;
 
             // Current orientation quaternion.
             Quaternion m_quaternion;
@@ -112,7 +112,7 @@ namespace arwain
             // State update methods.
             void update_mag_imu();
             void update_imu();
-            void computeAngles();
+            void compute_angles();
     };
 }
 
