@@ -68,7 +68,7 @@ TEST(Madgwick, Get_roll)
     mad.update(0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
     EXPECT_NE(mad.getRoll(), 0);
 
-    // After many gravity-aligned updates, roll should again close to zero;
+    // After many gravity-aligned updates, roll should be close to zero;
     // we check it is less than 1 degree.
     for (int i = 0; i < 50000; i++)
     {
@@ -88,9 +88,29 @@ TEST(Madgwick, Get_roll)
 TEST(Madgwick, Get_pitch)
 {
     arwain::Madgwick mad;
-    double pitch = mad.getPitch();
-    //EXPECT_TRUE(pitch == 0.0);
-    FAIL();
+
+    // Pitch should be initially be zero.
+    EXPECT_EQ(mad.getPitch(), 0);
+
+    // After some noisy data updates, pitch should be non-zero.
+    mad.update(0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+    EXPECT_NE(mad.getPitch(), 0);
+
+    // After many gravity-aligned updates, pitch should be close to zero;
+    // we check it is less than 1 degree.
+    for (int i = 0; i < 50000; i++)
+    {
+        mad.update(0, 0, 0, 0, 0, 10);
+    }
+    EXPECT_LT(mad.getPitch(), 1.0);
+
+    // After many anti-gravity-aligned updates, pitch should be close to 0 degrees.
+    for (int i = 0; i < 50000; i++)
+    {
+        mad.update(0, 0, 0, 0, 0, -10);
+    }
+    EXPECT_GT(std::abs(mad.getPitch()), 0.0);
+    EXPECT_LT(std::abs(mad.getPitch()), 1.0);
 }
 
 TEST(Madgwick, Get_yaw)
