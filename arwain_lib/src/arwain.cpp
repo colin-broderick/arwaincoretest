@@ -445,31 +445,27 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
     IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
     IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
 
-    std::vector<Vector3> readings_1;
-    std::vector<Vector3> readings_2;
-    std::vector<Vector3> readings_3;
+    AccelerometerCalibrator calib1;
+    AccelerometerCalibrator calib2;
+    AccelerometerCalibrator calib3;
 
-    // Take readings while tumbling device.
     for (int i = 0; i < 6; i++)
     {
-        std::cout << i+1 << ") Place the device in a random orientation ..." << std::endl;
-        sleep_ms(10000);
-
-        Vector3 reading_1 = imu1.calibration_accel_sample();
-        Vector3 reading_2 = imu2.calibration_accel_sample();
-        Vector3 reading_3 = imu3.calibration_accel_sample();
-
-        readings_1.push_back(reading_1);
-        readings_2.push_back(reading_2);
-        readings_3.push_back(reading_3);
+        while (!calib1.is_converged() || !calib2.is_converged() || !calib3.is_converged())
+        {
+            calib1.feed(imu1.read_IMU().acce);
+            calib2.feed(imu2.read_IMU().acce);
+            calib3.feed(imu3.read_IMU().acce);
+        }
+        calib1.next_sampling();
+        calib2.next_sampling();
+        calib3.next_sampling();
     }
-    
-    // TODO Detect and remove outliers.
+    auto [bias_1, scale_1] = calib1.deduce_calib_params();
+    auto [bias_2, scale_2] = calib2.deduce_calib_params();
+    auto [bias_3, scale_3] = calib3.deduce_calib_params();
 
-    // Compute centre offsets; this assumes outliers have been successfully removed.
-    auto [bias_1, scale_1] = deduce_calib_params(readings_1);
-    auto [bias_2, scale_2] = deduce_calib_params(readings_2);
-    auto [bias_3, scale_3] = deduce_calib_params(readings_3);
+    // TODO Detect and remove outliers.
 
     // Log to config file.
     arwain::config.replace("accel1_bias_x", bias_1.x);

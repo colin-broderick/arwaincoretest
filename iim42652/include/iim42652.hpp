@@ -96,8 +96,6 @@ class IMU_IIM42652
         void set_resolutions(double accel, double gyro);
         ImuData read_IMU();
         double read_temperature();
-        // Vector3 calibrate_gyroscope();
-        Vector3 calibration_accel_sample();
         void set_gyro_bias(double x, double y, double z);
         void set_accel_bias(double x, double y, double z);
         void set_accel_scale(double x, double y, double z);
