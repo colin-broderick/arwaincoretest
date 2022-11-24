@@ -6,8 +6,12 @@
 #include "vector3.hpp"
 
 /** \brief Computes the coverage percentage of a sphere by counting the number of non-zero
- * entries in the coverage array.
-*/
+ * entries in the coverage array. Each index in the array corresponds to an equal-area region
+ * of a sphere.
+ * \param region_sample_count Coverage array; each non-zero element corresponds to a sphere region
+ * for which data has been acquired. Each zero element corresponds to a sphere region for which
+ * data has not been acquired.
+ */
 int MagnetometerCalibrator::sphere_coverage(const std::array<int, 100>& region_sample_count) const
 {
     int coverage = 0;
@@ -29,31 +33,32 @@ int MagnetometerCalibrator::sphere_coverage(const std::array<int, 100>& region_s
  */
 int MagnetometerCalibrator::sphere_region(const double x, const double y, const double z) const
 {
-    double latitude, longitude;
-    int region;
+    double latitude = 0;
+    double longitude = 0;
+    int region = 0;
 
-    longitude = std::atan2(y, x) + M_PI;                             // longitude = 0 to 2pi  (meaning 0 to 360 degrees)
-    latitude = M_PI / 2.0 - std::atan2(std::sqrt(x * x + y * y), z); // latitude = -pi/2 to +pi/2  (meaning -90 to +90 degrees)
+    longitude = std::atan2(y, x) + pi;                             // longitude = 0 to 2pi  (meaning 0 to 360 degrees)
+    latitude = pi / 2.0 - std::atan2(std::sqrt(x * x + y * y), z); // latitude = -pi/2 to +pi/2  (meaning -90 to +90 degrees)
 
     // https://etna.mcs.kent.edu/vol.25.2006/pp309-327.dir/pp309-327.html
     // sphere equations....
     //  area of unit sphere = 4*pi
     //  area of unit sphere cap = 2*pi*h  h = cap height
     //  lattitude of unit sphere cap = arcsin(1 - h)
-    if (latitude > 1.37046f /* 78.52 deg */)
+    if (latitude > 1.37046 /* 78.52 deg */)
     {
         // arctic cap, 1 region
         region = 0;
     }
-    else if (latitude < -1.37046f /* -78.52 deg */)
+    else if (latitude < -1.37046 /* -78.52 deg */)
     {
         // antarctic cap, 1 region
         region = 99;
     }
-    else if (latitude > 0.74776f /* 42.84 deg */ || latitude < -0.74776f)
+    else if (latitude > 0.74776 /* 42.84 deg */ || latitude < -0.74776)
     {
         // temperate zones, 15 regions each
-        region = std::floor(longitude * 15.0 / (M_PI * 2.0));
+        region = std::floor(longitude * 15.0 / (pi * 2.0));
         if (region < 0)
         {
             region = 0;
@@ -74,7 +79,7 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
     else
     {
         // tropic zones, 34 regions each
-        region = std::floor(longitude * 34.0 / (M_PI * 2.0));
+        region = std::floor(longitude * 34.0 / (pi * 2.0));
         if (region < 0)
         {
             region = 0;
@@ -106,7 +111,7 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
  * purpose, later stages of the calibration will likely fail. After the first 100 readings,
  * subsequent readings will be used to accumulate sphere coverage with respect to the
  * newly-acquired bias parameters.
-*/
+ */
 void MagnetometerCalibrator::feed(const Vector3& reading)
 {
     static double x_bias = 0;
@@ -154,6 +159,11 @@ void MagnetometerCalibrator::feed(const Vector3& reading)
     std::cout << "Coverage quality: " << this->sphere_coverage_quality << std::endl;
 }
 
+/** \brief Gives a measure of fully the sphere has been covered by data readings fed to the
+ * calibrator. Quality is given as a percentage, where 100% means all 100 regions of the sphere
+ * have at least one associated measurement.
+ * \return Sphere coverage quality as a percentage. 
+ */
 int MagnetometerCalibrator::get_sphere_coverage_quality() const
 {
     return this->sphere_coverage_quality;
@@ -167,7 +177,7 @@ int MagnetometerCalibrator::get_sphere_coverage_quality() const
  *    {.      y           yz cross},
  *    {.      .           z       },
  * The blank entries can be ignored.
-*/
+ */
 std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCalibrator::solve()
 {
     // TODO Make sure there are enough data samples
@@ -250,4 +260,140 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCa
             {L(2, 0), L(2, 1), L(2, 2)},
         }
     };
+}
+
+/** \brief Reports whether the current series of readings has converged.
+ * 
+ * Here, converged means that the state estimater has reached a certain confidence level for the
+ * readings being fed in, where it as assumed that the readings are all taken with the device
+ * stationary in some fixed orientation.
+ *
+ * \return Boolean indicated whether the state estimater has converged.
+ */
+bool AccelerometerCalibrator::is_converged()
+{
+    return converged;
+}
+
+/** \brief Get the currently estimated state for all three accelerometer axes. 
+ * \return Current state estimate.
+ */
+Vector3 AccelerometerCalibrator::get_params()
+{
+    return {kfx.est, kfy.est, kfz.est};
+}
+
+/** \brief Call to tell the calibrator that measurement of accelerometer data in the current orientation
+ * has been finished, and therefore the internal state estimater and convergence state should be reset.
+ *
+ * After calling next_sampling(), start feeding data for a new orientation or continue
+ * on to deduce_calib_params().
+ */
+void AccelerometerCalibrator::next_sampling()
+{
+    converged = false;
+    samplings.push_back({kfx.est, kfy.est, kfz.est});
+    kfx = KalmanFilter1D{9.81, 1.0};
+    kfy = KalmanFilter1D{9.81, 1.0};
+    kfz = KalmanFilter1D{9.81, 1.0};
+}
+
+/** \brief Supply a new data reading.
+ * \param reading Accelerometer data in units of m/s2.
+ * \return Boolean indicating whether convergence has been reached,
+ */
+bool AccelerometerCalibrator::feed(const Vector3& reading)
+{
+    kfx.update(reading.x, 0.1);
+    kfy.update(reading.y, 0.1);
+    kfz.update(reading.z, 0.1);
+
+    if (!kfx.converged || !kfy.converged || !kfz.converged)
+    {
+        converged = false;
+    }
+    else
+    {
+        converged = true;
+    }
+
+    return converged;
+}
+
+/** \brief Using data collected so far, calculate bias and scale parameters to calibrate the accelerometers.
+ * \return A pair of vectors, where the first vector is the offset parameters in the order x, y, z, and the
+ * second vector is scale parameters in the order x, y, z.
+ */
+std::tuple<Vector3, Vector3> AccelerometerCalibrator::deduce_calib_params()
+{
+    double x_min = 1e6;
+    double x_max = -1e6;
+    double y_min = 1e6;
+    double y_max = -1e6;
+    double z_min = 1e6;
+    double z_max = -1e6;
+    
+    for (const Vector3& vec : samplings)
+    {
+        x_min = vec.x < x_min ? vec.x : x_min;
+        x_max = vec.x > x_max ? vec.x : x_max;
+        y_min = vec.y < y_min ? vec.y : y_min;
+        y_max = vec.y > y_max ? vec.y : y_max;
+        z_min = vec.z < z_min ? vec.z : z_min;
+        z_max = vec.z > z_max ? vec.z : z_max;
+    }
+    Vector3 bias_ = {(x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0};
+
+    // Compute scale correction factors.
+    Vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
+    double average_delta = (delta.x + delta.y + delta.z)/3.0;
+    double scale_x = average_delta / delta.x;
+    double scale_y = average_delta / delta.y;
+    double scale_z = average_delta / delta.z;
+    Vector3 scale_ = {scale_x, scale_y, scale_z};
+
+    return {bias_, scale_};
+}
+
+/** \brief Reports whether the current series of readings has converged.
+ * 
+ * Here, converged means that the state estimater has reached a certain confidence level for the
+ * readings being fed in, where it as assumed that the readings are all taken with the device
+ * stationary in some fixed orientation.
+ *
+ * \return Boolean indicated whether the state estimater has converged.
+ */
+bool GyroscopeCalibrator::is_converged()
+{
+    return converged;
+}
+
+/** \brief Get the currently estimated state for all three gyroscope axes. 
+ * \return Current state estimate.
+ */
+Vector3 GyroscopeCalibrator::get_params()
+{
+    return {kfx.est, kfy.est, kfz.est};
+}
+
+/** \brief Supply a new data reading.
+ * \param reading Gyroscope data in units of rad/s.
+ * \return Boolean indicating whether convergence has been reached,
+ */
+bool GyroscopeCalibrator::feed(const Vector3& reading)
+{
+    kfx.update(reading.x, 0.02);
+    kfy.update(reading.y, 0.02);
+    kfz.update(reading.z, 0.02);
+
+    if (!kfx.converged || !kfy.converged || !kfz.converged)
+    {
+        converged = false;
+    }
+    else
+    {
+        converged = true;
+    }
+
+    return converged;
 }
