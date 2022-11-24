@@ -38,7 +38,27 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter arwain_thread vector3)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
-include_directories(lora arwain_thread orientation iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384 uubla/include arwain_lib /opt/arwain/workspace/tensorflow_src realsense_t265)
+include_directories(
+    lora/include
+    arwain_thread/include
+    orientation/include
+    iim42652/include
+    orientation_fusion/include
+    quaternion/include
+    vector3/include
+    logger/include
+    kalman/include
+    input_parser/include
+    timers/include
+    lis3mdl/include
+    minitrace/include
+    ips/include
+    bmp384/include
+    uubla/include
+    arwain_lib/include
+    /opt/arwain/workspace/tensorflow_src
+    realsense_t265/include
+)
 
 if(USE_UUBLA)
     message("Compiling with UUBLA support")
