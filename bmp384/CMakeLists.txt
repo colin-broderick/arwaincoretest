@@ -1,1 +1,1 @@
-add_library(bmp384 bmp384.cpp)
+add_library(bmp384 src/bmp384.cpp)

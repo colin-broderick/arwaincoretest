@@ -1,3 +1,3 @@
 project(timers)
 
-add_Library(${PROJECT_NAME} STATIC timers.cpp)
+add_Library(${PROJECT_NAME} STATIC src/timers.cpp)
