@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 
 #include "IMU_IIM42652_driver.hpp"
+#include "vector3.hpp"
 
 TEST(Imu_driver, Constructor)
 {
     EXPECT_NO_THROW(IMU_IIM42652());
     EXPECT_NO_THROW(IMU_IIM42652(1, "test_driver"));
 }
-
 
 TEST(Imu_driver, IMU_config)
 {   //need a list of return codes and config options
@@ -16,7 +16,8 @@ TEST(Imu_driver, IMU_config)
 
 TEST(Imu_driver, set_resolutions)
 {
-    FAIL();//no getters for values set
+    //no getters for values set
+    FAIL();
 }
 
 TEST(Imu_driver, read_IMU)
@@ -93,14 +94,3 @@ TEST(Imu_driver, get_gyro_calib_z)
 {
     FAIL();
 }
-
-
-
-
-
-
-
-
-
-
-
