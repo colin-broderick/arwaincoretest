@@ -449,8 +449,14 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
     AccelerometerCalibrator calib2;
     AccelerometerCalibrator calib3;
 
+    std::cout << "Accelerometer calibration starting\n";
+    sleep_ms(5000);
+
     for (int i = 0; i < 6; i++)
     {
+        std::cout << "Place the device in a random orientation\n";
+        sleep_ms(5000);
+
         while (!calib1.is_converged() || !calib2.is_converged() || !calib3.is_converged())
         {
             calib1.feed(imu1.read_IMU().acce);
@@ -461,6 +467,8 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
         calib2.next_sampling();
         calib3.next_sampling();
     }
+
+    std::cout << "Data collection complete; computing calibration parameters...\n";
     auto [bias_1, scale_1] = calib1.deduce_calib_params();
     auto [bias_2, scale_2] = calib2.deduce_calib_params();
     auto [bias_3, scale_3] = calib3.deduce_calib_params();
@@ -489,7 +497,7 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
     arwain::config.replace("accel3_scale_y", scale_3.y);
     arwain::config.replace("accel3_scale_z", scale_3.z);
 
-    std::cout << "Calibration complete and logged to config file" << std::endl;
+    std::cout << "Calibration complete and logged to config file\n";
 
     return arwain::ReturnCode::Success;
 }
