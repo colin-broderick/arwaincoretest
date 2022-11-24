@@ -5,7 +5,7 @@
 #include "arwain_tests.hpp"
 #include "timers.hpp"
 #include "bmp384.hpp"
-#include "IMU_IIM42652_driver.hpp"
+#include "iim42652.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
 #include "sensor_manager.hpp"

@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <random>
 
-#include "IMU_IIM42652_driver.hpp"
+#include "iim42652.hpp"
 #include "kalman.hpp"
 #include "vector3.hpp"
 

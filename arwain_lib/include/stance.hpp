@@ -12,6 +12,7 @@
 #include "arwain.hpp"
 #include "logger.hpp"
 #include "arwain_thread.hpp"
+#include "iim42652.hpp"
 
 class StanceDetector
 {
