@@ -51,9 +51,9 @@ arwain::Madgwick::Madgwick()
 /** \brief Constructor using custom sample frequency.
  * \param sample_frequency The anticipated update frequency in Hz.
  */
-arwain::Madgwick::Madgwick(double sample_frequency, double beta)
+arwain::Madgwick::Madgwick(double sample_frequency, double beta_)
 {
-	beta = beta;
+	beta = beta_;
 	w = 1.0;
 	x = 0.0;
 	y = 0.0;
