@@ -6,7 +6,7 @@
 #include "arwain.hpp"
 #include "logger.hpp"
 #include "arwain_thread.hpp"
-#include "IMU_IIM42652_driver.hpp"
+#include "iim42652.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
 #include "arwain_utils.hpp"

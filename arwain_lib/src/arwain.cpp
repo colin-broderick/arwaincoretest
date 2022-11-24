@@ -26,7 +26,7 @@
 #include "indoor_positioning_wrapper.hpp"
 #include "altimeter.hpp"
 #include "logger.hpp"
-#include "IMU_IIM42652_driver.hpp"
+#include "iim42652.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
 #include "lis3mdl.hpp"

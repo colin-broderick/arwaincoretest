@@ -3,7 +3,7 @@
 #ifndef _ARWAIN_MULTI_IMU_HPP
 #define _ARWAIN_MULTI_IMU_HPP
 
-#include "IMU_IIM42652_driver.hpp"
+#include "iim42652.hpp"
 
 class Multi_IIM42652
 {
