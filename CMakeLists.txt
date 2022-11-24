@@ -35,7 +35,7 @@ include_directories(
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter arwain_thread vector3)
+set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace bmp384 lora fusion_filter arwain_thread vector3)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
 include_directories(
@@ -52,7 +52,6 @@ include_directories(
     timers/include
     lis3mdl/include
     minitrace/include
-    ips/include
     bmp384/include
     uubla/include
     arwain_lib/include
@@ -77,7 +76,6 @@ add_subdirectory(kalman)
 add_subdirectory(timers)
 add_subdirectory(lis3mdl)
 add_subdirectory(minitrace) # Adds performance profiling tools which generate reports viewable in Chrome.
-add_subdirectory(ips)
 add_subdirectory(bmp384)
 if(USE_UUBLA)
 add_subdirectory(uubla)

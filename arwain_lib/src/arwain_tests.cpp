@@ -241,6 +241,7 @@ arwain::ReturnCode arwain::interactive_test()
         return arwain::ReturnCode::GeneralError;
     }
 
+    #if USE_UUBLA
     ret = arwain::test_uubla_integration();
     std::cout << "\n";
     std::cout << "Did you see the expected UUBLA output (y/n)?\n";
@@ -249,6 +250,7 @@ arwain::ReturnCode arwain::interactive_test()
     {
         return arwain::ReturnCode::GeneralError;
     }
+    #endif
 
     ret = arwain::test_lora_tx();
     std::cout << "\n";
