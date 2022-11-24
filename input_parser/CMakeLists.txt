@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.16)
 project(input_parser)
-
+include_directories(include)
 add_Library(${PROJECT_NAME} STATIC src/input_parser.cpp)
