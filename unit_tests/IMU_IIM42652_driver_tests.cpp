@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "IMU_IIM42652_driver.hpp"
+#include "iim42652.hpp"
 #include "vector3.hpp"
 
 TEST(Imu_driver, Constructor)
