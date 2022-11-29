@@ -8,7 +8,6 @@
 #include <random>
 
 #include "iim42652.hpp"
-#include "kalman.hpp"
 #include "vector3.hpp"
 
 /** \brief Constructor.
@@ -59,74 +58,6 @@ double IMU_IIM42652::get_gyro_calib_z()
 {
     return gyro_bias_z;
 }
-
-namespace
-{
-    struct AccelerometerCalibrationCandidate
-    {
-        Eigen::Matrix<double, 3, 3> alignment;
-        Eigen::Matrix<double, 3, 3> scale;
-        Eigen::Matrix<double, 3, 1> bias;
-        double loss = 0;
-        AccelerometerCalibrationCandidate()
-        {
-        }
-        void update_loss(double gravity, std::vector<Eigen::Matrix<double, 3, 1>>& samples)
-        {
-            this->loss = 0;
-            for (Eigen::Matrix<double, 3, 1> &sample : samples)
-            {
-                auto h = this->alignment * this->scale * (sample - this->bias);
-                auto hdoth = h.dot(h);
-                auto x = gravity * gravity - hdoth;
-                this->loss = this->loss + x * x;
-            }
-        }
-    };
-}
-
-Vector3 IMU_IIM42652::calibration_accel_sample()
-{
-    KalmanFilter1D kfx{9.81, 1.0};
-    KalmanFilter1D kfy{9.81, 1.0};
-    KalmanFilter1D kfz{9.81, 1.0};
-    
-    while (!kfx.converged && !kfy.converged && !kfz.converged)
-    {
-        auto [accel, gyro] = this->read_IMU();
-        kfx.update(accel.x, 0.1);
-        kfy.update(accel.y, 0.1);
-        kfz.update(accel.z, 0.1);
-        std::this_thread::sleep_for(std::chrono::milliseconds{10});
-    }
-
-    return {kfx.est, kfy.est, kfz.est};
-}
-
-// /** \brief Defines a procedure for calculating calibration offsets
-//  * for the gyroscope.
-//  * 
-//  * We take repeated gyroscope readings until a state estimator converges
-//  * on a stable value for each gyroscope axis.
-//  * 
-//  * This procedure does not consider the change in offset as a
-//  * function of temperature.
-//  */
-// Vector3 IMU_IIM42652::calibrate_gyroscope()
-// {
-//     KalmanFilter1D kfx{0, 1};
-//     KalmanFilter1D kfy{0, 1};
-//     KalmanFilter1D kfz{0, 1};
-//     while (!kfx.converged && !kfy.converged && !kfz.converged)
-//     {
-//         auto [accel, gyro] = this->read_IMU();
-//         kfx.update(gyro.x, 0.02);
-//         kfy.update(gyro.y, 0.02);
-//         kfz.update(gyro.z, 0.02);
-//         std::this_thread::sleep_for(std::chrono::milliseconds{10});
-//     }
-//     return {kfx.est, kfy.est, kfz.est};
-// }
 
 int IMU_IIM42652::get_address() const
 {

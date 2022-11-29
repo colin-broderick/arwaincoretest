@@ -12,12 +12,17 @@ arwain::CornerDetector::CornerDetector(int window_size_, double detection_angle_
 }
 
 /** \brief Converts an angle in radians to an angle in degrees.
+ *
+ * Converts radians to degrees by multiplying by
+ * 180.0° (i.e. half a circle in degrees) and then dividing by
+ * pi (i.e. half a circle in radians).
+ *
  * \param radians The size of the angle to convert in radians
  */
 double arwain::CornerDetector::radians_to_degrees(double radians)
 {
     //multuplied by 180 degrees and then divided by pi
-     return radians * 180.0 / 3.14159;
+    return radians * 180.0 / 3.141592653;
 }
 
 /** \brief Checks the track to see if a corner can be detected.
