@@ -1,7 +1,20 @@
 #include <gtest/gtest.h>
+#include <chrono>
 
 #include "arwain.hpp"
 #include "input_parser.hpp"
+
+/** \brief Test that the sleep_ms utility function waits approximately the expected amount of time. */
+TEST(ArwainUtils, sleep_ms)
+{
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+    sleep_ms(25);
+    std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+    
+    int duration = (end - start).count();
+    EXPECT_GT(duration, 25000000);
+    EXPECT_LT(duration, 26000000);
+}
 
 TEST(Arwain, Arwain_Main)
 {
@@ -13,7 +26,7 @@ TEST(Arwain, Operator_Test)
     FAIL();
 }
 
-TEST(Arwain, Setup_No_Name)
+TEST(Arwain, setup_log_folder_name_suffix_with_no_name)
 {
     int j = 3;
     std::string program = "arwain_test";
@@ -22,13 +35,13 @@ TEST(Arwain, Setup_No_Name)
     char* input_array[3] = {program.data(),command.data(), paramater.data()};
     InputParser parser(j, input_array);
 
-    arwain::setup(parser);
+    arwain::setup_log_folder_name_suffix(parser);
     std::string empty = "";
 
     EXPECT_EQ(empty, arwain::folder_date_string_suffix);
 }
 
-TEST(Arwain, Setup_Name)
+TEST(Arwain, setup_log_folder_name_suffix_with_name)
 {
     int j = 3;
     std::string program = "arwain_test";
@@ -37,7 +50,7 @@ TEST(Arwain, Setup_Name)
     char* input_array[3] = {program.data(),command.data(), paramater.data()};
     InputParser parser(j, input_array);
 
-    arwain::setup(parser);
+    arwain::setup_log_folder_name_suffix(parser);
     std::string name = "example";
     EXPECT_EQ(name, arwain::folder_date_string_suffix);
 }

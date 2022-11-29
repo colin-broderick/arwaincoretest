@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.16)
 project(timers)
-
-add_Library(${PROJECT_NAME} STATIC timers.cpp)
+include_directories(include)
+add_Library(${PROJECT_NAME} STATIC src/timers.cpp)
