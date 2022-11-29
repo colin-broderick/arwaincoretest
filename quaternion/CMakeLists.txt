@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.16)
 project(quaternion)
-
-add_library(quaternion quaternion.cpp)
+include_directories(include)
+add_library(quaternion src/quaternion.cpp)

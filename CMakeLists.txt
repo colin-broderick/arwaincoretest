@@ -4,12 +4,12 @@ project(arwain)
 
 find_package(GTest CONFIG REQUIRED)
 
-option(USE_NCS2             "Use the Neural Compute Stick for inference"        OFF)
-option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"        OFF)
-option(USE_ROS              "Use ROS topics to publish diagnostic data"         OFF)
-option(USE_UUBLA            "Include the UUBLA ultra-wideband library"          OFF)
-option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"     OFF)
-option(UNIT_TESTS           "Make namespace functions public to enable testing" OFF)
+option(USE_NCS2             "Use the Neural Compute Stick for inference"          OFF)
+option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"          OFF)
+option(USE_ROS              "Use ROS topics to publish diagnostic data"           OFF)
+option(USE_UUBLA            "Include the UUBLA ultra-wideband library"            OFF)
+option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"       OFF)
+option(UNIT_TESTS           "Make private class methods public to enable testing" OFF)
 
 if(UNIT_TESTS)
     message("Building with all public class methods for test")
@@ -35,10 +35,28 @@ include_directories(
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter arwain_thread vector3)
+set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl bmp384 lora fusion_filter arwain_thread vector3)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
-include_directories(lora arwain_thread orientation iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384 uubla/include arwain_lib /opt/arwain/workspace/tensorflow_src realsense_t265)
+include_directories(
+    lora/include
+    arwain_thread/include
+    orientation/include
+    iim42652/include
+    orientation_fusion/include
+    quaternion/include
+    vector3/include
+    logger/include
+    kalman/include
+    input_parser/include
+    timers/include
+    lis3mdl/include
+    bmp384/include
+    uubla/include
+    arwain_lib/include
+    /opt/arwain/workspace/tensorflow_src
+    realsense_t265/include
+)
 
 if(USE_UUBLA)
     message("Compiling with UUBLA support")
@@ -56,8 +74,6 @@ add_subdirectory(input_parser)
 add_subdirectory(kalman)
 add_subdirectory(timers)
 add_subdirectory(lis3mdl)
-add_subdirectory(minitrace)
-add_subdirectory(ips)
 add_subdirectory(bmp384)
 if(USE_UUBLA)
 add_subdirectory(uubla)
@@ -96,11 +112,12 @@ if(USE_NCS2)
     add_definitions(-DUSE_NCS2)
     set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} zmq)
 else()
-    set(TENSORFLOW_SOURCE_DIR "/opt/arwain/workspace/tensorflow_src" CACHE PATH
+    message("Compiling with tensorflow support")
+    set(TENSORFLOW_SOURCE_DIR "/home/pi/tensorflow" CACHE PATH
     "Directory that contains the TensorFlow project" )
     if(NOT TENSORFLOW_SOURCE_DIR)
-    get_filename_component(TENSORFLOW_SOURCE_DIR
-        "${CMAKE_CURRENT_LIST_DIR}/../../../../" ABSOLUTE)
+        get_filename_component(TENSORFLOW_SOURCE_DIR
+            "${CMAKE_CURRENT_LIST_DIR}/../../../../" ABSOLUTE)
     endif()
     if(NOT EXISTS "tfdone")  
         add_subdirectory(
