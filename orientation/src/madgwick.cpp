@@ -35,7 +35,7 @@
 
 /** \brief Default constructor.
  * Sets the initial quaternion q = (1, 0, 0, 0). Sets the inverse_sample_frequency as reciprocal of
- * sample_frequency_default. Sets angles_computed flag to 0. Sets beta equal to beta_default.
+ * sample_frequency_default. Sets angles_computed flag to false. Sets beta equal to beta_default.
  */
 arwain::Madgwick::Madgwick()
 {
@@ -45,7 +45,10 @@ arwain::Madgwick::Madgwick()
 	y = 0.0;
 	z = 0.0;
 	inverse_sample_frequency = 1.0 / sample_frequency_default;
-	angles_computed = 0;
+	roll = 0;
+	pitch = 0;
+	yaw = 0;
+	angles_computed = false;
 }
 
 /** \brief Constructor using custom sample frequency.
@@ -59,7 +62,10 @@ arwain::Madgwick::Madgwick(double sample_frequency, double beta_)
 	y = 0.0;
 	z = 0.0;
 	inverse_sample_frequency = 1.0 / sample_frequency;
-	angles_computed = 0;
+	roll = 0;
+	pitch = 0;
+	yaw = 0;
+	angles_computed = false;
 }
 
 // General methods --------------------------------------------------------------------------------
@@ -175,7 +181,7 @@ void arwain::Madgwick::update(double gx, double gy, double gz, double ax, double
 	x *= reciprocal_norm;
 	y *= reciprocal_norm;
 	z *= reciprocal_norm;
-	angles_computed = 0;
+	angles_computed = false;
 }
 
 /** \brief This is a dummy function to allow eFaroe and Madgwick filters to use the same API - timestamp is not used.
@@ -293,7 +299,7 @@ void arwain::Madgwick::update(double gx, double gy, double gz, double ax, double
 	x *= reciprocal_norm;
 	y *= reciprocal_norm;
 	z *= reciprocal_norm;
-	angles_computed = 0;
+	angles_computed = false;
 }
 
 /** \brief Calculates inverse square root of number.
@@ -312,7 +318,7 @@ void arwain::Madgwick::compute_angles()
 	roll = std::atan2(w*x + y*z, 0.5 - x*x - y*y);
 	pitch = std::asin(-2.0 * (x*z - w*y));
 	yaw = std::atan2(x*y + w*z, 0.5 - y*y - z*z);
-	angles_computed = 1;
+	angles_computed = true;
 }
 
 // Getters ----------------------------------------------------------------------------------------
@@ -322,7 +328,7 @@ void arwain::Madgwick::compute_angles()
  */
 bool arwain::Madgwick::angles_updated() const
 {
-	return angles_computed == 0 ? false : true;
+	return angles_computed;
 }
 
 /** \brief Gives the inverse sample frequency in 1/Hz, i.e., the assumed time between updates in seconds.

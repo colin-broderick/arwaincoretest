@@ -41,7 +41,7 @@ namespace arwain
             double roll;
             double pitch;
             double yaw;
-            char angles_computed;
+            bool angles_computed;
             
         TESTABLE:
             constexpr static double sample_frequency_default = 512.0;
