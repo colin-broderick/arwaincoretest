@@ -12,7 +12,7 @@
  * for which data has been acquired. Each zero element corresponds to a sphere region for which
  * data has not been acquired.
  */
-int MagnetometerCalibrator::sphere_coverage(const std::array<int, 100>& region_sample_count) const
+int MagnetometerCalibrator::sphere_coverage(const std::array<int, MagnetometerCalibrator::total_sphere_regions>& region_sample_count) const
 {
     int coverage = 0;
     for (const int value : region_sample_count)
@@ -22,10 +22,40 @@ int MagnetometerCalibrator::sphere_coverage(const std::array<int, 100>& region_s
     return coverage;
 }
 
-/** \brief Having split the sphere into 100 regions of equal area, determine
- * which region a specific 3-vector belongs in when projected onto the unit
- * sphere. Based on the work of Paul Stoffregen:
- *      https://github.com/PaulStoffregen/MotionCal
+/** \brief Get count of the number of data readings that have been supplied to the calibrator.
+ * The feed count is incremented each time feed() is called. 
+ * \return Integer count of readings supplied.
+ */
+int MagnetometerCalibrator::get_feed_count() const
+{
+    return feed_count;
+}
+
+/** \brief Determine which region a specific 3-vector belongs in when projected onto the unit
+ * sphere, where the sphere is split into 100 regions of equal area.
+ *
+ * Based on the work of Paul Stoffregen:
+ *     https://github.com/PaulStoffregen/MotionCal
+
+ * The sphere is divided into six bands. The northernmost band is a single region covering the
+ * arctic cap. The southernmost band is also a single region, covering the antarctic cap. The
+ * four remaining bands give two above and two below the equator. The bands adjacent the equator
+ * are referred to as the tropic bands, and the bands adjacent the polar caps are referred to as
+ * the temperate bands. Each band is split into regions such that the area of each is the same.
+ * The northern tropic band is split into 15 regions along lines of longitude, each 24° apart.
+ * The northern temperate band is split into 34 regions, each 10.58° apart. The two southern
+ * bands are split into regions in the same way, giving a total of 100 regions.
+ *
+ * The following document describes the origin of the various numerical values in this function:
+ *     https://etna.mcs.kent.edu/vol.25.2006/pp309-327.dir/pp309-327.html
+
+ * The reading (x, y, z) is projected onto the sphere and this function returns an integer
+ * corresponding to the region of the sphere in which it lands. The arctic cap is index 0; the
+ * northern band regions are then numbered 1-49, and the southern bands 50-98, with the antarctic
+ * cap being index 99.
+ *
+ * Within this function, all angles are represented in radian form.
+ *
  * \param x The x component of the 3-vector.
  * \param y The y component of the 3-vector.
  * \param z The z component of the 3-vector.
@@ -37,27 +67,25 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
     double longitude = 0;
     int region = 0;
 
-    longitude = std::atan2(y, x) + pi;                             // longitude = 0 to 2pi  (meaning 0 to 360 degrees)
-    latitude = pi / 2.0 - std::atan2(std::sqrt(x * x + y * y), z); // latitude = -pi/2 to +pi/2  (meaning -90 to +90 degrees)
+    const double arctic_cap_latitude = 1.37046;              // 78.52 degrees; the latitude of the line demarking the arctic cap.
+    const double antarctic_cap_latitude = -1.37046;          // -78.52 degrees; the latitude of the line demarking the antarctic cap.
+    const double north_tropic_temperate_boundary = 0.74776;  // 42.84 degrees; the latitude of the line separating the remaining two northern bands.
+    const double south_tropic_temperate_boundary = -0.74776; // -42.84 degrees; the latitude of the line separating the remaining two southern bands.
 
-    // https://etna.mcs.kent.edu/vol.25.2006/pp309-327.dir/pp309-327.html
-    // sphere equations....
-    //  area of unit sphere = 4*pi
-    //  area of unit sphere cap = 2*pi*h  h = cap height
-    //  lattitude of unit sphere cap = arcsin(1 - h)
-    if (latitude > 1.37046 /* 78.52 deg */)
+    longitude = std::atan2(y, x) + pi;                             // Longitude in range [0, 2pi].
+    latitude = pi / 2.0 - std::atan2(std::sqrt(x * x + y * y), z); // Latitude in range [-pi/2, +pi/2].
+
+    if (latitude > arctic_cap_latitude) // This is the arctic cap, a singular region, index 0.
     {
-        // arctic cap, 1 region
         region = 0;
     }
-    else if (latitude < -1.37046 /* -78.52 deg */)
+    else if (latitude < antarctic_cap_latitude) // This is the antarctic cap, a singular region, index 99.
     {
-        // antarctic cap, 1 region
         region = 99;
     }
-    else if (latitude > 0.74776 /* 42.84 deg */ || latitude < -0.74776)
+    else if (latitude > north_tropic_temperate_boundary || latitude < south_tropic_temperate_boundary)
     {
-        // temperate zones, 15 regions each
+        // We are in one of the temperate zones, 15 regions each.
         region = std::floor(longitude * 15.0 / (pi * 2.0));
         if (region < 0)
         {
@@ -69,16 +97,16 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
         }
         if (latitude > 0.0)
         {
-            region += 1; // 1 to 15
+            region += 1; // Northern temperate zones are indexed 1 to 15.
         }
         else
         {
-            region += 84; // 84 to 98
+            region += 84; // Southern temperate zones are indexed 84 to 98.
         }
     }
     else
     {
-        // tropic zones, 34 regions each
+        // We are in one of the tropic zones, 34 regions each.
         region = std::floor(longitude * 34.0 / (pi * 2.0));
         if (region < 0)
         {
@@ -90,11 +118,11 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
         }
         if (latitude >= 0.0)
         {
-            region += 16; // 16 to 49
+            region += 16; // Northern tropic zones are indexed 16 to 49.
         }
         else
         {
-            region += 50; // 50 to 83
+            region += 50; // Southern tropic zones are indexed 50 to 83.
         }
     }
     return region;
@@ -114,39 +142,45 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
  */
 void MagnetometerCalibrator::feed(const Vector3& reading)
 {
-    static double x_bias = 0;
-    static double y_bias = 0;
-    static double z_bias = 0;
+    // 1000 is just a number sufficiently large that now real reading will fall outside these bounds.
     static double x_min = 1000;
     static double x_max = -1000;
     static double y_min = 1000;
     static double y_max = -1000;
     static double z_min = 1000;
     static double z_max = -1000;
+    
+    static double x_bias = 0;
+    static double y_bias = 0;
+    static double z_bias = 0;
 
     // This first 100 samples are used to create a rough estimate of the biases, so that
     // sphere coverage can be accurately measured.
     if (feed_count < 100)
     {
-        std::cout << "Determining bias parameters " << feed_count+1 << "\n";
+        std::cout << "Determining bias parameters " << feed_count + 1 << "\n";
         if (reading.x < x_min) x_min = reading.x;
         if (reading.x > x_max) x_max = reading.x;
         if (reading.y < y_min) y_min = reading.y;
         if (reading.y > y_max) y_max = reading.y;
         if (reading.z < z_min) z_min = reading.z;
         if (reading.z > z_max) z_max = reading.z;
-        x_bias = (x_min + x_max) / 2.0;
-        y_bias = (y_min + y_max) / 2.0;
-        z_bias = (z_min + z_max) / 2.0;
         feed_count++;
         return;
     }
 
+    // TODO The 100 reads is to hopefully get enough data to ensure the initial bias parameters are
+    // 'reasonable'. It should be possible to check that they are close enough and go from there, rather
+    // than just hope that 100 reads is enough.
     if (feed_count == 100)
     {
+        x_bias = (x_min + x_max) / 2.0;
+        y_bias = (y_min + y_max) / 2.0;
+        z_bias = (z_min + z_max) / 2.0;
         std::cout << "\n";
-        feed_count++;
     }
+    
+    feed_count++;
 
     // Once the biases are approximately established, record each data sample into the
     // appropriate sphere region.
@@ -169,6 +203,24 @@ int MagnetometerCalibrator::get_sphere_coverage_quality() const
     return this->sphere_coverage_quality;
 }
 
+/** \brief Gets the current region sample count.
+ * \return An array where each index contains an int which counts the number of readings
+ * which correspond to the sphere region with that index.
+ */
+std::array<int, MagnetometerCalibrator::total_sphere_regions> MagnetometerCalibrator::get_region_sample_count() const
+{
+    return region_sample_count;
+}
+
+/** \brief Gets the current cumulative readings for each sphere region.
+ * \return An array where each element is a Vector3 giving the sum of all readings fed in for
+ * the corresponding sphere region.
+ */
+std::array<Vector3, MagnetometerCalibrator::total_sphere_regions> MagnetometerCalibrator::get_region_sample_value() const
+{
+    return region_sample_value;
+}
+
 /** \brief Generates magnetometer calibration parameters if enough data has been collected.
  * \return A tuple of vectors, where:
  * the first vector is the bias parameters in the order x, y, z;
@@ -184,11 +236,14 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCa
     // TODO Make sure there is good sphere coverage
     // TODO Check for outliers?
 
-    for (int i = 0; i < 100; i++)
+    // Form a 3x100 array, where each row of three elements is the average reading from the
+    // corresponding sphere region.
+    nc::NdArray<double> data_array;
+    for (int i = 0; i < total_sphere_regions; i++)
     {
         if (region_sample_count[i] != 0)
         {
-            xyz = nc::stack({xyz, {
+            data_array = nc::stack({data_array, {
                 region_sample_value[i].x / static_cast<double>(region_sample_count[i]),
                 region_sample_value[i].y / static_cast<double>(region_sample_count[i]),
                 region_sample_value[i].z / static_cast<double>(region_sample_count[i])
@@ -197,16 +252,16 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCa
     }
 
     // Form A and b matrices.
-    nc::NdArray<double> xyz2 = xyz * xyz;
-    nc::NdArray<double> xy = xyz(xyz.rSlice(), 0) * xyz(xyz.rSlice(), 1);
-    nc::NdArray<double> xz = xyz(xyz.rSlice(), 0) * xyz(xyz.rSlice(), 2);
-    nc::NdArray<double> yz = xyz(xyz.rSlice(), 1) * xyz(xyz.rSlice(), 2);
-    nc::NdArray<double> A = nc::stack({xyz2, xy, xz, yz, xyz}, nc::Axis::COL);
+    nc::NdArray<double> xyz2 = data_array * data_array;
+    nc::NdArray<double> xy = data_array(data_array.rSlice(), 0) * data_array(data_array.rSlice(), 1);
+    nc::NdArray<double> xz = data_array(data_array.rSlice(), 0) * data_array(data_array.rSlice(), 2);
+    nc::NdArray<double> yz = data_array(data_array.rSlice(), 1) * data_array(data_array.rSlice(), 2);
+    nc::NdArray<double> A = nc::stack({xyz2, xy, xz, yz, data_array}, nc::Axis::COL);
 
-    auto b = nc::ones<double>({A.shape().rows, 1});
+    nc::NdArray<double> b = nc::ones<double>({A.shape().rows, 1});
 
     // Solve the system of lienar equations Ax = b for x.
-    auto x = nc::linalg::lstsq(A, b);
+    nc::NdArray<double> x = nc::linalg::lstsq(A, b);
 
     // Build the scaled ellipsoid quadric matrix in homogeneous coordinates.
     nc::NdArray<double> A2{
@@ -346,7 +401,7 @@ std::tuple<Vector3, Vector3> AccelerometerCalibrator::deduce_calib_params()
 
     // Compute scale correction factors.
     Vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
-    double average_delta = (delta.x + delta.y + delta.z)/3.0;
+    double average_delta = (delta.x + delta.y + delta.z) / 3.0;
     double scale_x = average_delta / delta.x;
     double scale_y = average_delta / delta.y;
     double scale_z = average_delta / delta.z;
