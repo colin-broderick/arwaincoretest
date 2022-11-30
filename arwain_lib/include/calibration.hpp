@@ -10,22 +10,24 @@
 class MagnetometerCalibrator
 {
     public:
+        constexpr static int total_sphere_regions = 100;
         void feed(const Vector3& reading);
         std::tuple<std::vector<double>, std::vector<std::vector<double>>> solve();
         int get_sphere_coverage_quality() const;
         int get_feed_count() const;
+        std::array<int, 100> get_region_sample_count() const;
+        std::array<Vector3, 100> get_region_sample_value() const;
 
     TESTABLE:
-        int sphere_coverage(const std::array<int,100>& region_sample_count) const;
+        int sphere_coverage(const std::array<int, total_sphere_regions>& region_sample_count) const;
         int sphere_region(const double x, const double y, const double z) const;
 
     private:
         constexpr static double pi = 3.14159265358979323846;
         int feed_count = 0;
         int sphere_coverage_quality = 0;
-        std::array<int, 100> region_sample_count = {0};
-        nc::NdArray<double> xyz;
-        Vector3 region_sample_value[100] = {{0, 0, 0}};
+        std::array<int, total_sphere_regions> region_sample_count = {0};
+        std::array<Vector3, total_sphere_regions> region_sample_value = {{0, 0, 0}};
 
 };
 
