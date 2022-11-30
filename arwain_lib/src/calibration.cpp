@@ -5,6 +5,8 @@
 #include "calibration.hpp"
 #include "vector3.hpp"
 
+long double operator""_radians(long double);
+
 /** \brief Computes the coverage percentage of a sphere by counting the number of non-zero
  * entries in the coverage array. Each index in the array corresponds to an equal-area region
  * of a sphere.
@@ -22,10 +24,25 @@ int MagnetometerCalibrator::sphere_coverage(const std::array<int, 100>& region_s
     return coverage;
 }
 
-/** \brief Having split the sphere into 100 regions of equal area, determine
- * which region a specific 3-vector belongs in when projected onto the unit
- * sphere. Based on the work of Paul Stoffregen:
- *      https://github.com/PaulStoffregen/MotionCal
+/** \brief Determine which region a specific 3-vector belongs in when projected onto the unit
+ * sphere, where the sphere is split into 100 regions of equal area.
+ *
+ * Based on the work of Paul Stoffregen:
+ *     https://github.com/PaulStoffregen/MotionCal
+
+ * The sphere is divided into six bands. The northernmost band is a single segment. The
+ * southernmost band is also a single segment. The four remaining bands, two above and two below
+ * the equator, and split into sections such that the area of each is the same. The first northern
+ * band, adjacent the equator, is split into 15 sections along lines of longitude, each 24° apart.
+ * The second northern band, adjacent the arctic cap, is split into 34 sections, each 10.58° apart.
+ * The two southern bands are split into sections in the same way, giving a total of 100 sections.
+ *
+ * The following document describes the origin of the various numerical values in this function
+ *     https://etna.mcs.kent.edu/vol.25.2006/pp309-327.dir/pp309-327.html
+
+ * The reading (x, y, z) is projected onto the sphere and this function returns an integer
+ * corresponding to the region of the sphere in which it lands.
+ *
  * \param x The x component of the 3-vector.
  * \param y The y component of the 3-vector.
  * \param z The z component of the 3-vector.
@@ -37,27 +54,25 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
     double longitude = 0;
     int region = 0;
 
-    longitude = std::atan2(y, x) + pi;                             // longitude = 0 to 2pi  (meaning 0 to 360 degrees)
-    latitude = pi / 2.0 - std::atan2(std::sqrt(x * x + y * y), z); // latitude = -pi/2 to +pi/2  (meaning -90 to +90 degrees)
+    const double arctic_cap_latitude = 1.37046_radians;                // 78.52 degrees; the latitude of the line demarking the arctic cap.
+    const double antarctic_cap_latitude = -1.37046_radians;            // -78.52 degrees; the latitude of the line demarking the antarctic cap.
+    const double northern_band_separation_latitude = 0.74776_radians;  // 42.84 degrees; the latitude of the line separating the remaining two northern bands.
+    const double southern_band_separation_latitude = -0.74776_radians; // -42.84 degrees; the latitude of the line separating the remaining two southern bands.
 
-    // https://etna.mcs.kent.edu/vol.25.2006/pp309-327.dir/pp309-327.html
-    // sphere equations....
-    //  area of unit sphere = 4*pi
-    //  area of unit sphere cap = 2*pi*h  h = cap height
-    //  lattitude of unit sphere cap = arcsin(1 - h)
-    if (latitude > 1.37046 /* 78.52 deg */)
+    longitude = std::atan2(y, x) + pi;                             // Longitude in range [0, 2pi].
+    latitude = pi / 2.0 - std::atan2(std::sqrt(x * x + y * y), z); // Latitude in range [-pi/2, +pi/2].
+
+    if (latitude > arctic_cap_latitude) // This is the arctic cap, a singular region, index 0.
     {
-        // arctic cap, 1 region
         region = 0;
     }
-    else if (latitude < -1.37046 /* -78.52 deg */)
+    else if (latitude < antarctic_cap_latitude) // This is the antarctic cap, a singular region, index 99.
     {
-        // antarctic cap, 1 region
         region = 99;
     }
-    else if (latitude > 0.74776 /* 42.84 deg */ || latitude < -0.74776)
+    else if (latitude > northern_band_separation_latitude || latitude < southern_band_separation_latitude)
     {
-        // temperate zones, 15 regions each
+        // We are in one of the temperate zones, 15 regions each.
         region = std::floor(longitude * 15.0 / (pi * 2.0));
         if (region < 0)
         {
@@ -69,16 +84,16 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
         }
         if (latitude > 0.0)
         {
-            region += 1; // 1 to 15
+            region += 1; // Northern temperate zones are indexed 1 to 15.
         }
         else
         {
-            region += 84; // 84 to 98
+            region += 84; // Southern temperate zones are indexed 84 to 98.
         }
     }
     else
     {
-        // tropic zones, 34 regions each
+        // We are in one of the tropic zones, 34 regions each.
         region = std::floor(longitude * 34.0 / (pi * 2.0));
         if (region < 0)
         {
@@ -90,11 +105,11 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
         }
         if (latitude >= 0.0)
         {
-            region += 16; // 16 to 49
+            region += 16; // Northern tropic zones are indexed 16 to 49.
         }
         else
         {
-            region += 50; // 50 to 83
+            region += 50; // Southern tropic zones are indexed 50 to 83.
         }
     }
     return region;
@@ -184,6 +199,8 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCa
     // TODO Make sure there is good sphere coverage
     // TODO Check for outliers?
 
+    // Form a 3x100 array, where each row of three elements is the average reading from the
+    // corresponding sphere region.
     for (int i = 0; i < 100; i++)
     {
         if (region_sample_count[i] != 0)
