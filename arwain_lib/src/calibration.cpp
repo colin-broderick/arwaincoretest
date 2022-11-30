@@ -22,6 +22,14 @@ int MagnetometerCalibrator::sphere_coverage(const std::array<int, 100>& region_s
     return coverage;
 }
 
+/** \brief Get count of the number of data readings that have been supplied to the calibrator. 
+ * \return Integer count of readings supplied.
+ */
+int MagnetometerCalibrator::get_feed_count() const
+{
+    return feed_count;
+}
+
 /** \brief Determine which region a specific 3-vector belongs in when projected onto the unit
  * sphere, where the sphere is split into 100 regions of equal area.
  *
@@ -147,7 +155,7 @@ void MagnetometerCalibrator::feed(const Vector3& reading)
     // sphere coverage can be accurately measured.
     if (feed_count < 100)
     {
-        std::cout << "Determining bias parameters " << feed_count+1 << "\n";
+        std::cout << "Determining bias parameters " << feed_count + 1 << "\n";
         if (reading.x < x_min) x_min = reading.x;
         if (reading.x > x_max) x_max = reading.x;
         if (reading.y < y_min) y_min = reading.y;
@@ -167,8 +175,9 @@ void MagnetometerCalibrator::feed(const Vector3& reading)
     if (feed_count == 100)
     {
         std::cout << "\n";
-        feed_count++;
     }
+    
+    feed_count++;
 
     // Once the biases are approximately established, record each data sample into the
     // appropriate sphere region.

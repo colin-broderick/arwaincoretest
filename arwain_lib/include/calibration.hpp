@@ -13,6 +13,7 @@ class MagnetometerCalibrator
         void feed(const Vector3& reading);
         std::tuple<std::vector<double>, std::vector<std::vector<double>>> solve();
         int get_sphere_coverage_quality() const;
+        int get_feed_count() const;
 
     TESTABLE:
         int sphere_coverage(const std::array<int,100>& region_sample_count) const;
