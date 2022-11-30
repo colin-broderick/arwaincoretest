@@ -5,8 +5,6 @@
 #include "calibration.hpp"
 #include "vector3.hpp"
 
-long double operator""_radians(long double);
-
 /** \brief Computes the coverage percentage of a sphere by counting the number of non-zero
  * entries in the coverage array. Each index in the array corresponds to an equal-area region
  * of a sphere.
@@ -30,18 +28,24 @@ int MagnetometerCalibrator::sphere_coverage(const std::array<int, 100>& region_s
  * Based on the work of Paul Stoffregen:
  *     https://github.com/PaulStoffregen/MotionCal
 
- * The sphere is divided into six bands. The northernmost band is a single segment. The
- * southernmost band is also a single segment. The four remaining bands, two above and two below
- * the equator, and split into sections such that the area of each is the same. The first northern
- * band, adjacent the equator, is split into 15 sections along lines of longitude, each 24° apart.
- * The second northern band, adjacent the arctic cap, is split into 34 sections, each 10.58° apart.
- * The two southern bands are split into sections in the same way, giving a total of 100 sections.
+ * The sphere is divided into six bands. The northernmost band is a single region covering the
+ * arctic cap. The southernmost band is also a single region, covering the antarctic cap. The
+ * four remaining bands give two above and two below the equator. The bands adjacent the equator
+ * are referred to as the tropic bands, and the bands adjacent the polar caps are referred to as
+ * the temperate bands. Each band is split into regions such that the area of each is the same.
+ * The northern tropic band is split into 15 regions along lines of longitude, each 24° apart.
+ * The northern temperate band is split into 34 regions, each 10.58° apart. The two southern
+ * bands are split into regions in the same way, giving a total of 100 regions.
  *
- * The following document describes the origin of the various numerical values in this function
+ * The following document describes the origin of the various numerical values in this function:
  *     https://etna.mcs.kent.edu/vol.25.2006/pp309-327.dir/pp309-327.html
 
  * The reading (x, y, z) is projected onto the sphere and this function returns an integer
- * corresponding to the region of the sphere in which it lands.
+ * corresponding to the region of the sphere in which it lands. The arctic cap is index 0; the
+ * northern band regions are then numbered 1-49, and the southern bands 50-98, with the antarctic
+ * cap being index 99.
+ *
+ * Within this function, all angles are represented in radian form.
  *
  * \param x The x component of the 3-vector.
  * \param y The y component of the 3-vector.
@@ -54,10 +58,10 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
     double longitude = 0;
     int region = 0;
 
-    const double arctic_cap_latitude = 1.37046_radians;                // 78.52 degrees; the latitude of the line demarking the arctic cap.
-    const double antarctic_cap_latitude = -1.37046_radians;            // -78.52 degrees; the latitude of the line demarking the antarctic cap.
-    const double northern_band_separation_latitude = 0.74776_radians;  // 42.84 degrees; the latitude of the line separating the remaining two northern bands.
-    const double southern_band_separation_latitude = -0.74776_radians; // -42.84 degrees; the latitude of the line separating the remaining two southern bands.
+    const double arctic_cap_latitude = 1.37046;              // 78.52 degrees; the latitude of the line demarking the arctic cap.
+    const double antarctic_cap_latitude = -1.37046;          // -78.52 degrees; the latitude of the line demarking the antarctic cap.
+    const double north_tropic_temperate_boundary = 0.74776;  // 42.84 degrees; the latitude of the line separating the remaining two northern bands.
+    const double south_tropic_temperate_boundary = -0.74776; // -42.84 degrees; the latitude of the line separating the remaining two southern bands.
 
     longitude = std::atan2(y, x) + pi;                             // Longitude in range [0, 2pi].
     latitude = pi / 2.0 - std::atan2(std::sqrt(x * x + y * y), z); // Latitude in range [-pi/2, +pi/2].
@@ -70,7 +74,7 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
     {
         region = 99;
     }
-    else if (latitude > northern_band_separation_latitude || latitude < southern_band_separation_latitude)
+    else if (latitude > north_tropic_temperate_boundary || latitude < south_tropic_temperate_boundary)
     {
         // We are in one of the temperate zones, 15 regions each.
         region = std::floor(longitude * 15.0 / (pi * 2.0));
@@ -157,6 +161,9 @@ void MagnetometerCalibrator::feed(const Vector3& reading)
         return;
     }
 
+    // TODO The 100 reads is to hopefully get enough data to ensure the initial bias parameters are
+    // 'reasonable'. It should be possible to check that they are close enough and go from there, rather
+    // than just hope that 100 reads is enough.
     if (feed_count == 100)
     {
         std::cout << "\n";
@@ -220,10 +227,10 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCa
     nc::NdArray<double> yz = xyz(xyz.rSlice(), 1) * xyz(xyz.rSlice(), 2);
     nc::NdArray<double> A = nc::stack({xyz2, xy, xz, yz, xyz}, nc::Axis::COL);
 
-    auto b = nc::ones<double>({A.shape().rows, 1});
+    nc::NdArray<double> b = nc::ones<double>({A.shape().rows, 1});
 
     // Solve the system of lienar equations Ax = b for x.
-    auto x = nc::linalg::lstsq(A, b);
+    nc::NdArray<double> x = nc::linalg::lstsq(A, b);
 
     // Build the scaled ellipsoid quadric matrix in homogeneous coordinates.
     nc::NdArray<double> A2{
@@ -363,7 +370,7 @@ std::tuple<Vector3, Vector3> AccelerometerCalibrator::deduce_calib_params()
 
     // Compute scale correction factors.
     Vector3 delta = {(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0};
-    double average_delta = (delta.x + delta.y + delta.z)/3.0;
+    double average_delta = (delta.x + delta.y + delta.z) / 3.0;
     double scale_x = average_delta / delta.x;
     double scale_y = average_delta / delta.y;
     double scale_z = average_delta / delta.z;
