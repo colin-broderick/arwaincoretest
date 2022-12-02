@@ -257,7 +257,6 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCa
     nc::NdArray<double> xz = data_array(data_array.rSlice(), 0) * data_array(data_array.rSlice(), 2);
     nc::NdArray<double> yz = data_array(data_array.rSlice(), 1) * data_array(data_array.rSlice(), 2);
     nc::NdArray<double> A = nc::stack({xyz2, xy, xz, yz, data_array}, nc::Axis::COL);
-
     nc::NdArray<double> b = nc::ones<double>({A.shape().rows, 1});
 
     // Solve the system of lienar equations Ax = b for x.
@@ -325,7 +324,7 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCa
  *
  * \return Boolean indicated whether the state estimater has converged.
  */
-bool AccelerometerCalibrator::is_converged()
+bool AccelerometerCalibrator::is_converged() const
 {
     return converged;
 }
@@ -333,7 +332,7 @@ bool AccelerometerCalibrator::is_converged()
 /** \brief Get the currently estimated state for all three accelerometer axes. 
  * \return Current state estimate.
  */
-Vector3 AccelerometerCalibrator::get_params()
+Vector3 AccelerometerCalibrator::get_params() const
 {
     return {kfx.est, kfy.est, kfz.est};
 }
@@ -348,9 +347,18 @@ void AccelerometerCalibrator::next_sampling()
 {
     converged = false;
     samplings.push_back({kfx.est, kfy.est, kfz.est});
-    kfx = KalmanFilter1D{9.81, 1.0};
-    kfy = KalmanFilter1D{9.81, 1.0};
-    kfz = KalmanFilter1D{9.81, 1.0};
+    kfx = KalmanFilter1D{gravity, initial_data_uncertainty};
+    kfy = KalmanFilter1D{gravity, initial_data_uncertainty};
+    kfz = KalmanFilter1D{gravity, initial_data_uncertainty};
+}
+
+/** \brief Return the interal vector of converged samplings.
+ * The vector has size equal to the number of times next_sampling() has been called.
+ * \return std::vector of Vector3s.
+ */
+std::vector<Vector3> AccelerometerCalibrator::get_samplings() const
+{
+    return samplings;
 }
 
 /** \brief Supply a new data reading.
@@ -359,9 +367,9 @@ void AccelerometerCalibrator::next_sampling()
  */
 bool AccelerometerCalibrator::feed(const Vector3& reading)
 {
-    kfx.update(reading.x, 0.1);
-    kfy.update(reading.y, 0.1);
-    kfz.update(reading.z, 0.1);
+    kfx.update(reading.x, data_uncertainty);
+    kfy.update(reading.y, data_uncertainty);
+    kfz.update(reading.z, data_uncertainty);
 
     if (!kfx.converged || !kfy.converged || !kfz.converged)
     {
@@ -381,6 +389,7 @@ bool AccelerometerCalibrator::feed(const Vector3& reading)
  */
 std::tuple<Vector3, Vector3> AccelerometerCalibrator::deduce_calib_params()
 {
+    // 1e6 a sufficiently large number that no real reading will exceed it.
     double x_min = 1e6;
     double x_max = -1e6;
     double y_min = 1e6;
@@ -418,7 +427,7 @@ std::tuple<Vector3, Vector3> AccelerometerCalibrator::deduce_calib_params()
  *
  * \return Boolean indicated whether the state estimater has converged.
  */
-bool GyroscopeCalibrator::is_converged()
+bool GyroscopeCalibrator::is_converged() const
 {
     return converged;
 }
@@ -426,7 +435,7 @@ bool GyroscopeCalibrator::is_converged()
 /** \brief Get the currently estimated state for all three gyroscope axes. 
  * \return Current state estimate.
  */
-Vector3 GyroscopeCalibrator::get_params()
+Vector3 GyroscopeCalibrator::get_params() const
 {
     return {kfx.est, kfy.est, kfz.est};
 }
@@ -437,9 +446,9 @@ Vector3 GyroscopeCalibrator::get_params()
  */
 bool GyroscopeCalibrator::feed(const Vector3& reading)
 {
-    kfx.update(reading.x, 0.02);
-    kfy.update(reading.y, 0.02);
-    kfz.update(reading.z, 0.02);
+    kfx.update(reading.x, data_uncertainty);
+    kfy.update(reading.y, data_uncertainty);
+    kfz.update(reading.z, data_uncertainty);
 
     if (!kfx.converged || !kfy.converged || !kfz.converged)
     {
