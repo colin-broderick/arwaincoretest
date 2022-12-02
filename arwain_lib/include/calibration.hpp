@@ -34,16 +34,21 @@ class MagnetometerCalibrator
 /** \brief Calibration tool for a 3-axis digital accelerometer. */
 class AccelerometerCalibrator
 {
+    constexpr static double gravity = 9.81;
+    constexpr static double data_uncertainty = 0.1;
+    constexpr static double initial_data_uncertainty = 1.0;
+
     private:
         bool converged = false;
-        KalmanFilter1D kfx{9.81, 1.0};
-        KalmanFilter1D kfy{9.81, 1.0};
-        KalmanFilter1D kfz{9.81, 1.0};
+        KalmanFilter1D kfx{gravity, initial_data_uncertainty};
+        KalmanFilter1D kfy{gravity, initial_data_uncertainty};
+        KalmanFilter1D kfz{gravity, initial_data_uncertainty};
         std::vector<Vector3> samplings;
 
     public:
-        bool is_converged();
-        Vector3 get_params();
+        std::vector<Vector3> get_samplings() const;
+        bool is_converged() const;
+        Vector3 get_params() const;
         void next_sampling();
         bool feed(const Vector3& reading);
         std::tuple<Vector3, Vector3> deduce_calib_params();
@@ -52,15 +57,19 @@ class AccelerometerCalibrator
 /** \brief Calibration tool for a 3-axis digital gyroscope. */
 class GyroscopeCalibrator
 {
+    constexpr static double initial_estimate = 0.0;
+    constexpr static double initial_estimate_error = 1.0;
+    constexpr static double data_uncertainty = 0.02;
+
     private:
         bool converged = false;
-        KalmanFilter1D kfx{0, 1};
-        KalmanFilter1D kfy{0, 1};
-        KalmanFilter1D kfz{0, 1};
+        KalmanFilter1D kfx{initial_estimate, initial_estimate_error};
+        KalmanFilter1D kfy{initial_estimate, initial_estimate_error};
+        KalmanFilter1D kfz{initial_estimate, initial_estimate_error};
 
     public:
-        bool is_converged();
-        Vector3 get_params();
+        Vector3 get_params() const;
+        bool is_converged() const;
         bool feed(const Vector3& reading);
 };
 
