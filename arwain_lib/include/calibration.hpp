@@ -46,8 +46,9 @@ class AccelerometerCalibrator
         std::vector<Vector3> samplings;
 
     public:
-        bool is_converged();
-        Vector3 get_params();
+        std::vector<Vector3> get_samplings() const;
+        bool is_converged() const;
+        Vector3 get_params() const;
         void next_sampling();
         bool feed(const Vector3& reading);
         std::tuple<Vector3, Vector3> deduce_calib_params();
@@ -67,8 +68,8 @@ class GyroscopeCalibrator
         KalmanFilter1D kfz{initial_estimate, initial_estimate_error};
 
     public:
-        bool is_converged();
-        Vector3 get_params();
+        Vector3 get_params() const;
+        bool is_converged() const;
         bool feed(const Vector3& reading);
 };
 
