@@ -221,7 +221,31 @@ std::array<Vector3, MagnetometerCalibrator::total_sphere_regions> MagnetometerCa
     return region_sample_value;
 }
 
+static nc::NdArray<double> form_magcal_A_matrix(const nc::NdArray<double>& data_array)
+{
+    // data_array_2 is the element-wise product of the data_array
+    nc::NdArray<double> data_array_2 = data_array * data_array;
+
+    // The xy, xy, and yz are the (num_readings, 1) matrix form by taking the element-wise product of, e.g.,
+    // the x column and the y column of the data array.
+    nc::NdArray<double> xy = data_array(data_array.rSlice(), 0) * data_array(data_array.rSlice(), 1);
+    nc::NdArray<double> xz = data_array(data_array.rSlice(), 0) * data_array(data_array.rSlice(), 2);
+    nc::NdArray<double> yz = data_array(data_array.rSlice(), 1) * data_array(data_array.rSlice(), 2);
+
+    // We stack the above to form a matrix with (num_readings) rows and nine columns.
+    return nc::stack({data_array_2, xy, xz, yz, data_array}, nc::Axis::COL);
+}
+
 /** \brief Generates magnetometer calibration parameters if enough data has been collected.
+ *
+ * When tumbling a perfectly calibrated magnetometer through all axes, we expect the sampled data
+ * to form a perfect sphere centred on the origin, where the radius of the sphere is the magnitude of the magnetic field in the vicinity. In reality, due to various types of noise and miscalibration, the data points will form the surface of a fuzzy, off-centre, rotated ellipsoid.
+ 
+ * We define a procedure which, given this miscalibrated data, deduces the calibration parameters which transform this ellipsoid onto sphere centred at the origin.
+
+ * This procedure assumes that the origin of the coordinate system is located within the ellipsoid. If it is not, a rough calculation should be done first to centre the ellipsoid. Failure to meet this condition may result in the mathematical procedure failing to find a valid solution.
+ * 
+ *
  * \return A tuple of vectors, where:
  * the first vector is the bias parameters in the order x, y, z;
  * the second vector is the scale parameters in the arrangement
@@ -230,14 +254,15 @@ std::array<Vector3, MagnetometerCalibrator::total_sphere_regions> MagnetometerCa
  *    {.      .           z       },
  * The blank entries can be ignored.
  */
-std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCalibrator::solve()
+MagnetometerCalibrator::CalibrationParameters MagnetometerCalibrator::solve()
 {
     // TODO Make sure there are enough data samples
     // TODO Make sure there is good sphere coverage
     // TODO Check for outliers?
 
-    // Form a 3x100 array, where each row of three elements is the average reading from the
-    // corresponding sphere region.
+    // Form a (total_sphere_regions, 3) array, where each row of three elements is the average reading from the
+    // corresponding sphere region. If any of the sphere regions do not contain any data, they will
+    // be ignored and the array may actually have fewer than total_sphere_regions rows.
     nc::NdArray<double> data_array;
     for (int i = 0; i < total_sphere_regions; i++)
     {
@@ -252,52 +277,73 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCa
     }
 
     // Form A and b matrices.
-    nc::NdArray<double> xyz2 = data_array * data_array;
-    nc::NdArray<double> xy = data_array(data_array.rSlice(), 0) * data_array(data_array.rSlice(), 1);
-    nc::NdArray<double> xz = data_array(data_array.rSlice(), 0) * data_array(data_array.rSlice(), 2);
-    nc::NdArray<double> yz = data_array(data_array.rSlice(), 1) * data_array(data_array.rSlice(), 2);
-    nc::NdArray<double> A = nc::stack({xyz2, xy, xz, yz, data_array}, nc::Axis::COL);
-    nc::NdArray<double> b = nc::ones<double>({A.shape().rows, 1});
+    nc::NdArray<double> D = form_magcal_A_matrix(data_array);
 
-    // Solve the system of lienar equations Ax = b for x.
-    nc::NdArray<double> x = nc::linalg::lstsq(A, b);
+    // I don't know why this is all ones.
+    nc::NdArray<double> b = nc::ones<double>({D.shape().rows, 1});
+
+    // Solve the system of linear equations Dx = b for x.
+    // I'm not completely clear why we're doing this. We're minimising the difference b - Dx,
+    // where D is our data matrix, x is the paramterisation of our ellipsoid, and b is ... what?
+    // We're computing the `difference` between our ellipsoid and a standardised ellipsoid?
+    // In other words, we have computed the parameterisation of our ellipsoid in 
+    // homogeneous coordinates.
+    // One pertinent question could be: Why do we expect the dot product between a point on the
+    // surface and the parameter matrix to be 1?
+    // params is the parameter matrix of the ellipsoid.
+    nc::NdArray<double> params = nc::linalg::lstsq(D, b);
 
     // Build the scaled ellipsoid quadric matrix in homogeneous coordinates.
-    nc::NdArray<double> A2{
-        {x(0, 0), 0.5 * x(0, 3), 0.5 * x(0, 4), 0.5 * x(0, 6)},
-        {0.5 * x(0, 3), x(0, 1), 0.5 * x(0, 5), 0.5 * x(0, 7)},
-        {0.5 * x(0, 4), 0.5 * x(0, 5), x(0, 2), 0.5 * x(0, 8)},
-        {0.5 * x(0, 6), 0.5 * x(0, 7), 0.5 * x(0, 8), -1}};
+    // This is just converting between the parameterised and matrix representations of a
+    // quadratic form. I can't remember why one of the elements is simply -1. It might be
+    // to do with the fact that our ellipse parameterisation is not completely general. We
+    // only get 9 coefficients, when it shold really be 10.
+    nc::NdArray<double> ellipsoid_homo_form{
+        {      params(0, 0), 0.5 * params(0, 3), 0.5 * params(0, 4), 0.5 * params(0, 6)},
+        {0.5 * params(0, 3),       params(0, 1), 0.5 * params(0, 5), 0.5 * params(0, 7)},
+        {0.5 * params(0, 4), 0.5 * params(0, 5),       params(0, 2), 0.5 * params(0, 8)},
+        {0.5 * params(0, 6), 0.5 * params(0, 7), 0.5 * params(0, 8),                 -1}
+    };
 
-    // Build scaled ellipsoid quadric matrix in regular coordinates.
-    nc::NdArray<double> Q{
-        {x(0, 0), 0.5 * x(0, 3), 0.5 * x(0, 4)},
-        {0.5 * x(0, 3), x(0, 1), 0.5 * x(0, 5)},
-        {0.5 * x(0, 4), 0.5 * x(0, 5), x(0, 2)}};
+    // Build scaled ellipsoid quadric matrix in regular coordinates. This represents the ellipsoid surface
+    // in standard (regular) Cartesian coordinates.
+    // Why doesn't it care about the last four coefficients?
+    nc::NdArray<double> ellipsoid_regular_form{
+        {      params(0, 0), 0.5 * params(0, 3), 0.5 * params(0, 4)},
+        {0.5 * params(0, 3),       params(0, 1), 0.5 * params(0, 5)},
+        {0.5 * params(0, 4), 0.5 * params(0, 5),       params(0, 2)}};
 
-    // Obtain the centroid of the ellispoid. This will be the bias offset vector.
-    nc::NdArray<double> temp{0.5 * x(0, 6), 0.5 * x(0, 7), 0.5 * x(0, 8)};
-    temp.reshape(3, 1);
-    nc::NdArray<double> x0 = nc::matmul(
-        nc::linalg::inv(-1.0 * Q),
-        temp);
+    // Obtain the centre of the ellipsoid. This will be the bias offset vector.
+    // To understand why this works we need to understand the action of the quadric matrix when
+    // used as an operator. What does it do to vectors?
+    // This operation can be read as 
+    //     b = -Q.inv * x
+    // where x is a vector containing the coefficients of the linear terms of the ellipsoid 
+    // parameterisation.
+    // nc::NdArray<double> temp{0.5 * x(0, 6), 0.5 * x(0, 7), 0.5 * x(0, 8)};
+    // temp.reshape(3, 1);
+    nc::NdArray<double> bias_vector = nc::matmul(
+        nc::linalg::inv(-1.0 * ellipsoid_regular_form),
+        nc::NdArray<double>{0.5 * params(0, 6), 0.5 * params(0, 7), 0.5 * params(0, 8)}.reshape(3, 1)
+    );
 
     // Move the ellipsoid to the origin of the coordinate system.
-    nc::NdArray<double> T_x0 = nc::eye<double>(4);
-    T_x0(0, 3) = x0(0, 0);
-    T_x0(1, 3) = x0(0, 1);
-    T_x0(2, 3) = x0(0, 2);
-    nc::NdArray<double> A3 = nc::matmul(nc::matmul(T_x0.transpose(), A2), T_x0);
+    nc::NdArray<double> offset_operator = nc::eye<double>(4);
+    offset_operator(0, 3) = bias_vector(0, 0);
+    offset_operator(1, 3) = bias_vector(0, 1);
+    offset_operator(2, 3) = bias_vector(0, 2);
+    nc::NdArray<double> centred_ellipsoid_homo_form = nc::matmul(nc::matmul(offset_operator.transpose(), ellipsoid_homo_form), offset_operator);
 
     // Rescale the ellispsoid quadric matrix in regular coordinates.
-    nc::NdArray<double> Q2 = Q * (-1.0 / A3(3, 3));
+    nc::NdArray<double> scaled_ellipsoid_regular_form = ellipsoid_regular_form * (-1.0 / centred_ellipsoid_homo_form(3, 3));
 
-    // Take the Cholesky decomposition of Q. This matrix will transform the ellipsoid
-    // onto a sphere, after correcting for bias offset.
+    // Take the Cholesky decomposition of ellipsoid_regular_form. This matrix will transform the ellipsoid
+    // onto a sphere, after correcting for bias offset. L is the matrix such that
+    //     scaled_ellipsoid_regular_form = L * L.T
     nc::NdArray<double> L = nc::eye<double>(3);
     try
     {
-        L = nc::linalg::cholesky(Q2).transpose();
+        L = nc::linalg::cholesky(scaled_ellipsoid_regular_form).transpose();
     }
     catch (const std::runtime_error& e)
     {
@@ -306,7 +352,7 @@ std::tuple<std::vector<double>, std::vector<std::vector<double>>> MagnetometerCa
 
     return {
         {
-            x0(0, 0), x0(0, 1), x0(0, 2)  // bias parameters.
+            bias_vector(0, 0), bias_vector(0, 1), bias_vector(0, 2)  // bias parameters.
         },
         {
             {L(0, 0), L(0, 1), L(0, 2)},  // scale parameters.
