@@ -46,7 +46,7 @@ class AccelerometerCalibrator
     constexpr static double data_uncertainty = 0.1;
     constexpr static double initial_data_uncertainty = 1.0;
 
-    private:
+    TESTABLE:
         bool converged = false;
         KalmanFilter1D kfx{gravity, initial_data_uncertainty};
         KalmanFilter1D kfy{gravity, initial_data_uncertainty};
