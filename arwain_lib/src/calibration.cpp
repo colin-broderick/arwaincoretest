@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "calibration.hpp"
+#include "arwain_utils.hpp"
 #include "vector3.hpp"
 
 /** \brief Computes the coverage percentage of a sphere by counting the number of non-zero
@@ -71,6 +72,7 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
     const double antarctic_cap_latitude = -1.37046;          // -78.52 degrees; the latitude of the line demarking the antarctic cap.
     const double north_tropic_temperate_boundary = 0.74776;  // 42.84 degrees; the latitude of the line separating the remaining two northern bands.
     const double south_tropic_temperate_boundary = -0.74776; // -42.84 degrees; the latitude of the line separating the remaining two southern bands.
+    const double equator_latitude = 0.0;
 
     longitude = std::atan2(y, x) + pi;                             // Longitude in range [0, 2pi].
     latitude = pi / 2.0 - std::atan2(std::sqrt((x * x) + (y * y)), z); // Latitude in range [-pi/2, +pi/2].
@@ -87,15 +89,8 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
     {
         // We are in one of the temperate zones, 15 regions each.
         region = std::floor(longitude * 15.0 / (pi * 2.0));
-        if (region < 0)
-        {
-            region = 0;
-        }
-        else if (region > 14)
-        {
-            region = 14;
-        }
-        if (latitude > 0.0)
+        region = clamp_value(region, 0, 14);
+        if (latitude > equator_latitude)
         {
             region += 1; // Northern temperate zones are indexed 1 to 15.
         }
@@ -108,15 +103,8 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
     {
         // We are in one of the tropic zones, 34 regions each.
         region = std::floor(longitude * 34.0 / (pi * 2.0));
-        if (region < 0)
-        {
-            region = 0;
-        }
-        else if (region > 33)
-        {
-            region = 33;
-        }
-        if (latitude >= 0.0)
+        region = clamp_value(region, 0, 33);
+        if (latitude >= equator_latitude)
         {
             region += 16; // Northern tropic zones are indexed 16 to 49.
         }
