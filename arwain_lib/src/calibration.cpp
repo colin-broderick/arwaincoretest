@@ -73,7 +73,7 @@ int MagnetometerCalibrator::sphere_region(const double x, const double y, const 
     const double south_tropic_temperate_boundary = -0.74776; // -42.84 degrees; the latitude of the line separating the remaining two southern bands.
 
     longitude = std::atan2(y, x) + pi;                             // Longitude in range [0, 2pi].
-    latitude = pi / 2.0 - std::atan2(std::sqrt(x * x + y * y), z); // Latitude in range [-pi/2, +pi/2].
+    latitude = pi / 2.0 - std::atan2(std::sqrt((x * x) + (y * y)), z); // Latitude in range [-pi/2, +pi/2].
 
     if (latitude > arctic_cap_latitude) // This is the arctic cap, a singular region, index 0.
     {
