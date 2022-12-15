@@ -64,3 +64,10 @@ TEST(Timers, CountDownTimerReset)
    std::this_thread::sleep_for(std::chrono::milliseconds{100});
    ASSERT_EQ(timer.finished(), true);
 }
+
+TEST(Timers, IntervalTimerConstructors)
+{
+   Timers::IntervalTimer<std::chrono::seconds> t1{1};
+   Timers::IntervalTimer<std::chrono::seconds> t2{1, __FUNCTION__};
+   FAIL();
+}
