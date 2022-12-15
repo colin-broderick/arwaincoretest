@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "arwain.hpp"
+#include "exceptions.hpp"
 #include "input_parser.hpp"
 
 TEST(ArwainUtils, clamp_value)
@@ -10,6 +11,54 @@ TEST(ArwainUtils, clamp_value)
     EXPECT_EQ(0, clamp_value(value, 0, 17));
     EXPECT_EQ(-5, clamp_value(value, -17, 11));
     EXPECT_EQ(-10, clamp_value(value, -17, -10));
+}
+
+TEST(Arwain, OperatingModeStreamOperator)
+{
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::AccelerometerCalibration;
+    EXPECT_EQ("Accelerometer calibration", testing::internal::GetCapturedStdout());
+    
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::Inference;
+    EXPECT_EQ("Inference", testing::internal::GetCapturedStdout());
+
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::Idle;
+    EXPECT_EQ("Idle/autocalibrating", testing::internal::GetCapturedStdout());
+
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::Terminate;
+    EXPECT_EQ("Terminate", testing::internal::GetCapturedStdout());
+
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::DataCollection;
+    EXPECT_EQ("Data collection", testing::internal::GetCapturedStdout());
+
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::GyroscopeCalibration;
+    EXPECT_EQ("Gyroscope calibration", testing::internal::GetCapturedStdout());
+
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::MagnetometerCalibration;
+    EXPECT_EQ("Magnetometer calibration", testing::internal::GetCapturedStdout());
+
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::TestSerial;
+    EXPECT_EQ("Test serial", testing::internal::GetCapturedStdout());
+
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::TestStanceDetector;
+    EXPECT_EQ("Test stance detector", testing::internal::GetCapturedStdout());
+
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::SelfTest;
+    EXPECT_EQ("Self test", testing::internal::GetCapturedStdout());
+}
+
+TEST(Arwain, ExceptionsNotImplemented)
+{
+    EXPECT_THROW(throw NotImplemented{"TEST"}, NotImplemented);
 }
 
 /** \brief Test that the sleep_ms utility function waits approximately the expected amount of time. */
