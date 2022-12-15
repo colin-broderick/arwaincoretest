@@ -228,7 +228,7 @@ std::array<Vector3, MagnetometerCalibrator::total_sphere_regions> MagnetometerCa
  * \param data_array An array with 3 columns and any number of rows.
  * \return A horizontally stacked array as described in the brief description.
  */
-static nc::NdArray<double> form_augmented_data_array(const nc::NdArray<double>& data_array)
+nc::NdArray<double> MagnetometerCalibrator::form_augmented_data_array(const nc::NdArray<double>& data_array)
 {
     // data_array_2 is the element-wise product of the data_array
     nc::NdArray<double> data_array_2 = data_array * data_array;
@@ -251,10 +251,10 @@ static nc::NdArray<double> form_augmented_data_array(const nc::NdArray<double>& 
  * corresponding sphere region.
  * \return A 100x3 array, where each row of 3 represents the average value of the reading in some particular sphere region.
  */
-static nc::NdArray<double> form_data_array(const std::array<int, 100>& region_sample_counts, const std::array<Vector3, 100>& region_sample_values)
+nc::NdArray<double> MagnetometerCalibrator::form_data_array(const std::array<int, total_sphere_regions>& region_sample_counts, const std::array<Vector3, total_sphere_regions>& region_sample_values)
 {
     nc::NdArray<double> data_array;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < total_sphere_regions; i++)
     {
         if (region_sample_counts[i] != 0)
         {
@@ -271,29 +271,29 @@ static nc::NdArray<double> form_data_array(const std::array<int, 100>& region_sa
 /** \brief Creates the matrix describing an ellipsoid in homogeneous coordinates.
  * It is assumed that the constant term is -1, so only 9 elements coefficients need to be passed, 
  * and the bottom-right element of the generated matrix will be equal to -1.
- * \param params A [1,9] matrix where the elements are the cofficients of an ellipsoid polynomial in stanard form.
+ * \param coefficients A [1,9] matrix where the elements are the cofficients of an ellipsoid polynomial in stanard form.
  * \return A [4,4] matrix representing the ellipsoid.
 */
-static nc::NdArray<double> create_ellipsoid_homogeneous(nc::NdArray<double> params)
+nc::NdArray<double> MagnetometerCalibrator::create_ellipsoid_homogeneous(const nc::NdArray<double>& coefficients)
 {
     return {
-        {      params(0, 0), 0.5 * params(0, 3), 0.5 * params(0, 4), 0.5 * params(0, 6)},
-        {0.5 * params(0, 3),       params(0, 1), 0.5 * params(0, 5), 0.5 * params(0, 7)},
-        {0.5 * params(0, 4), 0.5 * params(0, 5),       params(0, 2), 0.5 * params(0, 8)},
-        {0.5 * params(0, 6), 0.5 * params(0, 7), 0.5 * params(0, 8),                 -1}
+        {      coefficients(0, 0), 0.5 * coefficients(0, 3), 0.5 * coefficients(0, 4), 0.5 * coefficients(0, 6)},
+        {0.5 * coefficients(0, 3),       coefficients(0, 1), 0.5 * coefficients(0, 5), 0.5 * coefficients(0, 7)},
+        {0.5 * coefficients(0, 4), 0.5 * coefficients(0, 5),       coefficients(0, 2), 0.5 * coefficients(0, 8)},
+        {0.5 * coefficients(0, 6), 0.5 * coefficients(0, 7), 0.5 * coefficients(0, 8),                 -1}
     };
 }
 
 /** \brief Forms a matrix representing the square terms of an ellipsoid in regular form.
- * \param params The coefficient matrix of the ellipse.
+ * \param coefficients The coefficient matrix of the ellipse.
  * \return 3x3 matrix representing square terms of ellipsoid.
  */
-static nc::NdArray<double> create_ellipsoid_regular(nc::NdArray<double> params)
+nc::NdArray<double> MagnetometerCalibrator::create_ellipsoid_regular(const nc::NdArray<double>& coefficients)
 {
     return {
-        {      params(0, 0), 0.5 * params(0, 3), 0.5 * params(0, 4)},
-        {0.5 * params(0, 3),       params(0, 1), 0.5 * params(0, 5)},
-        {0.5 * params(0, 4), 0.5 * params(0, 5),       params(0, 2)}
+        {      coefficients(0, 0), 0.5 * coefficients(0, 3), 0.5 * coefficients(0, 4)},
+        {0.5 * coefficients(0, 3),       coefficients(0, 1), 0.5 * coefficients(0, 5)},
+        {0.5 * coefficients(0, 4), 0.5 * coefficients(0, 5),       coefficients(0, 2)}
     };
 }
 
@@ -301,7 +301,7 @@ static nc::NdArray<double> create_ellipsoid_regular(nc::NdArray<double> params)
  * \param vector The vector by which to translate the quadric.
  * \return The translation operator.
  */
-static nc::NdArray<double> create_translation_operator_homogeneous(nc::NdArray<double>& vector)
+nc::NdArray<double> MagnetometerCalibrator::create_translation_operator_homogeneous(const nc::NdArray<double>& vector)
 {
     nc::NdArray<double> offset_operator = nc::eye<double>(4);
     offset_operator(0, 3) = vector(0, 0);
@@ -311,14 +311,6 @@ static nc::NdArray<double> create_translation_operator_homogeneous(nc::NdArray<d
 }
 
 /** \brief Generates magnetometer calibration parameters if enough data has been collected.
- *
- * When tumbling a perfectly calibrated magnetometer through all axes, we expect the sampled data
- * to form a perfect sphere centred on the origin, where the radius of the sphere is the magnitude of the
- * magnetic field in the vicinity. In reality, due to various types of noise and miscalibration, the data
- * points will form the surface of a fuzzy, off-centre, rotated ellipsoid.
- 
- * We define a procedure which, given this miscalibrated data, deduces the calibration parameters
- * which transform this ellipsoid onto sphere centred at the origin.
  *
  * The procedure is described in detail in the software design document U0021026.
  * 
@@ -350,15 +342,15 @@ MagnetometerCalibrator::CalibrationParameters MagnetometerCalibrator::solve()
     nc::NdArray<double> b = nc::ones<double>({augmented_data_array.shape().rows, 1});
 
     // Solve the system of linear equations
-    //    augmented_data_array * params = b
-    // for params. Params then represents the ellipsoid which best fits the data in data_array.
-    nc::NdArray<double> params = nc::linalg::lstsq(augmented_data_array, b);
+    //    augmented_data_array * coefficients = b
+    // for coefficients. Coefficients then represents the ellipsoid which best fits the data in data_array.
+    nc::NdArray<double> coefficients = nc::linalg::lstsq(augmented_data_array, b);
 
     // Build ellipsoid quadric matrix in regular coordinates. This is matrix A in the sotware design doc.
-    nc::NdArray<double> ellipsoid_regular = create_ellipsoid_regular(params);
+    nc::NdArray<double> ellipsoid_regular = create_ellipsoid_regular(coefficients);
 
     // Build the linear part of the ellipsoid equation. This is matrix a in the software design doc.
-    nc::NdArray<double> ellipsoid_linear_part{params(0, 6), params(0, 7), params(0, 8)};
+    nc::NdArray<double> ellipsoid_linear_part{coefficients(0, 6), coefficients(0, 7), coefficients(0, 8)};
     
     // Obtain the centre of the ellipsoid. This will be the bias offset vector.
     nc::NdArray<double> bias_vector = -0.5 * nc::matmul(
@@ -369,7 +361,7 @@ MagnetometerCalibrator::CalibrationParameters MagnetometerCalibrator::solve()
     // Move the ellipsoid to the origin of the coordinate system.
     // To do this we first form the quadric matrix in homogeneous coordinates, then move IT to
     // the centre, and use it to discover a scale factor for the quadric in regular coordinates.
-    nc::NdArray<double> ellipsoid_homogeneous = create_ellipsoid_homogeneous(params);
+    nc::NdArray<double> ellipsoid_homogeneous = create_ellipsoid_homogeneous(coefficients);
     nc::NdArray<double> offset_operator = create_translation_operator_homogeneous(bias_vector);
     nc::NdArray<double> centred_ellipsoid_homogeneous = nc::matmul(nc::matmul(offset_operator.transpose(), ellipsoid_homogeneous), offset_operator);
 
