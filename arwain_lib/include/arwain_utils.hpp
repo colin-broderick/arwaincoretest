@@ -13,6 +13,7 @@ class Vector3;
 
 double unwrap_phase_degrees(double new_angle, double previous_angle);
 double unwrap_phase_radians(double new_angle, double previous_angle);
+int clamp_value(int value, int minimum, int maximum);
 std::string date_time_string();
 
 struct EulerOrientation
