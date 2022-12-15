@@ -18,6 +18,7 @@ namespace arwain
     arwain::ReturnCode test_ori(int rate);
     #if USE_UUBLA
     arwain::ReturnCode test_uubla_integration();
+    arwain::ReturnCode test_uubla_2();
     #endif
     arwain::ReturnCode interactive_test();
 }
