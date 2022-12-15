@@ -61,7 +61,7 @@ TEST(Calibration, MagnetometerCalibrator_sphere_coverage_0)
 {
    MagnetometerCalibrator mag_cal;
    std::array<int, 100> region_sample_count;
-   for(int i = 0 ; i < region_sample_count.size() ; i++)
+   for(unsigned int i = 0 ; i < region_sample_count.size() ; i++)
    {
          region_sample_count[i] = 0;
    }
@@ -73,7 +73,7 @@ TEST(Calibration, MagnetometerCalibrator_sphere_coverage_1)
 {
    MagnetometerCalibrator mag_cal;
    std::array<int, 100> region_sample_count;
-   for(int i = 0 ; i < region_sample_count.size() ; i++)
+   for(unsigned int i = 0 ; i < region_sample_count.size() ; i++)
    {
          region_sample_count[i] = 1;
    }
@@ -93,7 +93,7 @@ TEST(Calibration, MagnetometerCalibrator_get_region_sample_count)
   MagnetometerCalibrator mag_cal;
   std::array<int, 100> rsc = mag_cal.get_region_sample_count();
   std::array<int, 100> comparison;
-  for(int i = 0 ; i < comparison.size() ; i++)
+  for(unsigned int i = 0 ; i < comparison.size() ; i++)
   {
       comparison[i] = 0;
   }
