@@ -10,9 +10,15 @@
 class MagnetometerCalibrator
 {
     public:
+        struct CalibrationParameters
+        {
+            std::vector<double> bias; // 3-vector (x, y, z) of bias offset values.
+            std::vector<std::vector<double>> scale; // 3x3 upper triangular matrix of scale parameters.
+        };
+
         constexpr static int total_sphere_regions = 100;
         void feed(const Vector3& reading);
-        std::tuple<std::vector<double>, std::vector<std::vector<double>>> solve();
+        CalibrationParameters solve();
         int get_sphere_coverage_quality() const;
         int get_feed_count() const;
         std::array<int, 100> get_region_sample_count() const;
@@ -21,14 +27,16 @@ class MagnetometerCalibrator
     TESTABLE:
         int sphere_coverage(const std::array<int, total_sphere_regions>& region_sample_count) const;
         int sphere_region(const double x, const double y, const double z) const;
-
-    private:
+        nc::NdArray<double> form_augmented_data_array(const nc::NdArray<double>& data_array);
+        nc::NdArray<double> form_data_array(const std::array<int, total_sphere_regions>& region_sample_counts, const std::array<Vector3, total_sphere_regions>& region_sample_values);
+        nc::NdArray<double> create_ellipsoid_homogeneous(const nc::NdArray<double>& params);
+        nc::NdArray<double> create_ellipsoid_regular(const nc::NdArray<double>& params);
+        nc::NdArray<double> create_translation_operator_homogeneous(const nc::NdArray<double>& vector);
         constexpr static double pi = 3.14159265358979323846;
         int feed_count = 0;
         int sphere_coverage_quality = 0;
         std::array<int, total_sphere_regions> region_sample_count = {0};
         std::array<Vector3, total_sphere_regions> region_sample_value = {{0, 0, 0}};
-
 };
 
 /** \brief Calibration tool for a 3-axis digital accelerometer. */
