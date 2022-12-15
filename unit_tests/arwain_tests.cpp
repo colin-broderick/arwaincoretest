@@ -4,6 +4,14 @@
 #include "arwain.hpp"
 #include "input_parser.hpp"
 
+TEST(ArwainUtils, clamp_value)
+{
+    int value = -5;
+    EXPECT_EQ(0, clamp_value(value, 0, 17));
+    EXPECT_EQ(-5, clamp_value(value, -17, 11));
+    EXPECT_EQ(-10, clamp_value(value, -17, -10));
+}
+
 /** \brief Test that the sleep_ms utility function waits approximately the expected amount of time. */
 TEST(ArwainUtils, sleep_ms)
 {
