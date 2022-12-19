@@ -298,7 +298,14 @@ nc::NdArray<double> MagnetometerCalibrator::create_ellipsoid_regular(const nc::N
     };
 }
 
-/** \brief Creates an operator which translates a quadric in homogeneous form. 
+/** \brief Creates an operator which translates a quadric in homogeneous form.
+ * 
+ * If the input vector is [x y z], the output matrix is
+ *    [[1   0   0   x]
+ *     [0   1   0   y]
+ *     [0   0   1   z]
+ *     [0   0   0   1]]
+ * 
  * \param vector The vector by which to translate the quadric.
  * \return The translation operator.
  */
