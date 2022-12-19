@@ -280,6 +280,12 @@ nc::NdArray<double> MagnetometerCalibrator::create_ellipsoid_homogeneous(const n
 }
 
 /** \brief Forms a matrix representing the square terms of an ellipsoid in regular form.
+ * 
+ * If the elements of the input vector are [a0 ... a8], the output matrix is
+ *    [[a0    a3/2  a4/2]
+ *     [a3/2  a1    a5/2]
+ *     [a4/2  a5/2  a2  ]]
+ * 
  * \param coefficients The coefficient matrix of the ellipse.
  * \return 3x3 matrix representing square terms of ellipsoid.
  */
