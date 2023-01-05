@@ -1,8 +1,13 @@
 #include <gtest/gtest.h>
+#include <string>
 #include "command_line.hpp"
 
 TEST(Command_Line, run)
 {
+    int j = 2;
+    std::string program = "arwain_test";
+    std::string command = "hello";
+    char* input_array[2] = {program.data(),command.data()};
     FAIL();
 }
 
