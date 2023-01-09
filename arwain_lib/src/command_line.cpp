@@ -67,11 +67,14 @@ void ArwainCLI::fail_to_switch_to(arwain::OperatingMode mode)
 
 /** \brief Switches the system to Terminate mode, which instructs all threads to clean up and exit.
  * This mode can be entered from any other mode.
+ * \return Boolean success or failure to switch mode. This one can't fail but it returns a bool for
+ * API consistency.
  */
-void ArwainCLI::switch_to_exit_mode()
+bool ArwainCLI::switch_to_exit_mode()
 {
     std::cout << "Cleaning up before closing, please wait ..." << std::endl;
     arwain::system_mode = arwain::OperatingMode::Terminate;
+    return true;
 }
 
 
@@ -110,69 +113,88 @@ void ArwainCLI::switch_to_inference_mode()
 /** \brief Puts the system into Idle mode. Only reachable from Inference mode.
  * Other modes will put the system into this Idle mode automatically when their
  * work is complete.
+ * \return Boolean success or failure to switch mode.
  */
-void ArwainCLI::switch_to_idle_autocal_mode()
+bool ArwainCLI::switch_to_idle_autocal_mode()
 {
     if (arwain::system_mode == arwain::OperatingMode::Inference)
     {
         std::cout << "Entering idle mode" << std::endl;
         arwain::system_mode = arwain::OperatingMode::Idle;
+        return true;
     }
     else
     {
         fail_to_switch_to(arwain::OperatingMode::Idle);
+        return false;
     }
 }
 
-/** \brief Switch to active gyro calibration mode. Only reachable from Idle/Autocal modes. */
-void ArwainCLI::switch_to_gyro_calib_mode()
+/** \brief Switch to active gyro calibration mode. Only reachable from Idle/Autocal modes.
+ * \return Boolean success or failure to switch mode.
+ */
+bool ArwainCLI::switch_to_gyro_calib_mode()
 {
     if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::GyroscopeCalibration);
+        return false;
     }
     else
     {
         std::cout << "Starting gyroscope calibration" << std::endl;
         // FIXTODAY ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
         arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
+        return true;
     }
 }
 
-/** \brief Switch to active magnetometer calibration mode. Only reachable from Idle/Autocal modes. */
-void ArwainCLI::switch_to_mag_calib_mode()
+/** \brief Switch to active magnetometer calibration mode. Only reachable from Idle/Autocal modes.
+ * \return Boolean success or failure to switch mode.
+ */
+bool ArwainCLI::switch_to_mag_calib_mode()
 {
     if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::MagnetometerCalibration);
+        return false;
     }
     else
     {
         std::cout << "Starting magnetometer calibration" << std::endl;
         // FIXTODAY ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
         arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
+        return true;
     }
 }
 
-/** \brief Switch to active accelerometer calibration mode. Only reachable from Idle/Autocal modes. */
-void ArwainCLI::switch_to_accel_calib_mode()
+/** \brief Switch to active accelerometer calibration mode. Only reachable from Idle/Autocal modes.
+ * \return Boolean success or failure to switch mode.
+ */
+bool ArwainCLI::switch_to_accel_calib_mode()
 {
     if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::AccelerometerCalibration);
+        return false;
     }
     else
     {
         std::cout << "Starting accelerometer calibration" << std::endl;
         arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
+        return true;
     }
 }
 
-void ArwainCLI::switch_to_data_collection_mode()
+/** \brief Switch to data collection mode. Only reachable from Idle/Autocal mode.
+ * \return Boolean success or failure to switch mode.
+ */
+bool ArwainCLI::switch_to_data_collection_mode()
 {
     if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::DataCollection);
+        return false;
     }
     else
     {
@@ -180,31 +202,39 @@ void ArwainCLI::switch_to_data_collection_mode()
         throw NotImplemented{"SEARCHTHISSTRING00000123"};
         std::cout << "Starting accelerometer calibration" << std::endl;
         arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
+        return true;
     }
 }
 
-void ArwainCLI::set_folder_name(const std::string& input)
+/** \brief Set the folder name for logs from the Arwain CLI by typing "name content", where content
+ * is the label to use. Will only succeed in Idle mode. Will fail with invalid input such as
+ * "name" with no "content".
+ * \param input A string of form "name content" where content is the name to apply.
+ * \return Boolean success or failure to switch mode.
+ */
+bool ArwainCLI::set_folder_name(const std::string& input)
 {
     if (arwain::system_mode != arwain::OperatingMode::Idle)
     {
         std::cout << "Folder name can only be changed from idle mode" << std::endl;
         report_current_mode();
+        return false;
     }
-    else
+
+    std::string value;
+    std::istringstream iss{input};
+    iss >> value >> value;
+
+    if (value == "name")
     {
-        std::string value;
-        std::istringstream iss{input};
-        iss >> value >> value;
-        if (value == "name")
-        {
-            std::cout << "ERROR: Provide a valid name" << std::endl;
-        }
-        else
-        {
-            arwain::folder_date_string_suffix = value;
-            std::cout << "Log folder name suffux set to '" << value << "'" << std::endl;
-        }
+        std::cout << "ERROR: Provide a valid name" << std::endl;
+        return false;
     }
+
+    arwain::folder_date_string_suffix = value;
+    std::cout << "Log folder name suffix set to '" << value << "'" << std::endl;
+
+    return true;
 }
 
 void ArwainCLI::parse_cli_input(const std::string& input)
