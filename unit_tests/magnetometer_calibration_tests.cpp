@@ -114,6 +114,11 @@ TEST(Calibration, MagnetometerCalibrator_get_region_sample_value)
   EXPECT_EQ(comparison, rsv);
 }
 
+TEST(Calibration, MagnetometerCalibrator_Solve)
+{
+   FAIL();
+}
+
 TEST(Calibration, MagnetometerCalibrator_sphere_region)
 {
    MagnetometerCalibrator mag_cal;
@@ -523,7 +528,3 @@ TEST(Calibration, MagnetometerCalibrator_sphere_region)
    EXPECT_TRUE(region == 99);
 }
 
-TEST(Calibration, MagnetometerCalibrator_Solve)
-{
-   FAIL();
-}

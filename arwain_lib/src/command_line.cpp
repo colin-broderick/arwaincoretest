@@ -8,7 +8,7 @@
 #include "altimeter.hpp"
 #include "std_output.hpp"
 #include "velocity_prediction.hpp"
-#include "arwain_thread.hpp"
+//#include "arwain_thread.hpp"
 #include "indoor_positioning_wrapper.hpp"
 #include "command_line.hpp"
 
