@@ -16,6 +16,7 @@ LoRa::LoRa(const std::string &address, const bool as_receiver, const LoRa::Frequ
     spi = new SPI(address.c_str(), &spi_config);
     if (!spi->begin())
     {
+        std::cout << "spi didnt begin" <<std::endl;
         throw std::runtime_error("Error starting SPI device - incorrecct device path?");
     };
     this->configure();
