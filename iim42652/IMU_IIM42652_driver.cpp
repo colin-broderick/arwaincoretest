@@ -378,5 +378,3 @@ void IMU_IIM42652::disable_auto_calib()
 {
     auto_calib_enabled = false;
 }
-
-#endif
