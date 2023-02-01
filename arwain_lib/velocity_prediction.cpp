@@ -10,7 +10,7 @@
 #include "arwain_thread.hpp"
 
 #if USE_NCS2
-    #include <zmq.h>
+    //#include <zmq.h>
 #else // Using tflite inference
     #include "tensorflow/lite/interpreter.h"
     #include "tensorflow/lite/kernels/register.h"
@@ -41,9 +41,9 @@ void PositionVelocityInference::core_setup()
     std::this_thread::sleep_for(std::chrono::milliseconds{1000});
     
     #if USE_NCS2
-    context = zmq_ctx_new();
-    responder = zmq_socket(context, ZMQ_REP);
-    zmq_bind(responder, inference_tcp_socket.c_str());
+    //context = zmq_ctx_new();
+    //responder = zmq_socket(context, ZMQ_REP);
+    //zmq_bind(responder, inference_tcp_socket.c_str());
     #else // USE_TF
     // TODO Create inferencer.
     // If the model file cannot be found or loaded, set mode to terminate and break loop.
@@ -125,9 +125,9 @@ void PositionVelocityInference::run_inference()
         // Send the data and await response.
         std::string fromStream = request.str();
         const char *str = fromStream.c_str();
-        zmq_send(responder, str, strlen(str), 0);
+        //zmq_send(responder, str, strlen(str), 0);
         std::cout << "Sent AI query by socket\n";
-        zmq_recv(responder, response_buffer, 50, 0);
+        //zmq_recv(responder, response_buffer, 50, 0);
         std::cout << "Received AI response by socket\n";
         request.str("");
 
@@ -136,7 +136,7 @@ void PositionVelocityInference::run_inference()
         // Assume a comma-separated list of three floats.
         std::string answer{response_buffer};
         std::cout << answer << "\n";
-        if (answer == "accept")
+        if (answer == "accept" || answer == "")
         {
             continue;
         }
@@ -251,9 +251,9 @@ void PositionVelocityInference::join()
     }
     // Instruct the NCS2 interface script to quit.
     #if USE_NCS2
-    std::cout << "stopping zmq\n";
-    zmq_send(responder, "stop", strlen("stop"), 0);
-    std::cout << "stopped zmq\n";
+    //std::cout << "stopping zmq\n";
+    //zmq_send(responder, "stop", strlen("stop"), 0);
+    //std::cout << "stopped zmq\n";
 
     // TODO Apparently, deletion of a void* is undefined, so not sure how to clean this up. Technically a memory leak, 
     // although only one of each of the following ever exist so not a real cause for concern.

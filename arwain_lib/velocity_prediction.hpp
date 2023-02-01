@@ -20,8 +20,8 @@ class PositionVelocityInference
         #if USE_NCS2
         // Socket for comm with Python script to manage NCS2.
         const std::string inference_tcp_socket = "tcp://*:5555";
-        void* context = nullptr;
-        void* responder = nullptr;
+        //void* context = nullptr;
+        //void* responder = nullptr;
         // Socket request and response buffers
         std::stringstream request;
         char response_buffer[50];
