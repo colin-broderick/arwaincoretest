@@ -107,15 +107,15 @@ int SPI::read(uint8_t *p_rxbuffer,uint8_t p_rxlen){
 
 bool SPI::begin(){
     /* open spidev device */
-    if (m_open == true )
-       return true;
-    if (m_spidev == NULL)
-       return false;
-    m_spifd = open(m_spidev, O_RDWR);
+    //if (m_open == true )
+      // return true;
+   // if (m_spidev == NULL)
+      // return false;
+   // m_spifd = open(m_spidev, O_RDWR);
   
-    if (m_spifd < 0) {
-        return false;
-    }
+   // if (m_spifd < 0) {
+     //   return false;
+    //}
     /* Set SPI_POL and SPI_PHA */
     // if (ioctl(m_spifd, SPI_IOC_WR_MODE, &m_spiconfig.mode) < 0) {
     //     close(m_spifd);
@@ -153,6 +153,7 @@ bool SPI::begin(){
   
 }
 SPI::SPI(const char * p_spidev){
+  /*
   m_spidev = NULL;
   if (p_spidev != NULL ){
       m_spidev = (char *)malloc(strlen(p_spidev)+1);
@@ -160,7 +161,7 @@ SPI::SPI(const char * p_spidev){
          strcpy(m_spidev,p_spidev);
   }
    m_open = false;
-
+*/
 }
 SPI::SPI(const char * p_spidev, spi_config_t *p_spi_config){
   m_spidev = NULL;
