@@ -10,6 +10,7 @@ int arwain::Configuration::read_from_file()
     std::ifstream file(this->config_file);
     if (!file.is_open())
     {
+        std::cout << "no file found" <<std::endl;
         return ReturnCodes::NoFile;
     }
 
@@ -92,6 +93,7 @@ int arwain::Configuration::read_from_file()
     read_option(options, "inference_model_xml", this->inference_model_xml);
     if (!std::filesystem::exists(this->inference_model_xml))
     {
+        std::cout << "no inference XML" <<std::endl;
         return ReturnCodes::NoInferenceXML;
     }
 

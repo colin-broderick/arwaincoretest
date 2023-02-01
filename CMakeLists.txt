@@ -124,7 +124,7 @@ endif()
 target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -Wno-psabi -Wall -Wshadow -Wextra)
 target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES}               pthread)
-target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} GTest::gtest pthread zmq)
+target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} GTest::gtest pthread)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)
