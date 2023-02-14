@@ -1,6 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
 project(iim42652_driver)
-
-add_library(${PROJECT_NAME} STATIC IMU_IIM42652_driver.cpp)
-
+include_directories(include)
+add_library(${PROJECT_NAME} STATIC src/iim42652.cpp)
 target_compile_options(${PROJECT_NAME} PRIVATE -Wno-psabi -Wall -Wshadow)
-

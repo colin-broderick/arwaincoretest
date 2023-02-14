@@ -1,1 +1,7 @@
-add_library(bmp384 bmp384.cpp)
+cmake_minimum_required(VERSION 3.16)
+project(bmp384)
+include_directories(include)
+add_library(bmp384 src/bmp384.cpp)
+if(UNIT_TESTS)
+    message("Building ${PROJECT_NAME} with test coverage")
+endif()
