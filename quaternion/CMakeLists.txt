@@ -1,3 +1,8 @@
+cmake_minimum_required(VERSION 3.16)
 project(quaternion)
-
-add_library(quaternion quaternion.cpp)
+include_directories(include)
+add_library(quaternion src/quaternion.cpp)
+if(UNIT_TESTS)
+    message("Building ${PROJECT_NAME} with test coverage")
+    target_compile_options(${PROJECT_NAME} PRIVATE -ftest-coverage -fprofile-arcs)
+endif()
