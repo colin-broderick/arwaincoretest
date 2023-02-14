@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#if USE_UUBLA
+
 #include "uwb_reader.hpp"
 #include "arwain.hpp"
 
@@ -40,23 +42,4 @@ TEST(UWB_Reader, Get_Distance)
     FAIL();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif
