@@ -1,0 +1,397 @@
+#include <gtest/gtest.h>
+#include <string>
+#include <string_view>
+#include "command_line.hpp"
+#include <iostream>
+
+TEST(Command_Line, run)
+{
+    FAIL();
+}
+
+TEST(Command_Line, s2i_exit)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("exit\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("exit"), 0);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_stop)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("stop\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("stop"), 0);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_shutdown)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("shutdown\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("shutdown"), 0);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_quit)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("quit\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("quit"), 0);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_infer)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("infer\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("infer"), 1);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_inference)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("inference\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("inference"), 1);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_autocal)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("autocal\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("autocal"), 2);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_idle)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("idle\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("idle"), 2);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_mode)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("mode\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("mode"), 3);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_calibg)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("calibg\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("calibg"), 4);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_calibm)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("calibm\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("calibm"), 6);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_caliba)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("caliba\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("caliba"), 5);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_record)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("record\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("record"), 9);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_name)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("name\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("name"), 7);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_help)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("help\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("help"), 10);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_zeropos)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("zeropos\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("zeropos"), 11);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_name_substr)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("name_test\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("name_test"), 7);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, s2i_default)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("test\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    command_line.join();
+    EXPECT_EQ(command_line.s2i("test"), 8);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, switch_to_exit_mode)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("test\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+    command_line.switch_to_exit_mode();
+    command_line.join();
+    EXPECT_TRUE(arwain::system_mode == arwain::OperatingMode::Terminate);
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, report_current_mode)
+{
+    // so simple that it probably can't be meaningfully tests
+    SUCCEED();
+}
+
+TEST(Command_Line, switch_to_idle_autocal_mode_from_inference)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("test\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    command_line.join();
+
+    arwain::system_mode = arwain::OperatingMode::Inference;
+
+    command_line.switch_to_idle_autocal_mode();
+    EXPECT_TRUE(arwain::system_mode == arwain::OperatingMode::Idle);
+
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, switch_to_idle_autocal_mode_from_something_else)
+{
+    /*std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("test\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    command_line.join();
+
+    arwain::system_mode = arwain::OperatingMode::Inference;
+
+    command_line.switch_to_idle_autocal_mode();
+    EXPECT_TRUE(arwain::system_mode == arwain::OperatingMode::Idle);
+
+    std::cin.rdbuf(orig);*/
+
+    // waiting for refactor
+    FAIL();
+}
+
+TEST(Command_Line, switch_to_inference_mode)
+{
+    FAIL();
+}
+
+TEST(Command_Line, core_setup)
+{
+    FAIL();
+}
+
+TEST(Command_Line, force_switch_to_idle_autocal_mode)
+{
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("test\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI command_line;
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    command_line.join();
+
+    command_line.force_switch_to_idle_autocal_mode();
+    EXPECT_TRUE(arwain::system_mode == arwain::OperatingMode::Idle);
+
+    std::cin.rdbuf(orig);
+}
+
+TEST(Command_Line, switch_to_gyro_calib_mode)
+{
+    FAIL();
+}
+
+TEST(Command_Line, fail_to_switch_to)
+{
+    FAIL();
+}
+
+TEST(Command_Line, switch_to_mag_calib_mode)
+{
+    FAIL();
+}
+
+TEST(Command_Line, switch_to_accel_calib_mode)
+{
+    FAIL();
+}
+
+TEST(Command_Line, switch_to_data_collection_mode)
+{
+    FAIL();
+}
+
+TEST(Command_Line, set_folder_name)
+{
+    FAIL();
+}
+
+TEST(Command_Line, parse_cli_input)
+{
+    FAIL();
+}
+
+TEST(Command_Line, set_velocity_inference_pointer)
+{
+    FAIL();
+}
+
+TEST(Command_Line, constructor)
+{
+    FAIL();
+}
+
+TEST(Command_Line, init)
+{
+    FAIL();
+}
+
+TEST(Command_Line, join)
+{
+    FAIL();
+}

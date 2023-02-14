@@ -1,3 +1,8 @@
+cmake_minimum_required(VERSION 3.16)
 project(input_parser)
-
-add_Library(${PROJECT_NAME} STATIC input_parser.cpp)
+include_directories(include)
+add_Library(${PROJECT_NAME} STATIC src/input_parser.cpp)
+if(UNIT_TESTS)
+    message("Building ${PROJECT_NAME} with test coverage")
+    target_compile_options(${PROJECT_NAME} PRIVATE -ftest-coverage -fprofile-arcs)
+endif()
