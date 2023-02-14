@@ -41,8 +41,5 @@ TEST(UWB_Reader, Get_Distance)
 {
     FAIL();
 }
-<<<<<<< HEAD
-=======
 
 #endif
->>>>>>> f96480aedb135fca5fd5bca44300b09f28a5d5a9
