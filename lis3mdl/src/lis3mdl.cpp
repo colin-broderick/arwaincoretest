@@ -44,7 +44,8 @@ LIS3MDL::LIS3MDL(const int i2c_address, const std::string& i2c_bus)
         ss << std::hex;
         ss << " 0x";
         ss << i2c_address;
-        throw std::runtime_error{ss.str()};
+        std::cout << ss.str() << "\n";
+        // throw std::runtime_error{ss.str()};
     }
     soft_reset();
     power_up();

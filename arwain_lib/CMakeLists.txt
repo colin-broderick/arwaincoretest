@@ -1,17 +1,21 @@
 cmake_minimum_required(VERSION 3.16)
 project(arwain_lib)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 add_definitions(-DUSE_NCS2)
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(include)
 
 file(GLOB SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
-list(REMOVE_ITEM SRC_FILES "/home/pi/arwain_inference_core/arwain_lib/src/realsense.cpp")
-list(REMOVE_ITEM SRC_FILES "/opt/arwain/workspace/arwain_inference_core/arwain_lib/src/realsense.cpp")
+list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/arwain_lib/src/realsense.cpp)
+list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/arwain_lib/src/realsense.cpp)
 
 if(USE_UUBLA)
 set(SRC_FILES ${SRC_FILES} src/uwb_reader.cpp)
+else()
+list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/arwain_lib/src/uwb_reader.cpp)
 endif()
 if(USE_REALSENSE)
 set(SRC_FILES ${SRC_FILES} src/realsense.cpp)

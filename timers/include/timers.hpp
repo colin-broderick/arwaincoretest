@@ -20,8 +20,8 @@ namespace Timers
         private:
             std::string _name;
             std::ostream* _out_stream;
-            std::chrono::system_clock::time_point _start;
-            std::chrono::system_clock::time_point _end;
+            std::chrono::high_resolution_clock::time_point _start;
+            std::chrono::high_resolution_clock::time_point _end;
     };
     
     /** \brief Implements a polled countdown timer; finished() will return true

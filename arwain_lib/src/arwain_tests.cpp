@@ -10,7 +10,9 @@
 #include "madgwick.hpp"
 #include "sensor_manager.hpp"
 #include "velocity_prediction.hpp"
+#if USE_UUBLA
 #include "uwb_reader.hpp"
+#endif
 
 #if USE_ROS
 #include <ros/ros.h>
@@ -202,6 +204,7 @@ arwain::ReturnCode arwain::interactive_test()
     std::string response;
 
     // Test UUBLA wrapper
+    #if USE_UUBLA
     ret = arwain::test_uubla_2();
     std::cout << "\n";
     std::cout << "Did you see the expected output from the UUBLA subsystem (y/n)?\n";
@@ -211,6 +214,7 @@ arwain::ReturnCode arwain::interactive_test()
         return arwain::ReturnCode::GeneralError;
     }
     return arwain::ReturnCode::Success;
+    #endif
 
     // Test IMU reads looks normal
     ret = arwain::test_imu("/dev/i2c-1", 0x68);

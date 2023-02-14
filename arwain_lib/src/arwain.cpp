@@ -34,7 +34,9 @@
 #include "calibration.hpp"
 #include "command_line.hpp"
 #include "std_output.hpp"
+#if USE_UUBLA
 #include "uwb_reader.hpp"
+#endif
 #include "global_buffer.hpp"
 
 #if USE_ROS

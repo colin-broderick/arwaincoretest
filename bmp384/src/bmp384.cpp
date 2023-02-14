@@ -24,7 +24,8 @@ BMP384::BMP384(int bus_address, const std::string &bus_name)
         ss << std::hex;
         ss << " 0x";
         ss << bus_address;
-        throw std::runtime_error{ss.str()};
+        std::cout << ss.str() << "\n";
+        // throw std::runtime_error{ss.str()};
     }
 
     soft_reset();
