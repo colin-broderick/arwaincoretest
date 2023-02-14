@@ -29,13 +29,8 @@ IMU_IIM42652::IMU_IIM42652(int bus_address, const std::string &bus_name)
         ss << std::hex;
         ss << " 0x";
         ss << bus_address;
-        throw std::runtime_error{ss.str()};
+        std::cout << ss.str() << "\n";
     }
-    soft_reset();
-    std::this_thread::sleep_for(std::chrono::milliseconds{2});
-    IMU_config(gyro_config, accel_config);
-    set_resolutions(ACCEL_RES_16G, GYRO_RES_1000);
-    enable();
     std::this_thread::sleep_for(std::chrono::milliseconds{25});
 }
 
