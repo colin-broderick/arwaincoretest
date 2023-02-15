@@ -20,6 +20,11 @@ DebugPrints::DebugPrints()
 
 void DebugPrints::run()
 {
+    if (!arwain::config.log_to_stdout)
+    {
+        return;
+    }
+    
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
@@ -109,10 +114,6 @@ void DebugPrints::core_setup()
     
 bool DebugPrints::init()
 {
-    if (!arwain::config.log_to_stdout)
-    {
-        return false;
-    }
     core_setup();
     job_thread = ArwainThread{&DebugPrints::run, "arwain_cout_th", this};
     return true;

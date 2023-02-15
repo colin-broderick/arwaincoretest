@@ -71,6 +71,11 @@ void IndoorPositioningSystem::run_idle()
 
 void IndoorPositioningSystem::run()
 {
+    if (!arwain::config.use_ips)
+    {
+        return;
+    }
+    
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
@@ -88,10 +93,6 @@ void IndoorPositioningSystem::run()
 
 bool IndoorPositioningSystem::init()
 {
-    if (!arwain::config.use_ips)
-    {
-        return false;
-    }
     core_setup();
     job_thread = ArwainThread{&IndoorPositioningSystem::run, "arwain_ips_th", this};
     return true;
