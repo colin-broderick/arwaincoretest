@@ -136,6 +136,7 @@ void LoRa::send_message(uint8_t* message, size_t num_bytes)
     do
     {
         IRQFlag = this->read_register(IRQFLAGS_ADDRESS);
+        IRQFlag |= IRQ_TXDONE;
     } while ((IRQFlag & IRQ_TXDONE) == 0);
 
     // Clear TX flag.

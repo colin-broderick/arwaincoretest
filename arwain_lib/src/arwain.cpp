@@ -294,13 +294,19 @@ arwain::ReturnCode arwain::execute_jobs()
     debug_prints.set_stance_detection_pointer(stance_detection);
     arwain_cli.set_velocity_inference_pointer(position_velocity_inference);
 
-    // Wait for all jobs to terminate.
+    std::cout << "sensor_manager.join(); " << std::endl;
     sensor_manager.join();
+    std::cout << "position_velocity_inference.join(); " << std::endl;
     position_velocity_inference.join();
+    std::cout << "stance_detection.join(); " << std::endl;
     stance_detection.join();
+    std::cout << "status_reporting.join(); " << std::endl;
     status_reporting.join();
+    std::cout << "debug_prints.join(); " << std::endl;
     debug_prints.join();
+    std::cout << "altimeter.join(); " << std::endl;
     altimeter.join();
+    std::cout << "indoor_positioning_system.join(); " << std::endl;
     indoor_positioning_system.join();
     #if USE_UUBLA
     uubla_wrapper.join();
@@ -308,7 +314,9 @@ arwain::ReturnCode arwain::execute_jobs()
     #if USE_REALSENSE
     camera_controller.join();
     #endif
+    std::cout << "arwain_cli.join();" << std::endl;
     arwain_cli.join();
+    std::cout << "All threads joined" << std::endl;
 
     return arwain::ReturnCode::Success;
 }

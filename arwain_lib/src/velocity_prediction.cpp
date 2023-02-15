@@ -120,20 +120,19 @@ void PositionVelocityInference::run_inference()
         std::string fromStream = request.str();
         const char *str = fromStream.c_str();
         //zmq_send(responder, str, strlen(str), 0);
-        std::cout << "Sent AI query by socket\n";
         //zmq_recv(responder, response_buffer, 50, 0);
-        std::cout << "Received AI response by socket\n";
         request.str("");
 
         // Process the answer buffer into local velocity buffers.
         // Assume a comma-separated list of three floats.
         std::string answer{response_buffer};
-        std::cout << answer << "\n";
-        if (answer == "accept" || answer == "")
+        std::cout << "Before if!\n";
+        if ((answer == "accept" || answer == "") && !ready_for_inference)
         {
             ready_for_inference = true;
             continue;
         }
+        std::cout << "After if!\n";
         int delimiter = answer.find(",");
         std::stringstream(answer.substr(0, delimiter)) >> velocity.x;
         answer = answer.substr(delimiter+1);
