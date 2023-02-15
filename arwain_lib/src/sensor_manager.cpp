@@ -32,6 +32,11 @@ Vector3 SensorManager::world_align(const Vector3& vec, const Quaternion& rotatio
 /** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does sleep if in non-relevant mode. */
 void SensorManager::run()
 {
+    if (arwain::config.no_imu)
+    {
+        return;
+    }
+
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
@@ -437,10 +442,6 @@ SensorManager::SensorManager()
 /** \brief Does overall initialization and sets up the job thread. */
 bool SensorManager::init()
 {
-    if (arwain::config.no_imu)
-    {
-        return false;
-    }
     core_setup();
     job_thread = ArwainThread{&SensorManager::run, "arwain_imu_th", this};
     return true;

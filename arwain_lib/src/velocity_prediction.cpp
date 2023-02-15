@@ -55,6 +55,11 @@ bool PositionVelocityInference::core_setup()
 
 void PositionVelocityInference::run()
 {
+    if (arwain::config.no_inference)
+    {
+        return;
+    }
+
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
@@ -229,10 +234,6 @@ bool PositionVelocityInference::ready()
 
 bool PositionVelocityInference::init()
 {
-    if (arwain::config.no_inference)
-    {
-        return false;
-    }
     // this->ready_for_inference = core_setup();
     core_setup();
     job_thread = ArwainThread{&PositionVelocityInference::run, "arwain_infr_th", this};
@@ -260,13 +261,13 @@ void PositionVelocityInference::join()
     // although only one of each of the following ever exist so not a real cause for concern.
     // delete context;
     // delete responder;
-    while (!nsc2_thread.joinable())
+    while (!ncs2_thread.joinable())
     {
         sleep_ms(1);
     }
-    if (nsc2_thread.joinable())
+    if (ncs2_thread.joinable())
     {
-        nsc2_thread.join();
+        ncs2_thread.join();
     }
     #else // USE_TF
     delete input;

@@ -31,6 +31,12 @@ void UublaWrapper::run_idle()
 
 void UublaWrapper::run()
 {
+    // TODO Currently configured to act as an UUBLA master; need to generalize.
+    if (!arwain::config.use_uwb_positioning || arwain::config.node_id != 2)
+    {
+        return;
+    }
+
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
@@ -75,11 +81,6 @@ void UublaWrapper::run_inference()
 
 bool UublaWrapper::init()
 {
-    // TODO Currently configured to act as an UUBLA master; need to generalize.
-    if (!arwain::config.use_uwb_positioning || arwain::config.node_id != 2)
-    {
-        return false;
-    }
     core_setup();
     job_thread = ArwainThread{&UublaWrapper::run, "arwain_uubla_th", this};
     return true;

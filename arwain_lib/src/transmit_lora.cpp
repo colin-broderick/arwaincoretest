@@ -170,6 +170,11 @@ void StatusReporting::run_inference()
 
 void StatusReporting::run()
 {
+    if (arwain::config.no_lora)
+    {
+        return;
+    }
+    
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
@@ -186,10 +191,6 @@ void StatusReporting::run()
 
 bool StatusReporting::init()
 {
-    if (arwain::config.no_lora)
-    {
-        return false;
-    }
     core_setup();
     job_thread = ArwainThread{&StatusReporting::run, "arwain_stat_th", this};
     return true;
