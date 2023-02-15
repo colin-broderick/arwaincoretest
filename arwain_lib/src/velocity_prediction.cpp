@@ -244,6 +244,10 @@ bool PositionVelocityInference::init()
 
 void PositionVelocityInference::join()
 {
+    while (!job_thread.joinable())
+    {
+        sleep_ms(1);
+    }
     if (job_thread.joinable())
     {
         job_thread.join();
@@ -256,9 +260,13 @@ void PositionVelocityInference::join()
     // although only one of each of the following ever exist so not a real cause for concern.
     // delete context;
     // delete responder;
-    if (ncs2_thread.joinable())
+    while (!nsc2_thread.joinable())
     {
-        ncs2_thread.join();
+        sleep_ms(1);
+    }
+    if (nsc2_thread.joinable())
+    {
+        nsc2_thread.join();
     }
     #else // USE_TF
     delete input;
