@@ -99,6 +99,10 @@ bool IndoorPositioningSystem::init()
 
 void IndoorPositioningSystem::join()
 {
+    while (!job_thread.joinable())
+    {
+        sleep_ms(1);
+    }
     if (job_thread.joinable())
     {
         job_thread.join();
