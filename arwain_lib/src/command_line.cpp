@@ -254,6 +254,10 @@ void ArwainCLI::core_setup()
 
 bool ArwainCLI::init()
 {
+    if (arwain::config.no_cli)
+    {
+        return false;
+    }
     core_setup();
     job_thread = ArwainThread{&ArwainCLI::run, "arwain_cmdl_th", this};
     return true;

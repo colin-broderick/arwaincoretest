@@ -366,10 +366,34 @@ TEST(Command_Line, switch_to_data_collection_mode)
 
 TEST(Command_Line, set_folder_name)
 {
-    FAIL();
+    arwain::config.no_cli = true;
+    arwain::system_mode = arwain::OperatingMode::Inference;
+    ArwainCLI cli;
+
+    std::string pre_value = arwain::folder_date_string_suffix;
+
+    // Should have no effect in inference mode.
+    cli.set_folder_name("name test_folder_name");
+    std::string post_value = arwain::folder_date_string_suffix;
+    EXPECT_EQ(pre_value, post_value);
+
+    // Should be ineffective with invalid input.
+    cli.set_folder_name("name name");
+    cli.set_folder_name("name");
+    post_value = arwain::folder_date_string_suffix;
+    EXPECT_EQ(pre_value, post_value);
+
+    // Should be effective in idle mode.
+    arwain::system_mode = arwain::OperatingMode::Idle;
+    cli.set_folder_name("name test_folder_name");
+    post_value = "test_folder_name";
+    EXPECT_EQ(post_value, arwain::folder_date_string_suffix);
+
+
 }
 
-TEST(Command_Line, parse_cli_input)
+/** \brief Produces no easily testable output. */
+TEST(NOTREADY_Command_Line, parse_cli_input)
 {
     FAIL();
 }
