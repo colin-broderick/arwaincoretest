@@ -92,7 +92,7 @@ namespace Timers
                 return time.time_since_epoch().count();
             }
 
-        private:
+        TESTABLE:
             std::chrono::high_resolution_clock::time_point time;
             DurationType interval;
             std::string stored_name = "no_name_set";

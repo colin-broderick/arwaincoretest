@@ -4,7 +4,7 @@
 #include "arwain.hpp"
 
 /** \brief Needs hardware*/
-TEST(NOTREADY_Altimeter, Init_Success)
+TEST(HARDWARE_Altimeter, Init_Success)
 {
     FAIL(); 
 }
@@ -21,7 +21,7 @@ TEST(Altimeter, Init_Failure)
 }
 
 /** \brief Can't currently test active join without hardware. */
-TEST(NOTREADY_Altimeter, Join)
+TEST(HARDWARE_Altimeter, Join)
 {
     {
         arwain::config.no_pressure = true;
@@ -30,34 +30,35 @@ TEST(NOTREADY_Altimeter, Join)
         EXPECT_FALSE(altimeter.job_thread.joinable());
         altimeter.join();
     }
+    FAIL();
 }
 
 /** \brief Needs hardware. */
-TEST(NOTREADY_Altimeter, Constructor)
+TEST(HARDWARE_Altimeter, Constructor)
 {
     FAIL(); 
 }
 
 /** \brief Needs hardware. */
-TEST(NOTREADY_Altimeter, Run)
+TEST(HARDWARE_Altimeter, Run)
 {
     FAIL(); 
 }
 
 /** \brief Needs hardware. */
-TEST(NOTREADY_Altimeter, Core_Setup)
+TEST(HARDWARE_Altimeter, Core_Setup)
 {
     FAIL(); 
 }
 
 /** \brief Needs hardware. */
-TEST(NOTREADY_Altimeter, Run_Inference)
+TEST(HARDWARE_Altimeter, Run_Inference)
 {
     FAIL(); 
 }
 
 /** \brief EVEN THIS needs hardware. */
-TEST(NOTREADY_Altimeter, Run_Idle)
+TEST(HARDWARE_Altimeter, Run_Idle)
 {
     FAIL(); 
 }
