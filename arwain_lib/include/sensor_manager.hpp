@@ -27,7 +27,7 @@ class SensorManager
         void run_self_test();
         Vector3 world_align(const Vector3& vec, const Quaternion& rotation);
 
-    private:
+    TESTABLE:
         // Callback to be executed when active gyroscope calibration is complete.
         std::function<void()> post_gyro_calib_callback;
 
