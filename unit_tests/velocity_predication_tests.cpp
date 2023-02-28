@@ -90,9 +90,32 @@ TEST(Velocity_Prediction, Setup_Inference)
     FAIL();
 }
 
+/** \brief TODO: I couldn't find a way to stub/mock run_inference without
+ * significant changes to the code so this doesn't work for inference mode.
+ * No idea what to do about it.
+ */
 TEST(Velocity_Prediction, Run)
 {
-   FAIL();
+    arwain::config.no_inference = true;
+    PositionVelocityInference inferrer;
+
+    // If system mode is terminate, run() should return immediately.
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EXPECT_NO_THROW(inferrer.run());
+
+    // If system mode is anything else, run() should loop inside run_idle()
+    // and return after the mode is set to Terminate.
+    arwain::system_mode = arwain::OperatingMode::SelfTest;
+    std::thread offthread = std::thread{
+        [this]()
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+            arwain::system_mode = arwain::OperatingMode::Terminate;
+        }
+    };
+    EXPECT_NO_THROW(inferrer.run());
+    
+    offthread.join();
 }
 
 /** \brief After the cleanup_inference() call, position and velocity
