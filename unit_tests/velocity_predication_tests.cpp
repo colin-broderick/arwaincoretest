@@ -50,9 +50,16 @@ TEST(Velocity_Prediction, Run_Inference)
    FAIL();
 }
 
+/** \brief The run_idle function is a no-op other than a sleep of some unknown duration.
+ * Since the duration is unknown, all we can really do is check that it doesn't generate
+ * any errors.
+ */
 TEST(Velocity_Prediction, Run_Idle)
 {
-    FAIL();
+    PositionVelocityInference inferrer;
+    EXPECT_NO_THROW(inferrer.run_idle());
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    inferrer.join();
 }
 
 TEST(Velocity_Prediction, Core_Setup)
