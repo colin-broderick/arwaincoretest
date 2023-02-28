@@ -13,7 +13,7 @@ TEST(Imu_driver, Constructor)
 }
 
 // This marked as not ready since it can only be tested with hardware.
-TEST(NOTREADY_Imu_driver, IMU_config)
+TEST(HARDWARE_Imu_driver, IMU_config)
 {   //need a list of return codes and config options
     FAIL();
 }
@@ -27,7 +27,7 @@ TEST(Imu_driver, set_resolutions)
 }
 
 // Marked as not ready because can only be tested on hardware.
-TEST(NOTREADY_Imu_driver, read_IMU)
+TEST(HARDWARE_Imu_driver, read_IMU)
 {
     IMU_IIM42652 driver(1, "test_driver");
     ImuData data;

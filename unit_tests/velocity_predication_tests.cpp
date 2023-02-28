@@ -49,7 +49,7 @@ TEST(Velocity_Prediction, Init_Failure)
     inference.join();
 }
 
-TEST(Velocity_Prediction, Run_Inference)
+TEST(HARDWARE_NOTREADY_Velocity_Prediction, Run_Inference)
 {
     //PositionVelocityInference inference;
     //inference.run_idle();
