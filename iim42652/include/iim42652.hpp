@@ -111,7 +111,7 @@ class IMU_IIM42652
         std::string get_bus() const;
         bool auto_calib_enabled() const;
 
-    private:
+    TESTABLE:
         double accel_resolution = 0;
         double gyro_resolution = 0;
         int handle = 0;
@@ -145,7 +145,7 @@ class IMU_IIM42652
         int address_ = 0;
         std::string bus_name_;
 
-    private:
+    TESTABLE:
         [[nodiscard]] bool i2c_init(const int address, const std::string& bus_name);
         void enable();
         int i2c_read(int reg_addr, int bytes, uint8_t *buffer);
