@@ -1,13 +1,18 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <string_view>
-#include "command_line.hpp"
 #include <iostream>
+
+#include "command_line.hpp"
+#include "velocity_prediction.hpp"
 
 TEST(Command_Line, run)
 {
     FAIL();
 }
+
+// TODO Most of the tests here are not properly exited, so you'll get random
+// segfaults and core dumps from threads not being properly joined.
 
 TEST(Command_Line, s2i_exit)
 {
@@ -15,8 +20,6 @@ TEST(Command_Line, s2i_exit)
     std::istringstream input("exit\n");
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
-
-    arwain::system_mode = arwain::OperatingMode::Terminate;
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("exit"), 0);
@@ -30,7 +33,6 @@ TEST(Command_Line, s2i_stop)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("stop"), 0);
@@ -44,8 +46,6 @@ TEST(Command_Line, s2i_shutdown)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
-
     command_line.join();
     EXPECT_EQ(command_line.s2i("shutdown"), 0);
     std::cin.rdbuf(orig);
@@ -57,8 +57,6 @@ TEST(Command_Line, s2i_quit)
     std::istringstream input("quit\n");
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
-
-    arwain::system_mode = arwain::OperatingMode::Terminate;
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("quit"), 0);
@@ -321,7 +319,7 @@ TEST(Command_Line, switch_to_inference_mode)
     FAIL();
 }
 
-TEST(Command_Line, core_setup)
+TEST(NOTREADY_Command_Line, core_setup)
 {
     FAIL();
 }
@@ -378,7 +376,23 @@ TEST(Command_Line, parse_cli_input)
 
 TEST(Command_Line, set_velocity_inference_pointer)
 {
-    FAIL();
+    arwain::config.no_inference = true;
+    PositionVelocityInference inferrer;
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("exit\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI cli;
+
+    EXPECT_EQ(cli.velocity_inference_handle, nullptr);
+
+    EXPECT_TRUE(cli.set_velocity_inference_pointer(inferrer));
+
+    EXPECT_NE(cli.velocity_inference_handle, nullptr);
+
+    cli.join();
+    inferrer.join();
+
+    std::cin.rdbuf(orig);
 }
 
 TEST(Command_Line, constructor)
@@ -386,12 +400,32 @@ TEST(Command_Line, constructor)
     FAIL();
 }
 
+/** \brief We construct a CLI, then shut it down, then call init manually and check for expected state. */
 TEST(Command_Line, init)
 {
-    FAIL();
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("exit\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI cli;
+    EXPECT_TRUE(cli.job_thread.joinable());
+    cli.join();
+
+    EXPECT_TRUE(cli.init());
+    std::cin.rdbuf(input.rdbuf());
+    EXPECT_TRUE(cli.job_thread.joinable());
+    cli.join();
+
+    std::cin.rdbuf(orig);
 }
 
 TEST(Command_Line, join)
 {
-    FAIL();
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("exit\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI cli;
+    EXPECT_TRUE(cli.job_thread.joinable());
+    cli.join();
+
+    std::cin.rdbuf(orig);
 }

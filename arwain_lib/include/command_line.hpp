@@ -24,7 +24,7 @@ class ArwainCLI
         void set_folder_name(const std::string& input);
         void parse_cli_input(const std::string& input);
 
-    private:
+    TESTABLE:
         PositionVelocityInference* velocity_inference_handle = nullptr;
         ArwainThread job_thread;
 
