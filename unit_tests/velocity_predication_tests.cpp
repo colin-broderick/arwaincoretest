@@ -84,10 +84,40 @@ TEST(Velocity_Prediction, Core_Setup)
 }
 #endif
 
+/** \brief The call to setup_inference should open log files and populate them with headers.
+ * Before calling, position and velocity should be zero-vectors.
+ * TODO This test can potentially be improved by making sure the content of the logs
+ * is as expected, before deleting them.
+ */
 TEST(Velocity_Prediction, Setup_Inference)
 {
-    //Can't be tested in its current state
-    FAIL();
+    arwain::config.no_inference = true;
+    arwain::folder_date_string = ".";
+    PositionVelocityInference inferrer;
+    inferrer.position = {1, 1, 1};
+    inferrer.velocity = {1, 1, 1};
+
+    EXPECT_NE(inferrer.position, (Vector3{0, 0, 0}));
+    EXPECT_NE(inferrer.velocity, (Vector3{0, 0, 0}));
+
+    inferrer.setup_inference();
+    EXPECT_TRUE(inferrer.velocity_file.is_open());
+    EXPECT_TRUE(inferrer.position_file.is_open());
+    
+    EXPECT_EQ(inferrer.position, (Vector3{0, 0, 0}));
+    EXPECT_EQ(inferrer.velocity, (Vector3{0, 0, 0}));
+
+    inferrer.velocity_file.close();
+    inferrer.position_file.close();
+
+    EXPECT_TRUE(std::filesystem::exists("./velocity.txt"));
+    EXPECT_TRUE(std::filesystem::exists("./position.txt"));
+
+    EXPECT_GT(std::filesystem::file_size("./velocity.txt"), 0);
+    EXPECT_GT(std::filesystem::file_size("./position.txt"), 0);
+
+    std::filesystem::remove("./velocity.txt");
+    std::filesystem::remove("./position.txt");
 }
 
 /** \brief TODO: I couldn't find a way to stub/mock run_inference without
