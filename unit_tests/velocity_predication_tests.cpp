@@ -62,10 +62,27 @@ TEST(Velocity_Prediction, Run_Idle)
     inferrer.join();
 }
 
+#if USE_NCS2
+/** \brief Before core_setup, the socket pointers context and responder should be null.
+ * After core_setup, they should be non-null (but we don't know exactly what they should be).
+ */
 TEST(Velocity_Prediction, Core_Setup)
 {
-   FAIL();
+    arwain::config.no_inference = true;
+    PositionVelocityInference inferrer;
+    EXPECT_EQ(inferrer.context, nullptr);
+    EXPECT_EQ(inferrer.responder, nullptr);
+    inferrer.core_setup();
+    EXPECT_NE(inferrer.context, nullptr);
+    EXPECT_NE(inferrer.responder, nullptr);
 }
+#else
+/** \brief This test not yet implemented for the tensorflow case. */
+TEST(Velocity_Prediction, Core_Setup)
+{
+    FAIL();
+}
+#endif
 
 TEST(Velocity_Prediction, Setup_Inference)
 {
