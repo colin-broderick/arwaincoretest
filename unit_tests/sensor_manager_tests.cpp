@@ -32,7 +32,18 @@ TEST(IMU_Reader, Init_failure)
    FAIL();
 }
 
+static void test_callback()
+{
+
+}
+
 TEST(IMU_Reader, Set_Post_Gyro_Calibration_Callback)
 {
-   FAIL();
+    arwain::config.no_imu = true;
+    SensorManager sensors;
+    EXPECT_FALSE(sensors.init());
+    EXPECT_EQ(sensors.post_gyro_calib_callback, nullptr);
+    sensors.set_post_gyro_calibration_callback(test_callback);
+    EXPECT_NE(sensors.post_gyro_calib_callback, nullptr);
+    sensors.join();
 }
