@@ -16,7 +16,6 @@ class IndoorPositioningSystem
         void run_inference();
         void run();
 
-    private:
         ArwainThread job_thread;
         arwain::Logger corner_log;
         arwain::Logger tracked_floor_log;
@@ -32,7 +31,7 @@ class IndoorPositioningSystem
 
     class IndoorPositioningWrapper
     {
-        private:
+        TESTABLE:
             double m_x = 0;
             double m_y = 0;
             double m_z = 0;
@@ -41,10 +40,10 @@ class IndoorPositioningSystem
 
         public:
             void update(const double &time, const double &x, const double &y, const double &z);
-            Vector3 getPosition();
-            double getX();
-            double getY();
-            double getZ();
+            Vector3 getPosition() const;
+            double getX() const;
+            double getY() const;
+            double getZ() const;
     };
 };
 
