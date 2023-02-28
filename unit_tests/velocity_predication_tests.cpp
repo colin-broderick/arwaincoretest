@@ -10,14 +10,25 @@ TEST(Velocity_Prediction, Join)
     EXPECT_NO_THROW(inference.join());
 }
 
+/** \brief After init(), the job_thread(s) should be running and should be
+ * joinable but incomplete. */
 TEST(Velocity_Prediction, Init_Success)
 {
-    /*PositionVelocityInference inference;
+    arwain::config.no_inference = true;
+    PositionVelocityInference inferrer;
+
+    // At this point, the inferrer exists, but init() has not been fully executed.
+    // and the job thread(s) is not created.
     arwain::config.no_inference = false;
-    EXPECT_TRUE(inference.init());
+    EXPECT_TRUE(inferrer.init());
+
+    EXPECT_TRUE(inferrer.job_thread.joinable());
+    #if USE_NCS2
+    EXPECT_TRUE(inferrer.job_thread.joinable());
+    #endif
+
     arwain::system_mode = arwain::OperatingMode::Terminate;
-    inference.join();*/
-    FAIL();
+    inferrer.join();
 }
 
 /** \brief If the config.no_inference option is on, then init() should return
