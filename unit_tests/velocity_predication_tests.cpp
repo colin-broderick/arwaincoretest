@@ -20,14 +20,22 @@ TEST(Velocity_Prediction, Init_Success)
     FAIL();
 }
 
+/** \brief If the config.no_inference option is on, then init() should return
+ * immediately with a false having taken no action. The job_thread should not
+ * be joinable because it should never have started. If the ncs2 option is on,
+ * it has its own thread which should also not be joinable.
+ */
 TEST(Velocity_Prediction, Init_Failure)
 {
-    /*PositionVelocityInference inference;
     arwain::config.no_inference = true;
+    PositionVelocityInference inference;
     EXPECT_FALSE(inference.init());
+    EXPECT_FALSE(inference.job_thread.joinable());
+    #if USE_NCS2
+    EXPECT_FALSE(inference.ncs2_thread.joinable());
+    #endif
     arwain::system_mode = arwain::OperatingMode::Terminate;
-    inference.join();*/
-    FAIL();
+    inference.join();
 }
 
 TEST(Velocity_Prediction, Run_Inference)
