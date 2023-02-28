@@ -2,14 +2,15 @@
 
 #include "sensor_manager.hpp"
 
-TEST(IMU_Reader, Join)
+TEST(SensorManager, Join)
 {
+    arwain::config.no_imu = true;
     SensorManager reader;
     arwain::system_mode = arwain::OperatingMode::Terminate;
     EXPECT_NO_THROW(reader.join());
 }
 
-TEST(IMU_Reader, Init_success)
+TEST(HARDWARE_NOTREADY_SensorManager, Init_success)
 {
    /* arwain::config.no_imu = false;
     SensorManager reader;
@@ -20,7 +21,7 @@ TEST(IMU_Reader, Init_success)
     FAIL();
 }
 
-TEST(IMU_Reader, Init_failure)
+TEST(HARDWARE_NOTREADY_SensorManager, Init_failure)
 {
     /*
     arwain::config.no_imu = true;
@@ -37,7 +38,7 @@ static void test_callback()
 
 }
 
-TEST(IMU_Reader, Set_Post_Gyro_Calibration_Callback)
+TEST(SensorManager, Set_Post_Gyro_Calibration_Callback)
 {
     arwain::config.no_imu = true;
     SensorManager sensors;
