@@ -7,6 +7,8 @@
 #include "sabatini_altimeter.hpp"
 #include "bmp384.hpp"
 
+class I2CDEVICEDRIVER;
+
 class Altimeter
 {
     TESTABLE:
@@ -24,7 +26,7 @@ class Altimeter
 
         ArwainThread job_thread;
         arwain::Logger pressure_log;
-        BMP384 bmp384;
+        BMP384<I2CDEVICEDRIVER> bmp384;
         arwain::Filters::SabatiniAltimeter sabatini_filter;
 
     public:

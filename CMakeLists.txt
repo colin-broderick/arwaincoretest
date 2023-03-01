@@ -14,9 +14,11 @@ option(UNIT_TESTS           "Make private class methods public to enable testing
 if(UNIT_TESTS)
     message("Building with all public class methods for test")
     add_definitions(-DTESTABLE=public)
-else()
+    add_definitions(-DI2CDEVICEDRIVER=MockI2CDevice)
+    else()
     add_definitions(-DTESTABLE=private)
-endif()
+    add_definitions(-DI2CDEVICEDRIVER=LinuxSmbusI2CDevice)
+    endif()
 
 if(USE_REALSENSE)
     message("Using librealsense for T265 camera")
