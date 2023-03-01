@@ -40,8 +40,8 @@ class RollingAverage
         void feed(double value);
         double get_value();
 
-    private:
-        unsigned int window_size;
+    TESTABLE:
+        unsigned int window_size = 0;
         double current_average = 0;
         std::deque<double> stack;
 };
