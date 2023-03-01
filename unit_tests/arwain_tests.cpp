@@ -148,11 +148,11 @@ TEST(HARDWARE_NOTREADY_Arwain, test_inference)
     FAIL();
 }
 
-TEST(HARDWARE_NOTREADY_Arwain, interactive_test)
-{
-    arwain::interactive_test();
-    FAIL();
-}
+// TEST(HARDWARE_NOTREADY_Arwain, interactive_test)
+// {
+//     arwain::interactive_test();
+//     FAIL();
+// }
 
 TEST(HARDWARE_NOTREADY_Arwain, test_mag)
 {

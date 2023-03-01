@@ -116,7 +116,7 @@ arwain::ReturnCode arwain::test_pressure()
 arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_address)
 {
     // Initialize the IMU.
-    IMU_IIM42652 imu{i2c_address, i2c_bus};
+    IMU_IIM42652<I2CDEVICEDRIVER> imu{i2c_address, i2c_bus};
     imu.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
     imu.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
@@ -371,7 +371,7 @@ arwain::ReturnCode arwain::test_lora_tx()
 
 arwain::ReturnCode arwain::test_ori(int frequency)
 {
-    IMU_IIM42652 imu{config.imu1_address, config.imu1_bus};
+    IMU_IIM42652<I2CDEVICEDRIVER> imu{config.imu1_address, config.imu1_bus};
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
     imu.enable_auto_calib();
     arwain::Madgwick filter{static_cast<double>(frequency), config.madgwick_beta};
