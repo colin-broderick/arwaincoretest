@@ -76,7 +76,7 @@ arwain::ReturnCode arwain::test_uubla_2()
 
 arwain::ReturnCode arwain::test_pressure()
 {
-    BMP384 bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
+    BMP384<I2CDEVICEDRIVER> bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
 
     // Set up timing.
 
@@ -85,7 +85,7 @@ arwain::ReturnCode arwain::test_pressure()
 
     auto [pressure, temperature] = bmp384.read();
     pressure = pressure - arwain::config.pressure_offset;
-    altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+    altitude = BMP384<I2CDEVICEDRIVER>::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
 
     sleep_ms(50);
 
@@ -96,7 +96,7 @@ arwain::ReturnCode arwain::test_pressure()
     {
         auto [new_pressure, new_temperature] = bmp384.read();
         new_pressure = new_pressure - arwain::config.pressure_offset;
-        double new_alt = BMP384::calculate_altitude(new_pressure / 100.0, new_temperature, arwain::config.sea_level_pressure);
+        double new_alt = BMP384<I2CDEVICEDRIVER>::calculate_altitude(new_pressure / 100.0, new_temperature, arwain::config.sea_level_pressure);
         altitude = factor * altitude + (1.0 - factor) * new_alt;
 
         std::cout << "Pressure:    " << new_pressure / 100.0 << " hPa" << std::endl;
