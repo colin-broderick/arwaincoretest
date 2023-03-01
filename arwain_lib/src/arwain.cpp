@@ -357,7 +357,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
 {
     Vector3 results;
 
-    IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IMU_IIM42652<I2CDEVICEDRIVER> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu1.get_bus() << " at 0x" << std::hex << imu1.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator1;
     while (!calibrator1.is_converged())
@@ -370,7 +370,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     arwain::config.replace("gyro1_bias_y", results.y);
     arwain::config.replace("gyro1_bias_z", results.z);
 
-    IMU_IIM42652 imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IMU_IIM42652<I2CDEVICEDRIVER> imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu2.get_bus() << " at 0x" << std::hex << imu2.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator2;
     while (!calibrator2.is_converged())
@@ -383,7 +383,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     arwain::config.replace("gyro2_bias_y", results.y);
     arwain::config.replace("gyro2_bias_z", results.z);
 
-    IMU_IIM42652 imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IMU_IIM42652<I2CDEVICEDRIVER> imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu3.get_bus() << " at 0x" << std::hex << imu3.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator3;
     while (!calibrator3.is_converged())
@@ -441,9 +441,9 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
     std::cout << "\t" << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << std::endl;
     std::cout << std::dec << std::endl;
 
-    IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
-    IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
-    IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
+    IMU_IIM42652<I2CDEVICEDRIVER> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IMU_IIM42652<I2CDEVICEDRIVER> imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
+    IMU_IIM42652<I2CDEVICEDRIVER> imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
 
     AccelerometerCalibrator calib1;
     AccelerometerCalibrator calib2;

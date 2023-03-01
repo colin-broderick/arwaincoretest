@@ -22,7 +22,7 @@ add_library(arwain_lib ${SRC_FILES})
 
 if(UNIT_TESTS)
     message("Building ${PROJECT_NAME} with test coverage")
-    target_compile_options(${PROJECT_NAME} PRIVATE -ftest-coverage -fprofile-arcs)
+    target_compile_options(${PROJECT_NAME} PRIVATE -ftest-coverage -fprofile-arcs -Wfatal-errors)
 endif()
 
 target_link_libraries(arwain_lib stdc++fs)
