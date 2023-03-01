@@ -18,6 +18,35 @@ TEST(Madgwick, Default_Constructor)
     EXPECT_FALSE(mad.angles_updated());
 }
 
+TEST(Madgwick, update_mag_zeroes)
+{
+    arwain::Madgwick madgwick{2.0, 1.0};
+
+    double pre_w = madgwick.get_w();
+    double pre_x = madgwick.get_x();
+    double pre_y = madgwick.get_y();
+    double pre_z = madgwick.get_z();
+    double pre_beta = madgwick.get_beta();
+    double pre_freq = madgwick.get_frequency();
+    
+    madgwick.update(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0);
+    
+    double post_w = madgwick.get_w();
+    double post_x = madgwick.get_x();
+    double post_y = madgwick.get_y();
+    double post_z = madgwick.get_z();
+    double post_beta = madgwick.get_beta();
+    double post_freq = madgwick.get_frequency();
+
+    EXPECT_NE(pre_w, post_w);
+    EXPECT_NE(pre_x, post_x);
+    EXPECT_NE(pre_y, post_y);
+    EXPECT_NE(pre_z, post_z);
+    EXPECT_EQ(pre_beta, post_beta);
+    EXPECT_EQ(pre_freq, post_freq);    
+
+}
+
 TEST(Madgwick, Constructor)
 {
     arwain::Madgwick mad(2.0, 1.0);
@@ -349,4 +378,11 @@ TEST(Madgwick, update_10)
     EXPECT_NE(pre_z, post_z);
     EXPECT_EQ(pre_beta, post_beta);
     EXPECT_EQ(pre_freq, post_freq);
+}
+
+TEST(Madgwick, get_euler_angles_degrees)
+{
+    arwain::Madgwick f;
+    f.get_euler_angles_degrees(1, 0, 0, 0);
+    f.get_euler_angles_radians(1, 0, 0, 0);
 }

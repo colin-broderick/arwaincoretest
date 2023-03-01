@@ -122,6 +122,15 @@ TEST(Vector3, OutputStreamOperator)
     }
 }
 
+TEST(Vector3, from_array)
+{
+    std::array<double, 3> arr{1, 2, 3};
+    Vector3 vec = Vector3::from_array(arr);
+    EXPECT_EQ(vec.x, 1);
+    EXPECT_EQ(vec.y, 2);
+    EXPECT_EQ(vec.z, 3);
+}
+
 /** \brief Tests that the cross product of two Vector3s is correct, as compared against an independent calculation
  * on WolframAlpha.
  */

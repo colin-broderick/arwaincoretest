@@ -7,6 +7,34 @@
 
 extern std::streambuf* original_cout_buffer;
 
+namespace arwain
+{
+    arwain::ReturnCode test_pressure();
+    arwain::ReturnCode test_imu(const std::string&, const int);
+    arwain::ReturnCode test_ori(int);
+    arwain::ReturnCode test_mag();
+    arwain::ReturnCode test_lora_tx();
+    arwain::ReturnCode test_lora_rx();
+    arwain::ReturnCode test_inference();
+    arwain::ReturnCode interactive_test();
+}
+
+TEST(ArwainUtils, RollingAverage_default_constructor)
+{
+    RollingAverage rl;
+    EXPECT_EQ(rl.current_average, 0);
+    EXPECT_TRUE(rl.ready());
+}
+
+TEST(ArwainUtils, RollingAverage_overflow)
+{
+    RollingAverage roll{10};
+    for (int i = 0; i < 20; i++)
+    {
+        EXPECT_NO_THROW(roll.feed(1));
+    }
+}
+
 TEST(ArwainUtils, clamp_value)
 {
     int value = -5;
@@ -60,6 +88,10 @@ TEST(Arwain, OperatingModeStreamOperator)
     std::cout << arwain::OperatingMode::SelfTest;
     EXPECT_EQ("Self test", testing::internal::GetCapturedStdout());
 
+    testing::internal::CaptureStdout();
+    std::cout << arwain::OperatingMode::InvalidMode;
+    EXPECT_EQ("Mode not specified", testing::internal::GetCapturedStdout());
+
     std::cout.rdbuf(nullptr);
 }
 
@@ -80,23 +112,112 @@ TEST(ArwainUtils, sleep_ms)
     EXPECT_LT(duration, 26000000);
 }
 
-namespace arwain
-{
-    arwain::ReturnCode execute_jobs_stub()
-    {
-        return arwain::ReturnCode::Success;
-    }
-}
-
 /** \brief I don't know how this can be tested because I can't find any way to mock the secondary function calls. */
 TEST(NOTREADY_Arwain, Arwain_Main)
 {
     FAIL();
 }
 
-TEST(Arwain, Operator_Test)
+TEST(ArwainExceptions, NotImplemeted)
 {
+    EXPECT_THROW(throw NotImplemented{__FUNCTION__}, NotImplemented);
+}
+
+TEST(HARDWARE_NOTREADY_Arwain, test_pressure)
+{
+    arwain::test_pressure();
     FAIL();
+}
+
+TEST(HARDWARE_NOTREADY_Arwain, test_imu)
+{
+    arwain::test_imu("/dev/null", 1);
+    FAIL();
+}
+
+
+TEST(HARDWARE_NOTREADY_Arwain, test_lora_rx)
+{
+    arwain::test_lora_rx();
+    FAIL();
+}
+
+TEST(HARDWARE_NOTREADY_Arwain, test_inference)
+{
+    arwain::test_inference();
+    FAIL();
+}
+
+TEST(HARDWARE_NOTREADY_Arwain, interactive_test)
+{
+    arwain::interactive_test();
+    FAIL();
+}
+
+TEST(HARDWARE_NOTREADY_Arwain, test_mag)
+{
+    arwain::test_mag();
+    FAIL();
+}
+
+TEST(HARDWARE_NOTREADY_Arwain, test_lora_tx)
+{
+    arwain::test_lora_tx();
+    FAIL();
+}
+
+TEST(HARDWARE_NOTREADY_Arwain, test_ori)
+{
+    arwain::test_ori(1);
+    FAIL();
+}
+
+double unwrap_phase_radians(double new_angle, double previous_angle);
+TEST(ArwainUtils, unwrap_phase_radians)
+{
+    double angle = 0;
+    double pi = 3.14159;
+    
+    EXPECT_EQ(1, unwrap_phase_radians(angle + 1, angle));
+    EXPECT_EQ(2, unwrap_phase_radians(angle + 2, angle));
+    EXPECT_EQ(3, unwrap_phase_radians(angle + 3, angle));
+    EXPECT_EQ(4 - 2 * pi, unwrap_phase_radians(angle + 4, angle));
+
+    EXPECT_EQ(-1, unwrap_phase_radians(angle - 1, angle));
+    EXPECT_EQ(-2, unwrap_phase_radians(angle - 2, angle));
+    EXPECT_EQ(-3, unwrap_phase_radians(angle - 3, angle));
+    EXPECT_EQ(-4 + 2 * pi, unwrap_phase_radians(angle - 4, angle));
+}
+
+double unwrap_phase_degrees(double new_angle, double previous_angle);
+TEST(ArwainUtils, unwrap_phase_degrees)
+{
+    double angle = 0;
+
+    EXPECT_EQ(179, unwrap_phase_degrees(angle + 179, angle));
+    EXPECT_EQ(181 - 360, unwrap_phase_degrees(angle + 181, angle));
+
+    EXPECT_EQ(-179, unwrap_phase_degrees(angle - 179, angle));
+    EXPECT_EQ(-181 + 360, unwrap_phase_degrees(angle - 181, angle));
+}
+
+std::string date_time_string();
+TEST(NOTREADY_ArwainUtils, date_time_string)
+{
+    EXPECT_NO_THROW(date_time_string());
+}
+
+TEST(NOTREADY_ArwainUtils, compute_euler)
+{
+    Quaternion q{1, 0, 0, 0};
+    EXPECT_NO_THROW(arwain::compute_euler(q));
+}
+
+TEST(NOTREADY_ArwainUtils, apply_quat_rotor_to_vector3)
+{
+    Vector3 v{1, 0, 0};
+    Quaternion q{1, 0, 0, 0};
+    EXPECT_NO_THROW(arwain::apply_quat_rotor_to_vector3(v, q));
 }
 
 TEST(Arwain, setup_log_folder_name_suffix_with_no_name)
@@ -104,8 +225,8 @@ TEST(Arwain, setup_log_folder_name_suffix_with_no_name)
     int j = 3;
     std::string program = "arwain_test";
     std::string command = "hello";
-    std::string paramater = "1";
-    char* input_array[3] = {program.data(), command.data(), paramater.data()};
+    std::string parameter = "1";
+    char* input_array[3] = {program.data(), command.data(), parameter.data()};
     InputParser parser(j, input_array);
 
     arwain::setup_log_folder_name_suffix(parser);
@@ -119,8 +240,8 @@ TEST(Arwain, setup_log_folder_name_suffix_with_name)
     int j = 3;
     std::string program = "arwain_test";
     std::string command = "-name";
-    std::string paramater = "example";
-    char* input_array[3] = {program.data(),command.data(), paramater.data()};
+    std::string parameter = "example";
+    char* input_array[3] = {program.data(),command.data(), parameter.data()};
     InputParser parser(j, input_array);
 
     arwain::setup_log_folder_name_suffix(parser);
