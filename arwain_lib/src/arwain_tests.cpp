@@ -201,6 +201,7 @@ arwain::ReturnCode arwain::interactive_test()
     arwain::ReturnCode ret = arwain::ReturnCode::Success;
     std::string response;
 
+    #if USE_UUBLA
     // Test UUBLA wrapper
     ret = arwain::test_uubla_2();
     std::cout << "\n";
@@ -210,7 +211,7 @@ arwain::ReturnCode arwain::interactive_test()
     {
         return arwain::ReturnCode::GeneralError;
     }
-    return arwain::ReturnCode::Success;
+    #endif
 
     // Test IMU reads looks normal
     ret = arwain::test_imu("/dev/i2c-1", 0x68);

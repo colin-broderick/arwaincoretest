@@ -25,7 +25,6 @@ class PositionVelocityInference
         void py_inference();
         #endif
 
-    private:
         bool ready_for_inference = false;
         #if USE_NCS2
         // Socket for comm with Python script to manage NCS2.

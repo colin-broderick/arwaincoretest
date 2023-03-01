@@ -17,7 +17,7 @@ class Altimeter
         void setup_inference();
         void cleanup_inference();
 
-    private:
+    TESTABLE:
         double altitude;
         double altitude_zero;
         const double CONSTANT_ROOM_TEMPERATURE = 21 + 273.15; // We are assuming constant ambient temperature in the hypsometric formula for now.
