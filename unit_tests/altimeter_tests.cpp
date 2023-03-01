@@ -3,79 +3,88 @@
 #include "altimeter.hpp"
 #include "arwain.hpp"
 
-TEST(Altimeter, Innit_Success)
+/** \brief Needs hardware*/
+TEST(HARDWARE_Altimeter, Init_Success)
 {
-    // PositionVelocityInference inference;
-    /*arwain::config.use_uwb_positioning = false;
-    arwain::config.node_id = 1;
-    EXPECT_FALSE(UublaWrapper::init());
-    arwain::system_mode = arwain::OperatingMode::Terminate;
-    UublaWrapper::join();*/
-
     FAIL(); 
 }
 
-TEST(Altimeter, Innit_Failure)
+/** \brief If pressure is disabled, init returns false and the rest of the
+ * class is uninitialized.
+ */
+TEST(Altimeter, Init_Failure)
 {
-    // PositionVelocityInference inference;
-    /*arwain::config.use_uwb_positioning = false;
-    arwain::config.node_id = 1;
-    EXPECT_FALSE(UublaWrapper::init());
-    arwain::system_mode = arwain::OperatingMode::Terminate;
-    UublaWrapper::join();*/
+    arwain::config.no_pressure = true;
+    Altimeter altimeter;
+    EXPECT_FALSE(altimeter.init());
+    EXPECT_FALSE(altimeter.job_thread.joinable());
+}
 
+/** \brief Can't currently test active join without hardware. */
+TEST(HARDWARE_Altimeter, Join)
+{
+    {
+        arwain::config.no_pressure = true;
+        Altimeter altimeter;
+        EXPECT_FALSE(altimeter.init());
+        EXPECT_FALSE(altimeter.job_thread.joinable());
+        altimeter.join();
+    }
     FAIL();
 }
 
-TEST(Altimeter, Join)
+/** \brief Needs hardware. */
+TEST(HARDWARE_Altimeter, Constructor)
 {
     FAIL(); 
 }
 
-TEST(Altimeter, Constructor)
+/** \brief Needs hardware. */
+TEST(HARDWARE_Altimeter, Run)
 {
-
     FAIL(); 
 }
 
-TEST(Altimeter, Run)
+/** \brief Needs hardware. */
+TEST(HARDWARE_Altimeter, Core_Setup)
 {
-
     FAIL(); 
 }
 
-TEST(Altimeter, Core_Setup)
+/** \brief Needs hardware. */
+TEST(HARDWARE_Altimeter, Run_Inference)
 {
-
     FAIL(); 
 }
 
-TEST(Altimeter, Run_Inference)
+/** \brief EVEN THIS needs hardware. */
+TEST(HARDWARE_Altimeter, Run_Idle)
 {
-
     FAIL(); 
 }
 
-TEST(Altimeter, Run_AutoCalibration)
-{
-
-    FAIL(); 
-}
-
-TEST(Altimeter, Run_Idle)
-{
-
-    FAIL(); 
-}
-
+/** \brief Opens a log file and puts a header into it. */
 TEST(Altimeter, Setup_Inference)
 {
-
-    FAIL(); 
+    arwain::config.no_pressure = true;
+    Altimeter altimeter;
+    arwain::folder_date_string = ".";
+    altimeter.setup_inference();
+    EXPECT_TRUE(altimeter.pressure_log.is_open());
+    altimeter.pressure_log.close();
+    EXPECT_FALSE(altimeter.pressure_log.is_open());
+    EXPECT_TRUE(std::filesystem::exists("./pressure.txt"));
+    EXPECT_GT(std::filesystem::file_size("./pressure.txt"), 0);
+    std::filesystem::remove("./pressure.txt");
+    EXPECT_FALSE(std::filesystem::exists("./pressure.txt"));
 }
 
 TEST(Altimeter, Cleanup_Inference)
 {
-
-    FAIL(); 
+    arwain::config.no_pressure = true;
+    Altimeter altimeter;
+    altimeter.pressure_log.open("/dev/null");
+    EXPECT_TRUE(altimeter.pressure_log.is_open());
+    altimeter.cleanup_inference();
+    EXPECT_FALSE(altimeter.pressure_log.is_open());
 }

@@ -111,22 +111,22 @@ void IndoorPositioningSystem::IndoorPositioningWrapper::update(const double &tim
     // m_x, m_y, m_z.
 }
 
-Vector3 IndoorPositioningSystem::IndoorPositioningWrapper::getPosition()
+Vector3 IndoorPositioningSystem::IndoorPositioningWrapper::getPosition() const
 {
     return {m_x, m_y, m_z};
 }
 
-double IndoorPositioningSystem::IndoorPositioningWrapper::getX()
+double IndoorPositioningSystem::IndoorPositioningWrapper::getX() const
 {
     return m_x;
 }
 
-double IndoorPositioningSystem::IndoorPositioningWrapper::getY()
+double IndoorPositioningSystem::IndoorPositioningWrapper::getY() const
 {
     return m_y;
 }
 
-double IndoorPositioningSystem::IndoorPositioningWrapper::getZ()
+double IndoorPositioningSystem::IndoorPositioningWrapper::getZ() const
 {
     return m_z;
 }

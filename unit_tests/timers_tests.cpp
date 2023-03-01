@@ -68,6 +68,10 @@ TEST(Timers, CountDownTimerReset)
 TEST(Timers, IntervalTimerConstructors)
 {
    Timers::IntervalTimer<std::chrono::seconds> t1{1};
+   std::chrono::seconds s{1};
+   EXPECT_EQ(t1.interval, s);
+   EXPECT_EQ(t1.stored_name, "no_name_set");
    Timers::IntervalTimer<std::chrono::seconds> t2{1, __FUNCTION__};
-   FAIL();
+   EXPECT_EQ(t2.interval, s);
+   EXPECT_EQ(t2.stored_name, __FUNCTION__);
 }

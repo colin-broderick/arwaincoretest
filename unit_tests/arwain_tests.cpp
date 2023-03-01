@@ -5,6 +5,8 @@
 #include "exceptions.hpp"
 #include "input_parser.hpp"
 
+extern std::streambuf* original_cout_buffer;
+
 TEST(ArwainUtils, clamp_value)
 {
     int value = -5;
@@ -15,6 +17,9 @@ TEST(ArwainUtils, clamp_value)
 
 TEST(Arwain, OperatingModeStreamOperator)
 {
+    // std::cout is globally turned off so turn it on for this test, then turn it off again at the end.
+    std::cout.rdbuf(original_cout_buffer);
+
     testing::internal::CaptureStdout();
     std::cout << arwain::OperatingMode::AccelerometerCalibration;
     EXPECT_EQ("Accelerometer calibration", testing::internal::GetCapturedStdout());
@@ -54,6 +59,8 @@ TEST(Arwain, OperatingModeStreamOperator)
     testing::internal::CaptureStdout();
     std::cout << arwain::OperatingMode::SelfTest;
     EXPECT_EQ("Self test", testing::internal::GetCapturedStdout());
+
+    std::cout.rdbuf(nullptr);
 }
 
 TEST(Arwain, ExceptionsNotImplemented)
@@ -73,7 +80,16 @@ TEST(ArwainUtils, sleep_ms)
     EXPECT_LT(duration, 26000000);
 }
 
-TEST(Arwain, Arwain_Main)
+namespace arwain
+{
+    arwain::ReturnCode execute_jobs_stub()
+    {
+        return arwain::ReturnCode::Success;
+    }
+}
+
+/** \brief I don't know how this can be tested because I can't find any way to mock the secondary function calls. */
+TEST(NOTREADY_Arwain, Arwain_Main)
 {
     FAIL();
 }
@@ -89,7 +105,7 @@ TEST(Arwain, setup_log_folder_name_suffix_with_no_name)
     std::string program = "arwain_test";
     std::string command = "hello";
     std::string paramater = "1";
-    char* input_array[3] = {program.data(),command.data(), paramater.data()};
+    char* input_array[3] = {program.data(), command.data(), paramater.data()};
     InputParser parser(j, input_array);
 
     arwain::setup_log_folder_name_suffix(parser);

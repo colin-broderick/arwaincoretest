@@ -28,6 +28,7 @@ void ArwainCLI::run()
     {
         std::string input;
         std::getline(std::cin, input);
+        std::cout << "past get line" << std::endl;
         parse_cli_input(input);
     }
 }
@@ -283,6 +284,10 @@ void ArwainCLI::core_setup()
 
 bool ArwainCLI::init()
 {
+    if (arwain::config.no_cli)
+    {
+        return false;
+    }
     core_setup();
     job_thread = ArwainThread{&ArwainCLI::run, "arwain_cmdl_th", this};
     return true;
