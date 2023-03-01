@@ -45,7 +45,7 @@ class ArwainThread : public std::thread
 
         std::string get_name();
 
-    private:
+    TESTABLE:
         void set_name(const std::string& name);
 };
 

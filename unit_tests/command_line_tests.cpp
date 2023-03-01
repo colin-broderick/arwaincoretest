@@ -388,8 +388,6 @@ TEST(Command_Line, set_folder_name)
     cli.set_folder_name("name test_folder_name");
     post_value = "test_folder_name";
     EXPECT_EQ(post_value, arwain::folder_date_string_suffix);
-
-
 }
 
 /** \brief Produces no easily testable output. */

@@ -24,7 +24,7 @@ class ActivityMetric
         void feed_acce(const Vector3& gyro);
         void feed_velocity(const Vector3& velocity);
         double read();
-    private:
+    TESTABLE:
         unsigned int ag_window_size;
         unsigned int velo_window_size;
         RollingAverage acce_roller;

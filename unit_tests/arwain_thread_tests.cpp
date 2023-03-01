@@ -45,4 +45,8 @@ TEST(ArwainThread, SetGetName)
     std::string name = th.get_name();
     th.join();
     EXPECT_EQ(name, "TestName");
+
+    ArwainThread th2(test_func);
+    EXPECT_THROW(th2.set_name("really-quite-a-long-name-that-probably-shouldn't-work"), std::runtime_error);
+    th2.join();
 }
