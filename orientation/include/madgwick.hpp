@@ -28,7 +28,7 @@
 
 namespace arwain
 {
-    class Madgwick : OrientationFilter
+    class Madgwick : public OrientationFilter
     {
 
         private:
