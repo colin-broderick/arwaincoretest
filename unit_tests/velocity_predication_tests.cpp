@@ -2,6 +2,15 @@
 
 #include "velocity_prediction.hpp"
 
+TEST(MockInferrer, init_infer)
+{
+    std::deque<ImuData> data;
+    data.push_back({{0, 0, 0}, {0, 0, 0}});
+    MockInferrer inferrer;
+    EXPECT_NO_THROW(inferrer.init());
+    EXPECT_EQ(inferrer.infer(data), (Vector3{0, 0, 0}));
+}
+
 TEST(Velocity_Prediction, Join)
 {
     PositionVelocityInference inference;
