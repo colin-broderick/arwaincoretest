@@ -56,11 +56,11 @@ void StanceDetection::run_inference()
         }
 
         // Log to file.
-        stance_file << loop_scheduler.count() << " "
-                    << StanceDetection::get_falling_state() << " "
-                    << StanceDetection::get_entangled_state() << " "
-                    << StanceDetection::get_attitude() << " "
-                    << StanceDetection::get_stance() << "\n";
+        stance_file << loop_scheduler.count() << " ";
+        stance_file << StanceDetection::get_falling_state() << " ";
+        stance_file << StanceDetection::get_entangled_state() << " ";
+        stance_file << StanceDetection::get_attitude() << " ";
+        stance_file << StanceDetection::get_stance() << "\n";
 
         // Wait until the next tick.
         loop_scheduler.await();
@@ -125,11 +125,11 @@ void StanceDetection::run_test_stance_detector()
         }
 
         // Log to file.
-        stance_file << loop_scheduler.count() << " "
-                    << StanceDetection::get_falling_state() << " "
-                    << StanceDetection::get_entangled_state() << " "
-                    << StanceDetection::get_attitude() << " "
-                    << StanceDetection::get_stance() << "\n";
+        stance_file << loop_scheduler.count() << " ";
+        stance_file << StanceDetection::get_falling_state() << " ";
+        stance_file << StanceDetection::get_entangled_state() << " ";
+        stance_file << StanceDetection::get_attitude() << " ";
+        stance_file << StanceDetection::get_stance() << "\n";
 
         // Wait until the next tick.
         loop_scheduler.await();
@@ -155,6 +155,10 @@ void StanceDetection::core_setup()
 
 bool StanceDetection::init()
 {
+    if (arwain::config.no_stance)
+    {
+        return false;
+    }
     core_setup();
     job_thread = ArwainThread{&StanceDetection::run, "arwain_stnc_th", this};
     return true;
@@ -162,22 +166,22 @@ bool StanceDetection::init()
 
 StanceDetector::FallState StanceDetection::get_falling_state()
 {
-    return stance->getFallingStatus();
+    return stance->get_falling_status();
 }
 
 StanceDetector::EntangleState StanceDetection::get_entangled_state()
 {
-    return stance->getEntangledStatus();
+    return stance->get_entangled_status();
 }
 
 StanceDetector::Attitude StanceDetection::get_attitude()
 {
-    return stance->getAttitude();
+    return stance->get_attitude();
 }
 
 StanceDetector::Stance StanceDetection::get_stance()
 {
-    return stance->getStance();
+    return stance->get_stance();
 }
 
 void StanceDetection::join()
@@ -489,7 +493,7 @@ double StanceDetector::buffer_mean_magnitude(const std::deque<Vector3> &buffer)
  */
 Vector3 StanceDetector::get_means(const std::vector<Vector3> &source_vector)
 {
-    Vector3 ret;
+    Vector3 ret{0, 0, 0};
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
@@ -510,7 +514,7 @@ Vector3 StanceDetector::get_means(const std::vector<Vector3> &source_vector)
  */
 Vector3 StanceDetector::get_means(const std::deque<Vector3> &source_vector)
 {
-    Vector3 ret;
+    Vector3 ret{0, 0, 0};
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
@@ -531,7 +535,7 @@ Vector3 StanceDetector::get_means(const std::deque<Vector3> &source_vector)
  */
 std::array<double, 6> StanceDetector::get_means(const std::deque<std::array<double, 6>> &source_vector)
 {
-    std::array<double, 6> ret;
+    std::array<double, 6> ret = {0};
     unsigned int length = source_vector.size();
     for (unsigned int i = 0; i < length; i++)
     {
@@ -557,7 +561,7 @@ std::array<double, 6> StanceDetector::get_means(const std::deque<std::array<doub
 /** \brief Returns string representing current stance.
  * \return Current stance.
  */
-StanceDetector::Stance StanceDetector::getStance()
+StanceDetector::Stance StanceDetector::get_stance()
 {
     std::lock_guard<std::mutex> lock{m_stance_lock};
     Stance ret = m_stance;
@@ -567,7 +571,7 @@ StanceDetector::Stance StanceDetector::getStance()
 /** \brief Gets the horizontal flag.
  * \return Integer bool.
  */
-StanceDetector::Attitude StanceDetector::getAttitude()
+StanceDetector::Attitude StanceDetector::get_attitude()
 {  
     std::lock_guard<std::mutex> lock{m_stance_lock};
     Attitude ret = m_attitude;
@@ -577,7 +581,7 @@ StanceDetector::Attitude StanceDetector::getAttitude()
 /** \brief Check if entangled flag set.
  * \return Integer bool.
  */
-StanceDetector::EntangleState StanceDetector::getEntangledStatus()
+StanceDetector::EntangleState StanceDetector::get_entangled_status()
 {
     std::lock_guard<std::mutex> lock{m_fall_lock};
     EntangleState ret = m_entangled;
@@ -588,7 +592,7 @@ StanceDetector::EntangleState StanceDetector::getEntangledStatus()
 /** \brief Get current fall flag.
  * \return Integer bool.
  */
-StanceDetector::FallState StanceDetector::getFallingStatus()
+StanceDetector::FallState StanceDetector::get_falling_status()
 {
     return m_falling;
 }

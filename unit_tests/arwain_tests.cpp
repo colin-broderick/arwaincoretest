@@ -206,7 +206,7 @@ TEST(Arwain, arwain_execute)
     EXPECT_EQ(arwain::execute_jobs(), arwain::ReturnCode::Success);
 }
 
-void terminate_after_ms(int ms)
+static void terminate_after_ms(int ms)
 {
     static std::thread th = std::thread{
         [ms]()

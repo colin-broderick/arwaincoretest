@@ -44,7 +44,7 @@ class StanceDetector
             Horizontal      // The wearer is horizontally oriented, e.g. prone or crawling.
         };
 
-    private:
+    TESTABLE:
         double m_a_mean_magnitude;
         double m_g_mean_magnitude;
         double m_v_mean_magnitude;
@@ -113,10 +113,10 @@ class StanceDetector
         int seconds_since_last_freefall() const;
 
         // Getters.
-        Stance getStance();
-        Attitude getAttitude();
-        EntangleState getEntangledStatus();
-        FallState getFallingStatus();
+        Stance get_stance();
+        Attitude get_attitude();
+        EntangleState get_entangled_status();
+        FallState get_falling_status();
 };
 
 class StanceDetection
@@ -132,7 +132,7 @@ class StanceDetection
         void run_idle();
         void core_setup();
 
-    private:
+    TESTABLE:
         ArwainThread job_thread;
 
         arwain::Logger stance_file;
