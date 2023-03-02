@@ -312,7 +312,7 @@ arwain::ReturnCode arwain::test_mag(int argc, char **argv)
 /** \brief Checks that the correct chip ID can be read from the magnetometer. If so, reads and prints orientation until interrupted. */
 arwain::ReturnCode arwain::test_mag()
 {
-    LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
+    LIS3MDL<I2CDEVICEDRIVER> magn{arwain::config.magn_address, arwain::config.magn_bus};
     magn.set_calibration_parameters(
         arwain::config.mag_bias,
         arwain::config.mag_scale,
