@@ -385,21 +385,22 @@ class IMU_IIM42652
 
 
         /** \brief Automatically update the gyroscope bias when the device is detected to be stationary.
+         * \return Boolean false if no change to calib parameters. True if calib parameters changed.
          */
-        void update_gyro_bias()
+        bool update_gyro_bias()
         {
             // If any gyro readings are above the auto calib threshold, reset the timer.
             if (std::abs(this->gyroscope_x) > auto_calib_threshold || std::abs(this->gyroscope_y) > auto_calib_threshold || std::abs(this->gyroscope_z) > this->auto_calib_threshold)
             {
                 this->auto_calib_timer = 0;
-                return;
+                return false;;
             }
 
             // If the minimum static time has not yet elapsed, increment the timer.
             if (this->auto_calib_timer < this->calib_time)
             {
                 this->auto_calib_timer++;
-                return;
+                return false;
             }
 
             // If not gyro reading breaks the threshold, and the timer has elapsed, use the new reading to update the bias.
@@ -409,6 +410,7 @@ class IMU_IIM42652
             this->gyro_bias_z = this->gyro_bias_z * this->correction_speed + (this->gyroscope_z + gyro_bias_z) * (1.0 - this->correction_speed);
             // Knock the timer back a little so we don't update too frequently.
             this->auto_calib_timer *= 0.8;
+            return true;
         }
 };
 

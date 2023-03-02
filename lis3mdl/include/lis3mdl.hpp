@@ -173,24 +173,22 @@ class LIS3MDL
             config &= ~(3 << 5);
             switch (fsr_selection)
             {
-            case FSR::FSR_4:
-                this->fsr_res = 4.0 / 27368.0;
-                config |= (0 << 5);
-                break;
-            case FSR::FSR_8:
-                this->fsr_res = 8.0 / 27368.0;
-                config |= (1 << 5);
-                break;
-            case FSR::FSR_12:
-                this->fsr_res = 12.0 / 27368.0;
-                config |= (2 << 5);
-                break;
-            case FSR::FSR_16:
-                this->fsr_res = 16.0 / 27368.0;
-                config |= (3 << 5);
-                break;
-            default:
-                break;
+                case FSR::FSR_4:
+                    this->fsr_res = 4.0 / 27368.0;
+                    config |= (0 << 5);
+                    break;
+                case FSR::FSR_8:
+                    this->fsr_res = 8.0 / 27368.0;
+                    config |= (1 << 5);
+                    break;
+                case FSR::FSR_12:
+                    this->fsr_res = 12.0 / 27368.0;
+                    config |= (2 << 5);
+                    break;
+                case FSR::FSR_16:
+                    this->fsr_res = 16.0 / 27368.0;
+                    config |= (3 << 5);
+                    break;
             }
             transport.i2c_write(ADDR_CTRL_REG2, 1, &config);
             sleep_ms(2);
@@ -202,41 +200,37 @@ class LIS3MDL
             config &= ~(7 << 2);
             switch (odr_selection)
             {
-            case ODR::ODR_5_Hz:
-                config |= (3 << 2);
-                break;
-            case ODR::ODR_10_Hz:
-                config |= (4 << 2);
-                break;
-            case ODR::ODR_20_Hz:
-                config |= (5 << 2);
-                break;
-            case ODR::ODR_40_Hz:
-                config |= (6 << 2);
-                break;
-            case ODR::ODR_80_Hz:
-                config |= (7 << 2);
-                break;
-            case ODR::ODR_155_Hz:
-                config |= (0 << 5);
-                config |= (1 << 1);
-                break;
-            case ODR::ODR_300_Hz:
-                config |= (1 << 5);
-                config |= (1 << 1);
-                break;
-            case ODR::ODR_500_Hz:
-                config |= (2 << 5);
-                config |= (1 << 1);
-                break;
-            case ODR::ODR_1000_Hz:
-                config |= (3 << 5);
-                config |= (1 << 1);
-                break;
-            default:
-                // Default 80 Hz.
-                config |= (7 << 2);
-                break;
+                case ODR::ODR_5_Hz:
+                    config |= (3 << 2);
+                    break;
+                case ODR::ODR_10_Hz:
+                    config |= (4 << 2);
+                    break;
+                case ODR::ODR_20_Hz:
+                    config |= (5 << 2);
+                    break;
+                case ODR::ODR_40_Hz:
+                    config |= (6 << 2);
+                    break;
+                case ODR::ODR_80_Hz:
+                    config |= (7 << 2);
+                    break;
+                case ODR::ODR_155_Hz:
+                    config |= (0 << 5);
+                    config |= (1 << 1);
+                    break;
+                case ODR::ODR_300_Hz:
+                    config |= (1 << 5);
+                    config |= (1 << 1);
+                    break;
+                case ODR::ODR_500_Hz:
+                    config |= (2 << 5);
+                    config |= (1 << 1);
+                    break;
+                case ODR::ODR_1000_Hz:
+                    config |= (3 << 5);
+                    config |= (1 << 1);
+                    break;
             }
             transport.i2c_write(ADDR_CTRL_REG1, 1, &config);
             sleep_ms(2);

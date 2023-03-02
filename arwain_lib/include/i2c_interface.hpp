@@ -60,7 +60,7 @@ class MockI2CDevice : public I_I2C
         {
             if (address == -1 || bus_name == "fail_bus")
             {
-                throw std::runtime_error{"Failed as expected"};
+                return false;
             }
             return true;
         }

@@ -159,6 +159,71 @@ TEST(Arwain, test_mag)
     EXPECT_EQ(arwain::ReturnCode::FailedMagnetometer, arwain::test_mag());
 }
 
+TEST(ArwainUtils, setup_log_directory)
+{
+    arwain::config.config_file = "/etc/randomnonsensefile";
+    // Will throw exception if the expected config location is not current.
+    EXPECT_THROW(arwain::setup_log_directory(), std::exception);
+
+    // Get into the branch which nulls the filename.
+    arwain::folder_date_string_suffix = "nullname";
+    EXPECT_THROW(arwain::setup_log_directory(), std::exception);
+
+    // Get int the branch which sets the folder data string suffix if not already set.
+    arwain::folder_date_string_suffix = "randomjunk";
+    EXPECT_THROW(arwain::setup_log_directory(), std::exception);
+
+    // To get past the exception, provide a valid conf file to copy.
+    std::ofstream tempfile{"./testfile.txt"};
+    tempfile << "Test text\n";
+    tempfile.close();
+    arwain::config.config_file = "./testfile.txt";
+    EXPECT_NO_THROW(arwain::setup_log_directory());
+
+    // We sleep here to make sure the next call creates a new directory.
+    sleep_ms(1000);
+
+    // Having done all that, the error log should now be open and we can
+    // hit the branch that closes it.
+    EXPECT_NO_THROW(arwain::setup_log_directory());
+
+    std::filesystem::remove("./tempfile.txt");
+}
+
+TEST(Arwain, arwain_execute)
+{
+    // Turn off all the options we can to prevent deep calls into
+    // seconday functions.
+    arwain::config.no_imu = true;
+    arwain::config.no_inference = true;
+    arwain::config.no_lora = true;
+    arwain::config.no_pressure = true;
+    arwain::config.no_cli = true;
+    arwain::config.use_ips = false;
+
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    EXPECT_EQ(arwain::execute_jobs(), arwain::ReturnCode::Success);
+}
+
+void terminate_after_ms(int ms)
+{
+    static std::thread th = std::thread{
+        [ms]()
+        {
+            sleep_ms(ms);
+            arwain::system_mode = arwain::OperatingMode::Terminate;
+        }
+    };
+}
+
+TEST(ArwainUtils, calibrate_magnetometers)
+{
+    FAIL();
+    terminate_after_ms(3500);
+    EXPECT_EQ(arwain::calibrate_magnetometers(), arwain::ReturnCode::Success);
+}
+
 TEST(HARDWARE_NOTREADY_Arwain, test_lora_tx)
 {
     arwain::test_lora_tx();

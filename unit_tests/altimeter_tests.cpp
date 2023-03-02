@@ -67,11 +67,11 @@ TEST(Altimeter, Run)
     EXPECT_NO_THROW(
         arwain::config.no_pressure = false;
         Altimeter altimeter;
-        sleep_ms(100); // Currently executing Idle loop.
+        sleep_ms(500); // Currently executing Idle loop.
         arwain::system_mode = arwain::OperatingMode::Inference;
-        sleep_ms(100); // Currently executing inference loop.
+        sleep_ms(500); // Currently executing inference loop.
         arwain::system_mode = arwain::OperatingMode::TestSerial; // Just a random mode for the default branch.
-        sleep_ms(100);
+        sleep_ms(500);
         arwain::system_mode = arwain::OperatingMode::Terminate;
         EXPECT_TRUE(altimeter.join());
     );
