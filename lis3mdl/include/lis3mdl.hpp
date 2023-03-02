@@ -2,12 +2,15 @@
 #define _ARWAIN_LIS3MDL_HPP
 
 #include <string>
+#include <sstream>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+#include <chrono>
+#include <thread>
 extern "C"
 {
-#include <linux/i2c-dev.h>
-#include <i2c/smbus.h>
+    #include <linux/i2c-dev.h>
+    #include <i2c/smbus.h>
 }
 
 #include "vector3.hpp"

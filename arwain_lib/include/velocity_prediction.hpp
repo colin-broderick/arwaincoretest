@@ -4,8 +4,9 @@
 #include "arwain.hpp"
 
 #if USE_NCS2
-    #include <zmq.h>
+#include "ncs2_inferrer.hpp"
 #else // Using tflite inference
+#include "tf_inferrer.hpp"
     #include "tensorflow/lite/interpreter.h"
     #include "tensorflow/lite/kernels/register.h"
     #include "tensorflow/lite/model.h"
@@ -22,18 +23,12 @@ class PositionVelocityInference
         void run();
         void cleanup_inference();
         #if USE_NCS2
-        void py_inference();
+        INFERRER inferrer;
         #endif
 
         bool ready_for_inference = false;
         #if USE_NCS2
-        // Socket for comm with Python script to manage NCS2.
-        const std::string inference_tcp_socket = "tcp://*:5555";
-        void* context = nullptr;
-        void* responder = nullptr;
-        // Socket request and response buffers
-        std::stringstream request;
-        char response_buffer[50];
+
         #else // USE_TF
         std::unique_ptr<tflite::FlatBufferModel> model;
         tflite::ops::builtin::BuiltinOpResolver resolver;

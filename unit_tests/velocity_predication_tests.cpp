@@ -79,13 +79,14 @@ TEST(Velocity_Prediction, Run_Idle)
  */
 TEST(Velocity_Prediction, Core_Setup)
 {
-    arwain::config.no_inference = true;
-    PositionVelocityInference inferrer;
-    EXPECT_EQ(inferrer.context, nullptr);
-    EXPECT_EQ(inferrer.responder, nullptr);
-    inferrer.core_setup();
-    EXPECT_NE(inferrer.context, nullptr);
-    EXPECT_NE(inferrer.responder, nullptr);
+    // arwain::config.no_inference = true;
+    // PositionVelocityInference inferrer;
+    // EXPECT_EQ(inferrer.context, nullptr);
+    // EXPECT_EQ(inferrer.responder, nullptr);
+    // inferrer.core_setup();
+    // EXPECT_NE(inferrer.context, nullptr);
+    // EXPECT_NE(inferrer.responder, nullptr);
+    FAIL();
 }
 #else
 /** \brief This test not yet implemented for the tensorflow case. */
@@ -195,10 +196,11 @@ TEST(Velocity_Prediction, Cleanup_Inference)
  */
 TEST(Velocity_Prediction, Py_Inference)
 {
-    PositionVelocityInference inferrer;
-    inferrer.py_inference();
-    arwain::system_mode = arwain::OperatingMode::Terminate;
-    inferrer.join();
-    SUCCEED();
+    // PositionVelocityInference inferrer;
+    // inferrer.py_inference();
+    // arwain::system_mode = arwain::OperatingMode::Terminate;
+    // inferrer.join();
+    // SUCCEED();
+    FAIL();
 }
 #endif
