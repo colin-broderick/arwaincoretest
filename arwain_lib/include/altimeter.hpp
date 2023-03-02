@@ -32,7 +32,7 @@ class Altimeter
     public:
         Altimeter();
         bool init();
-        void join();
+        bool join();
 };
 
 #endif

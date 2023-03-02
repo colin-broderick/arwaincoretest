@@ -123,10 +123,15 @@ bool Altimeter::init()
     return true;
 }
 
-void Altimeter::join()
+/** \brief Returns true of the job_thread was successfully joined, and false if the
+ * job_thread was not joinable.
+*/
+bool Altimeter::join()
 {
     if (job_thread.joinable())
     {
         job_thread.join();
+        return true;
     }
+    return false;
 }

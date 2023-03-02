@@ -3,10 +3,20 @@
 #include "altimeter.hpp"
 #include "arwain.hpp"
 
-/** \brief Needs hardware*/
-TEST(HARDWARE_Altimeter, Init_Success)
+/** \brief Test that the init() function in Altimeter correctly executes the true path. */
+TEST(Altimeter, Init_Success)
 {
-    FAIL(); 
+    // First create the altimeter in an uninitalized state.
+    arwain::config.no_pressure = true;
+    Altimeter altimeter;
+
+    // Now initialize it.
+    arwain::config.no_pressure = false;
+    EXPECT_TRUE(altimeter.init());
+
+    // And join it before quitting.
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EXPECT_TRUE(altimeter.join());
 }
 
 /** \brief If pressure is disabled, init returns false and the rest of the
@@ -20,47 +30,96 @@ TEST(Altimeter, Init_Failure)
     EXPECT_FALSE(altimeter.job_thread.joinable());
 }
 
-/** \brief Can't currently test active join without hardware. */
-TEST(HARDWARE_Altimeter, Join)
+/** \brief Test that alimeter.join returns the expected value depending on system state. */
+TEST(Altimeter, Join)
 {
     {
         arwain::config.no_pressure = true;
         Altimeter altimeter;
         EXPECT_FALSE(altimeter.init());
         EXPECT_FALSE(altimeter.job_thread.joinable());
-        altimeter.join();
+        EXPECT_FALSE(altimeter.join());
     }
-    FAIL();
+
+    {
+        arwain::config.no_pressure = false;
+        Altimeter altimeter;
+        EXPECT_TRUE(altimeter.job_thread.joinable());
+        arwain::system_mode = arwain::OperatingMode::Terminate;
+        EXPECT_TRUE(altimeter.join());
+    }
 }
 
-/** \brief Needs hardware. */
-TEST(HARDWARE_Altimeter, Constructor)
+TEST(Altimeter, Constructor)
 {
-    FAIL(); 
+    EXPECT_NO_THROW(
+        Altimeter alt;
+        arwain::system_mode = arwain::OperatingMode::Terminate;
+        alt.join();
+    );
 }
 
-/** \brief Needs hardware. */
-TEST(HARDWARE_Altimeter, Run)
+/** \brief Hit each branch of the run method. */
+TEST(Altimeter, Run)
 {
-    FAIL(); 
+    // By creating an altimeter and switching to each of various modes, we run each branch
+    // of the run() method.
+    EXPECT_NO_THROW(
+        arwain::config.no_pressure = false;
+        Altimeter altimeter;
+        sleep_ms(100); // Currently executing Idle loop.
+        arwain::system_mode = arwain::OperatingMode::Inference;
+        sleep_ms(100); // Currently executing inference loop.
+        arwain::system_mode = arwain::OperatingMode::TestSerial; // Just a random mode for the default branch.
+        sleep_ms(100);
+        arwain::system_mode = arwain::OperatingMode::Terminate;
+        EXPECT_TRUE(altimeter.join());
+    );
 }
 
-/** \brief Needs hardware. */
-TEST(HARDWARE_Altimeter, Core_Setup)
+/** \brief Test achieves coverage of core_setup function but needs to check state. */
+TEST(Altimeter, Core_Setup)
 {
-    FAIL(); 
+    arwain::config.no_pressure = true;
+    Altimeter alt;
+    EXPECT_NO_THROW(alt.core_setup());
 }
 
-/** \brief Needs hardware. */
-TEST(HARDWARE_Altimeter, Run_Inference)
+TEST(Altimeter, Run_Inference)
 {
-    FAIL(); 
+    // Should go straight into the inference loop and then terminate after a delay.
+    arwain::system_mode = arwain::OperatingMode::Inference;
+    arwain::config.no_pressure = false;
+    Altimeter altimeter;
+    sleep_ms(10);
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EXPECT_TRUE(altimeter.join());
 }
 
-/** \brief EVEN THIS needs hardware. */
-TEST(HARDWARE_Altimeter, Run_Idle)
+/** \brief Check the run_idle function runs until mode tells it to stop. */
+TEST(Altimeter, Run_Idle)
 {
-    FAIL(); 
+    // Create an initialized altimeter.
+    arwain::config.no_pressure = false;
+    Altimeter altimeter;
+
+    // Join it immediately to stop the job thread.
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    altimeter.join();
+
+    // Start a thread that will change the system mode to terminate after specified time,
+    arwain::system_mode = arwain::OperatingMode::Idle;
+    std::thread mode_thread = std::thread{
+        []()
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+            arwain::system_mode = arwain::OperatingMode::Terminate;
+        }
+    };
+
+    // And run the idle loop until it quits.
+    EXPECT_NO_THROW(altimeter.run_idle());
+    mode_thread.join();
 }
 
 /** \brief Opens a log file and puts a header into it. */
