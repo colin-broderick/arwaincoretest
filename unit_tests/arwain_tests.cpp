@@ -142,9 +142,9 @@ TEST(HARDWARE_NOTREADY_Arwain, test_lora_rx)
     FAIL();
 }
 
-TEST(HARDWARE_NOTREADY_Arwain, test_inference)
+TEST(Arwain, test_inference)
 {
-    arwain::test_inference();
+    // arwain::test_inference();
     FAIL();
 }
 
