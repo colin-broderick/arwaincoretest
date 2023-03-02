@@ -73,6 +73,7 @@ namespace arwain
         int no_lora = 0;                              // Disables LoRa radio.
         int no_pressure = 0;                          // Disables pressure sensor.
         int no_cli = 0;                               // Disable thie built-in command-line interface.
+        int no_stance = 0;                            // Disable stance detection subsystem.
         std::string config_file = "/etc/arwain.conf"; // Location of configuration file.
         std::string imu1_bus;                         // The I2C bus on which to find IMU1.
         std::string imu2_bus;                         // The I2C bus on which to find IMU2.
