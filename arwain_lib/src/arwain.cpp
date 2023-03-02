@@ -506,7 +506,7 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
  * Sets the system mode to Terminate, which instructs all threads to clean up and exit.
  * \param signal The signal to capture.
  */
-static void sigint_handler(int signal)
+void sigint_handler(int signal)
 {
     if (signal == SIGINT)
     {

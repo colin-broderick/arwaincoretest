@@ -226,8 +226,8 @@ TEST(ArwainUtils, calibrate_magnetometers)
 
 TEST(HARDWARE_NOTREADY_Arwain, test_lora_tx)
 {
-    arwain::test_lora_tx();
     FAIL();
+    arwain::test_lora_tx();
 }
 
 TEST(Arwain, test_ori)
@@ -312,32 +312,79 @@ TEST(Arwain, setup_log_folder_name_suffix_with_name)
     EXPECT_EQ(name, arwain::folder_date_string_suffix);
 }
 
-TEST(Arwain, Execute_Inference)
-{
-    FAIL();
-}
-
 TEST(Arwain, Rerun_Orientation_Filter)
 {
-    FAIL();
+    // Create file to operate on
+    std::ofstream acce_log{"./acce.txt"};
+    std::ofstream gyro_log{"./gyro.txt"};
+
+    acce_log << "headers aren't parsed so whatever\n";
+    gyro_log << "headers aren't parsed so whatever\n";
+
+    for (int i = 0; i < 10; i++)
+    {
+        acce_log << "0 0.0 0.0 9.81\n";
+        gyro_log << "0 0.0 0.0 0.0\n";
+    }
+
+    acce_log.close();
+    gyro_log.close();
+
+    // Rerun the filter on the example file.
+    auto ret = arwain::rerun_orientation_filter(".");
+    EXPECT_EQ(ret, arwain::ReturnCode::Success);
+
+    // SHould have created new files called slow_file, fast_file, fusion_file
+    EXPECT_TRUE(std::filesystem::exists("./slow_file.txt"));
+    EXPECT_TRUE(std::filesystem::exists("./fast_file.txt"));
+    EXPECT_TRUE(std::filesystem::exists("./fusion_file.txt"));
 }
 
-TEST(Arwain, Rerun_Floor_Tracker)
+TEST(ArwainUtils, Rerun_Floor_Tracker)
 {
-    FAIL();
+    // Create file to operate on
+    std::ofstream floor_log{"./position.txt"};
+    floor_log << "headers aren't parsed so whatever\n";
+    for (int i = 0; i < 10; i++)
+    {
+        floor_log << "0 0.0 0.0 0.0\n";
+    }
+    floor_log.close();
+
+    // Run the floor tracker on the example file.
+    auto ret = arwain::rerun_floor_tracker(".");
+    EXPECT_EQ(ret, arwain::ReturnCode::Success);
+
+    // Should have created a file called "pos_out.txt".
+    EXPECT_TRUE(std::filesystem::exists("./pos_out.txt"));
 }
 
-TEST(Arwain, Date_Time_String)
+TEST(ArwainUtils, calibrate_gyroscopes_offline)
 {
-    FAIL();
+    EXPECT_EQ(arwain::ReturnCode::Success, arwain::calibrate_gyroscopes_offline());
 }
 
-TEST(Arwain, Setup_Log_Directory)
-{
-    FAIL();
-}
-
+std::tuple<Vector3, Vector3> deduce_calib_params(const std::vector<Vector3>& readings);
 TEST(Arwain, deduce_calib_params)
 {
-    FAIL();
+    std::vector<Vector3> data
+    {
+        {0, 0, 1},
+        {0, 0, -1},
+        {0, 1, 0},
+        {0, -1, 0},
+        {1, 0, 0},
+        {-1, 0, 0}
+    };
+    auto [bias, scale] = deduce_calib_params(data);
+    EXPECT_EQ(bias, (Vector3{0, 0, 0}));
+    EXPECT_EQ(scale, (Vector3{1, 1, 1}));
+}
+
+void sigint_handler(int signal);
+TEST(ArwainUtils, sigint_handler)
+{
+    EXPECT_TRUE((arwain::system_mode == arwain::OperatingMode::Idle));
+    sigint_handler(SIGINT);
+    EXPECT_TRUE((arwain::system_mode == arwain::OperatingMode::Terminate));
 }
