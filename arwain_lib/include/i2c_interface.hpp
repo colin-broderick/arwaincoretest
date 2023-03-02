@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+#include <cstring>
 
 extern "C"
 {
@@ -45,22 +46,22 @@ class MockI2CDevice : public I_I2C
     public:
         int i2c_read(int reg_addr, int bytes, uint8_t *buffer) override
         {
+            std::memset(buffer, 0, bytes);
             (void)reg_addr;
-            (void)bytes;
-            (void)buffer;
             return 0;
         }
         int i2c_write(int reg_addr, int bytes, uint8_t *buffer) override
         {
+            std::memset(buffer, 0, bytes);
             (void)reg_addr;
-            (void)bytes;
-            (void)buffer;
             return 0;
         }
         [[nodiscard]] bool i2c_init(const int address, const std::string &bus_name) override
         {
-            (void)address;
-            (void)bus_name;
+            if (address == -1 || bus_name == "fail_bus")
+            {
+                throw std::runtime_error{"Failed as expected"};
+            }
             return true;
         }
 };
