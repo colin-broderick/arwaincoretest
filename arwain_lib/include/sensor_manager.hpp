@@ -36,7 +36,7 @@ class SensorManager
         IMU_IIM42652<I2CDEVICEDRIVER> imu1;
         IMU_IIM42652<I2CDEVICEDRIVER> imu2;
         IMU_IIM42652<I2CDEVICEDRIVER> imu3;
-        LIS3MDL magnetometer;
+        LIS3MDL<I2CDEVICEDRIVER> magnetometer;
         arwain::Madgwick madgwick_filter_1;
         arwain::Madgwick madgwick_filter_mag_1;
 

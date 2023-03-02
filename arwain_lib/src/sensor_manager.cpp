@@ -406,7 +406,7 @@ void SensorManager::core_setup()
     imu3.enable_auto_calib();
 
     // Configure magnetometer.
-    magnetometer = LIS3MDL{arwain::config.magn_address, arwain::config.magn_bus};
+    magnetometer = LIS3MDL<I2CDEVICEDRIVER>{arwain::config.magn_address, arwain::config.magn_bus};
     magnetometer.set_calibration_parameters(
         arwain::config.mag_bias,
         arwain::config.mag_scale,

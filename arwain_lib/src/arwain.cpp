@@ -313,7 +313,7 @@ arwain::ReturnCode arwain::execute_jobs()
 
 arwain::ReturnCode arwain::calibrate_magnetometers()
 {
-    LIS3MDL magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
+    LIS3MDL<I2CDEVICEDRIVER> magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
     MagnetometerCalibrator calibrator;
     std::cout << "About to start magnetometer calibration." << std::endl;
     std::cout << "Move the device through all orientations; press Ctrl+C when done." << std::endl;
