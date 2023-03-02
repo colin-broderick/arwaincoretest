@@ -9,13 +9,15 @@ TEST(Imu_driver, Constructor)
     EXPECT_NO_THROW(IMU_IIM42652<I2CDEVICEDRIVER>());
 
     // We expect this constructor to fail when passed junk address.
-    EXPECT_THROW(IMU_IIM42652<I2CDEVICEDRIVER>(1, "test_driver"), std::runtime_error);
+    EXPECT_THROW(IMU_IIM42652<I2CDEVICEDRIVER>(-1, "fail_bus"), std::runtime_error);
 }
 
-// This marked as not ready since it can only be tested with hardware.
+// TODO Incomplete, cannot test effectively without a list of ret codes and ways to generate errors
+// Also hard to test with the mock interface.
 TEST(HARDWARE_Imu_driver, IMU_config)
-{   //need a list of return codes and config options
-    FAIL();
+{
+    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    EXPECT_NO_THROW(imu.IMU_config(0, 0));
 }
 
 TEST(Imu_driver, set_resolutions)
@@ -31,7 +33,7 @@ TEST(HARDWARE_Imu_driver, read_IMU)
 {
     IMU_IIM42652<I2CDEVICEDRIVER> driver(1, "test_driver");
     ImuData data;
-    ImuData expected_data{0,0,0,0,0,0};
+    ImuData expected_data{0, 0, 0, 0, 0, 0};
     data = driver.read_IMU();
     EXPECT_EQ(expected_data.acce, data.acce);
     EXPECT_EQ(expected_data.gyro, data.gyro);

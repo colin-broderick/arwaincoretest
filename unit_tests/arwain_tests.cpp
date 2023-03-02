@@ -123,16 +123,14 @@ TEST(ArwainExceptions, NotImplemeted)
     EXPECT_THROW(throw NotImplemented{__FUNCTION__}, NotImplemented);
 }
 
-TEST(HARDWARE_NOTREADY_Arwain, test_pressure)
+TEST(Arwain, test_pressure)
 {
-    arwain::test_pressure();
-    FAIL();
+    EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_pressure());
 }
 
-TEST(HARDWARE_NOTREADY_Arwain, test_imu)
+TEST(Arwain, test_imu)
 {
-    arwain::test_imu("/dev/null", 1);
-    FAIL();
+    EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_imu("/dev/null", 1));
 }
 
 
@@ -144,8 +142,9 @@ TEST(HARDWARE_NOTREADY_Arwain, test_lora_rx)
 
 TEST(Arwain, test_inference)
 {
-    // arwain::test_inference();
     FAIL();
+    // Gets stuck in a loop somewhere and never returns, even with MockInferrer.
+    EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_inference());
 }
 
 // TEST(HARDWARE_NOTREADY_Arwain, interactive_test)
@@ -154,10 +153,10 @@ TEST(Arwain, test_inference)
 //     FAIL();
 // }
 
-TEST(HARDWARE_NOTREADY_Arwain, test_mag)
+TEST(Arwain, test_mag)
 {
-    arwain::test_mag();
-    FAIL();
+    // TODO Incomplete coverage because chip ID returned by func is not 0x3D.
+    EXPECT_EQ(arwain::ReturnCode::FailedMagnetometer, arwain::test_mag());
 }
 
 TEST(HARDWARE_NOTREADY_Arwain, test_lora_tx)
@@ -166,10 +165,9 @@ TEST(HARDWARE_NOTREADY_Arwain, test_lora_tx)
     FAIL();
 }
 
-TEST(HARDWARE_NOTREADY_Arwain, test_ori)
+TEST(Arwain, test_ori)
 {
-    arwain::test_ori(1);
-    FAIL();
+    EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_ori(1));
 }
 
 double unwrap_phase_radians(double new_angle, double previous_angle);
