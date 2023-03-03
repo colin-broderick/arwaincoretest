@@ -55,15 +55,15 @@ namespace arwain
         double efaroe_beta;                           // EFAROE filter gain parameter.
         double efaroe_zeta;                           // EFAROE filter gain parameter.
         std::string orientation_filter;               // Which orientation filter to use out of options [efaroe, madgwick].
-        LoRa::Frequency lora_rf_frequency;            // Frequency in MHz of the LoRa radio.
+        LoRa<SPIDEVICEDRIVER>::Frequency lora_rf_frequency;            // Frequency in MHz of the LoRa radio.
         int lora_packet_frequency;                    // Times per second to transmit LoRa packet.
         int lora_tx_power;                            // LoRa transmission power.
-        LoRa::SpreadFactor lora_spread_factor;        // LoRa spread factor.
-        LoRa::Bandwidth lora_bandwidth;               // LoRa bandwidth.
-        LoRa::CodingRate lora_coding_rate;            // LoRa coding rate.
+        LoRa<SPIDEVICEDRIVER>::SpreadFactor lora_spread_factor;        // LoRa spread factor.
+        LoRa<SPIDEVICEDRIVER>::Bandwidth lora_bandwidth;               // LoRa bandwidth.
+        LoRa<SPIDEVICEDRIVER>::CodingRate lora_coding_rate;            // LoRa coding rate.
         std::string lora_address;                     // spidev address of SX1276.
         int lora_sync_word;                           // LoRa sync word.
-        LoRa::HeaderMode lora_header_mode;            // LoRa header mode, implicit or explicit.
+        LoRa<SPIDEVICEDRIVER>::HeaderMode lora_header_mode;            // LoRa header mode, implicit or explicit.
         int lora_enable_crc;                          //  Whether to add CRC to LoRa messages.
         std::string inference_model_xml;              // The location of the inference model xml file.
         double sea_level_pressure;                    // Sea level pressure near the region of interest.

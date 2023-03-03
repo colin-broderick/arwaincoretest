@@ -144,7 +144,7 @@ arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_ad
 
 arwain::ReturnCode arwain::test_lora_rx()
 {
-    LoRa lora{arwain::config.lora_address, true};
+    LoRa<SPIDEVICEDRIVER> lora{arwain::config.lora_address, true};
 
     if (lora.test_chip() == 0x1A)
     {
@@ -342,7 +342,7 @@ arwain::ReturnCode arwain::test_mag()
 
 arwain::ReturnCode arwain::test_lora_tx()
 {
-    LoRa lora{arwain::config.lora_address, false};
+    LoRa<SPIDEVICEDRIVER> lora{arwain::config.lora_address, false};
 
     if (lora.test_chip() == 0x1A)
     {

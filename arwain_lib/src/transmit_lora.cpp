@@ -41,7 +41,7 @@ std::chrono::time_point<std::chrono::high_resolution_clock> StatusReporting::get
 
 void StatusReporting::core_setup()
 {
-    lora = LoRa{
+    lora = LoRa<SPIDEVICEDRIVER>{
         arwain::config.lora_address,
         true,
         arwain::config.lora_rf_frequency,
