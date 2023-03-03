@@ -194,7 +194,7 @@ void LoRa<SpiDeviceClass>::write_FIFO(const char *str, uint8_t num_bytes)
 }
 
 template <class SpiDeviceClass>
-void LoRa<SpiDeviceClass>::read_FIFO(uint8_t num_bytes, uint8_t* out_buffer)
+void LoRa<SpiDeviceClass>::read_fifo(uint8_t num_bytes, uint8_t* out_buffer)
 {
     uint8_t read_addr = read_register(FIFORXBYTEADDR_ADDRESS) - num_bytes;
     write_register(FIFOPTR_ADDRESS, read_addr);
@@ -213,7 +213,7 @@ bool LoRa<SpiDeviceClass>::rx(uint8_t* out_buffer)
     {
         write_register(IRQFLAGS_ADDRESS, IRQMASK_RXDONE);
         uint8_t num_bytes = read_register(RXNBBYTES_ADDRESS);
-        read_FIFO(num_bytes, out_buffer);
+        read_fifo(num_bytes, out_buffer);
         return true;
     }
     else if (IRQFlags & (IRQMASK_RXDONE | IRQ_PAYLOADCRCERR))

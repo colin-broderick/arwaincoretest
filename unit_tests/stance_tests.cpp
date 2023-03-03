@@ -3,7 +3,7 @@
 #include "stance.hpp"
 #include "arwain.hpp"
 
-TEST(StanceDetection, Constructor)
+TEST(StanceDetection, StanceDetection)
 {
     EXPECT_NO_THROW(
         StanceDetection stance;
@@ -52,7 +52,7 @@ TEST(StanceDetector, register_freefall_event)
     EXPECT_EQ(stance.m_falling, StanceDetector::Falling);
 }
 
-TEST(StanceDetector, EntangledOrOperators)
+TEST(StanceDetector, entangled_or_operator)
 {
     auto stance1 = StanceDetector::EntangleState::Entangled;
     auto stance2 = StanceDetector::EntangleState::NotEntangled;
@@ -62,7 +62,7 @@ TEST(StanceDetector, EntangledOrOperators)
     EXPECT_EQ(stance2 | stance2, stance2);
 }
 
-TEST(StanceDetector, FallOrOperators)
+TEST(StanceDetector, fall_or_operator)
 {
     auto stance1 = StanceDetector::FallState::Falling;
     auto stance2 = StanceDetector::FallState::NotFalling;

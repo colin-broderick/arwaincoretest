@@ -3,7 +3,7 @@
 #include "iim42652.hpp"
 #include "vector3.hpp"
 
-TEST(IIM42652, Constructor)
+TEST(IIM42652, IIM42652)
 {
     // The default constructor should always succeed since it doesn't try to access a device.
     EXPECT_NO_THROW(IIM42652<I2CDEVICEDRIVER>());
@@ -12,7 +12,7 @@ TEST(IIM42652, Constructor)
     EXPECT_THROW(IIM42652<I2CDEVICEDRIVER>(-1, "fail_bus"), std::runtime_error);
 }
 
-TEST(IIM42652, init_fail)
+TEST(IIM42652, init__fail)
 {
     // Cause init to fail by trying to provide an invalid I2C bus.
     EXPECT_THROW((IIM42652<I2CDEVICEDRIVER>{1, "fail_bus"}), std::runtime_error);
@@ -20,10 +20,10 @@ TEST(IIM42652, init_fail)
 
 // TODO Incomplete, cannot test effectively without a list of ret codes and ways to generate errors
 // Also hard to test with the mock interface.
-TEST(IIM42652, IMU_config)
+TEST(IIM42652, imu_config)
 {
     IIM42652<I2CDEVICEDRIVER> imu;
-    EXPECT_NO_THROW(imu.IMU_config(0, 0));
+    EXPECT_NO_THROW(imu.imu_config(0, 0));
 }
 
 TEST(IIM42652, set_resolutions)
@@ -79,12 +79,12 @@ TEST(IIM42652, auto_calib_enabled)
 }
 
 // Marked as not ready because can only be tested on hardware.
-TEST(IIM42652, read_IMU)
+TEST(IIM42652, read_imu)
 {
     IIM42652<I2CDEVICEDRIVER> driver(1, "test_driver");
     ImuData data;
     ImuData expected_data{0, 0, 0, 0, 0, 0};
-    data = driver.read_IMU();
+    data = driver.read_imu();
     EXPECT_EQ(expected_data.acce, data.acce);
     EXPECT_EQ(expected_data.gyro, data.gyro);
 }
@@ -101,10 +101,10 @@ TEST(IIM42652, set_gyro_bias)
 TEST(IIM42652, set_accel_bias)
 {
     IIM42652<I2CDEVICEDRIVER> imu;
-    imu.set_accel_scale(1.5, 1.6, 1.7);
-    EXPECT_EQ(imu.accel_scale_x, 1.5);
-    EXPECT_EQ(imu.accel_scale_y, 1.6);
-    EXPECT_EQ(imu.accel_scale_z, 1.7);
+    imu.set_accel_bias(1.5, 1.6, 1.7);
+    EXPECT_EQ(imu.accel_bias_x, 1.5);
+    EXPECT_EQ(imu.accel_bias_y, 1.6);
+    EXPECT_EQ(imu.accel_bias_z, 1.7);
 }
 
 TEST(IIM42652, set_accel_scale)

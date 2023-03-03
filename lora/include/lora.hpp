@@ -173,7 +173,7 @@ class LoRa
         uint8_t read_register(uint8_t address);
         void write_register(uint8_t address, uint8_t val);
 		void configure();
-		void read_FIFO(uint8_t num_bytes, uint8_t* out_buffer);
+		void read_fifo(uint8_t num_bytes, uint8_t* out_buffer);
 		void write_FIFO(const char* str, uint8_t num_bytes);
 		bool rx(uint8_t* out_buffer);
 

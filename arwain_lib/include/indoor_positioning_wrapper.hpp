@@ -40,10 +40,10 @@ class IndoorPositioningSystem
 
         public:
             void update(const double &time, const double &x, const double &y, const double &z);
-            Vector3 getPosition() const;
-            double getX() const;
-            double getY() const;
-            double getZ() const;
+            Vector3 get_position() const;
+            double get_x() const;
+            double get_y() const;
+            double get_z() const;
     };
 };
 

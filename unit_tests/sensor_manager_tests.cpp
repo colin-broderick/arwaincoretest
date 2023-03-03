@@ -24,7 +24,7 @@ TEST(SensorManager, run_through_modes)
     sensors.join();
 }
 
-TEST(SensorManager, Join)
+TEST(SensorManager, join)
 {
     arwain::config.no_imu = true;
     SensorManager reader;
@@ -32,7 +32,7 @@ TEST(SensorManager, Join)
     EXPECT_NO_THROW(reader.join());
 }
 
-TEST(HARDWARE_NOTREADY_SensorManager, Init_success)
+TEST(SensorManager, init__success)
 {
    /* arwain::config.no_imu = false;
     SensorManager reader;
@@ -43,7 +43,7 @@ TEST(HARDWARE_NOTREADY_SensorManager, Init_success)
     FAIL();
 }
 
-TEST(HARDWARE_NOTREADY_SensorManager, Init_failure)
+TEST(SensorManager, init__failure)
 {
     /*
     arwain::config.no_imu = true;
@@ -60,7 +60,7 @@ static void test_callback()
 
 }
 
-TEST(SensorManager, Set_Post_Gyro_Calibration_Callback)
+TEST(SensorManager, set_post_gyro_calibration_callback)
 {
     arwain::config.no_imu = true;
     SensorManager sensors;

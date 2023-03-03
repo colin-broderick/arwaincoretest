@@ -257,7 +257,7 @@ void arwain::setup_log_folder_name_suffix(const InputParser& input)
 {
     if (input.contains("-name"))
     {
-        arwain::folder_date_string_suffix = input.getCmdOption(("-name"));
+        arwain::folder_date_string_suffix = input.get_cmd_option(("-name"));
     }
     else
     {
@@ -362,7 +362,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     GyroscopeCalibrator calibrator1;
     while (!calibrator1.is_converged())
     {
-        calibrator1.feed(imu1.read_IMU().gyro);
+        calibrator1.feed(imu1.read_imu().gyro);
         sleep_ms(5);
     }
     results = calibrator1.get_params();
@@ -375,7 +375,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     GyroscopeCalibrator calibrator2;
     while (!calibrator2.is_converged())
     {
-        calibrator2.feed(imu2.read_IMU().gyro);
+        calibrator2.feed(imu2.read_imu().gyro);
         sleep_ms(5);
     }
     results = calibrator2.get_params();
@@ -388,7 +388,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     GyroscopeCalibrator calibrator3;
     while (!calibrator3.is_converged())
     {
-        calibrator3.feed(imu3.read_IMU().gyro);
+        calibrator3.feed(imu3.read_imu().gyro);
         sleep_ms(5);
     }
     results = calibrator3.get_params();
@@ -459,9 +459,9 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
 
         while (!calib1.is_converged() || !calib2.is_converged() || !calib3.is_converged())
         {
-            calib1.feed(imu1.read_IMU().acce);
-            calib2.feed(imu2.read_IMU().acce);
-            calib3.feed(imu3.read_IMU().acce);
+            calib1.feed(imu1.read_imu().acce);
+            calib2.feed(imu2.read_imu().acce);
+            calib3.feed(imu3.read_imu().acce);
         }
         calib1.next_sampling();
         calib2.next_sampling();
@@ -580,17 +580,17 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     else if (input.contains("-testori"))
     {
         int rate;
-        const char *rate_str = input.getCmdOption("-testori").c_str();
+        const char *rate_str = input.get_cmd_option("-testori").c_str();
         rate = std::atoi(rate_str);
         ret = arwain::test_ori(rate);
     }
     else if (input.contains("-rerunori"))
     {
-        ret = arwain::rerun_orientation_filter(input.getCmdOption("-rerunori"));
+        ret = arwain::rerun_orientation_filter(input.get_cmd_option("-rerunori"));
     }
     else if (input.contains("-rerunfloor"))
     {
-        ret = arwain::rerun_floor_tracker(input.getCmdOption("-rerunfloor"));
+        ret = arwain::rerun_floor_tracker(input.get_cmd_option("-rerunfloor"));
     }
 
     // Perform quick calibration of gyroscopes and write to config file.
