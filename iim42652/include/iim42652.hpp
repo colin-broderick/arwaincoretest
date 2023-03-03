@@ -91,20 +91,20 @@ class Vector3;
 class ImuData;
 
 template <class I2CDeviceClass>
-class IMU_IIM42652
+class IIM42652
 {
     TESTABLE:
         I2CDeviceClass transport;
     public:
-        IMU_IIM42652() = default;
+        IIM42652() = default;
 
-        ~IMU_IIM42652() = default;
+        ~IIM42652() = default;
 
         /** \brief Constructor.
          * \param[in] bus_address The I2C address of the device.
          * \param[in] bus_name The bus on which the device is found, e.g. "/dev/i2c-1".
          */
-        IMU_IIM42652(int bus_address, const std::string &bus_name)
+        IIM42652(int bus_address, const std::string &bus_name)
         : address_(bus_address), bus_name_(bus_name)
         {
             // Default configuration.

@@ -1,4 +1,4 @@
-#include "IMU_IIM42652_driver.hpp"
+#include "IIM42652_driver.hpp"
 #include "madgwick.hpp"
 
 #include <thread>
@@ -10,9 +10,9 @@ int main()
     arwain::Madgwick filter2;
     arwain::Madgwick filter3;
 
-    IMU_IIM42652 imu1{0x68, "/dev/i2c-1"};
-    IMU_IIM42652 imu2{0x69, "/dev/i2c-1"};
-    IMU_IIM42652 imu3{0x68, "/dev/i2c-4"};
+    IIM42652 imu1{0x68, "/dev/i2c-1"};
+    IIM42652 imu2{0x69, "/dev/i2c-1"};
+    IIM42652 imu3{0x68, "/dev/i2c-4"};
 
     while (true)
     {

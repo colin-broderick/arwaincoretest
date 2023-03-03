@@ -71,7 +71,7 @@ void SensorManager::run()
  * \return Will return false if autocalibration is turned onm, and calibration could not be
  * performed. Return true if calibration is performed.
  */
-bool calibrate_gyroscope_bias(IMU_IIM42652<I2CDEVICEDRIVER>& imu)
+bool calibrate_gyroscope_bias(IIM42652<I2CDEVICEDRIVER>& imu)
 {
     if (imu.auto_calib_enabled())
     {
@@ -387,19 +387,19 @@ arwain::ReturnCode SensorManager::cleanup_inference()
 void SensorManager::core_setup()
 {
     // Configure IMUs.
-    imu1 = IMU_IIM42652<I2CDEVICEDRIVER>{arwain::config.imu1_address, arwain::config.imu1_bus};
+    imu1 = IIM42652<I2CDEVICEDRIVER>{arwain::config.imu1_address, arwain::config.imu1_bus};
     imu1.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
     imu1.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
     imu1.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
     imu1.enable_auto_calib();
 
-    imu2 = IMU_IIM42652<I2CDEVICEDRIVER>{arwain::config.imu2_address, arwain::config.imu2_bus};
+    imu2 = IIM42652<I2CDEVICEDRIVER>{arwain::config.imu2_address, arwain::config.imu2_bus};
     imu2.set_gyro_bias(arwain::config.gyro2_bias.x, arwain::config.gyro2_bias.y, arwain::config.gyro2_bias.z);
     imu2.set_accel_bias(arwain::config.accel2_bias.x, arwain::config.accel2_bias.y, arwain::config.accel2_bias.z);
     imu2.set_accel_scale(arwain::config.accel2_scale.x, arwain::config.accel2_scale.y, arwain::config.accel2_scale.z);
     imu2.enable_auto_calib();
 
-    imu3 = IMU_IIM42652<I2CDEVICEDRIVER>{arwain::config.imu3_address, arwain::config.imu3_bus};
+    imu3 = IIM42652<I2CDEVICEDRIVER>{arwain::config.imu3_address, arwain::config.imu3_bus};
     imu3.set_gyro_bias(arwain::config.gyro3_bias.x, arwain::config.gyro3_bias.y, arwain::config.gyro3_bias.z);
     imu3.set_accel_bias(arwain::config.accel3_bias.x, arwain::config.accel3_bias.y, arwain::config.accel3_bias.z);
     imu3.set_accel_scale(arwain::config.accel3_scale.x, arwain::config.accel3_scale.y, arwain::config.accel3_scale.z);

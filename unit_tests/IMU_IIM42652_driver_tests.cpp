@@ -6,29 +6,29 @@
 TEST(IIM42652, Constructor)
 {
     // The default constructor should always succeed since it doesn't try to access a device.
-    EXPECT_NO_THROW(IMU_IIM42652<I2CDEVICEDRIVER>());
+    EXPECT_NO_THROW(IIM42652<I2CDEVICEDRIVER>());
 
     // We expect this constructor to fail when passed junk address.
-    EXPECT_THROW(IMU_IIM42652<I2CDEVICEDRIVER>(-1, "fail_bus"), std::runtime_error);
+    EXPECT_THROW(IIM42652<I2CDEVICEDRIVER>(-1, "fail_bus"), std::runtime_error);
 }
 
 TEST(IIM42652, init_fail)
 {
     // Cause init to fail by trying to provide an invalid I2C bus.
-    EXPECT_THROW((IMU_IIM42652<I2CDEVICEDRIVER>{1, "fail_bus"}), std::runtime_error);
+    EXPECT_THROW((IIM42652<I2CDEVICEDRIVER>{1, "fail_bus"}), std::runtime_error);
 }
 
 // TODO Incomplete, cannot test effectively without a list of ret codes and ways to generate errors
 // Also hard to test with the mock interface.
 TEST(IIM42652, IMU_config)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     EXPECT_NO_THROW(imu.IMU_config(0, 0));
 }
 
 TEST(IIM42652, set_resolutions)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.set_resolutions(1.5, 1.7);
     EXPECT_EQ(imu.accel_resolution, 1.5);
     EXPECT_EQ(imu.gyro_resolution, 1.7);
@@ -36,19 +36,19 @@ TEST(IIM42652, set_resolutions)
 
 TEST(IIM42652, get_address)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu{1, "bus"};
+    IIM42652<I2CDEVICEDRIVER> imu{1, "bus"};
     EXPECT_EQ(imu.get_address(), 1);
 }
 
 TEST(IIM42652, get_bus)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu{1, "bus"};
+    IIM42652<I2CDEVICEDRIVER> imu{1, "bus"};
     EXPECT_EQ(imu.get_bus(), "bus");
 }
 
 TEST(IIM42652, update_gyro_bias)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu{1, "bus"};
+    IIM42652<I2CDEVICEDRIVER> imu{1, "bus"};
     
     // Exceed the calib treshold and thereby reset the timer.
     imu.gyroscope_x = 1.1;
@@ -71,7 +71,7 @@ TEST(IIM42652, update_gyro_bias)
 
 TEST(IIM42652, auto_calib_enabled)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.auto_calib_enabled_ = true;
     EXPECT_EQ(imu.auto_calib_enabled(), true);
     imu.auto_calib_enabled_ = false;
@@ -81,7 +81,7 @@ TEST(IIM42652, auto_calib_enabled)
 // Marked as not ready because can only be tested on hardware.
 TEST(IIM42652, read_IMU)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> driver(1, "test_driver");
+    IIM42652<I2CDEVICEDRIVER> driver(1, "test_driver");
     ImuData data;
     ImuData expected_data{0, 0, 0, 0, 0, 0};
     data = driver.read_IMU();
@@ -91,7 +91,7 @@ TEST(IIM42652, read_IMU)
 
 TEST(IIM42652, set_gyro_bias)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.set_gyro_bias(1.5, 1.6, 1.7);
     EXPECT_EQ(imu.gyro_bias_x, 1.5);
     EXPECT_EQ(imu.gyro_bias_y, 1.6);
@@ -100,7 +100,7 @@ TEST(IIM42652, set_gyro_bias)
 
 TEST(IIM42652, set_accel_bias)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.set_accel_scale(1.5, 1.6, 1.7);
     EXPECT_EQ(imu.accel_scale_x, 1.5);
     EXPECT_EQ(imu.accel_scale_y, 1.6);
@@ -109,7 +109,7 @@ TEST(IIM42652, set_accel_bias)
 
 TEST(IIM42652, set_accel_scale)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.set_accel_scale(1.5, 1.6, 1.7);
     EXPECT_EQ(imu.accel_scale_x, 1.5);
     EXPECT_EQ(imu.accel_scale_y, 1.6);
@@ -118,7 +118,7 @@ TEST(IIM42652, set_accel_scale)
 
 TEST(IIM42652, set_correction_speed)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.set_correction_speed(-0.1);
     EXPECT_EQ(imu.correction_speed, 0);
     imu.set_correction_speed(0.1);
@@ -129,7 +129,7 @@ TEST(IIM42652, set_correction_speed)
 
 TEST(IIM42652, enable_auto_calib)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.auto_calib_enabled_ = false;
     imu.enable_auto_calib();
     EXPECT_TRUE(imu.auto_calib_enabled_);
@@ -137,7 +137,7 @@ TEST(IIM42652, enable_auto_calib)
 
 TEST(IIM42652, disable_auto_calib)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.auto_calib_enabled_ = true;
     imu.disable_auto_calib();
     EXPECT_FALSE(imu.auto_calib_enabled_);
@@ -145,7 +145,7 @@ TEST(IIM42652, disable_auto_calib)
 
 TEST(IIM42652, get_gyro_calib)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.gyro_bias_x = 1.5;
     imu.gyro_bias_y = 1.5;
     imu.gyro_bias_z = 1.5;
@@ -157,21 +157,21 @@ TEST(IIM42652, get_gyro_calib)
 
 TEST(IIM42652, get_gyro_calib_x)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.gyro_bias_x = 1.5;
     EXPECT_EQ(imu.get_gyro_calib_x(), 1.5);
 }
 
 TEST(IIM42652, get_gyro_calib_y)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.gyro_bias_y = 1.5;
     EXPECT_EQ(imu.get_gyro_calib_y(), 1.5);
 }
 
 TEST(IIM42652, get_gyro_calib_z)
 {
-    IMU_IIM42652<I2CDEVICEDRIVER> imu;
+    IIM42652<I2CDEVICEDRIVER> imu;
     imu.gyro_bias_z = 1.5;
     EXPECT_EQ(imu.get_gyro_calib_z(), 1.5);
 }
