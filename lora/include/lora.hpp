@@ -169,7 +169,7 @@ class LoRa
 		std::tuple<bool, std::string> receive_string(int timeout_ms);
 		std::tuple<bool, std::vector<uint8_t>> receive_bytes();
 
-	private: // Methods
+	TESTABLE: // Methods
         uint8_t read_register(uint8_t address);
         void write_register(uint8_t address, uint8_t val);
 		void configure();
@@ -177,7 +177,7 @@ class LoRa
 		void write_FIFO(const char* str, uint8_t num_bytes);
 		bool rx(uint8_t* out_buffer);
 
-    private: // Attributes
+    TESTABLE: // Attributes
 		static const int max_message_size = 63;
 		bool is_receiver;
 		Frequency frequency_mhz;

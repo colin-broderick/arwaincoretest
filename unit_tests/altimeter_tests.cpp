@@ -4,7 +4,7 @@
 #include "arwain.hpp"
 
 /** \brief Test that the init() function in Altimeter correctly executes the true path. */
-TEST(Altimeter, Init_Success)
+TEST(Altimeter, init__success)
 {
     // First create the altimeter in an uninitalized state.
     arwain::config.no_pressure = true;
@@ -22,7 +22,7 @@ TEST(Altimeter, Init_Success)
 /** \brief If pressure is disabled, init returns false and the rest of the
  * class is uninitialized.
  */
-TEST(Altimeter, Init_Failure)
+TEST(Altimeter, init__fail)
 {
     arwain::config.no_pressure = true;
     Altimeter altimeter;
@@ -31,7 +31,7 @@ TEST(Altimeter, Init_Failure)
 }
 
 /** \brief Test that alimeter.join returns the expected value depending on system state. */
-TEST(Altimeter, Join)
+TEST(Altimeter, join)
 {
     {
         arwain::config.no_pressure = true;
@@ -50,7 +50,7 @@ TEST(Altimeter, Join)
     }
 }
 
-TEST(Altimeter, Constructor)
+TEST(Altimeter, Altimeter)
 {
     EXPECT_NO_THROW(
         Altimeter alt;
@@ -60,7 +60,7 @@ TEST(Altimeter, Constructor)
 }
 
 /** \brief Hit each branch of the run method. */
-TEST(Altimeter, Run)
+TEST(Altimeter, run)
 {
     // By creating an altimeter and switching to each of various modes, we run each branch
     // of the run() method.
@@ -78,14 +78,14 @@ TEST(Altimeter, Run)
 }
 
 /** \brief Test achieves coverage of core_setup function but needs to check state. */
-TEST(Altimeter, Core_Setup)
+TEST(Altimeter, core_setup)
 {
     arwain::config.no_pressure = true;
     Altimeter alt;
     EXPECT_NO_THROW(alt.core_setup());
 }
 
-TEST(Altimeter, Run_Inference)
+TEST(Altimeter, run_inference)
 {
     // Should go straight into the inference loop and then terminate after a delay.
     arwain::system_mode = arwain::OperatingMode::Inference;
@@ -97,7 +97,7 @@ TEST(Altimeter, Run_Inference)
 }
 
 /** \brief Check the run_idle function runs until mode tells it to stop. */
-TEST(Altimeter, Run_Idle)
+TEST(Altimeter, run_idle)
 {
     // Create an initialized altimeter.
     arwain::config.no_pressure = false;
@@ -123,7 +123,7 @@ TEST(Altimeter, Run_Idle)
 }
 
 /** \brief Opens a log file and puts a header into it. */
-TEST(Altimeter, Setup_Inference)
+TEST(Altimeter, setup_inference)
 {
     arwain::config.no_pressure = true;
     Altimeter altimeter;
@@ -138,7 +138,7 @@ TEST(Altimeter, Setup_Inference)
     EXPECT_FALSE(std::filesystem::exists("./pressure.txt"));
 }
 
-TEST(Altimeter, Cleanup_Inference)
+TEST(Altimeter, cleanup_inference)
 {
     arwain::config.no_pressure = true;
     Altimeter altimeter;

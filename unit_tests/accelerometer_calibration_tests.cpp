@@ -4,20 +4,20 @@
 #include "vector3.hpp"
 #include "calibration.hpp"
 
-TEST(Calibration, AccelerometerCalibrator_is_converged)
+TEST(AccelerometerCalibrator, is_converged)
 {
    AccelerometerCalibrator acc_cal;
    EXPECT_FALSE(acc_cal.is_converged());
 }
 
-TEST(Calibration, AccelerometerCalibrator_get_params)
+TEST(AccelerometerCalibrator, get_params)
 {
    AccelerometerCalibrator acc_cal;
    Vector3 comparison = {9.81, 9.81, 9.81};
    EXPECT_TRUE(acc_cal.get_params() == comparison);
 }
 
-TEST(Calibration, AccelerometerCalibrator_next_sampling)
+TEST(AccelerometerCalibrator, next_sampling)
 {
    AccelerometerCalibrator acc_cal;
 
@@ -31,7 +31,7 @@ TEST(Calibration, AccelerometerCalibrator_next_sampling)
    EXPECT_TRUE(acc_cal.get_params() == comparison);
 }
 
-TEST(Calibration, AccelerometerCalibrator_feed_false)
+TEST(AccelerometerCalibrator, feed__false)
 {
    AccelerometerCalibrator acc_cal;
    Vector3 reading = {1.0, 1.0, 1.0};
@@ -39,7 +39,7 @@ TEST(Calibration, AccelerometerCalibrator_feed_false)
    EXPECT_FALSE(converged);
 }
 
-TEST(Calibration, AccelerometerCalibrator_feed_true)
+TEST(AccelerometerCalibrator, feed__true)
 {
    AccelerometerCalibrator acc_cal;
    Vector3 reading = {0.0, 0.0, 9.81};
@@ -52,7 +52,7 @@ TEST(Calibration, AccelerometerCalibrator_feed_true)
    EXPECT_TRUE(acc_cal.feed(reading));
 }
 
-TEST(Calibration, AccelerometerCalibrator_deduce_calib_params)
+TEST(AccelerometerCalibrator, deduce_calib_params)
 {
    AccelerometerCalibrator acc_cal;
    acc_cal.samplings.push_back({2.00, 2.00, 2.00});

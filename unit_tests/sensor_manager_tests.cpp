@@ -2,6 +2,28 @@
 
 #include "sensor_manager.hpp"
 
+TEST(SensorManager, run_through_modes)
+{
+    arwain::config.no_imu = false;
+    SensorManager sensors;
+    sleep_ms(500);
+    arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
+    sleep_ms(500);
+    // arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
+    // sleep_ms(500);
+    // arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
+    // sleep_ms(500);
+    arwain::system_mode = arwain::OperatingMode::Inference;
+    sleep_ms(500);
+    arwain::system_mode = arwain::OperatingMode::TestStanceDetector;
+    sleep_ms(500);
+    // arwain::system_mode = arwain::OperatingMode::SelfTest;
+    // sleep_ms(500);
+    
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    sensors.join();
+}
+
 TEST(SensorManager, Join)
 {
     arwain::config.no_imu = true;

@@ -3,6 +3,8 @@
 
 #include <tuple>
 
+#include "arwain_thread.hpp"
+
 class StanceDetection;
 
 /** \brief Periodically logs status messages to stdout.

@@ -199,17 +199,20 @@ TEST(Velocity_Prediction, Cleanup_Inference)
 #if USE_NCS2
 /** \brief This function just calls a Python script then returns.
  * Nothing else is testable at this stage. In fact it will probably
- * fail to find the script, but we can't test that effectively.
- * 
- * TODO Improve testability of py_inference funciton.
+ * fail to find the script, but we can't test that effectively atm.
  */
-TEST(Velocity_Prediction, Py_Inference)
+TEST(NCS2Inferrer, Py_Inference)
 {
-    // PositionVelocityInference inferrer;
-    // inferrer.py_inference();
-    // arwain::system_mode = arwain::OperatingMode::Terminate;
-    // inferrer.join();
-    // SUCCEED();
-    FAIL();
+    // The script is called indirectly by the inferrer constructor.
+    arwain::config.no_inference = false;
+    EXPECT_NO_THROW(
+        NCS2Inferrer inferrer;
+        inferrer.ncs2_thread.join();
+    );
+
+    arwain::config.no_inference = true;
+    EXPECT_NO_THROW(
+        NCS2Inferrer inferrer;
+    );
 }
 #endif

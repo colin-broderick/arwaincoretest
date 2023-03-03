@@ -19,14 +19,14 @@ namespace arwain
     arwain::ReturnCode interactive_test();
 }
 
-TEST(ArwainUtils, RollingAverage_default_constructor)
+TEST(RollingAverage, RollingAverage__default)
 {
     RollingAverage rl;
     EXPECT_EQ(rl.current_average, 0);
     EXPECT_TRUE(rl.ready());
 }
 
-TEST(ArwainUtils, RollingAverage_overflow)
+TEST(RollingAverage, feed__overflow)
 {
     RollingAverage roll{10};
     for (int i = 0; i < 20; i++)
@@ -35,7 +35,7 @@ TEST(ArwainUtils, RollingAverage_overflow)
     }
 }
 
-TEST(ArwainUtils, clamp_value)
+TEST(FreeFuncs, clamp_value)
 {
     int value = -5;
     EXPECT_EQ(0, clamp_value(value, 0, 17));
@@ -43,7 +43,7 @@ TEST(ArwainUtils, clamp_value)
     EXPECT_EQ(-10, clamp_value(value, -17, -10));
 }
 
-TEST(Arwain, OperatingModeStreamOperator)
+TEST(OperatingMode, ostream)
 {
     // std::cout is globally turned off so turn it on for this test, then turn it off again at the end.
     std::cout.rdbuf(original_cout_buffer);
@@ -95,13 +95,13 @@ TEST(Arwain, OperatingModeStreamOperator)
     std::cout.rdbuf(nullptr);
 }
 
-TEST(Arwain, ExceptionsNotImplemented)
+TEST(NotImplemented, throw)
 {
     EXPECT_THROW(throw NotImplemented{"TEST"}, NotImplemented);
 }
 
 /** \brief Test that the sleep_ms utility function waits approximately the expected amount of time. */
-TEST(ArwainUtils, sleep_ms)
+TEST(FreeFuncs, sleep_ms)
 {
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     sleep_ms(25);
@@ -118,48 +118,37 @@ TEST(NOTREADY_Arwain, Arwain_Main)
     FAIL();
 }
 
-TEST(ArwainExceptions, NotImplemeted)
-{
-    EXPECT_THROW(throw NotImplemented{__FUNCTION__}, NotImplemented);
-}
-
-TEST(Arwain, test_pressure)
+TEST(arwain__FreeFuncs, test_pressure)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_pressure());
 }
 
-TEST(Arwain, test_imu)
+TEST(arwain__FreeFuncs, test_imu)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_imu("/dev/null", 1));
 }
 
 
-TEST(HARDWARE_NOTREADY_Arwain, test_lora_rx)
+TEST(arwain__FreeFuncs, test_lora_rx)
 {
     arwain::test_lora_rx();
     FAIL();
 }
 
-TEST(Arwain, test_inference)
+TEST(arwain__FreeFuncs, test_inference)
 {
     FAIL();
     // Gets stuck in a loop somewhere and never returns, even with MockInferrer.
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_inference());
 }
 
-// TEST(HARDWARE_NOTREADY_Arwain, interactive_test)
-// {
-//     arwain::interactive_test();
-//     FAIL();
-// }
-
-TEST(Arwain, test_mag)
+TEST(arwain__FreeFuncs, test_mag)
 {
     // TODO Incomplete coverage because chip ID returned by func is not 0x3D.
     EXPECT_EQ(arwain::ReturnCode::FailedMagnetometer, arwain::test_mag());
 }
 
-TEST(ArwainUtils, setup_log_directory)
+TEST(arwain__FreeFuncs, setup_log_directory)
 {
     arwain::config.config_file = "/etc/randomnonsensefile";
     // Will throw exception if the expected config location is not current.
@@ -190,7 +179,7 @@ TEST(ArwainUtils, setup_log_directory)
     std::filesystem::remove("./tempfile.txt");
 }
 
-TEST(Arwain, arwain_execute)
+TEST(arwain__FreeFuncs, execute_jobs)
 {
     // Turn off all the options we can to prevent deep calls into
     // seconday functions.
@@ -206,37 +195,33 @@ TEST(Arwain, arwain_execute)
     EXPECT_EQ(arwain::execute_jobs(), arwain::ReturnCode::Success);
 }
 
-static void terminate_after_ms(int ms)
+TEST(arwain__FreeFuncs, calibrate_magnetometers)
 {
-    static std::thread th = std::thread{
-        [ms]()
+    FAIL();
+    std::thread th = std::thread{
+        []()
         {
-            sleep_ms(ms);
+            sleep_ms(3500);
             arwain::system_mode = arwain::OperatingMode::Terminate;
         }
     };
-}
-
-TEST(ArwainUtils, calibrate_magnetometers)
-{
-    FAIL();
-    terminate_after_ms(3500);
     EXPECT_EQ(arwain::calibrate_magnetometers(), arwain::ReturnCode::Success);
+    th.join();
 }
 
-TEST(HARDWARE_NOTREADY_Arwain, test_lora_tx)
+TEST(arwain__FreeFuncs, test_lora_tx)
 {
     FAIL();
     arwain::test_lora_tx();
 }
 
-TEST(Arwain, test_ori)
+TEST(arwain__FreeFuncs, test_ori)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_ori(1));
 }
 
 double unwrap_phase_radians(double new_angle, double previous_angle);
-TEST(ArwainUtils, unwrap_phase_radians)
+TEST(FreeFuncs, unwrap_phase_radians)
 {
     double angle = 0;
     double pi = 3.14159;
@@ -253,7 +238,7 @@ TEST(ArwainUtils, unwrap_phase_radians)
 }
 
 double unwrap_phase_degrees(double new_angle, double previous_angle);
-TEST(ArwainUtils, unwrap_phase_degrees)
+TEST(FreeFuncs, unwrap_phase_degrees)
 {
     double angle = 0;
 
@@ -265,25 +250,25 @@ TEST(ArwainUtils, unwrap_phase_degrees)
 }
 
 std::string date_time_string();
-TEST(NOTREADY_ArwainUtils, date_time_string)
+TEST(FreeFuncs, date_time_string)
 {
     EXPECT_NO_THROW(date_time_string());
 }
 
-TEST(NOTREADY_ArwainUtils, compute_euler)
+TEST(arwain__FreeFuncs, compute_euler)
 {
     Quaternion q{1, 0, 0, 0};
     EXPECT_NO_THROW(arwain::compute_euler(q));
 }
 
-TEST(NOTREADY_ArwainUtils, apply_quat_rotor_to_vector3)
+TEST(arwain__FreeFuncs, apply_quat_rotor_to_vector3)
 {
     Vector3 v{1, 0, 0};
     Quaternion q{1, 0, 0, 0};
     EXPECT_NO_THROW(arwain::apply_quat_rotor_to_vector3(v, q));
 }
 
-TEST(Arwain, setup_log_folder_name_suffix_with_no_name)
+TEST(arwain__FreeFuncs, setup_log_folder_name_suffix__with_no_name)
 {
     int j = 3;
     std::string program = "arwain_test";
@@ -298,7 +283,7 @@ TEST(Arwain, setup_log_folder_name_suffix_with_no_name)
     EXPECT_EQ(empty, arwain::folder_date_string_suffix);
 }
 
-TEST(Arwain, setup_log_folder_name_suffix_with_name)
+TEST(arwain__FreeFuncs, setup_log_folder_name_suffix__with_name)
 {
     int j = 3;
     std::string program = "arwain_test";
@@ -312,7 +297,7 @@ TEST(Arwain, setup_log_folder_name_suffix_with_name)
     EXPECT_EQ(name, arwain::folder_date_string_suffix);
 }
 
-TEST(Arwain, Rerun_Orientation_Filter)
+TEST(arwain__FreeFuncs, rerun_orientation_filter)
 {
     // Create file to operate on
     std::ofstream acce_log{"./acce.txt"};
@@ -340,7 +325,7 @@ TEST(Arwain, Rerun_Orientation_Filter)
     EXPECT_TRUE(std::filesystem::exists("./fusion_file.txt"));
 }
 
-TEST(ArwainUtils, Rerun_Floor_Tracker)
+TEST(arwain__FreeFuncs, rerun_floor_tracker)
 {
     // Create file to operate on
     std::ofstream floor_log{"./position.txt"};
@@ -359,13 +344,13 @@ TEST(ArwainUtils, Rerun_Floor_Tracker)
     EXPECT_TRUE(std::filesystem::exists("./pos_out.txt"));
 }
 
-TEST(ArwainUtils, calibrate_gyroscopes_offline)
+TEST(arwain__FreeFuncs, calibrate_gyroscopes_offline)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::calibrate_gyroscopes_offline());
 }
 
 std::tuple<Vector3, Vector3> deduce_calib_params(const std::vector<Vector3>& readings);
-TEST(Arwain, deduce_calib_params)
+TEST(arwain__FreeFuncs, deduce_calib_params)
 {
     std::vector<Vector3> data
     {
@@ -382,8 +367,9 @@ TEST(Arwain, deduce_calib_params)
 }
 
 void sigint_handler(int signal);
-TEST(ArwainUtils, sigint_handler)
+TEST(FreeFuncs, sigint_handler)
 {
+    arwain::system_mode = arwain::OperatingMode::Idle;
     EXPECT_TRUE((arwain::system_mode == arwain::OperatingMode::Idle));
     sigint_handler(SIGINT);
     EXPECT_TRUE((arwain::system_mode == arwain::OperatingMode::Terminate));

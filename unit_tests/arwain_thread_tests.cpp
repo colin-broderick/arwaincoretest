@@ -17,7 +17,7 @@ namespace
     }
 }
 
-TEST(ArwainThread, Constructors)
+TEST(ArwainThread, ArwainThread__all_constructors)
 {
     EXPECT_NO_THROW(
         // "Normal" std thread invokation.
@@ -38,7 +38,7 @@ TEST(ArwainThread, Constructors)
     );
 }
 
-TEST(ArwainThread, SetGetName)
+TEST(ArwainThread, get_name__set_name)
 {
     ArwainThread th(test_func, "TestName");
     std::this_thread::sleep_for(std::chrono::milliseconds{80});
