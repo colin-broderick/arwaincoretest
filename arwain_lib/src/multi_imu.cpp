@@ -9,11 +9,11 @@ Multi_IIM42652::Multi_IIM42652()
 
 }
 
-void Multi_IIM42652::read_IMU()
+void Multi_IIM42652::read_imu()
 {
-    auto [accel1, gyro1] = imu1.read_IMU();
-    auto [accel2, gyro2] = imu2.read_IMU();
-    auto [accel3, gyro3] = imu3.read_IMU();
+    auto [accel1, gyro1] = imu1.read_imu();
+    auto [accel2, gyro2] = imu2.read_imu();
+    auto [accel3, gyro3] = imu3.read_imu();
    
     this->accelerometer_x = (accel1.x + accel2.x + accel3.x) / 3.0;
     this->accelerometer_y = (accel1.y + accel2.y + accel3.y) / 3.0;

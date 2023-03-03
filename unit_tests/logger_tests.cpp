@@ -8,7 +8,7 @@
 /** \brief Creates a file object, checks file has been created correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, CreateFile)
+TEST(arwain__Logger, __create_file)
 {
     arwain::Logger file("test_file");
 
@@ -22,7 +22,7 @@ TEST(Logger, CreateFile)
 /** \brief Creates a file object, checks file object is empty.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, CreateFileEmpty)
+TEST(arwain__Logger, __create_file_empty)
 {
     arwain::Logger file;
 
@@ -35,7 +35,7 @@ TEST(Logger, CreateFileEmpty)
 /** \brief checks is_open function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, FileIsOpen)
+TEST(arwain__Logger, is_open)
 {
     arwain::Logger file("test_file");
 
@@ -47,7 +47,7 @@ TEST(Logger, FileIsOpen)
 /** \brief checks is_open function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, FileClosed)
+TEST(arwain__Logger, close)
 {
     arwain::Logger file("test_file");
     file.close();
@@ -61,7 +61,7 @@ TEST(Logger, FileClosed)
 /** \brief checks get_filename() function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, GetFileName)
+TEST(arwain__Logger, get_filename)
 {
     arwain::Logger file("test_file");
     file.close();
@@ -73,7 +73,7 @@ TEST(Logger, GetFileName)
 /** \brief checks open() function is correct.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, OpenFile)
+TEST(arwain__Logger, open)
 {
     arwain::Logger file("test_file");
     file.close();
@@ -87,7 +87,7 @@ TEST(Logger, OpenFile)
 /** \brief checks open() function is correct when file is already open.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, FileAlreadyOpen)
+TEST(arwain__Logger, open__already_open)
 {
     arwain::Logger file("test_file");
 
@@ -99,7 +99,7 @@ TEST(Logger, FileAlreadyOpen)
 /** \brief checks << operator inserts data into a file correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, InsertString)
+TEST(arwain__Logger, ostream__string)
 {
     arwain::Logger file("test_file");
     
@@ -117,7 +117,7 @@ TEST(Logger, InsertString)
 /** \brief checks << operator inserts data into a file correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, InsertInt)
+TEST(arwain__Logger, ostream__int)
 {
     arwain::Logger file("test_file");
     
@@ -135,7 +135,7 @@ TEST(Logger, InsertInt)
 /** \brief checks << operator inserts data into a file correctly.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Logger, InsertFloat)
+TEST(arwain__Logger, ostream__float)
 {
     arwain::Logger file("test_file");
     

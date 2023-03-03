@@ -9,7 +9,7 @@ class Multi_IIM42652
 {
     public:
         Multi_IIM42652();
-        void read_IMU();
+        void read_imu();
         double read_temperature();
         double accelerometer_x, accelerometer_y, accelerometer_z, gyroscope_x, gyroscope_y, gyroscope_z;
     

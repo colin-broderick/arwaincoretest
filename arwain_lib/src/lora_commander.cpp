@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
     InputParser input{argc, argv};
     if (input.contains("-cmd"))
     {
-        auto message = "C." + input.getCmdOption("-cmd");
+        auto message = "C." + input.get_cmd_option("-cmd");
         transmitter.send_message(message);
         std::cout << "Sent message: " << message << std::endl;
     }

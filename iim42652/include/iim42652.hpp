@@ -123,7 +123,7 @@ class IIM42652
             }
             soft_reset();
             std::this_thread::sleep_for(std::chrono::milliseconds{2});
-            IMU_config(gyro_config, accel_config);
+            imu_config(gyro_config, accel_config);
             set_resolutions(ACCEL_RES_16G, GYRO_RES_1000);
             enable();
             std::this_thread::sleep_for(std::chrono::milliseconds{25});
@@ -140,7 +140,7 @@ class IIM42652
          * \param gyro_config Four bytes of gyro ODR | four bytes of gyro FSR.
          * \param gyro_config Four bytes of accel ODR | four bytes of accel FSR.
         */
-        int IMU_config(uint8_t gyro_config, uint8_t accel_config)
+        int imu_config(uint8_t gyro_config, uint8_t accel_config)
         {
             int ret_code = transport.i2c_write(ADDR_GYRO_CONFIG0, 1, &gyro_config);
             if (ret_code > 0)
@@ -175,9 +175,9 @@ class IIM42652
         }
 
         /** \brief Fetches raw IMU data and applies conversion factors to get correct units. Alters state. */
-        ImuData read_IMU()
+        ImuData read_imu()
         {
-            read_IMU_raw_data();
+            read_imu_raw_data();
 
             // Store new accelerometer reading.
             accelerometer_x = (accelerometer_x * accel_resolution * GRAVITY - accel_bias_x) * accel_scale_x;
@@ -350,7 +350,7 @@ class IIM42652
         }
 
         /** \brief Reads the registers containing raw accelerometer and gyroscope data. */
-        void read_IMU_raw_data()
+        void read_imu_raw_data()
         {
             uint8_t buffer[12];
             int ret_code;

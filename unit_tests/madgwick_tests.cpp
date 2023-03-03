@@ -4,7 +4,7 @@
 #include "madgwick.hpp"
 #include "gtest/gtest.h"
 
-TEST(Madgwick, Default_Constructor)
+TEST(arwain__Madgwick, Madgwick)
 {
     arwain::Madgwick mad;
     
@@ -18,7 +18,7 @@ TEST(Madgwick, Default_Constructor)
     EXPECT_FALSE(mad.angles_updated());
 }
 
-TEST(Madgwick, update_mag_zeroes)
+TEST(arwain__Madgwick, update__mag_zeroes)
 {
     arwain::Madgwick madgwick{2.0, 1.0};
 
@@ -47,7 +47,7 @@ TEST(Madgwick, update_mag_zeroes)
 
 }
 
-TEST(Madgwick, Constructor)
+TEST(arwain__Madgwick, Madgwick__2)
 {
     arwain::Madgwick mad(2.0, 1.0);
     
@@ -61,42 +61,42 @@ TEST(Madgwick, Constructor)
     EXPECT_FALSE(mad.angles_updated());
 }
 
-TEST(Madgwick, Get_Beta)
+TEST(arwain__Madgwick, get_beta)
 {
     arwain::Madgwick mad;
     double beta = mad.get_beta();
     EXPECT_TRUE(beta == 0.1);
 }
 
-TEST(Madgwick, Get_W)
+TEST(arwain__Madgwick, get_w)
 {
     arwain::Madgwick mad;
     double w = mad.get_w();
     EXPECT_TRUE(w == 1.0);
 }
 
-TEST(Madgwick, Get_X)
+TEST(arwain__Madgwick, get_x)
 {
     arwain::Madgwick mad;
     double x = mad.get_x();
     EXPECT_TRUE(x == 0.0);
 }
 
-TEST(Madgwick, Get_Y)
+TEST(arwain__Madgwick, get_y)
 {
     arwain::Madgwick mad;
     double y = mad.get_y();
     EXPECT_TRUE(y == 0.0);
 }
 
-TEST(Madgwick, Get_Z)
+TEST(arwain__Madgwick, get_z)
 {
     arwain::Madgwick mad;
     double z = mad.get_z();
     EXPECT_TRUE(z == 0.0);
 }
 
-TEST(Madgwick, Get_roll)
+TEST(arwain__Madgwick, get_roll)
 {
     arwain::Madgwick mad;
 
@@ -124,7 +124,7 @@ TEST(Madgwick, Get_roll)
     EXPECT_LT(std::abs(mad.get_roll()), 180.0);
 }
 
-TEST(Madgwick, Get_pitch)
+TEST(arwain__Madgwick, get_pitch)
 {
     arwain::Madgwick mad;
 
@@ -152,7 +152,7 @@ TEST(Madgwick, Get_pitch)
     EXPECT_LT(std::abs(mad.get_pitch()), 1.0);
 }
 
-TEST(Madgwick, Get_yaw)
+TEST(arwain__Madgwick, get_yaw)
 {
     /* Yaw is a bit tricky to test as it's one of the biggest theoretical problems faced by ARWAIN.
     It responds 'unpredictably' to sensor data and therefore we do only simple tests on its getter.
@@ -167,7 +167,7 @@ TEST(Madgwick, Get_yaw)
     EXPECT_NE(mad.get_yaw(), 0.0);
 }
 
-TEST(Madgwick, get_roll_radians)
+TEST(arwain__Madgwick, get_roll_radians)
 {
     arwain::Madgwick mad;
 
@@ -195,7 +195,7 @@ TEST(Madgwick, get_roll_radians)
     EXPECT_LT(std::abs(mad.get_roll_radians()), 3.141593);
 }
 
-TEST(Madgwick, get_pitch_radians)
+TEST(arwain__Madgwick, get_pitch_radians)
 {
     arwain::Madgwick mad;
 
@@ -223,7 +223,7 @@ TEST(Madgwick, get_pitch_radians)
     EXPECT_LT(std::abs(mad.get_pitch_radians()), 1.0 / 180.0 * 3.141593);
 }
 
-TEST(Madgwick, get_yaw_radians)
+TEST(arwain__Madgwick, get_yaw_radians)
 {
     /* Yaw is a bit tricky to test as it's one of the biggest theoretical problems faced by ARWAIN.
     It responds 'unpredictably' to sensor data and therefore we do only simple tests on its getter.
@@ -238,7 +238,7 @@ TEST(Madgwick, get_yaw_radians)
     EXPECT_NE(mad.get_yaw_radians(), 0.0);
 }
 
-TEST(Madgwick, set_q)
+TEST(arwain__Madgwick, set_q)
 {
     arwain::Madgwick mad;
     mad.set_q(1.0, 2.0, 3.0, 4.0);
@@ -248,14 +248,14 @@ TEST(Madgwick, set_q)
     EXPECT_TRUE(mad.get_z() == 4.0);
 }
 
-TEST(Madgwick, set_beta)
+TEST(arwain__Madgwick, set_beta)
 {
     arwain::Madgwick mad;
     mad.set_beta(1.0);
     EXPECT_TRUE(mad.get_beta() == 1.0);
 }
 
-TEST(Madgwick, update_6)
+TEST(arwain__Madgwick, update__6_args)
 {
     /* The state that a Madgwick filter should move to after an update is quite a complex question, and in my 
     opinion not something it is realistic to duplicate in a small unit test. What we can say is that after an update,
@@ -290,7 +290,7 @@ TEST(Madgwick, update_6)
     EXPECT_EQ(pre_freq, post_freq);    
 }
 
-TEST(Madgwick, update_7)
+TEST(arwain__Madgwick, update__7_args)
 {
     // Testing void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az);
     
@@ -320,7 +320,7 @@ TEST(Madgwick, update_7)
     EXPECT_EQ(pre_freq, post_freq);
 }
 
-TEST(Madgwick, update_9)
+TEST(arwain__Madgwick, update__9_args)
 {
     // Testing void update(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
     
@@ -350,7 +350,7 @@ TEST(Madgwick, update_9)
     EXPECT_EQ(pre_freq, post_freq);
 }
 
-TEST(Madgwick, update_10)
+TEST(arwain__Madgwick, update__10_args)
 {
     // Testing void update(double timestamp, double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
     
@@ -380,7 +380,7 @@ TEST(Madgwick, update_10)
     EXPECT_EQ(pre_freq, post_freq);
 }
 
-TEST(Madgwick, get_euler_angles_degrees)
+TEST(arwain__Madgwick, get_euler_angles_degrees)
 {
     arwain::Madgwick f;
     f.get_euler_angles_degrees(1, 0, 0, 0);

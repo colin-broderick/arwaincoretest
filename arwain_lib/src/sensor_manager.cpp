@@ -84,7 +84,7 @@ bool calibrate_gyroscope_bias(IIM42652<I2CDEVICEDRIVER>& imu)
     GyroscopeCalibrator calibrator;
     while (!calibrator.is_converged())
     {
-        calibrator.feed(imu.read_IMU().gyro);
+        calibrator.feed(imu.read_imu().gyro);
     }
     Vector3 gyroscope_bias = calibrator.get_params();
 
@@ -218,7 +218,7 @@ void SensorManager::run_idle()
     {
         int64_t time_count = loop_scheduler.count();
 
-        auto [accel_data1, gyro_data1] = imu1.read_IMU();
+        auto [accel_data1, gyro_data1] = imu1.read_imu();
         // Force approximate alignment of the IMUs.
 
         // Feed the activity metric.
@@ -285,7 +285,7 @@ void SensorManager::run_inference()
     {
         int64_t time_count = loop_scheduler.count(); // Provides an accurate count of milliseconds passed since last loop iteration.
 
-        auto [accel_data1, gyro_data1] = imu1.read_IMU();
+        auto [accel_data1, gyro_data1] = imu1.read_imu();
 
         Vector3 magnet = magnetometer.read();
         magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.

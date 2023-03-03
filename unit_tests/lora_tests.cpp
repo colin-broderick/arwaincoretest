@@ -10,7 +10,7 @@
  * Configure writes hardware but changes to other state, so can't effectively test
  * the result without hardware. But we can check for code coverage with no crashes.
  */
-TEST(LoRaTests, configure)
+TEST(LoRa, configure)
 {
     // Branch for each frequency.
     for (auto freq : {
@@ -81,7 +81,7 @@ TEST(LoRaTests, configure)
 
 // Can't currently do this effectively because we can't
 // set IRQFlag or change IRQ_TXDONE within send_message.
-TEST(NOTREADY_LoRaTests, send_message)
+TEST(LoRa, send_message)
 {
     // SUCCEED();
     LoRa<MockSpiDevice> lora{"address", true};
@@ -89,22 +89,22 @@ TEST(NOTREADY_LoRaTests, send_message)
     lora.send_message(message);
 }
 
-TEST(LoRaTests, test_chip)
+TEST(LoRa, test_chip)
 {
     // In the test setup this can only return 0.
     LoRa<MockSpiDevice> lora{"address", true};
     EXPECT_EQ(lora.test_chip(), 0);
 }
 
-TEST(LoRaTests, read_FIFO)
+TEST(LoRa, read_fifo)
 {
     LoRa<MockSpiDevice> lora{"address", true};
     uint8_t buffer[10] = {0};
-    lora.read_FIFO(8, buffer);
+    lora.read_fifo(8, buffer);
     EXPECT_EQ(buffer[3], 0xCC);
 }
 
-TEST(LoRaTests, StatusReporting_setup_inference)
+TEST(StatusReporting, setup_inference)
 {
     EXPECT_FALSE(std::filesystem::exists("./lora_log.txt"));
     arwain::config.no_lora = true;
@@ -121,7 +121,7 @@ TEST(LoRaTests, StatusReporting_setup_inference)
     status.join();
 }
 
-TEST(LoRaTests, StatusReporting_run_idle)
+TEST(StatusReporting, run_idle)
 {
     arwain::config.no_lora = true;
     StatusReporting status;
@@ -129,7 +129,7 @@ TEST(LoRaTests, StatusReporting_run_idle)
     status.join();
 }
 
-TEST(LoRaTests, StatusReporting_set_stance_detection_pointer)
+TEST(StatusReporting, set_stance_detection_pointer)
 {
     arwain::config.no_lora = true;
     StanceDetection stance;
@@ -142,7 +142,7 @@ TEST(LoRaTests, StatusReporting_set_stance_detection_pointer)
     status.join();
 }
 
-TEST(LoRaTests, StatusReporting_run_inference)
+TEST(StatusReporting, run_inference)
 {
     arwain::system_mode = arwain::OperatingMode::Inference;
     arwain::config.no_lora = false;

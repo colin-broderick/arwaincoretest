@@ -19,7 +19,7 @@ InputParser::InputParser(int &argc, char **argv)
  * \param option The name of the sought parameter.
  * \return The value of the sought parameter.
  */
-const std::string& InputParser::getCmdOption(const std::string &option) const
+const std::string& InputParser::get_cmd_option(const std::string &option) const
 {
     // Identify the position of a requested option and return the next token if found.
     std::vector<std::string>::const_iterator itr;

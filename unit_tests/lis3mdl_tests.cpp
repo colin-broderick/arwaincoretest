@@ -2,7 +2,7 @@
 
 #include "lis3mdl.hpp"
 
-TEST(LIS3MDL, Constructor_fail)
+TEST(LIS3MDL, LIS3MDL__fail)
 {
     // Construct with invalid bus name.
     EXPECT_THROW((LIS3MDL<I2CDEVICEDRIVER>{1, "fail_bus"}), std::runtime_error);
@@ -45,7 +45,7 @@ TEST(LIS3MDL, set_calibration_parameters)
     EXPECT_NO_THROW(mag.set_calibration_parameters(stuff, stuff, stuff));
 }
 
-TEST(LIS3MDL, DefaultConstructor)
+TEST(LIS3MDL, LIS3MDL)
 {
     EXPECT_NO_THROW(
         LIS3MDL<I2CDEVICEDRIVER> mag;

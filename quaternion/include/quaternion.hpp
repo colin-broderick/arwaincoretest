@@ -30,14 +30,14 @@ class Quaternion
 
         // Getters
         double getW() const;
-        double getX() const;
-        double getY() const;
-        double getZ() const;
+        double get_x() const;
+        double get_y() const;
+        double get_z() const;
         double getAngle() const;
         std::array<double, 3> vector_part() const;
         std::array<double, 3> getAxis() const;
         double norm() const;
-        bool isNormal() const;
+        bool is_normal() const;
         Quaternion unit() const;
         Quaternion normalized() const;
         Quaternion conjugate() const;
@@ -62,9 +62,9 @@ Quaternion operator*(const Scalar scalar, const Quaternion& quat)
 {
     return Quaternion{
         scalar * quat.getW(),
-        scalar * quat.getX(),
-        scalar * quat.getY(),
-        scalar * quat.getZ()
+        scalar * quat.get_x(),
+        scalar * quat.get_y(),
+        scalar * quat.get_z()
     };
 }
 

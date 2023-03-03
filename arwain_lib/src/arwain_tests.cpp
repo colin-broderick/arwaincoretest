@@ -127,7 +127,7 @@ arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_ad
 
     while (!loop_timer.finished())
     {
-        auto [accel_data, gyro_data] = imu.read_IMU();
+        auto [accel_data, gyro_data] = imu.read_imu();
         accel_data.x = (accel_data.x - arwain::config.accel1_bias.x) * arwain::config.accel1_scale.x;
         accel_data.y = (accel_data.y - arwain::config.accel1_bias.y) * arwain::config.accel1_scale.y;
         accel_data.z = (accel_data.z - arwain::config.accel1_bias.z) * arwain::config.accel1_scale.z;
@@ -390,7 +390,7 @@ arwain::ReturnCode arwain::test_ori(int frequency)
         loop_scheduler.await();
         auto time_count = loop_scheduler.count();
 
-        auto [accel, gyro] = imu.read_IMU();
+        auto [accel, gyro] = imu.read_imu();
         accel = accel - config.accel1_bias;
         
         filter.update(time_count, gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);

@@ -11,7 +11,7 @@ TEST(MockInferrer, init_infer)
     EXPECT_EQ(inferrer.infer(data), (Vector3{0, 0, 0}));
 }
 
-TEST(Velocity_Prediction, Join)
+TEST(PositionVelocityInference, join)
 {
     PositionVelocityInference inference;
     //inference.init();
@@ -21,7 +21,7 @@ TEST(Velocity_Prediction, Join)
 
 /** \brief After init(), the job_thread(s) should be running and should be
  * joinable but incomplete. */
-TEST(Velocity_Prediction, Init_Success)
+TEST(PositionVelocityInference, init__success)
 {
     arwain::config.no_inference = true;
     PositionVelocityInference inferrer;
@@ -45,7 +45,7 @@ TEST(Velocity_Prediction, Init_Success)
  * be joinable because it should never have started. If the ncs2 option is on,
  * it has its own thread which should also not be joinable.
  */
-TEST(Velocity_Prediction, Init_Failure)
+TEST(PositionVelocityInference, init__failure)
 {
     arwain::config.no_inference = true;
     PositionVelocityInference inference;
@@ -58,7 +58,7 @@ TEST(Velocity_Prediction, Init_Failure)
     inference.join();
 }
 
-TEST(HARDWARE_NOTREADY_Velocity_Prediction, Run_Inference)
+TEST(PositionVelocityInference, run_inference)
 {
     //PositionVelocityInference inference;
     //inference.run_idle();
@@ -74,7 +74,7 @@ TEST(HARDWARE_NOTREADY_Velocity_Prediction, Run_Inference)
  * Since the duration is unknown, all we can really do is check that it doesn't generate
  * any errors.
  */
-TEST(Velocity_Prediction, Run_Idle)
+TEST(PositionVelocityInference, run_idle)
 {
     PositionVelocityInference inferrer;
     EXPECT_NO_THROW(inferrer.run_idle());
@@ -86,7 +86,7 @@ TEST(Velocity_Prediction, Run_Idle)
 /** \brief Before core_setup, the socket pointers context and responder should be null.
  * After core_setup, they should be non-null (but we don't know exactly what they should be).
  */
-TEST(Velocity_Prediction, Core_Setup)
+TEST(PositionVelocityInference, core_setup)
 {
     // arwain::config.no_inference = true;
     // PositionVelocityInference inferrer;
@@ -99,7 +99,7 @@ TEST(Velocity_Prediction, Core_Setup)
 }
 #else
 /** \brief This test not yet implemented for the tensorflow case. */
-TEST(Velocity_Prediction, Core_Setup)
+TEST(PositionVelocityInference, core_setup)
 {
     FAIL();
 }
@@ -110,7 +110,7 @@ TEST(Velocity_Prediction, Core_Setup)
  * TODO This test can potentially be improved by making sure the content of the logs
  * is as expected, before deleting them.
  */
-TEST(Velocity_Prediction, Setup_Inference)
+TEST(PositionVelocityInference, setup_inference)
 {
     arwain::config.no_inference = true;
     arwain::folder_date_string = ".";
@@ -145,7 +145,7 @@ TEST(Velocity_Prediction, Setup_Inference)
  * significant changes to the code so this doesn't work for inference mode.
  * No idea what to do about it.
  */
-TEST(Velocity_Prediction, Run)
+TEST(PositionVelocityInference, run)
 {
     arwain::config.no_inference = true;
     PositionVelocityInference inferrer;
@@ -173,7 +173,7 @@ TEST(Velocity_Prediction, Run)
  * should both be zero-vector regardless of what they were before.
  * Log files should both be closed.
  */
-TEST(Velocity_Prediction, Cleanup_Inference)
+TEST(PositionVelocityInference, cleanup_inference)
 {
     PositionVelocityInference inferrer;
     inferrer.position = {1, 1, 1};
@@ -201,7 +201,7 @@ TEST(Velocity_Prediction, Cleanup_Inference)
  * Nothing else is testable at this stage. In fact it will probably
  * fail to find the script, but we can't test that effectively atm.
  */
-TEST(NCS2Inferrer, Py_Inference)
+TEST(PositionVelocityInference, py_inference)
 {
     // The script is called indirectly by the inferrer constructor.
     arwain::config.no_inference = false;

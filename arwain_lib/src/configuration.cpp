@@ -239,6 +239,6 @@ arwain::Configuration::Configuration(const InputParser& input)
     // If alternate configuration file supplied, read it instead of default.
     if (input.contains("-conf"))
     {
-        this->config_file = input.getCmdOption("-conf");
+        this->config_file = input.get_cmd_option("-conf");
     }
 }

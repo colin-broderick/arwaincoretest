@@ -2,7 +2,7 @@
 
 #include "kalman.hpp"
 
-TEST(KalmanFilter, kalman_gain)
+TEST(KalmanFilter, kalman_one_cycle)
 {
     MatrixXd observation(2,1);
 
@@ -67,7 +67,7 @@ TEST(KalmanFilter, kalman_gain)
     // filter.new_state_covariance_matrix();
 }
 
-TEST(KalmanFilter1D, constructors)
+TEST(KalmanFilter1D, KalmanFilter1D)
 {
     KalmanFilter1D kf1;
     KalmanFilter1D kf2{1, 1};

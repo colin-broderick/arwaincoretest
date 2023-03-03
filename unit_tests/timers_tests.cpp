@@ -6,13 +6,13 @@
 
 #include "timers.hpp"
 
-TEST(Timers, ScopedTimerConstructors)
+TEST(Timers__ScopedTimer, ScopedTimer)
 {
     EXPECT_NO_THROW(Timers::ScopedTimer{"timername"});
     EXPECT_NO_THROW(Timers::ScopedTimer("timername", std::cout));
 }
 
-TEST(Timers, ScopedTimerDestructor)
+TEST(Timers__ScopedTimer, DestructorScopedTimer)
 {
    std::stringstream string;
    {
@@ -41,12 +41,12 @@ TEST(Timers, ScopedTimerDestructor)
    }
 }
 
-TEST(Timers, CountDownTimerConstructor)
+TEST(Timers__CountdownTimer, CountdownTimer)
 {
    EXPECT_NO_THROW(Timers::CountdownTimer{1000});
 }
 
-TEST(Timers, CountDownTimerFinished)
+TEST(Timers__CountdownTimer, finished)
 {
    Timers::CountdownTimer timer{100};
    ASSERT_EQ(timer.finished(), false);
@@ -54,7 +54,7 @@ TEST(Timers, CountDownTimerFinished)
    ASSERT_EQ(timer.finished(), true);
 }
 
-TEST(Timers, CountDownTimerReset)
+TEST(Timers__CountdownTimer, reset)
 {
    Timers::CountdownTimer timer{100};
    ASSERT_EQ(timer.finished(), false);
@@ -65,7 +65,7 @@ TEST(Timers, CountDownTimerReset)
    ASSERT_EQ(timer.finished(), true);
 }
 
-TEST(Timers, IntervalTimerConstructors)
+TEST(Timers__IntervalTimer, IntervalTimer)
 {
    Timers::IntervalTimer<std::chrono::seconds> t1{1};
    std::chrono::seconds s{1};

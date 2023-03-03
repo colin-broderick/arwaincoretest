@@ -2,7 +2,7 @@
 
 #include "sabatini_altimeter.hpp"
 
-TEST(SabatiniAltimeter, Constructors)
+TEST(arwain__Filters__SabatiniAltimeter, SabatiniAltimeter)
 {
     EXPECT_NO_THROW(arwain::Filters::SabatiniAltimeter{});
     EXPECT_NO_THROW((arwain::Filters::SabatiniAltimeter{1, 1, 1, 1, 1}));
@@ -21,7 +21,7 @@ TEST(SabatiniAltimeter, Constructors)
     EXPECT_EQ(sab.K, K);
 }
 
-TEST(SabatiniAltimeter, update)
+TEST(arwain__Filters__SabatiniAltimeter, update)
 {
     arwain::Filters::SabatiniAltimeter sab{1, 1, 1, 1, 1};
     double pre_position = sab.get_position();

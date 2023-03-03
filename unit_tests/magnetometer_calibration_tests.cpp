@@ -5,7 +5,7 @@
 #include "calibration.hpp"
 
 /** \brief Until the 100th feed, the feed_count reflects the number of feeds so far. */
-TEST(Calibration, MagnetometerCalibrator_Feed_less_than)
+TEST(MagnetometerCalibrator, feed__less_than_100)
 {
    MagnetometerCalibrator mag_cal;
    Vector3 reading{1, 1, 1};
@@ -21,7 +21,7 @@ TEST(Calibration, MagnetometerCalibrator_Feed_less_than)
  * time for internal reasons, hence the 101 instead of 100. This is probably
  * confusing and should be improved. TODO
  */
-TEST(Calibration, MagnetometerCalibrator_Feed_more_than)
+TEST(MagnetometerCalibrator, feed__more_than_100)
 {
    MagnetometerCalibrator mag_cal;
    Vector3 reading{1, 1, 1};
@@ -33,7 +33,7 @@ TEST(Calibration, MagnetometerCalibrator_Feed_more_than)
    EXPECT_EQ(mag_cal.get_feed_count(), 101);
 }
 
-TEST(Calibration, MagnetometerCalibrator_get_sphere_coverage_quality)
+TEST(MagnetometerCalibrator, get_sphere_coverage_quality)
 {
    MagnetometerCalibrator mag_cal;
    EXPECT_EQ(mag_cal.get_sphere_coverage_quality(), 0);
@@ -41,7 +41,7 @@ TEST(Calibration, MagnetometerCalibrator_get_sphere_coverage_quality)
    EXPECT_EQ(mag_cal.get_sphere_coverage_quality(), 17);
 }
 
-TEST(Calibration, MagnetometerCalibrator_sphere_coverage_0)
+TEST(MagnetometerCalibrator, sphere_coverage__0)
 {
    MagnetometerCalibrator mag_cal;
    std::array<int, 100> region_sample_count;
@@ -53,7 +53,7 @@ TEST(Calibration, MagnetometerCalibrator_sphere_coverage_0)
    EXPECT_TRUE(coverage == 0);
 }
 
-TEST(Calibration, MagnetometerCalibrator_sphere_coverage_1)
+TEST(MagnetometerCalibrator, sphere_coverage__1)
 {
    MagnetometerCalibrator mag_cal;
    std::array<int, 100> region_sample_count;
@@ -65,14 +65,14 @@ TEST(Calibration, MagnetometerCalibrator_sphere_coverage_1)
    EXPECT_TRUE(coverage == 100);
 }
 
-TEST(Calibration, MagnetometerCalibrator_get_feed_count)
+TEST(MagnetometerCalibrator, get_feed_count)
 {
    MagnetometerCalibrator mag_cal;
    int count = mag_cal.get_feed_count();
    EXPECT_TRUE(count == 0);
 }
 
-TEST(Calibration, MagnetometerCalibrator_get_region_sample_count)
+TEST(MagnetometerCalibrator, get_region_sample_count)
 {
    MagnetometerCalibrator mag_cal;
    std::array<int, 100> rsc = mag_cal.get_region_sample_count();
@@ -84,7 +84,7 @@ TEST(Calibration, MagnetometerCalibrator_get_region_sample_count)
    EXPECT_EQ(comparison, rsc);
 }
 
-TEST(Calibration, MagnetometerCalibrator_get_region_sample_value)
+TEST(MagnetometerCalibrator, get_region_sample_value)
 {
    MagnetometerCalibrator mag_cal;
    std::array<Vector3, 100> rsv = mag_cal.get_region_sample_value();
@@ -99,12 +99,12 @@ TEST(Calibration, MagnetometerCalibrator_get_region_sample_value)
 }
 
 /** \brief Can't be effectively tested without sample data. */
-TEST(NOTREADY_Calibration, MagnetometerCalibrator_Solve)
+TEST(MagnetometerCalibrator, solve)
 {
    FAIL();
 }
 
-TEST(Calibration, MagnetometerCalibrator_sphere_region)
+TEST(MagnetometerCalibrator, sphere_region)
 {
    MagnetometerCalibrator mag_cal;
 
