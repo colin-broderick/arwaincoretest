@@ -2,14 +2,12 @@
 
 #include "corner_detector.hpp"
 
-TEST(CornerDetector, Constructor)
+TEST(arwain__CornerDetector, CornerDetector)
 {
-
-EXPECT_NO_THROW(arwain::CornerDetector(1,1.0,1.0));
-
+    EXPECT_NO_THROW(arwain::CornerDetector(1,1.0,1.0));
 }
 
-TEST(CornerDetector, Update_Angle)
+TEST(arwain__CornerDetector, update)
 {
     Vector3 pos;
     pos.x = 1.0;
@@ -20,7 +18,7 @@ TEST(CornerDetector, Update_Angle)
     EXPECT_TRUE(detector.update(pos));
 }
 
-TEST(CornerDetector, Update_Insufficient_Motion)
+TEST(arwain__CornerDetector, update__insufficient_motion)
 {
     Vector3 pos;
     pos.x = 1.0;
@@ -31,7 +29,7 @@ TEST(CornerDetector, Update_Insufficient_Motion)
     EXPECT_FALSE(detector.update(pos));
 }
 
-TEST(CornerDetector, Update_Isufficient_Information)
+TEST(arwain__CornerDetector, udpate__insufficient_information)
 {
     Vector3 pos;
     pos.x = 1.0;

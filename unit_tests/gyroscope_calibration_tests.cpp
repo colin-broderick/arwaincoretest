@@ -5,20 +5,20 @@
 #include "vector3.hpp"
 #include "calibration.hpp"
 
-TEST(Calibration, GyroscopeCalibrator_is_converged)
+TEST(GyroscopeCalibrator, is_converged)
 {
    GyroscopeCalibrator gyro_cal;
    EXPECT_FALSE(gyro_cal.is_converged());
 }
 
-TEST(Calibration, GyroscopeCalibrator_get_params)
+TEST(GyroscopeCalibrator, get_params)
 {
    GyroscopeCalibrator gyro_cal;
    Vector3 comparison = {0, 0, 0};
    EXPECT_EQ(gyro_cal.get_params(), comparison);
 }
 
-TEST(Calibration, GyroscopeCalibrator_feed_false)
+TEST(GyroscopeCalibrator, feed__false)
 {
    GyroscopeCalibrator gyro_cal;
    Vector3 reading = {0, 0, 0};
@@ -26,7 +26,7 @@ TEST(Calibration, GyroscopeCalibrator_feed_false)
    EXPECT_FALSE(gyro_cal.feed(reading));
 }
 
-TEST(Calibration, GyroscopeCalibrator_feed_true)
+TEST(GyroscopeCalibrator, feed__true)
 {
    GyroscopeCalibrator gyro_cal;
    Vector3 reading = {0.0, 0.0, 0.0};

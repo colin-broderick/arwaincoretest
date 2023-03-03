@@ -24,7 +24,7 @@ class MockInferrer : public I_VelInferrer
 
 class NCS2Inferrer : public I_VelInferrer
 {
-    private:
+    TESTABLE:
         void* context = nullptr;
         void* responder = nullptr;
         const std::string inference_tcp_socket = "tcp://*:5555";

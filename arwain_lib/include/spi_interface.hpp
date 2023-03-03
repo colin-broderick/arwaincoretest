@@ -1,6 +1,8 @@
 #ifndef _GREEVE_SPI_INTERFACE
 #define _GREEVE_SPI_INTERFACE
 
+#include <cstring>
+
 struct SpiConfig
 {
     uint8_t mode;
@@ -46,6 +48,10 @@ class MockSpiDevice : public I_SPI
         }
         int read(uint8_t *p_rxbuffer, uint8_t p_rxlen)
         {
+            for (int i = 0; i < p_rxlen; i++)
+            {
+                p_rxbuffer[i] = 0xcc;
+            }
             (void)p_rxbuffer;
             (void)p_rxlen;
             return 0;
@@ -58,6 +64,13 @@ class MockSpiDevice : public I_SPI
         }
         int xfer(uint8_t *p_txbuffer, uint8_t p_txlen, uint8_t *p_rxbuffer, uint8_t p_rxlen)
         {
+            switch (p_txbuffer[0])
+            {
+                case (0x12 & 0x7f): // Checking IRQFlags
+                    p_rxbuffer[1] = (1<<3); // Set TXDONE
+                    break;
+            }
+
             (void)p_txbuffer;
             (void)p_txlen;
             (void)p_rxbuffer;

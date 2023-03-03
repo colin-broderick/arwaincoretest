@@ -503,7 +503,7 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
 }
 
 /** \brief Capture the SIGINT signal for clean exit.
- * Sets the system mode to Terminate, which instructs all threads to clean up and exit.
+ * After calling, the system mode is Terminate, which instructs all threads to clean up and exit.
  * \param signal The signal to capture.
  */
 void sigint_handler(int signal)

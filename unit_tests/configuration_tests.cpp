@@ -3,7 +3,7 @@
 #include "configuration.hpp"
 #include "input_parser.hpp"
 
-TEST(Configuration, Constructors)
+TEST(arwain__Configuration, Configuration_all)
 {
     EXPECT_NO_THROW(
         (arwain::Configuration{})
@@ -36,7 +36,7 @@ TEST(Configuration, Constructors)
     );
 }
 
-TEST(Configuration, read_from_invalid_file)
+TEST(arwain__Configuration, read_from_file__invalid_file)
 {
     std::string text0 = "exename";
     std::string text1 = "-lstd";
@@ -64,7 +64,7 @@ TEST(Configuration, read_from_invalid_file)
 }
 
 /** \brief A valid configuration file MUST be provided at the specified location. */
-TEST(Configuration, read_valid_config_file)
+TEST(arwain__Configuration, read_from_file__valid_file)
 {
     std::string text0 = "exename";
     std::string text1 = "-lstd";
@@ -91,7 +91,7 @@ TEST(Configuration, read_valid_config_file)
     EXPECT_TRUE((arwain::ReturnCode::Success == conf.read_from_file()));
 }
 
-TEST(Configuration, read_valid_config_and_then_replace_something)
+TEST(arwain__Configuration, replace)
 {
     std::string text0 = "exename";
     std::string text1 = "-lstd";
@@ -118,9 +118,9 @@ TEST(Configuration, read_valid_config_and_then_replace_something)
     EXPECT_NO_THROW(conf.replace("mag_scale_x", 1));
 }
 
-TEST(Configuration, read_nonexistant_option)
+TEST(arwain__Configuration, read_option__invalid_option)
 {
-        std::string text0 = "exename";
+    std::string text0 = "exename";
     std::string text1 = "-lstd";
     std::string text2 = "-noinf";
     std::string text3 = "-nolora";

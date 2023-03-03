@@ -19,7 +19,7 @@ class StatusReporting
         void cleanup_inference();
         std::chrono::time_point<std::chrono::high_resolution_clock> get_next_time_slot(int node_id);
 
-	private:
+	TESTABLE:
 	    StanceDetection* stance_detection_handle = nullptr;
 		UublaWrapper* uubla_wrapper_handle = nullptr;
         ArwainThread job_thread;
