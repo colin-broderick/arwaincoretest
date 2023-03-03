@@ -7,7 +7,6 @@
 class StanceDetection;
 class UublaWrapper;
 class ArwainThread;
-class LoRa;
 
 class StatusReporting
 {
@@ -24,7 +23,7 @@ class StatusReporting
 	    StanceDetection* stance_detection_handle = nullptr;
 		UublaWrapper* uubla_wrapper_handle = nullptr;
         ArwainThread job_thread;
-        LoRa lora;
+        LoRa<SPIDEVICEDRIVER> lora;
         arwain::Logger lora_file;
 
 	public:

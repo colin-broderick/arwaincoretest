@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[])
 {
-    LoRa transmitter{"/dev/spidev0.1", false};
+    LoRa<SPIDEVICEDRIVER> transmitter{"/dev/spidev0.1", false};
     InputParser input{argc, argv};
     if (input.contains("-cmd"))
     {

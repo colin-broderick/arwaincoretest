@@ -140,6 +140,7 @@
 #define MODEMCONFIG3_MOBILENODE	(1<<3)
 #define MODEMCONFIG3_AGCAUTOON	(1<<2)
 
+template <class SpiDeviceClass>
 class LoRa
 {
     public: // Types
@@ -182,8 +183,8 @@ class LoRa
 		Frequency frequency_mhz;
 		Bandwidth bandwidth_khz;
 		SpreadFactor spread_factor;
-        SPI *spi = nullptr;
-        spi_config_t spi_config;		
+        SpiDeviceClass spi;
+        SpiConfig spi_config;		
 };
 
 #endif
