@@ -17,7 +17,7 @@ namespace Random
     }
 }
 
-TEST(Vector3, Magnitude)
+TEST(Vector3, magnitude)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -31,7 +31,7 @@ TEST(Vector3, Magnitude)
     }
 }
 
-TEST(Vector3, DistanceBetween)
+TEST(Vector3, distance_between)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -51,7 +51,7 @@ TEST(Vector3, DistanceBetween)
     }
 }
 
-TEST(Vector3, AdditionOperator)
+TEST(Vector3, addition_operator)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -70,7 +70,7 @@ TEST(Vector3, AdditionOperator)
     }
 }
 
-TEST(Vector3, SubtractionOperator)
+TEST(Vector3, subtraction_operator)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -89,7 +89,7 @@ TEST(Vector3, SubtractionOperator)
     }
 }
 
-TEST(Vector3, ElementWiseProductOperator)
+TEST(Vector3, product_operator)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -108,7 +108,7 @@ TEST(Vector3, ElementWiseProductOperator)
     }
 }
 
-TEST(Vector3, OutputStreamOperator)
+TEST(Vector3, ostream)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -122,10 +122,19 @@ TEST(Vector3, OutputStreamOperator)
     }
 }
 
+TEST(Vector3, from_array)
+{
+    std::array<double, 3> arr{1, 2, 3};
+    Vector3 vec = Vector3::from_array(arr);
+    EXPECT_EQ(vec.x, 1);
+    EXPECT_EQ(vec.y, 2);
+    EXPECT_EQ(vec.z, 3);
+}
+
 /** \brief Tests that the cross product of two Vector3s is correct, as compared against an independent calculation
  * on WolframAlpha.
  */
-TEST(Vector3, CrossProduct)
+TEST(Vector3, cross)
 {
     Vector3 v0{0.1857669481991132, 0.32978932882087486, 0.6884939739258459};
     Vector3 v1{0.780797532183143, 0.2626766978368277, 0.28715335316602153};
@@ -152,7 +161,7 @@ TEST(Vector3, CrossProduct)
     EXPECT_NEAR(v4_v5.z, v4_v5_expected.z, 0.0000001);
 }
 
-TEST(Vector3, Normalized)
+TEST(Vector3, normalized)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -174,7 +183,7 @@ TEST(Vector3, Normalized)
     }
 }
 
-TEST(Vector3, DotProduct)
+TEST(Vector3, dot)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -193,7 +202,7 @@ TEST(Vector3, DotProduct)
     }
 }
 
-TEST(Vector3, AngleBetween)
+TEST(Vector3, angle_between)
 {
     Vector3 v0{0.1857669481991132, 0.32978932882087486, 0.6884939739258459};
     Vector3 v1{0.780797532183143, 0.2626766978368277, 0.28715335316602153};
@@ -211,7 +220,7 @@ TEST(Vector3, AngleBetween)
     EXPECT_NEAR(Vector3::angle_between(v4, v5), expected_angle_45, 0.0000001);
 }
 
-TEST(Vector3, EqualityOperator)
+TEST(Vector3, equality_operator)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -244,7 +253,7 @@ TEST(Vector3, EqualityOperator)
     }
 }
 
-TEST(Vector3, NonEqualityOperator)
+TEST(Vector3, inequality_operator)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -263,7 +272,7 @@ TEST(Vector3, NonEqualityOperator)
     }   
 }
 
-TEST(ImuData, IndexOperator)
+TEST(ImuData, index_operator)
 {
     ImuData v{{1, 2, 3}, {4, 5, 6}};
 
@@ -276,7 +285,7 @@ TEST(ImuData, IndexOperator)
     EXPECT_THROW(v[7], std::exception);
 }
 
-TEST(Vector3, TemplateScalarDivisionOperator)
+TEST(Vector3, scaler_division_operator)
 {
     Vector3 v{Random::Double(), Random::Double(), Random::Double()};
 
@@ -287,7 +296,7 @@ TEST(Vector3, TemplateScalarDivisionOperator)
     EXPECT_EQ(v.x/3U, (v/3U).x);
 }
 
-TEST(Vector3, TemplateScalarProductOperators)
+TEST(Vector3, scalar_product_operator)
 {
     for (int i = 0; i < 1000; i++)
     {

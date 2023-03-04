@@ -14,27 +14,13 @@ PositionVelocityInference::PositionVelocityInference()
     init();
 }
 
-#if USE_NCS2
-/** \brief Start a Python script which opens a socket and does inference on data we send it. */
-void PositionVelocityInference::py_inference()
-{   
-    //if (!arwain::config.no_inference)
-    //{   
-        //std::string command = "PYTHONPATH=/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/lib/python2.7/dist-packages:/opt/intel/openvino/python/python3.7:/opt/intel/openvino/python/python3:/opt/intel/openvino/deployment_tools/model_optimizer InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share INTEL_OPENVINO_DIR=/opt/intel/openvino OpenCV_DIR=/opt/intel/openvino/opencv/cmake LD_LIBRARY_PATH=/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l:/opt/ros/melodic/lib:/opt/intel/openvino/opencv/lib:/opt/intel/openvino/deployment_tools/ngraph/lib:/opt/intel/opencl:/opt/intel/openvino/deployment_tools/inference_engine/external/hddl/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/gna/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/opt/intel/openvino/deployment_tools/inference_engine/lib/armv7l PATH=/opt/intel/openvino/deployment_tools/model_optimizer:/opt/ros/melodic/bin:/home/pi/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/pi/.local/bin:/opt/intel/openvino/deployment_tools/model_optimizer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games /usr/bin/python3 ./python_utils/ncs2_interface.py " + arwain::config.inference_model_xml + " > /dev/null &";
-        //system(command.c_str());
-    //}
-}
-#endif
-
 bool PositionVelocityInference::core_setup()
 {
     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
     std::this_thread::sleep_for(std::chrono::milliseconds{1000});
     
     #if USE_NCS2
-    //context = zmq_ctx_new();
-    //responder = zmq_socket(context, ZMQ_REP);
-    //zmq_bind(responder, inference_tcp_socket.c_str());
+    inferrer.init();
     #else // USE_TF
     // TODO Create inferencer.
     // If the model file cannot be found or loaded, set mode to terminate and break loop.
@@ -89,8 +75,6 @@ void PositionVelocityInference::setup_inference()
     position_file << "time x y z" << "\n";
 }
 
-// TODO Split NCS2 stuff into deprecated function
-
 void PositionVelocityInference::run_inference()
 {
     setup_inference();
@@ -111,39 +95,7 @@ void PositionVelocityInference::run_inference()
         last_time = time;
 
         #if USE_NCS2
-        // Load the IMU data into a string for serial transmission, gyro first.
-        for (unsigned int i = 0; i < imu.size(); i++)
-        {
-            request << std::setprecision(15) << (float)imu[i].gyro.x << ",";
-            request << std::setprecision(15) << (float)imu[i].gyro.y << ",";
-            request << std::setprecision(15) << (float)imu[i].gyro.z << ",";
-            request << std::setprecision(15) << (float)imu[i].acce.x << ",";
-            request << std::setprecision(15) << (float)imu[i].acce.y << ",";
-            request << std::setprecision(15) << (float)imu[i].acce.z << ",";
-        }
-        // Send the data and await response.
-        std::string fromStream = request.str();
-        const char *str = fromStream.c_str();
-        //zmq_send(responder, str, strlen(str), 0);
-        //zmq_recv(responder, response_buffer, 50, 0);
-        request.str("");
-
-        // Process the answer buffer into local velocity buffers.
-        // Assume a comma-separated list of three floats.
-        std::string answer{response_buffer};
-        std::cout << "Before if!\n";
-        if ((answer == "accept" || answer == "") && !ready_for_inference)
-        {
-            ready_for_inference = true;
-            continue;
-        }
-        std::cout << "After if!\n";
-        int delimiter = answer.find(",");
-        std::stringstream(answer.substr(0, delimiter)) >> velocity.x;
-        answer = answer.substr(delimiter+1);
-        delimiter = answer.find(",");
-        std::stringstream(answer.substr(0, delimiter)) >> velocity.y;
-        std::stringstream(answer.substr(delimiter+1)) >> velocity.z;
+        velocity = inferrer.infer(imu);
         #else // USE_TF
         // Load data into inference and run inference.
         unsigned int input_index = 0;
@@ -234,12 +186,12 @@ bool PositionVelocityInference::ready()
 
 bool PositionVelocityInference::init()
 {
-    // this->ready_for_inference = core_setup();
+    if (arwain::config.no_inference)
+    {
+        return false;
+    }
     core_setup();
     job_thread = ArwainThread{&PositionVelocityInference::run, "arwain_infr_th", this};
-    #if USE_NCS2
-    ncs2_thread = ArwainThread{&PositionVelocityInference::py_inference, "arwain_ncs2_th", this};          // Temporary: Run Python script to handle velocity inference.
-    #endif
     return true;
 }
 
@@ -255,20 +207,6 @@ void PositionVelocityInference::join()
     }
     // Instruct the NCS2 interface script to quit.
     #if USE_NCS2
-    //zmq_send(responder, "stop", strlen("stop"), 0);
-
-    // TODO Apparently, deletion of a void* is undefined, so not sure how to clean this up. Technically a memory leak, 
-    // although only one of each of the following ever exist so not a real cause for concern.
-    // delete context;
-    // delete responder;
-    while (!ncs2_thread.joinable())
-    {
-        sleep_ms(1);
-    }
-    if (ncs2_thread.joinable())
-    {
-        ncs2_thread.join();
-    }
     #else // USE_TF
     delete input;
     #endif

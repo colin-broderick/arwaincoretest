@@ -38,23 +38,23 @@ int main(int argc, char **argv)
     }
     if (input_parser.contains("-beta"))
     {
-        std::stringstream(input_parser.getCmdOption("-beta")) >> beta;
+        std::stringstream(input_parser.get_cmd_option("-beta")) >> beta;
     }
     if (input_parser.contains("-freq"))
     {
-        std::stringstream(input_parser.getCmdOption("-freq")) >> frequency;
+        std::stringstream(input_parser.get_cmd_option("-freq")) >> frequency;
     }
     if (input_parser.contains("-xbias"))
     {
-        std::stringstream(input_parser.getCmdOption("-xbias")) >> x_bias;
+        std::stringstream(input_parser.get_cmd_option("-xbias")) >> x_bias;
     }
     if (input_parser.contains("-ybias"))
     {
-        std::stringstream(input_parser.getCmdOption("-ybias")) >> y_bias;
+        std::stringstream(input_parser.get_cmd_option("-ybias")) >> y_bias;
     }
     if (input_parser.contains("-zbias"))
     {
-        std::stringstream(input_parser.getCmdOption("-zbias")) >> z_bias;
+        std::stringstream(input_parser.get_cmd_option("-zbias")) >> z_bias;
     }
 
     // Create orientation filter.
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     };
 
     // Open input and output file handles.
-    std::string filename = input_parser.getCmdOption("-file");
+    std::string filename = input_parser.get_cmd_option("-file");
     std::ifstream inputfile{filename};
     std::ofstream outputfile{filename+".processed.csv"};
     outputfile << "Roll, Pitch, Yaw\n";

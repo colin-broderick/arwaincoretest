@@ -259,6 +259,13 @@ nc::NdArray<double> MagnetometerCalibrator::form_data_array(const std::array<int
 /** \brief Creates the matrix describing an ellipsoid in homogeneous coordinates.
  * It is assumed that the constant term is -1, so only 9 elements coefficients need to be passed, 
  * and the bottom-right element of the generated matrix will be equal to -1.
+ * 
+ * If the elements of the input vector are [a0 ... a8], the output matrix is
+ *    [[a0    a3/2  a4/2  a6/2]
+ *     [a3/2  a1    a5/2  a7/2]
+ *     [a4/2  a5/2  a2    a8/2]
+ *     [a6/2  a7/2  a8/1   -1 ]]
+ * 
  * \param coefficients A [1,9] matrix where the elements are the cofficients of an ellipsoid polynomial in stanard form.
  * \return A [4,4] matrix representing the ellipsoid.
 */
@@ -273,6 +280,12 @@ nc::NdArray<double> MagnetometerCalibrator::create_ellipsoid_homogeneous(const n
 }
 
 /** \brief Forms a matrix representing the square terms of an ellipsoid in regular form.
+ * 
+ * If the elements of the input vector are [a0 ... a8], the output matrix is
+ *    [[a0    a3/2  a4/2]
+ *     [a3/2  a1    a5/2]
+ *     [a4/2  a5/2  a2  ]]
+ * 
  * \param coefficients The coefficient matrix of the ellipse.
  * \return 3x3 matrix representing square terms of ellipsoid.
  */
@@ -285,7 +298,14 @@ nc::NdArray<double> MagnetometerCalibrator::create_ellipsoid_regular(const nc::N
     };
 }
 
-/** \brief Creates an operator which translates a quadric in homogeneous form. 
+/** \brief Creates an operator which translates a quadric in homogeneous form.
+ * 
+ * If the input vector is [x y z], the output matrix is
+ *    [[1   0   0   x]
+ *     [0   1   0   y]
+ *     [0   0   1   z]
+ *     [0   0   0   1]]
+ * 
  * \param vector The vector by which to translate the quadric.
  * \return The translation operator.
  */

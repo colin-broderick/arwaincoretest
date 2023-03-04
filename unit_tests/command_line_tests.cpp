@@ -1,71 +1,69 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <string_view>
-#include "command_line.hpp"
 #include <iostream>
 
-TEST(Command_Line, run)
+#include "command_line.hpp"
+#include "velocity_prediction.hpp"
+
+TEST(ArwainCLI, run)
 {
     FAIL();
 }
 
-TEST(Command_Line, s2i_exit)
+// TODO Most of the tests here are not properly exited, so you'll get random
+// segfaults and core dumps from threads not being properly joined.
+
+TEST(ArwainCLI, s2i__exit)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("exit\n");
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
-
     command_line.join();
     EXPECT_EQ(command_line.s2i("exit"), 0);
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_stop)
+TEST(ArwainCLI, s2i__stop)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("stop\n");
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("stop"), 0);
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_shutdown)
+TEST(ArwainCLI, s2i__shutdown)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("shutdown\n");
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
-
     command_line.join();
     EXPECT_EQ(command_line.s2i("shutdown"), 0);
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_quit)
+TEST(ArwainCLI, s2i__quit)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("quit\n");
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
-
     command_line.join();
     EXPECT_EQ(command_line.s2i("quit"), 0);
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_infer)
+TEST(ArwainCLI, s2i__infer)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("infer\n");
@@ -79,7 +77,7 @@ TEST(Command_Line, s2i_infer)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_inference)
+TEST(ArwainCLI, s2i__inference)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("inference\n");
@@ -93,7 +91,7 @@ TEST(Command_Line, s2i_inference)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_autocal)
+TEST(ArwainCLI, s2i__autocal)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("autocal\n");
@@ -107,7 +105,7 @@ TEST(Command_Line, s2i_autocal)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_idle)
+TEST(ArwainCLI, s2i__idle)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("idle\n");
@@ -121,7 +119,7 @@ TEST(Command_Line, s2i_idle)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_mode)
+TEST(ArwainCLI, s2i__mode)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("mode\n");
@@ -135,7 +133,7 @@ TEST(Command_Line, s2i_mode)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_calibg)
+TEST(ArwainCLI, s2i__calibg)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("calibg\n");
@@ -149,7 +147,7 @@ TEST(Command_Line, s2i_calibg)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_calibm)
+TEST(ArwainCLI, s2i__calibm)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("calibm\n");
@@ -163,7 +161,7 @@ TEST(Command_Line, s2i_calibm)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_caliba)
+TEST(ArwainCLI, s2i__caliba)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("caliba\n");
@@ -177,7 +175,7 @@ TEST(Command_Line, s2i_caliba)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_record)
+TEST(ArwainCLI, s2i__record)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("record\n");
@@ -191,7 +189,7 @@ TEST(Command_Line, s2i_record)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_name)
+TEST(ArwainCLI, s2i__name)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("name\n");
@@ -205,7 +203,7 @@ TEST(Command_Line, s2i_name)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_help)
+TEST(ArwainCLI, s2i__help)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("help\n");
@@ -219,7 +217,7 @@ TEST(Command_Line, s2i_help)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_zeropos)
+TEST(ArwainCLI, s2i__zeropos)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("zeropos\n");
@@ -233,7 +231,7 @@ TEST(Command_Line, s2i_zeropos)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_name_substr)
+TEST(ArwainCLI, s2i__name_substr)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("name_test\n");
@@ -247,7 +245,7 @@ TEST(Command_Line, s2i_name_substr)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, s2i_default)
+TEST(ArwainCLI, s2i__default)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("test\n");
@@ -261,7 +259,7 @@ TEST(Command_Line, s2i_default)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, switch_to_exit_mode)
+TEST(ArwainCLI, switch_to_exit_mode)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("test\n");
@@ -273,13 +271,13 @@ TEST(Command_Line, switch_to_exit_mode)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, report_current_mode)
+TEST(ArwainCLI, report_current_mode)
 {
     // so simple that it probably can't be meaningfully tests
-    SUCCEED();
+    FAIL();
 }
 
-TEST(Command_Line, switch_to_idle_autocal_mode_from_inference)
+TEST(ArwainCLI, switch_to_idle_autocal_mode__from_inference)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("test\n");
@@ -296,7 +294,7 @@ TEST(Command_Line, switch_to_idle_autocal_mode_from_inference)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, switch_to_idle_autocal_mode_from_something_else)
+TEST(ArwainCLI, switch_to_idle_autocal_mode__from_something_else)
 {
     /*std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("test\n");
@@ -316,17 +314,17 @@ TEST(Command_Line, switch_to_idle_autocal_mode_from_something_else)
     FAIL();
 }
 
-TEST(Command_Line, switch_to_inference_mode)
+TEST(ArwainCLI, switch_to_inference_mode)
 {
     FAIL();
 }
 
-TEST(Command_Line, core_setup)
+TEST(ArwainCLI, core_setup)
 {
     FAIL();
 }
 
-TEST(Command_Line, force_switch_to_idle_autocal_mode)
+TEST(ArwainCLI, force_switch_to_idle_autocal_mode)
 {
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("test\n");
@@ -341,57 +339,115 @@ TEST(Command_Line, force_switch_to_idle_autocal_mode)
     std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, switch_to_gyro_calib_mode)
+TEST(ArwainCLI, switch_to_gyro_calib_mode)
 {
     FAIL();
 }
 
-TEST(Command_Line, fail_to_switch_to)
+TEST(ArwainCLI, fail_to_switch_to)
 {
     FAIL();
 }
 
-TEST(Command_Line, switch_to_mag_calib_mode)
+TEST(ArwainCLI, switch_to_mag_calib_mode)
 {
     FAIL();
 }
 
-TEST(Command_Line, switch_to_accel_calib_mode)
+TEST(ArwainCLI, switch_to_accel_calib_mode)
 {
     FAIL();
 }
 
-TEST(Command_Line, switch_to_data_collection_mode)
+TEST(ArwainCLI, switch_to_data_collection_mode)
 {
     FAIL();
 }
 
-TEST(Command_Line, set_folder_name)
+TEST(ArwainCLI, set_folder_name)
+{
+    arwain::config.no_cli = true;
+    arwain::system_mode = arwain::OperatingMode::Inference;
+    ArwainCLI cli;
+
+    std::string pre_value = arwain::folder_date_string_suffix;
+
+    // Should have no effect in inference mode.
+    cli.set_folder_name("name test_folder_name");
+    std::string post_value = arwain::folder_date_string_suffix;
+    EXPECT_EQ(pre_value, post_value);
+
+    // Should be ineffective with invalid input.
+    cli.set_folder_name("name name");
+    cli.set_folder_name("name");
+    post_value = arwain::folder_date_string_suffix;
+    EXPECT_EQ(pre_value, post_value);
+
+    // Should be effective in idle mode.
+    arwain::system_mode = arwain::OperatingMode::Idle;
+    cli.set_folder_name("name test_folder_name");
+    post_value = "test_folder_name";
+    EXPECT_EQ(post_value, arwain::folder_date_string_suffix);
+}
+
+/** \brief Produces no easily testable output. */
+TEST(ArwainCLI, parse_cli_input)
 {
     FAIL();
 }
 
-TEST(Command_Line, parse_cli_input)
+TEST(ArwainCLI, set_velocity_inference_pointer)
+{
+    arwain::config.no_inference = true;
+    PositionVelocityInference inferrer;
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("exit\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI cli;
+
+    EXPECT_EQ(cli.velocity_inference_handle, nullptr);
+
+    EXPECT_TRUE(cli.set_velocity_inference_pointer(inferrer));
+
+    EXPECT_NE(cli.velocity_inference_handle, nullptr);
+
+    cli.join();
+    inferrer.join();
+
+    std::cin.rdbuf(orig);
+}
+
+TEST(ArwainCLI, ArwainCLI)
 {
     FAIL();
 }
 
-TEST(Command_Line, set_velocity_inference_pointer)
+/** \brief We construct a CLI, then shut it down, then call init manually and check for expected state. */
+TEST(ArwainCLI, init)
 {
-    FAIL();
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("exit\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI cli;
+    EXPECT_TRUE(cli.job_thread.joinable());
+    cli.join();
+
+    EXPECT_TRUE(cli.init());
+    std::cin.rdbuf(input.rdbuf());
+    EXPECT_TRUE(cli.job_thread.joinable());
+    cli.join();
+
+    std::cin.rdbuf(orig);
 }
 
-TEST(Command_Line, constructor)
+TEST(ArwainCLI, join)
 {
-    FAIL();
-}
+    std::streambuf *orig = std::cin.rdbuf();
+    std::istringstream input("exit\n");
+    std::cin.rdbuf(input.rdbuf());
+    ArwainCLI cli;
+    EXPECT_TRUE(cli.job_thread.joinable());
+    cli.join();
 
-TEST(Command_Line, init)
-{
-    FAIL();
-}
-
-TEST(Command_Line, join)
-{
-    FAIL();
+    std::cin.rdbuf(orig);
 }

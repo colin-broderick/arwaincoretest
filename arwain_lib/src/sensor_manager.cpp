@@ -76,7 +76,7 @@ void SensorManager::run()
  * \return Will return false if autocalibration is turned onm, and calibration could not be
  * performed. Return true if calibration is performed.
  */
-bool calibrate_gyroscope_bias(IMU_IIM42652& imu)
+bool calibrate_gyroscope_bias(IIM42652<I2CDEVICEDRIVER>& imu)
 {
     if (imu.auto_calib_enabled())
     {
@@ -89,7 +89,7 @@ bool calibrate_gyroscope_bias(IMU_IIM42652& imu)
     GyroscopeCalibrator calibrator;
     while (!calibrator.is_converged())
     {
-        calibrator.feed(imu.read_IMU().gyro);
+        calibrator.feed(imu.read_imu().gyro);
     }
     Vector3 gyroscope_bias = calibrator.get_params();
 
@@ -223,7 +223,7 @@ void SensorManager::run_idle()
     {
         int64_t time_count = loop_scheduler.count();
 
-        auto [accel_data1, gyro_data1] = imu1.read_IMU();
+        auto [accel_data1, gyro_data1] = imu1.read_imu();
         // Force approximate alignment of the IMUs.
 
         // Feed the activity metric.
@@ -290,7 +290,7 @@ void SensorManager::run_inference()
     {
         int64_t time_count = loop_scheduler.count(); // Provides an accurate count of milliseconds passed since last loop iteration.
 
-        auto [accel_data1, gyro_data1] = imu1.read_IMU();
+        auto [accel_data1, gyro_data1] = imu1.read_imu();
 
         Vector3 magnet = magnetometer.read();
         magnet = {magnet.y, magnet.x, magnet.z}; // align magnetometer with IMU.
@@ -392,26 +392,26 @@ arwain::ReturnCode SensorManager::cleanup_inference()
 void SensorManager::core_setup()
 {
     // Configure IMUs.
-    imu1 = IMU_IIM42652{arwain::config.imu1_address, arwain::config.imu1_bus};
+    imu1 = IIM42652<I2CDEVICEDRIVER>{arwain::config.imu1_address, arwain::config.imu1_bus};
     imu1.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
     imu1.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
     imu1.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
     imu1.enable_auto_calib();
 
-    imu2 = IMU_IIM42652{arwain::config.imu2_address, arwain::config.imu2_bus};
+    imu2 = IIM42652<I2CDEVICEDRIVER>{arwain::config.imu2_address, arwain::config.imu2_bus};
     imu2.set_gyro_bias(arwain::config.gyro2_bias.x, arwain::config.gyro2_bias.y, arwain::config.gyro2_bias.z);
     imu2.set_accel_bias(arwain::config.accel2_bias.x, arwain::config.accel2_bias.y, arwain::config.accel2_bias.z);
     imu2.set_accel_scale(arwain::config.accel2_scale.x, arwain::config.accel2_scale.y, arwain::config.accel2_scale.z);
     imu2.enable_auto_calib();
 
-    imu3 = IMU_IIM42652{arwain::config.imu3_address, arwain::config.imu3_bus};
+    imu3 = IIM42652<I2CDEVICEDRIVER>{arwain::config.imu3_address, arwain::config.imu3_bus};
     imu3.set_gyro_bias(arwain::config.gyro3_bias.x, arwain::config.gyro3_bias.y, arwain::config.gyro3_bias.z);
     imu3.set_accel_bias(arwain::config.accel3_bias.x, arwain::config.accel3_bias.y, arwain::config.accel3_bias.z);
     imu3.set_accel_scale(arwain::config.accel3_scale.x, arwain::config.accel3_scale.y, arwain::config.accel3_scale.z);
     imu3.enable_auto_calib();
 
     // Configure magnetometer.
-    magnetometer = LIS3MDL{arwain::config.magn_address, arwain::config.magn_bus};
+    magnetometer = LIS3MDL<I2CDEVICEDRIVER>{arwain::config.magn_address, arwain::config.magn_bus};
     magnetometer.set_calibration_parameters(
         arwain::config.mag_bias,
         arwain::config.mag_scale,

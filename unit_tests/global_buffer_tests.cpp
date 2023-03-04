@@ -2,12 +2,12 @@
 
 #include "global_buffer.hpp"
 
-TEST(GlobalBuffer, Constructor)
+TEST(GlobalBuffer, GlobalBuffer)
 {
     EXPECT_NO_THROW((GlobalBuffer<int, 10>()));
 }
 
-TEST(GlobalBuffer, GetData)
+TEST(GlobalBuffer, get_data)
 {
     GlobalBuffer<int, 10> data;
     std::deque<int> expected_data;
@@ -18,7 +18,7 @@ TEST(GlobalBuffer, GetData)
     EXPECT_EQ(data.get_data(), expected_data);
 }
 
-TEST(GlobalBuffer, PushBackData)
+TEST(GlobalBuffer, push_back)
 {
     GlobalBuffer<int, 10> data;
     std::deque<int> expected_data;
@@ -34,7 +34,7 @@ TEST(GlobalBuffer, PushBackData)
     EXPECT_EQ(data.get_data().size(), 10);
 }
 
-TEST(GlobalBuffer, Back)
+TEST(GlobalBuffer, back)
 {
     GlobalBuffer<double, 100> data;
     data.push_back(445.345);
@@ -44,7 +44,7 @@ TEST(GlobalBuffer, Back)
     EXPECT_EQ(data.back(), 5.3);
 }
 
-TEST(GlobalBuffer, Clear)
+TEST(GlobalBuffer, clear)
 {
     GlobalBuffer<double, 100> data;
     data.push_back(445.345);

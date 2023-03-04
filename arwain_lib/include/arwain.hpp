@@ -68,7 +68,8 @@ namespace arwain
         AccelerometerCalibration,
         TestSerial,
         TestStanceDetector,
-        DataCollection
+        DataCollection,
+        InvalidMode
     };
 }
 

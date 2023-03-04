@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 
 project(arwain)
-
+set(CMAKE_BUILD_TYPE Debug)
 find_package(GTest CONFIG REQUIRED)
 
 option(USE_NCS2             "Use the Neural Compute Stick for inference"          OFF)
@@ -10,6 +10,7 @@ option(USE_ROS              "Use ROS topics to publish diagnostic data"         
 option(USE_UUBLA            "Include the UUBLA ultra-wideband library"            OFF)
 option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"       OFF)
 option(UNIT_TESTS           "Make private class methods public to enable testing" OFF)
+option(CHERI                "Compile with CHERI/Morello compatibility options"    OFF)
 
 find_package(Eigen3 REQUIRED)
 include_directories(EIGEN3_INCLUDE_DIR)
@@ -22,9 +23,15 @@ include_directories(/usr/local64/include)
 if(UNIT_TESTS)
     message("Building with all public class methods for test")
     add_definitions(-DTESTABLE=public)
-else()
+    add_definitions(-DI2CDEVICEDRIVER=MockI2CDevice)
+    add_definitions(-DSPIDEVICEDRIVER=MockSpiDevice)
+    add_definitions(-DINFERRER=MockInferrer)
+    else()
     add_definitions(-DTESTABLE=private)
-endif()
+    add_definitions(-DI2CDEVICEDRIVER=LinuxSmbusI2CDevice)
+    add_definitions(-DSPIDEVICEDRIVER=LinuxSpiDevice)
+    add_definitions(-DINFERRER=NCS2Inferrer)
+    endif()
 
 if(USE_REALSENSE)
     message("Using librealsense for T265 camera")

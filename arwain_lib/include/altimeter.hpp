@@ -7,6 +7,8 @@
 #include "sabatini_altimeter.hpp"
 #include "bmp384.hpp"
 
+class I2CDEVICEDRIVER;
+
 class Altimeter
 {
     TESTABLE:
@@ -17,20 +19,20 @@ class Altimeter
         void setup_inference();
         void cleanup_inference();
 
-    private:
+    TESTABLE:
         double altitude;
         double altitude_zero;
         const double CONSTANT_ROOM_TEMPERATURE = 21 + 273.15; // We are assuming constant ambient temperature in the hypsometric formula for now.
 
         ArwainThread job_thread;
         arwain::Logger pressure_log;
-        BMP384 bmp384;
+        BMP384<I2CDEVICEDRIVER> bmp384;
         arwain::Filters::SabatiniAltimeter sabatini_filter;
 
     public:
         Altimeter();
         bool init();
-        void join();
+        bool join();
 };
 
 #endif
