@@ -13,7 +13,7 @@ namespace arwain::Filters
      */
     class SabatiniAltimeter
     {
-        private:
+        TESTABLE:
             double dt; // Time step between updates, [seconds].
             double gravity; // Local acceleration due to gravity, [m/s2].
             Eigen::Matrix<double, 2, 1> K; // Gain matrix.

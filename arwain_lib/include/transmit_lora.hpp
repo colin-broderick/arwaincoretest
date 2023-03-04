@@ -7,7 +7,6 @@
 class StanceDetection;
 class UublaWrapper;
 class ArwainThread;
-class LoRa;
 
 class StatusReporting
 {
@@ -20,11 +19,11 @@ class StatusReporting
         void cleanup_inference();
         std::chrono::time_point<std::chrono::high_resolution_clock> get_next_time_slot(int node_id);
 
-	private:
+	TESTABLE:
 	    StanceDetection* stance_detection_handle = nullptr;
 		UublaWrapper* uubla_wrapper_handle = nullptr;
         ArwainThread job_thread;
-        LoRa lora;
+        LoRa<SPIDEVICEDRIVER> lora;
         arwain::Logger lora_file;
 
 	public:

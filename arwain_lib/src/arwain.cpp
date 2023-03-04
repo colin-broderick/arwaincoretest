@@ -259,7 +259,7 @@ void arwain::setup_log_folder_name_suffix(const InputParser& input)
 {
     if (input.contains("-name"))
     {
-        arwain::folder_date_string_suffix = input.getCmdOption(("-name"));
+        arwain::folder_date_string_suffix = input.get_cmd_option(("-name"));
     }
     else
     {
@@ -323,7 +323,7 @@ arwain::ReturnCode arwain::execute_jobs()
 
 arwain::ReturnCode arwain::calibrate_magnetometers()
 {
-    LIS3MDL magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
+    LIS3MDL<I2CDEVICEDRIVER> magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
     MagnetometerCalibrator calibrator;
     std::cout << "About to start magnetometer calibration." << std::endl;
     std::cout << "Move the device through all orientations; press Ctrl+C when done." << std::endl;
@@ -367,12 +367,12 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
 {
     Vector3 results;
 
-    IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<I2CDEVICEDRIVER> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu1.get_bus() << " at 0x" << std::hex << imu1.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator1;
     while (!calibrator1.is_converged())
     {
-        calibrator1.feed(imu1.read_IMU().gyro);
+        calibrator1.feed(imu1.read_imu().gyro);
         sleep_ms(5);
     }
     results = calibrator1.get_params();
@@ -380,12 +380,12 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     arwain::config.replace("gyro1_bias_y", results.y);
     arwain::config.replace("gyro1_bias_z", results.z);
 
-    IMU_IIM42652 imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<I2CDEVICEDRIVER> imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu2.get_bus() << " at 0x" << std::hex << imu2.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator2;
     while (!calibrator2.is_converged())
     {
-        calibrator2.feed(imu2.read_IMU().gyro);
+        calibrator2.feed(imu2.read_imu().gyro);
         sleep_ms(5);
     }
     results = calibrator2.get_params();
@@ -393,12 +393,12 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     arwain::config.replace("gyro2_bias_y", results.y);
     arwain::config.replace("gyro2_bias_z", results.z);
 
-    IMU_IIM42652 imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<I2CDEVICEDRIVER> imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu3.get_bus() << " at 0x" << std::hex << imu3.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator3;
     while (!calibrator3.is_converged())
     {
-        calibrator3.feed(imu3.read_IMU().gyro);
+        calibrator3.feed(imu3.read_imu().gyro);
         sleep_ms(5);
     }
     results = calibrator3.get_params();
@@ -451,9 +451,9 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
     std::cout << "\t" << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << std::endl;
     std::cout << std::dec << std::endl;
 
-    IMU_IIM42652 imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
-    IMU_IIM42652 imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
-    IMU_IIM42652 imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
+    IIM42652<I2CDEVICEDRIVER> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<I2CDEVICEDRIVER> imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
+    IIM42652<I2CDEVICEDRIVER> imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
 
     AccelerometerCalibrator calib1;
     AccelerometerCalibrator calib2;
@@ -469,9 +469,9 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
 
         while (!calib1.is_converged() || !calib2.is_converged() || !calib3.is_converged())
         {
-            calib1.feed(imu1.read_IMU().acce);
-            calib2.feed(imu2.read_IMU().acce);
-            calib3.feed(imu3.read_IMU().acce);
+            calib1.feed(imu1.read_imu().acce);
+            calib2.feed(imu2.read_imu().acce);
+            calib3.feed(imu3.read_imu().acce);
         }
         calib1.next_sampling();
         calib2.next_sampling();
@@ -513,10 +513,10 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
 }
 
 /** \brief Capture the SIGINT signal for clean exit.
- * Sets the system mode to Terminate, which instructs all threads to clean up and exit.
+ * After calling, the system mode is Terminate, which instructs all threads to clean up and exit.
  * \param signal The signal to capture.
  */
-static void sigint_handler(int signal)
+void sigint_handler(int signal)
 {
     if (signal == SIGINT)
     {
@@ -590,17 +590,17 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     else if (input.contains("-testori"))
     {
         int rate;
-        const char *rate_str = input.getCmdOption("-testori").c_str();
+        const char *rate_str = input.get_cmd_option("-testori").c_str();
         rate = std::atoi(rate_str);
         ret = arwain::test_ori(rate);
     }
     else if (input.contains("-rerunori"))
     {
-        ret = arwain::rerun_orientation_filter(input.getCmdOption("-rerunori"));
+        ret = arwain::rerun_orientation_filter(input.get_cmd_option("-rerunori"));
     }
     else if (input.contains("-rerunfloor"))
     {
-        ret = arwain::rerun_floor_tracker(input.getCmdOption("-rerunfloor"));
+        ret = arwain::rerun_floor_tracker(input.get_cmd_option("-rerunfloor"));
     }
 
     // Perform quick calibration of gyroscopes and write to config file.

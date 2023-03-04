@@ -48,7 +48,7 @@ std::chrono::time_point<std::chrono::high_resolution_clock> StatusReporting::get
 
 void StatusReporting::core_setup()
 {
-    lora = LoRa{
+    lora = LoRa<SPIDEVICEDRIVER>{
         arwain::config.lora_address,
         true,
         arwain::config.lora_rf_frequency,
@@ -105,6 +105,12 @@ void StatusReporting::run_inference()
 
     while (arwain::system_mode == arwain::OperatingMode::Inference)
     {
+        if (stance_detection_handle == nullptr)
+        {
+            // TODO return arwain code for early exit
+            throw std::runtime_error{"You haven't set a stance detection pointer."};
+        }
+
         arwain::PosePacket pose_message;
         pose_message.metadata = arwain::config.node_id;
         auto position = arwain::Buffers::POSITION_BUFFER.back();
@@ -118,18 +124,10 @@ void StatusReporting::run_inference()
         pose_message.other = static_cast<uint8_t>(act >= 7 ? 7 : act);
 
         // Create alerts flags.
-        if (stance_detection_handle != nullptr)
-        {
-            pose_message.alerts = stance_detection_handle->get_falling_state()
-                               | (stance_detection_handle->get_entangled_state() << 1)
-                               | (stance_detection_handle->get_attitude() << 2)
-                               | (stance_detection_handle->get_stance() << 3);
-        }
-        else
-        {
-            // TODO return arwain code for early exit
-            throw std::exception{};
-        }
+        pose_message.alerts = stance_detection_handle->get_falling_state()
+                            | (stance_detection_handle->get_entangled_state() << 1)
+                            | (stance_detection_handle->get_attitude() << 2)
+                            | (stance_detection_handle->get_stance() << 3);
 
         #if USE_UUBLA
         // As written, only one piece of beacon info can be sent at a time.

@@ -9,14 +9,14 @@ class Multi_IIM42652
 {
     public:
         Multi_IIM42652();
-        void read_IMU();
+        void read_imu();
         double read_temperature();
         double accelerometer_x, accelerometer_y, accelerometer_z, gyroscope_x, gyroscope_y, gyroscope_z;
     
     private:
-        IMU_IIM42652 imu1{0x68, "/dev/i2c-1"};
-        IMU_IIM42652 imu2{0x69, "/dev/i2c-1"};
-        IMU_IIM42652 imu3{0x68, "/dev/i2c-4"};
+        IIM42652<I2CDEVICEDRIVER> imu1{0x68, "/dev/i2c-1"};
+        IIM42652<I2CDEVICEDRIVER> imu2{0x69, "/dev/i2c-1"};
+        IIM42652<I2CDEVICEDRIVER> imu3{0x68, "/dev/i2c-4"};
 };
 
 #endif

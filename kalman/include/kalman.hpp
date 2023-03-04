@@ -11,6 +11,7 @@ using Eigen::MatrixXd;
 class KalmanFilter
 {
 public:
+    KalmanFilter() = default;
     KalmanFilter(MatrixXd X, MatrixXd P, int dt, MatrixXd u, MatrixXd a, MatrixXd c, MatrixXd m, MatrixXd r, MatrixXd h, MatrixXd i, MatrixXd w, MatrixXd q)
     {
         state_matrix = X;
@@ -28,7 +29,7 @@ public:
     }
     MatrixXd kalman_one_cycle(MatrixXd observation, MatrixXd U);
     
-private:
+TESTABLE:
     void set_B(double dt);
     void new_predicted_state();
     void new_state_covariance_matrix();
@@ -60,7 +61,7 @@ class KalmanFilter1D
         double est = 0;
         bool converged = false;
 
-    private:
+    TESTABLE:
         double KG = 0;
         double E_est = 0;
         double E_mea = 0;
@@ -71,7 +72,7 @@ class KalmanFilter1D
         void update(const double measurement, const double measurement_error);
         double get_gain() const;
 
-    private:
+    TESTABLE:
         void update_gain(const double measurement_error);
         void update_estimate(const double measurement);
         void update_estimate_error();

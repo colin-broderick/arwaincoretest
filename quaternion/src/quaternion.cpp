@@ -111,9 +111,9 @@ Quaternion::Quaternion(const double w, const double x, const double y, const dou
 double Quaternion::dot(const Quaternion& quat1, const Quaternion& quat2)
 {
     return quat1.getW() * quat2.getW()
-         + quat1.getX() * quat2.getX()
-         + quat1.getY() * quat2.getY()
-         + quat1.getZ() * quat2.getZ();
+         + quat1.get_x() * quat2.get_x()
+         + quat1.get_y() * quat2.get_y()
+         + quat1.get_z() * quat2.get_z();
 }
 
 /** \brief Assuming two versors are supplied, computes the difference in their rotation angles.
@@ -138,9 +138,9 @@ Quaternion operator+(const Quaternion& quat1, const Quaternion& quat2)
 {
     return Quaternion{
         quat1.getW() + quat2.getW(),
-        quat1.getX() + quat2.getX(),
-        quat1.getY() + quat2.getY(),
-        quat1.getZ() + quat2.getZ()
+        quat1.get_x() + quat2.get_x(),
+        quat1.get_y() + quat2.get_y(),
+        quat1.get_z() + quat2.get_z()
     };
 }
 
@@ -153,9 +153,9 @@ Quaternion operator-(const Quaternion& quat1, const Quaternion& quat2)
 {
     return Quaternion{
         quat1.getW() - quat2.getW(),
-        quat1.getX() - quat2.getX(),
-        quat1.getY() - quat2.getY(),
-        quat1.getZ() - quat2.getZ()
+        quat1.get_x() - quat2.get_x(),
+        quat1.get_y() - quat2.get_y(),
+        quat1.get_z() - quat2.get_z()
     };
 }
 
@@ -167,14 +167,14 @@ Quaternion operator-(const Quaternion& quat1, const Quaternion& quat2)
 Quaternion operator*(const Quaternion& quat1, const Quaternion& quat2)
 {
     double p1 = quat1.getW();
-    double p2 = quat1.getX();
-    double p3 = quat1.getY();
-    double p4 = quat1.getZ();
+    double p2 = quat1.get_x();
+    double p3 = quat1.get_y();
+    double p4 = quat1.get_z();
 
     double q1 = quat2.getW();
-    double q2 = quat2.getX();
-    double q3 = quat2.getY();
-    double q4 = quat2.getZ();
+    double q2 = quat2.get_x();
+    double q3 = quat2.get_y();
+    double q4 = quat2.get_z();
 
     return Quaternion{
         p1*q1 - p2*q2 - p3*q3 - p4*q4,
@@ -201,15 +201,15 @@ bool operator==(const Quaternion& quat1, const Quaternion& quat2)
     {
         return false;
     }
-    if (quat1.getX() != quat2.getX())
+    if (quat1.get_x() != quat2.get_x())
     {
         return false;
     }
-    if (quat1.getY() != quat2.getY())
+    if (quat1.get_y() != quat2.get_y())
     {
         return false;
     }
-    if (quat1.getZ() != quat2.getZ())
+    if (quat1.get_z() != quat2.get_z())
     {
         return false;
     }
@@ -223,8 +223,8 @@ bool operator==(const Quaternion& quat1, const Quaternion& quat2)
  */
 std::ostream& operator<<(std::ostream& stream, const Quaternion& quaternion)
 {
-    stream << "quaternion(" << quaternion.getW() << ", " << quaternion.getX()
-                    << ", " << quaternion.getY() << ", " << quaternion.getZ() << ")";
+    stream << "quaternion(" << quaternion.getW() << ", " << quaternion.get_x()
+                    << ", " << quaternion.get_y() << ", " << quaternion.get_z() << ")";
     return stream;
 }
 
@@ -235,17 +235,17 @@ double Quaternion::getW() const
     return w;
 }
 
-double Quaternion::getX() const
+double Quaternion::get_x() const
 {
     return x;
 }
 
-double Quaternion::getY() const
+double Quaternion::get_y() const
 {
     return y;
 }
 
-double Quaternion::getZ() const
+double Quaternion::get_z() const
 {
     return z;
 }
@@ -273,7 +273,7 @@ double Quaternion::norm() const
 }
 
 /** \brief Whether the quaternion has unit magnitude. */
-bool Quaternion::isNormal() const
+bool Quaternion::is_normal() const
 {
     double norm_ = norm();
     return norm_ > 0.99999 && norm_ <  1.00001;

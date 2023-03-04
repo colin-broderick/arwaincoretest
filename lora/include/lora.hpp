@@ -140,6 +140,7 @@
 #define MODEMCONFIG3_MOBILENODE	(1<<3)
 #define MODEMCONFIG3_AGCAUTOON	(1<<2)
 
+template <class SpiDeviceClass>
 class LoRa
 {
     public: // Types
@@ -168,22 +169,22 @@ class LoRa
 		std::tuple<bool, std::string> receive_string(int timeout_ms);
 		std::tuple<bool, std::vector<uint8_t>> receive_bytes();
 
-	private: // Methods
+	TESTABLE: // Methods
         uint8_t read_register(uint8_t address);
         void write_register(uint8_t address, uint8_t val);
 		void configure();
-		void read_FIFO(uint8_t num_bytes, uint8_t* out_buffer);
+		void read_fifo(uint8_t num_bytes, uint8_t* out_buffer);
 		void write_FIFO(const char* str, uint8_t num_bytes);
 		bool rx(uint8_t* out_buffer);
 
-    private: // Attributes
+    TESTABLE: // Attributes
 		static const int max_message_size = 63;
 		bool is_receiver;
 		Frequency frequency_mhz;
 		Bandwidth bandwidth_khz;
 		SpreadFactor spread_factor;
-        SPI *spi = nullptr;
-        spi_config_t spi_config;		
+        SpiDeviceClass spi;
+        SpiConfig spi_config;		
 };
 
 #endif

@@ -37,27 +37,27 @@ int main(int argc, char **argv)
         std::cout << "  gyro_x, gyro_y, gyro_z, accel_x, accel_y, accel_z, mag_x, mag_y, mag_z\n";
         return 0;
     }
-    std::stringstream(input_parser.getCmdOption("-accelindex")) >> accelindex;
-    std::stringstream(input_parser.getCmdOption("-gyroindex")) >> gyroindex;
+    std::stringstream(input_parser.get_cmd_option("-accelindex")) >> accelindex;
+    std::stringstream(input_parser.get_cmd_option("-gyroindex")) >> gyroindex;
     if (input_parser.contains("-beta"))
     {
-        std::stringstream(input_parser.getCmdOption("-beta")) >> beta;
+        std::stringstream(input_parser.get_cmd_option("-beta")) >> beta;
     }
     if (input_parser.contains("-freq"))
     {
-        std::stringstream(input_parser.getCmdOption("-freq")) >> frequency;
+        std::stringstream(input_parser.get_cmd_option("-freq")) >> frequency;
     }
     if (input_parser.contains("-xbias"))
     {
-        std::stringstream(input_parser.getCmdOption("-xbias")) >> x_bias;
+        std::stringstream(input_parser.get_cmd_option("-xbias")) >> x_bias;
     }
     if (input_parser.contains("-ybias"))
     {
-        std::stringstream(input_parser.getCmdOption("-ybias")) >> y_bias;
+        std::stringstream(input_parser.get_cmd_option("-ybias")) >> y_bias;
     }
     if (input_parser.contains("-zbias"))
     {
-        std::stringstream(input_parser.getCmdOption("-zbias")) >> z_bias;
+        std::stringstream(input_parser.get_cmd_option("-zbias")) >> z_bias;
     }
 
     // Create orientation filter.
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     arwain::Madgwick filter{frequency, beta};
 
     // Open input and output file handles.
-    std::string filename = input_parser.getCmdOption("-file");
+    std::string filename = input_parser.get_cmd_option("-file");
     std::ifstream inputfile{filename};
     std::ofstream outputfile{filename+".processed.csv"};
     outputfile << "W, X, Y, Z\n";
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
             data_line[accelindex+1],
             data_line[accelindex+2]                       // Units of acceleration don't matter since only the norm is used
         );
-        outputfile << filter.getW() << "," << filter.getX() << "," << filter.getY() << "," << filter.getZ() << "\n";
+        outputfile << filter.getW() << "," << filter.get_x() << "," << filter.get_y() << "," << filter.get_z() << "\n";
     }
 
     std::cout << "Read " << count << " total lines\n";

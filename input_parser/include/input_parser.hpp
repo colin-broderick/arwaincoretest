@@ -11,7 +11,7 @@ class InputParser
 
     public:
         InputParser(int &argc, char **argv);
-        const std::string& getCmdOption(const std::string &option) const;
+        const std::string& get_cmd_option(const std::string &option) const;
         bool contains(const std::string &option) const;
 };
 

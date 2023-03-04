@@ -2,14 +2,37 @@
 
 #include "sensor_manager.hpp"
 
-TEST(IMU_Reader, Join)
+TEST(SensorManager, run_through_modes)
 {
+    arwain::config.no_imu = false;
+    SensorManager sensors;
+    sleep_ms(500);
+    arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
+    sleep_ms(500);
+    // arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
+    // sleep_ms(500);
+    // arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
+    // sleep_ms(500);
+    arwain::system_mode = arwain::OperatingMode::Inference;
+    sleep_ms(500);
+    arwain::system_mode = arwain::OperatingMode::TestStanceDetector;
+    sleep_ms(500);
+    // arwain::system_mode = arwain::OperatingMode::SelfTest;
+    // sleep_ms(500);
+    
+    arwain::system_mode = arwain::OperatingMode::Terminate;
+    sensors.join();
+}
+
+TEST(SensorManager, join)
+{
+    arwain::config.no_imu = true;
     SensorManager reader;
     arwain::system_mode = arwain::OperatingMode::Terminate;
     EXPECT_NO_THROW(reader.join());
 }
 
-TEST(IMU_Reader, Init_success)
+TEST(SensorManager, init__success)
 {
    /* arwain::config.no_imu = false;
     SensorManager reader;
@@ -20,7 +43,7 @@ TEST(IMU_Reader, Init_success)
     FAIL();
 }
 
-TEST(IMU_Reader, Init_failure)
+TEST(SensorManager, init__failure)
 {
     /*
     arwain::config.no_imu = true;
@@ -32,7 +55,18 @@ TEST(IMU_Reader, Init_failure)
    FAIL();
 }
 
-TEST(IMU_Reader, Set_Post_Gyro_Calibration_Callback)
+static void test_callback()
 {
-   FAIL();
+
+}
+
+TEST(SensorManager, set_post_gyro_calibration_callback)
+{
+    arwain::config.no_imu = true;
+    SensorManager sensors;
+    EXPECT_FALSE(sensors.init());
+    EXPECT_EQ(sensors.post_gyro_calib_callback, nullptr);
+    sensors.set_post_gyro_calibration_callback(test_callback);
+    EXPECT_NE(sensors.post_gyro_calib_callback, nullptr);
+    sensors.join();
 }

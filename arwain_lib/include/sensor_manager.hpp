@@ -27,16 +27,16 @@ class SensorManager
         void run_self_test();
         Vector3 world_align(const Vector3& vec, const Quaternion& rotation);
 
-    private:
+    TESTABLE:
         // Callback to be executed when active gyroscope calibration is complete.
         std::function<void()> post_gyro_calib_callback;
 
         ArwainThread job_thread;
         ArwainThread quick_madgwick_convergence_thread;
-        IMU_IIM42652 imu1;
-        IMU_IIM42652 imu2;
-        IMU_IIM42652 imu3;
-        LIS3MDL magnetometer;
+        IIM42652<I2CDEVICEDRIVER> imu1;
+        IIM42652<I2CDEVICEDRIVER> imu2;
+        IIM42652<I2CDEVICEDRIVER> imu3;
+        LIS3MDL<I2CDEVICEDRIVER> magnetometer;
         arwain::Madgwick madgwick_filter_1;
         arwain::Madgwick madgwick_filter_mag_1;
 

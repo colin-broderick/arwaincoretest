@@ -78,7 +78,7 @@ arwain::ReturnCode arwain::test_uubla_2()
 
 arwain::ReturnCode arwain::test_pressure()
 {
-    BMP384 bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
+    BMP384<I2CDEVICEDRIVER> bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
 
     // Set up timing.
 
@@ -87,7 +87,7 @@ arwain::ReturnCode arwain::test_pressure()
 
     auto [pressure, temperature] = bmp384.read();
     pressure = pressure - arwain::config.pressure_offset;
-    altitude = BMP384::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+    altitude = BMP384<I2CDEVICEDRIVER>::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
 
     sleep_ms(50);
 
@@ -98,7 +98,7 @@ arwain::ReturnCode arwain::test_pressure()
     {
         auto [new_pressure, new_temperature] = bmp384.read();
         new_pressure = new_pressure - arwain::config.pressure_offset;
-        double new_alt = BMP384::calculate_altitude(new_pressure / 100.0, new_temperature, arwain::config.sea_level_pressure);
+        double new_alt = BMP384<I2CDEVICEDRIVER>::calculate_altitude(new_pressure / 100.0, new_temperature, arwain::config.sea_level_pressure);
         altitude = factor * altitude + (1.0 - factor) * new_alt;
 
         std::cout << "Pressure:    " << new_pressure / 100.0 << " hPa" << std::endl;
@@ -118,7 +118,7 @@ arwain::ReturnCode arwain::test_pressure()
 arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_address)
 {
     // Initialize the IMU.
-    IMU_IIM42652 imu{i2c_address, i2c_bus};
+    IIM42652<I2CDEVICEDRIVER> imu{i2c_address, i2c_bus};
     imu.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
     imu.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
@@ -129,7 +129,7 @@ arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_ad
 
     while (!loop_timer.finished())
     {
-        auto [accel_data, gyro_data] = imu.read_IMU();
+        auto [accel_data, gyro_data] = imu.read_imu();
         accel_data.x = (accel_data.x - arwain::config.accel1_bias.x) * arwain::config.accel1_scale.x;
         accel_data.y = (accel_data.y - arwain::config.accel1_bias.y) * arwain::config.accel1_scale.y;
         accel_data.z = (accel_data.z - arwain::config.accel1_bias.z) * arwain::config.accel1_scale.z;
@@ -146,7 +146,7 @@ arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_ad
 
 arwain::ReturnCode arwain::test_lora_rx()
 {
-    LoRa lora{arwain::config.lora_address, true};
+    LoRa<SPIDEVICEDRIVER> lora{arwain::config.lora_address, true};
 
     if (lora.test_chip() == 0x1A)
     {
@@ -203,6 +203,7 @@ arwain::ReturnCode arwain::interactive_test()
     arwain::ReturnCode ret = arwain::ReturnCode::Success;
     std::string response;
 
+    #if USE_UUBLA
     // Test UUBLA wrapper
     #if USE_UUBLA
     ret = arwain::test_uubla_2();
@@ -213,7 +214,6 @@ arwain::ReturnCode arwain::interactive_test()
     {
         return arwain::ReturnCode::GeneralError;
     }
-    return arwain::ReturnCode::Success;
     #endif
 
     // Test IMU reads looks normal
@@ -315,7 +315,7 @@ arwain::ReturnCode arwain::test_mag(int argc, char **argv)
 /** \brief Checks that the correct chip ID can be read from the magnetometer. If so, reads and prints orientation until interrupted. */
 arwain::ReturnCode arwain::test_mag()
 {
-    LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
+    LIS3MDL<I2CDEVICEDRIVER> magn{arwain::config.magn_address, arwain::config.magn_bus};
     magn.set_calibration_parameters(
         arwain::config.mag_bias,
         arwain::config.mag_scale,
@@ -345,7 +345,7 @@ arwain::ReturnCode arwain::test_mag()
 
 arwain::ReturnCode arwain::test_lora_tx()
 {
-    LoRa lora{arwain::config.lora_address, false};
+    LoRa<SPIDEVICEDRIVER> lora{arwain::config.lora_address, false};
 
     if (lora.test_chip() == 0x1A)
     {
@@ -374,7 +374,7 @@ arwain::ReturnCode arwain::test_lora_tx()
 
 arwain::ReturnCode arwain::test_ori(int frequency)
 {
-    IMU_IIM42652 imu{config.imu1_address, config.imu1_bus};
+    IIM42652<I2CDEVICEDRIVER> imu{config.imu1_address, config.imu1_bus};
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
     imu.enable_auto_calib();
     arwain::Madgwick filter{static_cast<double>(frequency), config.madgwick_beta};
@@ -393,7 +393,7 @@ arwain::ReturnCode arwain::test_ori(int frequency)
         loop_scheduler.await();
         auto time_count = loop_scheduler.count();
 
-        auto [accel, gyro] = imu.read_IMU();
+        auto [accel, gyro] = imu.read_imu();
         accel = accel - config.accel1_bias;
         
         filter.update(time_count, gyro.x, gyro.y, gyro.z, accel.x, accel.y, accel.z);
