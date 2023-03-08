@@ -30,8 +30,8 @@ if(UNIT_TESTS)
     endif()
 endif()
 
-target_link_libraries(${PROJECT_NAME} stdc++fs)
 if(NOT CHERI)
+target_link_libraries(${PROJECT_NAME} stdc++fs)
 target_link_libraries(${PROJECT_NAME} zmq)
 endif()
 include_directories(
