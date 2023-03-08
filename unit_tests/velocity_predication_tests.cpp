@@ -176,6 +176,7 @@ TEST(PositionVelocityInference, run)
  */
 TEST(PositionVelocityInference, cleanup_inference)
 {
+    arwain::config.no_inference = true;
     PositionVelocityInference inferrer;
     inferrer.position = {1, 1, 1};
     inferrer.velocity = {1, 1, 1};
@@ -194,7 +195,6 @@ TEST(PositionVelocityInference, cleanup_inference)
     EXPECT_FALSE(inferrer.velocity_file.is_open());
 
     arwain::system_mode = arwain::OperatingMode::Terminate;
-    inferrer.join();
 }
 
 #if USE_NCS2
