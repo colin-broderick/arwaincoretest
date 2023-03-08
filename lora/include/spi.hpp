@@ -3,6 +3,7 @@
 
 #include "spi_interface.hpp"
 
+#if !UNIT_TESTS
 class LinuxSpiDevice : public I_SPI
 {
     TESTABLE: // Attributes
@@ -29,4 +30,5 @@ class LinuxSpiDevice : public I_SPI
         int xfer(uint8_t *p_txbuffer, uint8_t p_txlen, uint8_t *p_rxbuffer, uint8_t p_rxlen);
 };
 
+#endif
 #endif

@@ -7,10 +7,13 @@
 #include <sys/ioctl.h>
 #include <cstring>
 
+#if !CHERI
 #include <linux/spi/spidev.h>
+#endif
 
 #include "spi.hpp"
 
+#if !UNIT_TESTS
 bool LinuxSpiDevice::set_bit_per_word(uint8_t p_bit)
 {
 
@@ -249,3 +252,5 @@ bool LinuxSpiDevice::set_config(SpiConfig *p_spi_config)
     }
     return false;
 }
+
+#endif
