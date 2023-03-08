@@ -83,7 +83,7 @@
 #define GYRO_RES_2000 0.06103515625
 
 class Vector3;
-class ImuData;
+struct ImuData;
 
 template <class I2CDeviceClass>
 class IIM42652
