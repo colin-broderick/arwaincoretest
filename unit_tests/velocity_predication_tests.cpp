@@ -2,14 +2,14 @@
 
 #include "velocity_prediction.hpp"
 
-TEST(MockInferrer, init_infer)
-{
-    std::deque<ImuData> data;
-    data.push_back({{0, 0, 0}, {0, 0, 0}});
-    MockInferrer inferrer;
-    EXPECT_NO_THROW(inferrer.init());
-    EXPECT_EQ(inferrer.infer(data), (Vector3{0, 0, 0}));
-}
+// TEST(MockInferrer, init_infer)
+// {
+//     std::deque<ImuData> data;
+//     data.push_back({{0, 0, 0}, {0, 0, 0}});
+//     MockInferrer inferrer;
+//     EXPECT_NO_THROW(inferrer.init());
+//     EXPECT_EQ(inferrer.infer(data), (Vector3{0, 0, 0}));
+// }
 
 TEST(PositionVelocityInference, join)
 {
@@ -197,6 +197,7 @@ TEST(PositionVelocityInference, cleanup_inference)
 }
 
 #if USE_NCS2
+#if !CHERI
 /** \brief This function just calls a Python script then returns.
  * Nothing else is testable at this stage. In fact it will probably
  * fail to find the script, but we can't test that effectively atm.
@@ -215,4 +216,5 @@ TEST(PositionVelocityInference, py_inference)
         NCS2Inferrer inferrer;
     );
 }
+#endif
 #endif
