@@ -4,11 +4,15 @@
 #include "arwain_thread.hpp"
 #include "vel_infer_interface.hpp"
 
+#if !CHERI
 #include <zmq.h>
+#endif
+
 #include <string>
 #include <sstream>
 
-class MockInferrer : public I_VelInferrer
+#if CHERI
+class NCS2Inferrer : public I_VelInferrer
 {
     public:
         Vector3 infer(const std::deque<ImuData>& imu_data)
@@ -21,7 +25,7 @@ class MockInferrer : public I_VelInferrer
             return;
         }
 };
-
+#else
 class NCS2Inferrer : public I_VelInferrer
 {
     TESTABLE:
@@ -118,5 +122,6 @@ class NCS2Inferrer : public I_VelInferrer
             }
         }
 };
+#endif
 
 #endif

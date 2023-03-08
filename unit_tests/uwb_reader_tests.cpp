@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
-#if USE_UUBLA
-
-#include "uwb_reader.hpp"
 #include "arwain.hpp"
+#if USE_UUBLA
+#include "uwb_reader.hpp"
+#endif
 
 #if USE_UUBLA
 TEST(UWB_Reader, Init_Both_Conditions_False)

@@ -7,6 +7,8 @@
 #include <sys/ioctl.h>
 #include <cstring>
 
+#include <linux/spi/spidev.h>
+
 #include "spi.hpp"
 
 bool LinuxSpiDevice::set_bit_per_word(uint8_t p_bit)

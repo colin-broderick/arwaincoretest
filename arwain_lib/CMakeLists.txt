@@ -23,13 +23,17 @@ endif()
 add_library(arwain_lib ${SRC_FILES})
 
 if(UNIT_TESTS)
+    target_link_libraries(${PROJECT_NAME} GTest::gtest)
     if(NOT CHERI)
         message("Building ${PROJECT_NAME} with test coverage")
         target_compile_options(${PROJECT_NAME} PRIVATE -ftest-coverage -fprofile-arcs -Wfatal-errors)
     endif()
 endif()
 
-target_link_libraries(arwain_lib stdc++fs)
+target_link_libraries(${PROJECT_NAME} stdc++fs)
+if(NOT CHERI)
+target_link_libraries(${PROJECT_NAME} zmq)
+endif()
 include_directories(
     ../vector3
     ../quaternion

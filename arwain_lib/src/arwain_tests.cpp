@@ -203,7 +203,6 @@ arwain::ReturnCode arwain::interactive_test()
     arwain::ReturnCode ret = arwain::ReturnCode::Success;
     std::string response;
 
-    #if USE_UUBLA
     // Test UUBLA wrapper
     #if USE_UUBLA
     ret = arwain::test_uubla_2();

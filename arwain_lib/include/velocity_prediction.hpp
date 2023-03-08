@@ -23,7 +23,7 @@ class PositionVelocityInference
         void run();
         void cleanup_inference();
         #if USE_NCS2
-        INFERRER inferrer;
+        NCS2Inferrer inferrer;
         #endif
 
         bool ready_for_inference = false;

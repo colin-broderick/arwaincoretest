@@ -20,17 +20,19 @@ add_definitions(-DNUMCPP_NO_USE_BOOST)
 
 include_directories(/usr/local64/include)
 
+if(CHERI)
+    add_definitions(-DCHERI)
+endif()
+
 if(UNIT_TESTS)
     message("Building with all public class methods for test")
     add_definitions(-DTESTABLE=public)
     add_definitions(-DI2CDEVICEDRIVER=MockI2CDevice)
     add_definitions(-DSPIDEVICEDRIVER=MockSpiDevice)
-    add_definitions(-DINFERRER=MockInferrer)
     else()
     add_definitions(-DTESTABLE=private)
     add_definitions(-DI2CDEVICEDRIVER=LinuxSmbusI2CDevice)
     add_definitions(-DSPIDEVICEDRIVER=LinuxSpiDevice)
-    add_definitions(-DINFERRER=NCS2Inferrer)
     endif()
 
 if(USE_REALSENSE)
@@ -148,6 +150,9 @@ endif()
 target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
 target_compile_options(${PROJECT_NAME}_test PRIVATE -O0 -g -Wno-psabi -Wall -Wshadow -Wextra)
 target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES}               pthread)
+if(NOT CHERI)
+target_link_libraries(${PROJECT_NAME}_test      ${ALL_ARWAIN_LIBRARIES}               pthread)
+endif()
 target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} GTest::gtest pthread)
 
 ## Install configuration and related files to correct locations.
