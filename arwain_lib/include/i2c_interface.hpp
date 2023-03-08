@@ -6,11 +6,13 @@
 #include <fcntl.h>
 #include <cstring>
 
-extern "C"
-{
-    #include <linux/i2c-dev.h>
-    #include <i2c/smbus.h>
-}
+#if !CHERI
+    extern "C"
+    {
+        #include <linux/i2c-dev.h>
+        #include <i2c/smbus.h>
+    }
+#endif
 
 /** \brief I2C interface defintion. */
 class I_I2C
@@ -39,7 +41,7 @@ class I_I2C
          */
         virtual bool i2c_init(const int address, const std::string &bus_name) = 0;
 };
-
+#if UNIT_TESTS
 class MockI2CDevice : public I_I2C
 {
     /*  (void) casts are present to suppress unused parameter warnings. */
@@ -65,6 +67,8 @@ class MockI2CDevice : public I_I2C
             return true;
         }
 };
+
+#else
 
 class LinuxSmbusI2CDevice : public I_I2C
 {
@@ -102,5 +106,7 @@ class LinuxSmbusI2CDevice : public I_I2C
             return true;
         }
 };
+
+#endif
 
 #endif

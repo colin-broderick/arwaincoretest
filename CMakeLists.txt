@@ -26,6 +26,7 @@ endif()
 
 if(UNIT_TESTS)
     message("Building with all public class methods for test")
+    add_definitions(-DUNIT_TESTS)
     add_definitions(-DTESTABLE=public)
     add_definitions(-DI2CDEVICEDRIVER=MockI2CDevice)
     add_definitions(-DSPIDEVICEDRIVER=MockSpiDevice)
