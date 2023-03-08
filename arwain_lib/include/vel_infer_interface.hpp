@@ -4,7 +4,7 @@
 #include <deque>
 
 class Vector3;
-class ImuData;
+struct ImuData;
 
 class I_VelInferrer
 {

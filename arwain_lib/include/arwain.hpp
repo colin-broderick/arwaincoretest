@@ -29,8 +29,8 @@ namespace arwain
 arwain::ReturnCode arwain_main(int argc, char** argv);
 
 class Vector3;
-class ImuData;
 class InputParser;
+struct ImuData;
 
 namespace arwain::BufferSizes
 {

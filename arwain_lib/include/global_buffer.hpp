@@ -5,7 +5,7 @@
 #include <mutex>
 
 class Vector3;
-class ImuData;
+struct ImuData;
 
 template <class DataType, int BufferSize>
 class GlobalBuffer
