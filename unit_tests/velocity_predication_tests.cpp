@@ -47,6 +47,7 @@ TEST(PositionVelocityInference, init__success)
  */
 TEST(PositionVelocityInference, init__failure)
 {
+    FAIL();
     arwain::config.no_inference = true;
     PositionVelocityInference inference;
     EXPECT_FALSE(inference.init());

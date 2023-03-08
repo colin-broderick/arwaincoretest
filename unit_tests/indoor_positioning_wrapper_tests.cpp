@@ -6,6 +6,7 @@
 /** \brief After running init() successfully, the job thread should be running and joinable. */
 TEST(IndoorPositioningSystem, init__success)
 {
+    FAIL();
     IndoorPositioningSystem ips;
     arwain::config.use_ips = true;
     EXPECT_TRUE(ips.init());
@@ -15,6 +16,7 @@ TEST(IndoorPositioningSystem, init__success)
 
 TEST(IndoorPositioningSystem, init__failure)
 {
+    FAIL();
     arwain::config.use_ips = false;
     IndoorPositioningSystem ips;
     EXPECT_FALSE(ips.init());
