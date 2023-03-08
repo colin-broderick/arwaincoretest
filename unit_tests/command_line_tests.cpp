@@ -398,6 +398,7 @@ TEST(ArwainCLI, parse_cli_input)
 
 TEST(ArwainCLI, set_velocity_inference_pointer)
 {
+    FAIL();
     arwain::config.no_inference = true;
     PositionVelocityInference inferrer;
     std::streambuf *orig = std::cin.rdbuf();
@@ -425,6 +426,7 @@ TEST(ArwainCLI, ArwainCLI)
 /** \brief We construct a CLI, then shut it down, then call init manually and check for expected state. */
 TEST(ArwainCLI, init)
 {
+    FAIL();
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("exit\n");
     std::cin.rdbuf(input.rdbuf());
@@ -442,6 +444,7 @@ TEST(ArwainCLI, init)
 
 TEST(ArwainCLI, join)
 {
+    FAIL();
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("exit\n");
     std::cin.rdbuf(input.rdbuf());

@@ -181,6 +181,7 @@ TEST(arwain__FreeFuncs, setup_log_directory)
 
 TEST(arwain__FreeFuncs, execute_jobs)
 {
+    FAIL();
     // Turn off all the options we can to prevent deep calls into
     // seconday functions.
     arwain::config.no_imu = true;

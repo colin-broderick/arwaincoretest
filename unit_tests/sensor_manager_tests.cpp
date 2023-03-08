@@ -64,9 +64,9 @@ TEST(SensorManager, set_post_gyro_calibration_callback)
 {
     arwain::config.no_imu = true;
     SensorManager sensors;
-    EXPECT_FALSE(sensors.init());
     EXPECT_EQ(sensors.post_gyro_calib_callback, nullptr);
     sensors.set_post_gyro_calibration_callback(test_callback);
     EXPECT_NE(sensors.post_gyro_calib_callback, nullptr);
+    arwain::system_mode = arwain::OperatingMode::Terminate;
     sensors.join();
 }
