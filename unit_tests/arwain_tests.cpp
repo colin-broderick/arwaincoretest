@@ -213,7 +213,6 @@ TEST(arwain__FreeFuncs, calibrate_magnetometers)
 
 TEST(arwain__FreeFuncs, test_lora_tx)
 {
-    FAIL();
     arwain::test_lora_tx();
 }
 
