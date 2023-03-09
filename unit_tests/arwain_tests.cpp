@@ -128,11 +128,13 @@ TEST(arwain__FreeFuncs, test_imu)
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_imu("/dev/null", 1));
 }
 
-
+/** \brief Cannot test the main loop inside test_lora_rx, since that's waiting on hardware returning something.
+ * Therefore, mode is set terminate to skip the loop. Full coverage is not achieved.
+ */
 TEST(arwain__FreeFuncs, test_lora_rx)
 {
+    arwain::system_mode = arwain::OperatingMode::Terminate;
     arwain::test_lora_rx();
-    FAIL();
 }
 
 TEST(arwain__FreeFuncs, test_inference)
