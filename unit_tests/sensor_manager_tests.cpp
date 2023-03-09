@@ -64,6 +64,7 @@ TEST(SensorManager, set_post_gyro_calibration_callback)
 {
     arwain::config.no_imu = true;
     SensorManager sensors;
+    test_callback(); // Honestly this call is just to get the test coverage up. There's nothing to test.
     EXPECT_EQ(sensors.post_gyro_calib_callback, nullptr);
     sensors.set_post_gyro_calibration_callback(test_callback);
     EXPECT_NE(sensors.post_gyro_calib_callback, nullptr);

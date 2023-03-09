@@ -4,7 +4,10 @@
 #include <chrono>
 #include <sstream>
 
+#include "arwain.hpp"
 #include "timers.hpp"
+
+extern std::streambuf* original_cout_buffer;
 
 TEST(Timers__ScopedTimer, ScopedTimer)
 {
@@ -32,13 +35,7 @@ TEST(Timers__ScopedTimer, DestructorScopedTimer)
     std::cout << temp2 <<std::endl;
     temp_int = stoi(temp2);
 
-   if(temp_int >= 1000000)
-   {
-    SUCCEED();
-   }else
-   {
-    FAIL();
-   }
+   EXPECT_GE(temp_int, 1000000);
 }
 
 TEST(Timers__CountdownTimer, CountdownTimer)
@@ -74,4 +71,21 @@ TEST(Timers__IntervalTimer, IntervalTimer)
    Timers::IntervalTimer<std::chrono::seconds> t2{1, __FUNCTION__};
    EXPECT_EQ(t2.interval, s);
    EXPECT_EQ(t2.stored_name, __FUNCTION__);
+}
+
+TEST(Timers__IntervalTimer, await)
+{
+   std::cout.rdbuf(original_cout_buffer);
+
+   Timers::IntervalTimer<std::chrono::milliseconds> t1{10};
+   // If the timer does a wait, await returns true.
+   EXPECT_TRUE(t1.await());
+   // If the timer doesn't do a wait, because too much time has elapsed already, it returns false.
+   // Force a too-long wait so await triggers a warning.
+   sleep_ms(11);
+   testing::internal::CaptureStdout();
+   EXPECT_FALSE(t1.await());
+   EXPECT_EQ("WARNING: Interval timer named \"no_name_set\" appears to be running slow\n", testing::internal::GetCapturedStdout());
+    
+   std::cout.rdbuf(nullptr);
 }
