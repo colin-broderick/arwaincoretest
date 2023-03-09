@@ -129,7 +129,7 @@ bool Altimeter::init()
 
 /** \brief Returns true of the job_thread was successfully joined, and false if the
  * job_thread was not joinable.
-*/
+ */
 bool Altimeter::join()
 {
     while (!job_thread.joinable())

@@ -1,15 +1,9 @@
 #include <gtest/gtest.h>
 
 #include "velocity_prediction.hpp"
+#include "event_manager.hpp"
 
-// TEST(MockInferrer, init_infer)
-// {
-//     std::deque<ImuData> data;
-//     data.push_back({{0, 0, 0}, {0, 0, 0}});
-//     MockInferrer inferrer;
-//     EXPECT_NO_THROW(inferrer.init());
-//     EXPECT_EQ(inferrer.infer(data), (Vector3{0, 0, 0}));
-// }
+extern std::streambuf* original_cout_buffer;
 
 TEST(PositionVelocityInference, join)
 {
@@ -168,6 +162,23 @@ TEST(PositionVelocityInference, run)
     
     offthread.join();
     inferrer.join();
+}
+
+TEST(PositionVelocityInference, set_mode)
+{
+    std::cout.rdbuf(original_cout_buffer);
+    {
+        arwain::config.no_inference = true;
+        std::cout << EventManager::switch_mode_event.size() << "\n";
+        PositionVelocityInference inferrer;
+        testing::internal::CaptureStdout();
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+        EXPECT_EQ("setmodecalled\n", testing::internal::GetCapturedStdout());
+        std::cout << EventManager::switch_mode_event.size() << "\n";
+        inferrer.join();
+    }
+    std::cout << EventManager::switch_mode_event.size() << "\n";
+    std::cout.rdbuf(nullptr);
 }
 
 /** \brief After the cleanup_inference() call, position and velocity

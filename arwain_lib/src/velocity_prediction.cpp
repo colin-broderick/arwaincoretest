@@ -7,6 +7,7 @@
 #include "logger.hpp"
 #include "arwain.hpp"
 #include "exceptions.hpp"
+#include "event_manager.hpp"
 #include "arwain_thread.hpp"
 
 PositionVelocityInference::PositionVelocityInference()
