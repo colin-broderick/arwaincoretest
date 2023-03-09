@@ -6,7 +6,6 @@
 /** \brief Test that the init() function in Altimeter correctly executes the true path. */
 TEST(Altimeter, init__success)
 {
-    FAIL();
     // First create the altimeter in an uninitalized state.
     arwain::config.no_pressure = true;
     Altimeter altimeter;
