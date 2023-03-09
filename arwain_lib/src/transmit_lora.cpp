@@ -103,7 +103,7 @@ void StatusReporting::run_inference()
 
     std::this_thread::sleep_until(get_next_time_slot(arwain::config.node_id));
 
-    while (arwain::system_mode == arwain::OperatingMode::Inference)
+    while (mode == arwain::OperatingMode::Inference)
     {
         if (stance_detection_handle == nullptr)
         {
@@ -173,9 +173,9 @@ void StatusReporting::run()
         return;
     }
     
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
-        switch (arwain::system_mode)
+        switch (mode)
         {
             case arwain::OperatingMode::Inference:
                 run_inference();

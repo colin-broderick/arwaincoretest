@@ -37,9 +37,9 @@ void UublaWrapper::run()
         return;
     }
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
-        switch (arwain::system_mode)
+        switch (mode)
         {
             case arwain::OperatingMode::Inference:
                 run_inference();
@@ -71,7 +71,7 @@ void UublaWrapper::run_inference()
 {
     setup_inference();
     
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
         sleep_ms(10);
     }

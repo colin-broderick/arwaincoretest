@@ -8,7 +8,7 @@
 #include "arwain_thread.hpp"
 #include "arwain_job_interface.hpp"
 
-class IndoorPositioningSystem : protected ArwainJob
+class IndoorPositioningSystem : public ArwainJob
 {
     TESTABLE:
         void core_setup();

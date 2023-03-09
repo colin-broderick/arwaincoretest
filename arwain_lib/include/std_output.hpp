@@ -12,7 +12,7 @@ class StanceDetection;
  * Useful for debugging or testing, but probably not wanted at runtime.
  * Output is of a form that can be easily piped to other processes.
  */
-class DebugPrints : protected ArwainJob
+class DebugPrints : public ArwainJob
 {
     TESTABLE:
         void run();

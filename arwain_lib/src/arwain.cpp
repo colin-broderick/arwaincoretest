@@ -267,8 +267,8 @@ void arwain::setup_log_folder_name_suffix(const InputParser& input)
     }
 }
 
-/** \brief Creates the ARWAIN job threads and then blocks until those threads are ended by settings
- * the global arwain::system_mode to arwain::OperatingMode::Terminate.
+/** \brief Creates the ARWAIN job threads and then blocks until those threads are ended by setting
+ * their modes to arwain::OperatingMode::Terminate.
  * \return ARWAIN return code indiciating success or failure.
 */
 arwain::ReturnCode arwain::execute_jobs()
@@ -521,7 +521,7 @@ void sigint_handler(int signal)
     if (signal == SIGINT)
     {
         std::cout << "\nReceived SIGINT - closing\n" << "\n";
-        arwain::system_mode = arwain::OperatingMode::Terminate;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     }
 }
 

@@ -4,6 +4,7 @@
 #include "arwain.hpp"
 #include "exceptions.hpp"
 #include "input_parser.hpp"
+#include "std_output.hpp"
 
 extern std::streambuf* original_cout_buffer;
 
@@ -133,7 +134,8 @@ TEST(arwain__FreeFuncs, test_imu)
  */
 TEST(arwain__FreeFuncs, test_lora_rx)
 {
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    FAIL();
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     arwain::test_lora_rx();
 }
 
@@ -183,9 +185,10 @@ TEST(arwain__FreeFuncs, setup_log_directory)
 
 TEST(arwain__FreeFuncs, execute_jobs)
 {
+    FAIL();
     // Turn off all the options we can to prevent deep calls into
     // seconday functions.
-    arwain::system_mode = arwain::OperatingMode::Idle;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
 
     arwain::config.no_imu = true;
     arwain::config.no_inference = true;
@@ -194,7 +197,9 @@ TEST(arwain__FreeFuncs, execute_jobs)
     arwain::config.no_cli = true;
     arwain::config.use_ips = false;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    // TODO This test currently hangs because we set mode to terminate before anything exists to receive that event.
+    // Invoke the event AFTER jobs are started.
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     EXPECT_EQ(arwain::execute_jobs(), arwain::ReturnCode::Success);
 }
@@ -206,7 +211,7 @@ TEST(arwain__FreeFuncs, calibrate_magnetometers)
         []()
         {
             sleep_ms(3500);
-            arwain::system_mode = arwain::OperatingMode::Terminate;
+            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
     EXPECT_EQ(arwain::calibrate_magnetometers(), arwain::ReturnCode::Success);
@@ -372,8 +377,11 @@ TEST(arwain__FreeFuncs, deduce_calib_params)
 void sigint_handler(int signal);
 TEST(FreeFuncs, sigint_handler)
 {
-    arwain::system_mode = arwain::OperatingMode::Idle;
-    EXPECT_TRUE((arwain::system_mode == arwain::OperatingMode::Idle));
+    // We need an ArwainJob to check the mode of, so I create a DebugPrints object.
+    DebugPrints dbg;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
+    EXPECT_TRUE((dbg.get_mode() == arwain::OperatingMode::Idle));
     sigint_handler(SIGINT);
-    EXPECT_TRUE((arwain::system_mode == arwain::OperatingMode::Terminate));
+    EXPECT_TRUE((dbg.get_mode() == arwain::OperatingMode::Terminate));
+    dbg.join();
 }

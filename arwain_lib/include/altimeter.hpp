@@ -11,7 +11,7 @@
 
 class I2CDEVICEDRIVER;
 
-class Altimeter : protected ArwainJob
+class Altimeter : public ArwainJob
 {
     TESTABLE:
         void run();

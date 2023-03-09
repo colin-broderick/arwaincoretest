@@ -15,7 +15,7 @@
     #include "tensorflow/lite/tools/gen_op_registration.h"
 #endif
 
-class PositionVelocityInference : protected ArwainJob
+class PositionVelocityInference : public ArwainJob
 {
     TESTABLE:
         void run_inference();

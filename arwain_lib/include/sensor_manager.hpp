@@ -11,7 +11,7 @@
 #include "arwain_utils.hpp"
 #include "arwain_job_interface.hpp"
 
-class SensorManager : protected ArwainJob
+class SensorManager : public ArwainJob
 {
     TESTABLE:
         void run();

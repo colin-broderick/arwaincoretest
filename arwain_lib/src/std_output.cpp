@@ -25,9 +25,9 @@ void DebugPrints::run()
         return;
     }
     
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
-        switch (arwain::system_mode)
+        switch (mode)
         {
             case arwain::OperatingMode::Inference:
                 run_inference();
@@ -63,7 +63,7 @@ void DebugPrints::run_inference()
     // Set up timing, including pause while IMU warms up.
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STD_OUT_INTERVAL, "arwain_cout_run_infer"};
 
-    while (arwain::system_mode == arwain::OperatingMode::Inference)
+    while (mode == arwain::OperatingMode::Inference)
     {
         std::stringstream ss;
 
