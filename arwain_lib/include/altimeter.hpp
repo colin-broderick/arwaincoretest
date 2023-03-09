@@ -3,9 +3,10 @@
 
 #include <tuple>
 
-#include "arwain.hpp"
 #include "sabatini_altimeter.hpp"
 #include "bmp384.hpp"
+#include "logger.hpp"
+#include "arwain_thread.hpp"
 #include "arwain_job_interface.hpp"
 
 class I2CDEVICEDRIVER;

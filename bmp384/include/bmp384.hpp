@@ -99,10 +99,7 @@
 #define BMP384_TEMP_ENABLE 0x02
 #define BMP384_TEMP_DISABLE 0x00
 
-inline void sleep_ms(int ms)
-{
-    std::this_thread::sleep_for(std::chrono::milliseconds{ms});
-}
+void sleep_ms(int ms);
 
 template <class I2CDeviceClass>
 class BMP384

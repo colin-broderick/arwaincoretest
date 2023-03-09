@@ -4,6 +4,7 @@
 #include <tuple>
 
 #include "arwain_thread.hpp"
+#include "arwain_job_interface.hpp"
 
 class StanceDetection;
 
@@ -11,7 +12,7 @@ class StanceDetection;
  * Useful for debugging or testing, but probably not wanted at runtime.
  * Output is of a form that can be easily piped to other processes.
  */
-class DebugPrints
+class DebugPrints : protected ArwainJob
 {
     TESTABLE:
         void run();
@@ -29,7 +30,7 @@ class DebugPrints
         bool set_stance_detection_pointer(StanceDetection& stance);
         DebugPrints();
         bool init();
-        void join();
+        bool join();
 };
 
 #endif

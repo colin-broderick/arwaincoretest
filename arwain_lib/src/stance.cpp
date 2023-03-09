@@ -184,7 +184,7 @@ StanceDetector::Stance StanceDetection::get_stance()
     return stance->get_stance();
 }
 
-void StanceDetection::join()
+bool StanceDetection::join()
 {
     delete stance;
     while (!job_thread.joinable())
@@ -194,7 +194,9 @@ void StanceDetection::join()
     if (job_thread.joinable())
     {
         job_thread.join();
+        return true;
     }
+    return false;
 }
 
 

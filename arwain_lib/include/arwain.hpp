@@ -18,6 +18,7 @@
 #include "configuration.hpp"
 #include "global_buffer.hpp"
 #include "activity_metric.hpp"
+#include "arwain_modes.hpp"
 
 class StanceDetection;
 
@@ -53,24 +54,6 @@ namespace arwain::BufferSizes
 namespace arwain
 {
     class Logger;
-}
-
-namespace arwain
-{
-    enum class OperatingMode
-    {
-        Terminate,
-        Inference,
-        Idle,
-        SelfTest,
-        GyroscopeCalibration,
-        MagnetometerCalibration,
-        AccelerometerCalibration,
-        TestSerial,
-        TestStanceDetector,
-        DataCollection,
-        InvalidMode
-    };
 }
 
 inline std::ostream& operator<<(std::ostream& stream, arwain::OperatingMode token)

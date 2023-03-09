@@ -1,5 +1,5 @@
-#ifndef STANCE_H
-#define STANCE_H
+#ifndef _ARWAIN_STANCE_DETECTION_HPP
+#define _ARWAIN_STANCE_DETECTION_HPP
 
 #include <vector>
 #include <array>
@@ -9,10 +9,10 @@
 
 #include "quaternion.hpp"
 #include "vector3.hpp"
-#include "arwain.hpp"
 #include "logger.hpp"
 #include "arwain_thread.hpp"
 #include "iim42652.hpp"
+#include "arwain_job_interface.hpp"
 
 class StanceDetector
 {
@@ -119,7 +119,7 @@ class StanceDetector
         FallState get_falling_status();
 };
 
-class StanceDetection
+class StanceDetection : protected ArwainJob
 {
     TESTABLE:
         void run_test_stance_detector();
@@ -138,7 +138,7 @@ class StanceDetection
         arwain::Logger stance_file;
 
         // Stance detector object.
-        StanceDetector* stance;
+        StanceDetector* stance = nullptr;
 
         std::deque<ImuData> imu_data;
         std::deque<Vector3> vel_data;
@@ -147,7 +147,7 @@ class StanceDetection
     public:
         StanceDetection();
         bool init();
-        void join();
+        bool join();
         StanceDetector::FallState get_falling_state();
         StanceDetector::EntangleState get_entangled_state();
         StanceDetector::Attitude get_attitude();
