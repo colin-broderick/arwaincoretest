@@ -139,6 +139,7 @@ TEST(arwain__FreeFuncs, test_lora_rx)
 
 TEST(arwain__FreeFuncs, test_inference)
 {
+    FAIL();
     // Gets stuck in a loop somewhere and never returns, even with MockInferrer.
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_inference());
 }
