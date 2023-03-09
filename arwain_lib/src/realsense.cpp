@@ -47,6 +47,10 @@ void CameraController::run_idle()
 
 void CameraController::run()
 {
+    if (!arwain::config.use_rs2)
+    {
+        return false;
+    }
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
@@ -63,10 +67,6 @@ void CameraController::run()
 
 bool CameraController::init()
 {
-    if (!arwain::config.use_rs2)
-    {
-        return false;
-    }
     core_setup();
     job_thread = ArwainThread{&CameraController::run, "arwain_cmra_th", this};
     return true;

@@ -71,6 +71,10 @@ void StanceDetection::run_inference()
 
 void StanceDetection::run()
 {
+    if (arwain::config.no_stance)
+    {
+        return;
+    }
     // A little presleep to give IMU data a chance to collect and orientation filter chance to converge.
     std::this_thread::sleep_for(std::chrono::milliseconds{3000});
     
@@ -155,10 +159,6 @@ void StanceDetection::core_setup()
 
 bool StanceDetection::init()
 {
-    if (arwain::config.no_stance)
-    {
-        return false;
-    }
     core_setup();
     job_thread = ArwainThread{&StanceDetection::run, "arwain_stnc_th", this};
     return true;

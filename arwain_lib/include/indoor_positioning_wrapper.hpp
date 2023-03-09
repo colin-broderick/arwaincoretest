@@ -5,8 +5,9 @@
 #include "arwain.hpp"
 #include "corner_detector.hpp"
 #include "floor_tracker.hpp"
+#include "arwain_job_interface.hpp"
 
-class IndoorPositioningSystem
+class IndoorPositioningSystem : protected ArwainJob
 {
     TESTABLE:
         void core_setup();
@@ -24,7 +25,7 @@ class IndoorPositioningSystem
 
     public:
         IndoorPositioningSystem();
-        void join();
+        bool join();
         bool init();
 
     

@@ -26,8 +26,9 @@ TEST(Altimeter, init__fail)
 {
     arwain::config.no_pressure = true;
     Altimeter altimeter;
-    EXPECT_FALSE(altimeter.init());
-    EXPECT_FALSE(altimeter.job_thread.joinable());
+    EXPECT_TRUE(altimeter.init());
+    EXPECT_TRUE(altimeter.job_thread.joinable());
+    EXPECT_TRUE(altimeter.join());
 }
 
 /** \brief Test that alimeter.join returns the expected value depending on system state. */
@@ -36,8 +37,9 @@ TEST(Altimeter, join)
     {
         arwain::config.no_pressure = true;
         Altimeter altimeter;
-        EXPECT_FALSE(altimeter.init());
-        EXPECT_FALSE(altimeter.job_thread.joinable());
+        EXPECT_TRUE(altimeter.init());
+        EXPECT_TRUE(altimeter.job_thread.joinable());
+        EXPECT_TRUE(altimeter.join());
     }
 
     {
@@ -82,6 +84,7 @@ TEST(Altimeter, core_setup)
     arwain::config.no_pressure = true;
     Altimeter alt;
     EXPECT_NO_THROW(alt.core_setup());
+    alt.join();
 }
 
 TEST(Altimeter, run_inference)
@@ -135,6 +138,7 @@ TEST(Altimeter, setup_inference)
     EXPECT_GT(std::filesystem::file_size("./pressure.txt"), 0);
     std::filesystem::remove("./pressure.txt");
     EXPECT_FALSE(std::filesystem::exists("./pressure.txt"));
+    altimeter.join();
 }
 
 TEST(Altimeter, cleanup_inference)
@@ -145,4 +149,5 @@ TEST(Altimeter, cleanup_inference)
     EXPECT_TRUE(altimeter.pressure_log.is_open());
     altimeter.cleanup_inference();
     EXPECT_FALSE(altimeter.pressure_log.is_open());
+    altimeter.join();
 }

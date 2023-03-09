@@ -190,6 +190,10 @@ void StatusReporting::run()
 bool StatusReporting::init()
 {
     core_setup();
+    if (job_thread.joinable())
+    {
+        job_thread.join();
+    }
     job_thread = ArwainThread{&StatusReporting::run, "arwain_stat_th", this};
     return true;
 }

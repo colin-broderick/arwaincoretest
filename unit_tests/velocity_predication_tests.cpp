@@ -28,13 +28,11 @@ TEST(PositionVelocityInference, init__success)
 
     // At this point, the inferrer exists, but init() has not been fully executed.
     // and the job thread(s) is not created.
+    arwain::system_mode = arwain::OperatingMode::Idle;
     arwain::config.no_inference = false;
     EXPECT_TRUE(inferrer.init());
 
     EXPECT_TRUE(inferrer.job_thread.joinable());
-    #if USE_NCS2
-    EXPECT_TRUE(inferrer.job_thread.joinable());
-    #endif
 
     arwain::system_mode = arwain::OperatingMode::Terminate;
     inferrer.join();
@@ -140,6 +138,8 @@ TEST(PositionVelocityInference, setup_inference)
 
     std::filesystem::remove("./velocity.txt");
     std::filesystem::remove("./position.txt");
+
+    inferrer.join();
 }
 
 /** \brief TODO: I couldn't find a way to stub/mock run_inference without
@@ -168,6 +168,7 @@ TEST(PositionVelocityInference, run)
     EXPECT_NO_THROW(inferrer.run());
     
     offthread.join();
+    inferrer.join();
 }
 
 /** \brief After the cleanup_inference() call, position and velocity
@@ -195,6 +196,8 @@ TEST(PositionVelocityInference, cleanup_inference)
     EXPECT_FALSE(inferrer.velocity_file.is_open());
 
     arwain::system_mode = arwain::OperatingMode::Terminate;
+
+    inferrer.join();
 }
 
 #if USE_NCS2
