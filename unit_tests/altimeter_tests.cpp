@@ -11,11 +11,11 @@ TEST(Altimeter, init__success)
     Altimeter altimeter;
 
     // Now initialize it.
+    arwain::system_mode = arwain::OperatingMode::Terminate;
     arwain::config.no_pressure = false;
     EXPECT_TRUE(altimeter.init());
 
     // And join it before quitting.
-    arwain::system_mode = arwain::OperatingMode::Terminate;
     EXPECT_TRUE(altimeter.join());
 }
 
