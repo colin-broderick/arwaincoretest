@@ -15,6 +15,7 @@
 class NCS2Inferrer : public I_VelInferrer
 {
     public:
+        bool ready = true;
         Vector3 infer(const std::deque<ImuData>& imu_data)
         {
             (void)imu_data;
