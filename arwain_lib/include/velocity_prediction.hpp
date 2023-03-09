@@ -2,6 +2,7 @@
 #define PREDICT_VELOCITY_H
 
 #include "arwain.hpp"
+#include "arwain_job_interface.hpp"
 
 #if USE_NCS2
 #include "ncs2_inferrer.hpp"
@@ -13,12 +14,12 @@
     #include "tensorflow/lite/tools/gen_op_registration.h"
 #endif
 
-class PositionVelocityInference
+class PositionVelocityInference : protected ArwainJob
 {
     TESTABLE:
         void run_inference();
         void run_idle();
-        bool core_setup();
+        void core_setup();
         void setup_inference();
         void run();
         void cleanup_inference();
@@ -55,7 +56,7 @@ class PositionVelocityInference
         PositionVelocityInference();
         bool ready();
         bool init();
-        void join();
+        bool join();
 };
 
 #endif

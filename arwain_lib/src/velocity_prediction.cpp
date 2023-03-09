@@ -14,7 +14,7 @@ PositionVelocityInference::PositionVelocityInference()
     init();
 }
 
-bool PositionVelocityInference::core_setup()
+void PositionVelocityInference::core_setup()
 {
     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
     std::this_thread::sleep_for(std::chrono::milliseconds{1000});
@@ -35,8 +35,6 @@ bool PositionVelocityInference::core_setup()
     interpreter->AllocateTensors();
     input = interpreter->typed_input_tensor<float>(0);
     #endif
-
-    return true;
 }
 
 void PositionVelocityInference::run()
@@ -190,16 +188,16 @@ bool PositionVelocityInference::ready()
 
 bool PositionVelocityInference::init()
 {
-    if (arwain::config.no_inference)
-    {
-        return false;
-    }
     core_setup();
+    if (job_thread.joinable())
+    {
+        job_thread.join();
+    }
     job_thread = ArwainThread{&PositionVelocityInference::run, "arwain_infr_th", this};
     return true;
 }
 
-void PositionVelocityInference::join()
+bool PositionVelocityInference::join()
 {
     while (!job_thread.joinable())
     {
@@ -208,7 +206,10 @@ void PositionVelocityInference::join()
     if (job_thread.joinable())
     {
         job_thread.join();
+        return true;
     }
+    return false;
+
     // Instruct the NCS2 interface script to quit.
     #if USE_NCS2
     #else // USE_TF

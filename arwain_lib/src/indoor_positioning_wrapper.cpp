@@ -94,11 +94,15 @@ void IndoorPositioningSystem::run()
 bool IndoorPositioningSystem::init()
 {
     core_setup();
+    if (job_thread.joinable())
+    {
+        job_thread.join();
+    }
     job_thread = ArwainThread{&IndoorPositioningSystem::run, "arwain_ips_th", this};
     return true;
 }
 
-void IndoorPositioningSystem::join()
+bool IndoorPositioningSystem::join()
 {
     while (!job_thread.joinable())
     {
@@ -107,7 +111,9 @@ void IndoorPositioningSystem::join()
     if (job_thread.joinable())
     {
         job_thread.join();
+        return true;
     }
+    return false;
 }
 
 void IndoorPositioningSystem::IndoorPositioningWrapper::update(const double &time, const double &x, const double &y, const double &z)

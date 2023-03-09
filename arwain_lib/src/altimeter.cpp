@@ -70,6 +70,10 @@ void Altimeter::run_idle()
 
 void Altimeter::run()
 {
+    if (arwain::config.no_pressure)
+    {
+        return;
+    }
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         switch (arwain::system_mode)
@@ -114,11 +118,11 @@ void Altimeter::core_setup()
 
 bool Altimeter::init()
 {
-    if (arwain::config.no_pressure)
-    {
-        return false;
-    }
     core_setup();
+    if (job_thread.joinable())
+    {
+        job_thread.join();
+    }
     job_thread = ArwainThread{&Altimeter::run, "arwain_altr_th", this};
     return true;
 }

@@ -24,6 +24,10 @@ void ArwainCLI::force_switch_to_idle_autocal_mode()
 
 void ArwainCLI::run()
 {
+    if (arwain::config.no_cli)
+    {
+        return;
+    }
     while (arwain::system_mode != arwain::OperatingMode::Terminate)
     {
         std::string input;
@@ -284,10 +288,6 @@ void ArwainCLI::core_setup()
 
 bool ArwainCLI::init()
 {
-    if (arwain::config.no_cli)
-    {
-        return false;
-    }
     core_setup();
     job_thread = ArwainThread{&ArwainCLI::run, "arwain_cmdl_th", this};
     return true;

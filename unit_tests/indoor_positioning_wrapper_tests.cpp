@@ -24,6 +24,7 @@ TEST(IndoorPositioningSystem, init__failure)
 
 TEST(IndoorPositioningSystem, join)
 {
+    arwain::config.use_ips = true;
     IndoorPositioningSystem pos_system;
     arwain::system_mode = arwain::OperatingMode::Terminate;
     EXPECT_NO_THROW(pos_system.join());

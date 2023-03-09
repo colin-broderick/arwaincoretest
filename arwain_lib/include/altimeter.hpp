@@ -6,10 +6,11 @@
 #include "arwain.hpp"
 #include "sabatini_altimeter.hpp"
 #include "bmp384.hpp"
+#include "arwain_job_interface.hpp"
 
 class I2CDEVICEDRIVER;
 
-class Altimeter
+class Altimeter : protected ArwainJob
 {
     TESTABLE:
         void run();

@@ -21,6 +21,7 @@ TEST(StanceDetection, setup_inference)
     EXPECT_TRUE(stance.stance_file.is_open());
     stance.cleanup_inference();
     EXPECT_FALSE(stance.stance_file.is_open());
+    stance.join();
 }
 
 TEST(StanceDetection, run_inference)
@@ -42,6 +43,7 @@ TEST(StanceDetection, run_inference)
     };
     EXPECT_NO_THROW(stance.run_inference());
     th.join();
+    stance.join();
 }
 
 TEST(StanceDetector, register_freefall_event)

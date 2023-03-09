@@ -182,9 +182,10 @@ TEST(arwain__FreeFuncs, setup_log_directory)
 
 TEST(arwain__FreeFuncs, execute_jobs)
 {
-    FAIL();
     // Turn off all the options we can to prevent deep calls into
     // seconday functions.
+    arwain::system_mode = arwain::OperatingMode::Idle;
+
     arwain::config.no_imu = true;
     arwain::config.no_inference = true;
     arwain::config.no_lora = true;
