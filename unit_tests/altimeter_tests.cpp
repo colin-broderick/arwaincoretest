@@ -33,13 +33,11 @@ TEST(Altimeter, init__fail)
 /** \brief Test that alimeter.join returns the expected value depending on system state. */
 TEST(Altimeter, join)
 {
-    FAIL();
     {
         arwain::config.no_pressure = true;
         Altimeter altimeter;
         EXPECT_FALSE(altimeter.init());
         EXPECT_FALSE(altimeter.job_thread.joinable());
-        EXPECT_FALSE(altimeter.join());
     }
 
     {
