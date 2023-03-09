@@ -28,13 +28,12 @@ TEST(PositionVelocityInference, init__success)
 
     // At this point, the inferrer exists, but init() has not been fully executed.
     // and the job thread(s) is not created.
-    arwain::system_mode = arwain::OperatingMode::Idle;
     arwain::config.no_inference = false;
+    arwain::system_mode = arwain::OperatingMode::Terminate;
     EXPECT_TRUE(inferrer.init());
 
     EXPECT_TRUE(inferrer.job_thread.joinable());
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
     inferrer.join();
 }
 
