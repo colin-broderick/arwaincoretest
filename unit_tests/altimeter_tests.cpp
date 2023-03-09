@@ -24,7 +24,6 @@ TEST(Altimeter, init__success)
  */
 TEST(Altimeter, init__fail)
 {
-    FAIL();
     arwain::config.no_pressure = true;
     Altimeter altimeter;
     EXPECT_FALSE(altimeter.init());
