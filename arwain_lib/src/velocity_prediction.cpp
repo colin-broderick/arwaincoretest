@@ -181,7 +181,11 @@ void PositionVelocityInference::cleanup_inference()
 
 bool PositionVelocityInference::ready()
 {
-    return this->ready_for_inference;
+    if (inferrer.ready)
+    {
+        ready_for_inference = true;
+    }
+    return ready_for_inference;
 }
 
 bool PositionVelocityInference::init()
