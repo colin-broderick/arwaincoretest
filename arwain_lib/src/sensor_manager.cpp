@@ -7,6 +7,7 @@
 #include <thread>
 #include <functional>
 
+#include "arwain.hpp"
 #include "arwain_utils.hpp"
 #include "sensor_manager.hpp"
 #include "multi_imu.hpp"
@@ -453,7 +454,7 @@ void SensorManager::set_post_gyro_calibration_callback(std::function<void()> fun
 }
 
 /** \brief Block until the job thread can be joined. */
-void SensorManager::join()
+bool SensorManager::join()
 {
     while (!job_thread.joinable())
     {
@@ -472,4 +473,6 @@ void SensorManager::join()
     {
         quick_madgwick_convergence_thread.join();
     }
+    
+    return true;
 }

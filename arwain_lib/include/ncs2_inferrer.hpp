@@ -3,6 +3,7 @@
 
 #include "arwain_thread.hpp"
 #include "vel_infer_interface.hpp"
+#include "arwain.hpp"
 
 #if !CHERI
 #include <zmq.h>

@@ -3,15 +3,15 @@
 
 #include <functional>
 
-#include "arwain.hpp"
 #include "logger.hpp"
 #include "arwain_thread.hpp"
 #include "iim42652.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
 #include "arwain_utils.hpp"
+#include "arwain_job_interface.hpp"
 
-class SensorManager
+class SensorManager : protected ArwainJob
 {
     TESTABLE:
         void run();
@@ -58,7 +58,7 @@ class SensorManager
     public:
         SensorManager();
         bool init();
-        void join();
+        bool join();
         void set_post_gyro_calibration_callback(std::function<void()> func);
 };
 

@@ -198,7 +198,7 @@ bool StatusReporting::init()
     return true;
 }
 
-void StatusReporting::join()
+bool StatusReporting::join()
 {
     while (!job_thread.joinable())
     {
@@ -207,7 +207,9 @@ void StatusReporting::join()
     if (job_thread.joinable())
     {
         job_thread.join();
+        return true;
     }
+    return false;
 }
 
 #if USE_UUBLA

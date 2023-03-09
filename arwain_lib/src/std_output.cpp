@@ -119,7 +119,7 @@ bool DebugPrints::init()
     return true;
 }
 
-void DebugPrints::join()
+bool DebugPrints::join()
 {
     while (!job_thread.joinable())
     {
@@ -128,5 +128,7 @@ void DebugPrints::join()
     if (job_thread.joinable())
     {
         job_thread.join();
+        return true;
     }
+    return false;
 }

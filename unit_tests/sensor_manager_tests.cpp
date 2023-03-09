@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "arwain.hpp"
 #include "sensor_manager.hpp"
 
 TEST(SensorManager, run_through_modes)

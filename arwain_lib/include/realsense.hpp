@@ -1,13 +1,13 @@
 #ifndef _ARWAIN_REALSENSE_HPP
 #define _ARWAIN_REALSENSE_HPP
 
-#include "arwain.hpp"
 #include "t265.hpp"
 #include "arwain_tests.hpp"
 #include "arwain_thread.hpp"
 #include "logger.hpp"
+#include "arwain_job_interface.hpp"
 
-class CameraController
+class CameraController : protected ArwainJob
 {
     TESTABLE:
         void setup_data_collection();

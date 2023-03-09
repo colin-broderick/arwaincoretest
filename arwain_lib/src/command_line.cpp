@@ -293,7 +293,7 @@ bool ArwainCLI::init()
     return true;
 }
 
-void ArwainCLI::join()
+bool ArwainCLI::join()
 {
     while (!job_thread.joinable())
     {
@@ -302,5 +302,7 @@ void ArwainCLI::join()
     if (job_thread.joinable())
     {
         job_thread.join();
+        return true;
     }
+    return false;
 }

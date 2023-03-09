@@ -1,11 +1,12 @@
 #ifndef _ARWAIN_COMMAND_LINE_HPP
 #define _ARWAIN_COMMAND_LINE_HPP
+
 #include "arwain_thread.hpp"
-#include "arwain.hpp"
+#include "arwain_job_interface.hpp"
 
 class PositionVelocityInference;
 
-class ArwainCLI
+class ArwainCLI : protected ArwainJob
 {
     TESTABLE:
         void run();
@@ -32,7 +33,7 @@ class ArwainCLI
         bool set_velocity_inference_pointer(PositionVelocityInference& velocity);
         ArwainCLI();
         bool init();
-        void join();
+        bool join();
 };
 
 #endif

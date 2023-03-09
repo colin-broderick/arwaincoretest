@@ -1,7 +1,10 @@
 #ifndef _ARWAIN_EVENT_MANAGER
 #define _ARWAIN_EVENT_MANAGER
 
-#include "arwain.hpp"
+#include <map>
+#include <functional>
+
+#include "arwain_modes.hpp"
 
 template <class FuncSig, class InvokeArg>
 class Event

@@ -9,16 +9,14 @@ class ArwainJobInterface
         virtual bool init() = 0;
         virtual bool join() = 0;
   protected:
-        virtual void core_setup() = 0;
         virtual void run() = 0;
-        virtual void run_idle() = 0;
-        virtual void run_inference() = 0;
 };
 
 class ArwainJob : protected ArwainJobInterface
 {
     private:
         uint64_t deregistration_key;
+        
     protected:
         arwain::OperatingMode mode = arwain::OperatingMode::Idle;
         ArwainJob()

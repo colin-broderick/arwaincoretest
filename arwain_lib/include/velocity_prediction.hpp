@@ -1,8 +1,9 @@
 #ifndef PREDICT_VELOCITY_H
 #define PREDICT_VELOCITY_H
 
-#include "arwain.hpp"
 #include "arwain_job_interface.hpp"
+#include "arwain_thread.hpp"
+#include "logger.hpp"
 
 #if USE_NCS2
 #include "ncs2_inferrer.hpp"

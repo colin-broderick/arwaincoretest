@@ -3,12 +3,13 @@
 
 #include "lora.hpp"
 #include "logger.hpp"
+#include "arwain_job_interface.hpp"
 
 class StanceDetection;
 class UublaWrapper;
 class ArwainThread;
 
-class StatusReporting
+class StatusReporting : protected ArwainJob
 {
 	TESTABLE:
         void core_setup();
@@ -31,7 +32,7 @@ class StatusReporting
 		bool set_stance_detection_pointer(StanceDetection& stance);
 		bool set_uubla_wrapper_handle(UublaWrapper& uubla);
 		bool init();
-		void join();
+		bool join();
 };
 
 namespace arwain

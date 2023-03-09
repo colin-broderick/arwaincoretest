@@ -3,8 +3,9 @@
 
 #include "arwain_thread.hpp"
 #include "uubla.hpp"
+#inlcude "arwain_job_interface"
 
-class UublaWrapper
+class UublaWrapper : protected ArwainJob
 {
     TESTABLE:
         void run_inference();
