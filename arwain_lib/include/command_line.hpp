@@ -6,7 +6,7 @@
 
 class PositionVelocityInference;
 
-class ArwainCLI : protected ArwainJob
+class ArwainCLI : public ArwainJob
 {
     TESTABLE:
         void run();

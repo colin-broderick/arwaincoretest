@@ -33,7 +33,7 @@ void Altimeter::run_inference()
 
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL, "altimeter_infer"};
 
-    while (arwain::system_mode == arwain::OperatingMode::Inference)
+    while (mode == arwain::OperatingMode::Inference)
     {
         auto [pressure, temperature] = bmp384.read();
         pressure = pressure - arwain::config.pressure_offset;
@@ -54,7 +54,7 @@ void Altimeter::run_idle()
 {
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL, "altimeter_idle"};
 
-    while (arwain::system_mode == arwain::OperatingMode::Idle)
+    while (mode == arwain::OperatingMode::Idle)
     {
         auto [pressure, temperature] = bmp384.read();
         pressure = pressure - arwain::config.pressure_offset;
@@ -74,9 +74,9 @@ void Altimeter::run()
     {
         return;
     }
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
-        switch (arwain::system_mode)
+        switch (mode)
         {
             case arwain::OperatingMode::Inference:
                 run_inference();

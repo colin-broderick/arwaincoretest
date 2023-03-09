@@ -70,7 +70,7 @@ TEST(ArwainCLI, s2i__infer)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("infer"), 1);
@@ -84,7 +84,7 @@ TEST(ArwainCLI, s2i__inference)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("inference"), 1);
@@ -98,7 +98,7 @@ TEST(ArwainCLI, s2i__autocal)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("autocal"), 2);
@@ -112,7 +112,7 @@ TEST(ArwainCLI, s2i__idle)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("idle"), 2);
@@ -126,7 +126,7 @@ TEST(ArwainCLI, s2i__mode)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("mode"), 3);
@@ -140,7 +140,7 @@ TEST(ArwainCLI, s2i__calibg)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("calibg"), 4);
@@ -154,7 +154,7 @@ TEST(ArwainCLI, s2i__calibm)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("calibm"), 6);
@@ -168,7 +168,7 @@ TEST(ArwainCLI, s2i__caliba)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("caliba"), 5);
@@ -182,7 +182,7 @@ TEST(ArwainCLI, s2i__record)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("record"), 9);
@@ -196,7 +196,7 @@ TEST(ArwainCLI, s2i__name)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("name"), 7);
@@ -210,7 +210,7 @@ TEST(ArwainCLI, s2i__help)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("help"), 10);
@@ -224,7 +224,7 @@ TEST(ArwainCLI, s2i__zeropos)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("zeropos"), 11);
@@ -238,7 +238,7 @@ TEST(ArwainCLI, s2i__name_substr)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("name_test"), 7);
@@ -252,7 +252,7 @@ TEST(ArwainCLI, s2i__default)
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
     EXPECT_EQ(command_line.s2i("test"), 8);
@@ -267,7 +267,7 @@ TEST(ArwainCLI, switch_to_exit_mode)
     ArwainCLI command_line;
     command_line.switch_to_exit_mode();
     command_line.join();
-    EXPECT_TRUE(arwain::system_mode == arwain::OperatingMode::Terminate);
+    EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Terminate));
     std::cin.rdbuf(orig);
 }
 
@@ -283,13 +283,13 @@ TEST(ArwainCLI, switch_to_idle_autocal_mode__from_inference)
     std::istringstream input("test\n");
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     command_line.join();
 
-    arwain::system_mode = arwain::OperatingMode::Inference;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
 
     command_line.switch_to_idle_autocal_mode();
-    EXPECT_TRUE(arwain::system_mode == arwain::OperatingMode::Idle);
+    EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Idle));
 
     std::cin.rdbuf(orig);
 }
@@ -300,13 +300,13 @@ TEST(ArwainCLI, switch_to_idle_autocal_mode__from_something_else)
     std::istringstream input("test\n");
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     command_line.join();
 
-    arwain::system_mode = arwain::OperatingMode::Inference;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
 
     command_line.switch_to_idle_autocal_mode();
-    EXPECT_TRUE(arwain::system_mode == arwain::OperatingMode::Idle);
+    EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Idle));
 
     std::cin.rdbuf(orig);*/
 
@@ -330,11 +330,11 @@ TEST(ArwainCLI, force_switch_to_idle_autocal_mode)
     std::istringstream input("test\n");
     std::cin.rdbuf(input.rdbuf());
     ArwainCLI command_line;
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     command_line.join();
 
     command_line.force_switch_to_idle_autocal_mode();
-    EXPECT_TRUE(arwain::system_mode == arwain::OperatingMode::Idle);
+    EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Idle));
 
     std::cin.rdbuf(orig);
 }
@@ -367,7 +367,7 @@ TEST(ArwainCLI, switch_to_data_collection_mode)
 TEST(ArwainCLI, set_folder_name)
 {
     arwain::config.no_cli = true;
-    arwain::system_mode = arwain::OperatingMode::Inference;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
     ArwainCLI cli;
 
     std::string pre_value = arwain::folder_date_string_suffix;
@@ -384,7 +384,7 @@ TEST(ArwainCLI, set_folder_name)
     EXPECT_EQ(pre_value, post_value);
 
     // Should be effective in idle mode.
-    arwain::system_mode = arwain::OperatingMode::Idle;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
     cli.set_folder_name("name test_folder_name");
     post_value = "test_folder_name";
     EXPECT_EQ(post_value, arwain::folder_date_string_suffix);

@@ -45,9 +45,9 @@ void PositionVelocityInference::run()
         return;
     }
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
-        switch (arwain::system_mode)
+        switch (mode)
         {
             case arwain::OperatingMode::Inference:
                 run_inference();
@@ -84,7 +84,7 @@ void PositionVelocityInference::run_inference()
     std::chrono::time_point<std::chrono::high_resolution_clock> time = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
 
-    while (arwain::system_mode == arwain::OperatingMode::Inference)
+    while (mode == arwain::OperatingMode::Inference)
     {
         imu = arwain::Buffers::IMU_WORLD_BUFFER.get_data();
         // Check what the time really is since it might not be accurate.

@@ -2,6 +2,7 @@
 
 #include "altimeter.hpp"
 #include "arwain.hpp"
+#include "event_manager.hpp"
 
 /** \brief Test that the init() function in Altimeter correctly executes the true path. */
 TEST(Altimeter, init__success)
@@ -11,7 +12,8 @@ TEST(Altimeter, init__success)
     Altimeter altimeter;
 
     // Now initialize it.
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+
     arwain::config.no_pressure = false;
     EXPECT_TRUE(altimeter.init());
 
@@ -46,7 +48,8 @@ TEST(Altimeter, join)
         arwain::config.no_pressure = false;
         Altimeter altimeter;
         EXPECT_TRUE(altimeter.job_thread.joinable());
-        arwain::system_mode = arwain::OperatingMode::Terminate;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+
         EXPECT_TRUE(altimeter.join());
     }
 }
@@ -55,7 +58,7 @@ TEST(Altimeter, Altimeter)
 {
     EXPECT_NO_THROW(
         Altimeter alt;
-        arwain::system_mode = arwain::OperatingMode::Terminate;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         alt.join();
     );
 }
@@ -69,11 +72,11 @@ TEST(Altimeter, run)
         arwain::config.no_pressure = false;
         Altimeter altimeter;
         sleep_ms(500); // Currently executing Idle loop.
-        arwain::system_mode = arwain::OperatingMode::Inference;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
         sleep_ms(500); // Currently executing inference loop.
-        arwain::system_mode = arwain::OperatingMode::TestSerial; // Just a random mode for the default branch.
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::TestSerial); // Just a random mode for the default branch.
         sleep_ms(500);
-        arwain::system_mode = arwain::OperatingMode::Terminate;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         EXPECT_TRUE(altimeter.join());
     );
 }
@@ -90,11 +93,11 @@ TEST(Altimeter, core_setup)
 TEST(Altimeter, run_inference)
 {
     // Should go straight into the inference loop and then terminate after a delay.
-    arwain::system_mode = arwain::OperatingMode::Inference;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
     arwain::config.no_pressure = false;
     Altimeter altimeter;
     sleep_ms(10);
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     EXPECT_TRUE(altimeter.join());
 }
 
@@ -106,16 +109,16 @@ TEST(Altimeter, run_idle)
     Altimeter altimeter;
 
     // Join it immediately to stop the job thread.
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     altimeter.join();
 
     // Start a thread that will change the system mode to terminate after specified time,
-    arwain::system_mode = arwain::OperatingMode::Idle;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
     std::thread mode_thread = std::thread{
         []()
         {
             std::this_thread::sleep_for(std::chrono::milliseconds{1000});
-            arwain::system_mode = arwain::OperatingMode::Terminate;
+            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
 

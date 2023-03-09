@@ -38,9 +38,9 @@ void SensorManager::run()
         return;
     }
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
-        switch (arwain::system_mode)
+        switch (mode)
         {
             case arwain::OperatingMode::GyroscopeCalibration:
                 run_gyro_calibration();
@@ -220,7 +220,7 @@ void SensorManager::run_idle()
 {
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL, "arwain_sensor_manager_run_idle"};
 
-    while (arwain::system_mode == arwain::OperatingMode::Idle || arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
+    while (mode == arwain::OperatingMode::Idle || mode == arwain::OperatingMode::TestStanceDetector)
     {
         int64_t time_count = loop_scheduler.count();
 
@@ -287,7 +287,7 @@ void SensorManager::run_inference()
     // Set up timing.
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL, "arwain_sensor_manager_run_infer"};
 
-    while (arwain::system_mode == arwain::OperatingMode::Inference)
+    while (mode == arwain::OperatingMode::Inference)
     {
         int64_t time_count = loop_scheduler.count(); // Provides an accurate count of milliseconds passed since last loop iteration.
 

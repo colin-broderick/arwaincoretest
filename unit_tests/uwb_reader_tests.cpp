@@ -12,7 +12,7 @@ TEST(UWB_Reader, Init_Both_Conditions_False)
     /*arwain::config.use_uwb_positioning = false;
     arwain::config.node_id = 1;
     EXPECT_FALSE(UublaWrapper::init());
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     UublaWrapper::join();*/
 
     FAIL(); //SEG FAULT TO BE SORTED FIRST!!!

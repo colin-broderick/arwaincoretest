@@ -14,6 +14,12 @@ class ArwainJobInterface
 
 class ArwainJob : protected ArwainJobInterface
 {
+    public:
+        arwain::OperatingMode get_mode() const
+        {
+            return mode;
+        }
+
     private:
         uint64_t deregistration_key;
         

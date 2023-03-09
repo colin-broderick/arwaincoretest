@@ -28,7 +28,7 @@ void CameraController::run_data_collection()
 {
     setup_data_collection();
 
-    while (arwain::system_mode == arwain::OperatingMode::DataCollection)
+    while (mode == arwain::OperatingMode::DataCollection)
     {
         Vector3 pos = Vector3::from_array(camera->get_position());
         camera_position_log << std::chrono::system_clock::now().time_since_epoch().count() << " "
@@ -51,9 +51,9 @@ void CameraController::run()
     {
         return false;
     }
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
-        switch (arwain::system_mode)
+        switch (mode)
         {
             case arwain::OperatingMode::DataCollection:
                 run_data_collection();

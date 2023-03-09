@@ -119,7 +119,7 @@ class StanceDetector
         FallState get_falling_status();
 };
 
-class StanceDetection : protected ArwainJob
+class StanceDetection : public ArwainJob
 {
     TESTABLE:
         void run_test_stance_detector();

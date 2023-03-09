@@ -10,7 +10,7 @@ TEST(IndoorPositioningSystem, init__success)
     IndoorPositioningSystem ips;
     arwain::config.use_ips = true;
     EXPECT_TRUE(ips.init());
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     ips.join();
 }
 
@@ -26,7 +26,7 @@ TEST(IndoorPositioningSystem, join)
 {
     arwain::config.use_ips = true;
     IndoorPositioningSystem pos_system;
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     EXPECT_NO_THROW(pos_system.join());
 }
 

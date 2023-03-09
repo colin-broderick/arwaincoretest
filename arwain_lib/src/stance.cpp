@@ -40,7 +40,7 @@ void StanceDetection::run_inference()
     // Set up timing.
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_infer"};
 
-    while (arwain::system_mode == arwain::OperatingMode::Inference)
+    while (mode == arwain::OperatingMode::Inference)
     {
         imu_data = arwain::Buffers::IMU_BUFFER.get_data();
         vel_data = arwain::Buffers::VELOCITY_BUFFER.get_data();
@@ -78,9 +78,9 @@ void StanceDetection::run()
     // A little presleep to give IMU data a chance to collect and orientation filter chance to converge.
     std::this_thread::sleep_for(std::chrono::milliseconds{3000});
     
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
-        switch (arwain::system_mode)
+        switch (mode)
         {
             case arwain::OperatingMode::Inference:
                 run_inference();
@@ -112,7 +112,7 @@ void StanceDetection::run_test_stance_detector()
     // Set up timing.
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_idle"};
 
-    while (arwain::system_mode == arwain::OperatingMode::TestStanceDetector)
+    while (mode == arwain::OperatingMode::TestStanceDetector)
     {
         // Get all relevant data.
         // TODO I just noticed that this is device IMU and not world IMU, and can't remember if that was intentional.

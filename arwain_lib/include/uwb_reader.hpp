@@ -5,7 +5,7 @@
 #include "uubla.hpp"
 #inlcude "arwain_job_interface"
 
-class UublaWrapper : protected ArwainJob
+class UublaWrapper : public ArwainJob
 {
     TESTABLE:
         void run_inference();

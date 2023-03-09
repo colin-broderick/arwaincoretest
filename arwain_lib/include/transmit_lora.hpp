@@ -9,7 +9,7 @@ class StanceDetection;
 class UublaWrapper;
 class ArwainThread;
 
-class StatusReporting : protected ArwainJob
+class StatusReporting : public ArwainJob
 {
 	TESTABLE:
         void core_setup();

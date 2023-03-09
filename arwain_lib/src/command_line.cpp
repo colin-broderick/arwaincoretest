@@ -19,7 +19,7 @@ ArwainCLI::ArwainCLI()
 
 void ArwainCLI::force_switch_to_idle_autocal_mode()
 {
-    arwain::system_mode = arwain::OperatingMode::Idle;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
 }
 
 void ArwainCLI::run()
@@ -28,7 +28,7 @@ void ArwainCLI::run()
     {
         return;
     }
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode != arwain::OperatingMode::Terminate)
     {
         std::string input;
         std::getline(std::cin, input);
@@ -60,7 +60,7 @@ constexpr int ArwainCLI::s2i(std::string_view input)
 /** \brief Reports the current system mode. */
 void ArwainCLI::report_current_mode()
 {
-    std::cout << "Current mode: " << arwain::system_mode << "\n";
+    std::cout << "Current mode: " << mode << "\n";
 }
 
 /** \brief Report inability to switch modes and inform of current mode. */
@@ -78,7 +78,7 @@ void ArwainCLI::fail_to_switch_to(arwain::OperatingMode mode)
 bool ArwainCLI::switch_to_exit_mode()
 {
     std::cout << "Cleaning up before closing, please wait ..." << std::endl;
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     return true;
 }
 
@@ -93,7 +93,7 @@ bool ArwainCLI::set_velocity_inference_pointer(PositionVelocityInference& veloci
 /** \brief Switches the system to Inference mode. Can only be entered from Idle mode. */
 void ArwainCLI::switch_to_inference_mode()
 {
-    if (arwain::system_mode == arwain::OperatingMode::Inference)
+    if (mode == arwain::OperatingMode::Inference)
     {
         std::cout << "Already in inference mode" << std::endl;
     }
@@ -101,11 +101,12 @@ void ArwainCLI::switch_to_inference_mode()
     {
         std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
     }
-    else if (arwain::system_mode == arwain::OperatingMode::Idle)
+    else if (mode == arwain::OperatingMode::Idle)
     {
         std::cout << "Entering inference mode" << std::endl;
         arwain::setup_log_directory();
-        arwain::system_mode = arwain::OperatingMode::Inference;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+
     }
     else
     {
@@ -122,10 +123,10 @@ void ArwainCLI::switch_to_inference_mode()
  */
 bool ArwainCLI::switch_to_idle_autocal_mode()
 {
-    if (arwain::system_mode == arwain::OperatingMode::Inference)
+    if (mode == arwain::OperatingMode::Inference)
     {
         std::cout << "Entering idle mode" << std::endl;
-        arwain::system_mode = arwain::OperatingMode::Idle;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
         return true;
     }
     else
@@ -140,7 +141,7 @@ bool ArwainCLI::switch_to_idle_autocal_mode()
  */
 bool ArwainCLI::switch_to_gyro_calib_mode()
 {
-    if (arwain::system_mode != arwain::OperatingMode::Idle)
+    if (mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::GyroscopeCalibration);
         return false;
@@ -149,7 +150,7 @@ bool ArwainCLI::switch_to_gyro_calib_mode()
     {
         std::cout << "Starting gyroscope calibration" << std::endl;
         // FIXTODAY ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
-        arwain::system_mode = arwain::OperatingMode::GyroscopeCalibration;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::GyroscopeCalibration);
         return true;
     }
 }
@@ -159,7 +160,7 @@ bool ArwainCLI::switch_to_gyro_calib_mode()
  */
 bool ArwainCLI::switch_to_mag_calib_mode()
 {
-    if (arwain::system_mode != arwain::OperatingMode::Idle)
+    if (mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::MagnetometerCalibration);
         return false;
@@ -168,7 +169,7 @@ bool ArwainCLI::switch_to_mag_calib_mode()
     {
         std::cout << "Starting magnetometer calibration" << std::endl;
         // FIXTODAY ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
-        arwain::system_mode = arwain::OperatingMode::MagnetometerCalibration;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::MagnetometerCalibration);
         return true;
     }
 }
@@ -178,7 +179,7 @@ bool ArwainCLI::switch_to_mag_calib_mode()
  */
 bool ArwainCLI::switch_to_accel_calib_mode()
 {
-    if (arwain::system_mode != arwain::OperatingMode::Idle)
+    if (mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::AccelerometerCalibration);
         return false;
@@ -186,7 +187,7 @@ bool ArwainCLI::switch_to_accel_calib_mode()
     else
     {
         std::cout << "Starting accelerometer calibration" << std::endl;
-        arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::AccelerometerCalibration);
         return true;
     }
 }
@@ -196,17 +197,15 @@ bool ArwainCLI::switch_to_accel_calib_mode()
  */
 bool ArwainCLI::switch_to_data_collection_mode()
 {
-    if (arwain::system_mode != arwain::OperatingMode::Idle)
+    if (mode != arwain::OperatingMode::Idle)
     {
         fail_to_switch_to(arwain::OperatingMode::DataCollection);
         return false;
     }
     else
     {
-        // TODO What's going on here?
-        throw NotImplemented{"SEARCHTHISSTRING00000123"};
-        std::cout << "Starting accelerometer calibration" << std::endl;
-        arwain::system_mode = arwain::OperatingMode::AccelerometerCalibration;
+        std::cout << "Starting data collection calibration" << std::endl;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::DataCollection);
         return true;
     }
 }
@@ -219,7 +218,7 @@ bool ArwainCLI::switch_to_data_collection_mode()
  */
 bool ArwainCLI::set_folder_name(const std::string& input)
 {
-    if (arwain::system_mode != arwain::OperatingMode::Idle)
+    if (mode != arwain::OperatingMode::Idle)
     {
         std::cout << "Folder name can only be changed from idle mode" << std::endl;
         report_current_mode();

@@ -172,7 +172,7 @@ arwain::ReturnCode arwain::test_inference()
     SensorManager sensor_manager;
     PositionVelocityInference inferrer;
 
-    arwain::system_mode = arwain::OperatingMode::Inference;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
 
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50, "arwain_test_infer"};
 
@@ -191,7 +191,7 @@ arwain::ReturnCode arwain::test_inference()
         loop_scheduler.await();
     }
 
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     sensor_manager.join();
     inferrer.join();
 

@@ -7,7 +7,7 @@
 #include "logger.hpp"
 #include "arwain_job_interface.hpp"
 
-class CameraController : protected ArwainJob
+class CameraController : public ArwainJob
 {
     TESTABLE:
         void setup_data_collection();

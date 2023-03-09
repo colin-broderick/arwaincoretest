@@ -7,7 +7,7 @@ TEST(StanceDetection, StanceDetection)
 {
     EXPECT_NO_THROW(
         StanceDetection stance;
-        arwain::system_mode = arwain::OperatingMode::Terminate;
+        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         stance.join();
     );
 }
@@ -32,13 +32,13 @@ TEST(StanceDetection, run_inference)
     arwain::Buffers::IMU_BUFFER.push_back({{0, 0, 0}, {0, 0, 0}});
     arwain::Buffers::VELOCITY_BUFFER.push_back({0, 0, 0});
     arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back({1, 0, 0, 0});
-    arwain::system_mode = arwain::OperatingMode::Inference;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
     stance.core_setup(); // Makes sure the internal stance detector is created.
     std::thread th = std::thread{
         []()
         {
             sleep_ms(500);
-            arwain::system_mode = arwain::OperatingMode::Terminate;
+            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
     EXPECT_NO_THROW(stance.run_inference());
