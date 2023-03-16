@@ -204,7 +204,7 @@ void SensorManager::run_magn_calibration()
 
     std::cout << "Magnetometer calibration complete" << std::endl;
 
-    if (post_gyro_calib_callback)
+    if (post_gyro_calib_callback != nullptr)
     {
         post_gyro_calib_callback();
     }
@@ -456,23 +456,13 @@ void SensorManager::set_post_gyro_calibration_callback(std::function<void()> fun
 /** \brief Block until the job thread can be joined. */
 bool SensorManager::join()
 {
-    while (!job_thread.joinable())
-    {
-        sleep_ms(1);
-    }
     if (job_thread.joinable())
     {
         job_thread.join();
-    }
-
-    while (!quick_madgwick_convergence_thread.joinable())
-    {
-        sleep_ms(1);
     }
     if (quick_madgwick_convergence_thread.joinable())
     {
         quick_madgwick_convergence_thread.join();
     }
-    
     return true;
 }

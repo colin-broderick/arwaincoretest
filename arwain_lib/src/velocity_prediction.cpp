@@ -118,7 +118,6 @@ void PositionVelocityInference::run_inference()
         {
             velocity.z = 0.0;
         }
-
         // Feed the activity metrix.
         arwain::activity_metric.feed_velocity(velocity);
 
@@ -200,10 +199,6 @@ bool PositionVelocityInference::init()
 
 bool PositionVelocityInference::join()
 {
-    while (!job_thread.joinable())
-    {
-        sleep_ms(1);
-    }
     if (job_thread.joinable())
     {
         job_thread.join();

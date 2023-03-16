@@ -113,12 +113,6 @@ TEST(FreeFuncs, sleep_ms)
     EXPECT_LT(duration, 26000000);
 }
 
-/** \brief I don't know how this can be tested because I can't find any way to mock the secondary function calls. */
-TEST(NOTREADY_Arwain, Arwain_Main)
-{
-    FAIL();
-}
-
 TEST(arwain__FreeFuncs, test_pressure)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_pressure());
@@ -134,15 +128,20 @@ TEST(arwain__FreeFuncs, test_imu)
  */
 TEST(arwain__FreeFuncs, test_lora_rx)
 {
-    FAIL();
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-    arwain::test_lora_rx();
+    // Set mode to terminate after a short delay.
+    std::thread th{
+        []{
+            std::this_thread::sleep_for(std::chrono::milliseconds{100});
+            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+        }
+    };
+
+    EXPECT_TRUE(arwain::ReturnCode::Success == arwain::test_lora_rx());
+    th.join();
 }
 
 TEST(arwain__FreeFuncs, test_inference)
 {
-    FAIL();
-    // Gets stuck in a loop somewhere and never returns, even with MockInferrer.
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_inference());
 }
 
@@ -185,7 +184,6 @@ TEST(arwain__FreeFuncs, setup_log_directory)
 
 TEST(arwain__FreeFuncs, execute_jobs)
 {
-    FAIL();
     // Turn off all the options we can to prevent deep calls into
     // seconday functions.
     EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
@@ -197,11 +195,22 @@ TEST(arwain__FreeFuncs, execute_jobs)
     arwain::config.no_cli = true;
     arwain::config.use_ips = false;
 
-    // TODO This test currently hangs because we set mode to terminate before anything exists to receive that event.
-    // Invoke the event AFTER jobs are started.
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    // Invoke the terminate event AFTER jobs are started.
+    std::thread th = std::thread{
+        []()
+        {
+            sleep_ms(15000);
+            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+        }
+    };
 
     EXPECT_EQ(arwain::execute_jobs(), arwain::ReturnCode::Success);
+    th.join();
+}
+
+TEST(arwain__FreeFuncs, calibrate_accelerometers_simple)
+{
+    EXPECT_TRUE((arwain::calibrate_accelerometers_simple() == arwain::ReturnCode::Success));
 }
 
 TEST(arwain__FreeFuncs, calibrate_magnetometers)
@@ -210,7 +219,7 @@ TEST(arwain__FreeFuncs, calibrate_magnetometers)
     std::thread th = std::thread{
         []()
         {
-            sleep_ms(3500);
+            sleep_ms(15000);
             EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
@@ -274,6 +283,119 @@ TEST(arwain__FreeFuncs, apply_quat_rotor_to_vector3)
     Vector3 v{1, 0, 0};
     Quaternion q{1, 0, 0, 0};
     EXPECT_NO_THROW(arwain::apply_quat_rotor_to_vector3(v, q));
+}
+
+TEST(FreeFuncs, arwain_main)
+{
+    {
+        // Create file to operate on
+        std::ofstream acce_log{"./acce.txt"};
+        std::ofstream gyro_log{"./gyro.txt"};
+
+        acce_log << "headers aren't parsed so whatever\n";
+        gyro_log << "headers aren't parsed so whatever\n";
+
+        for (int i = 0; i < 10; i++)
+        {
+            acce_log << "0 0.0 0.0 9.81\n";
+            gyro_log << "0 0.0 0.0 0.0\n";
+        }
+
+        acce_log.close();
+        gyro_log.close();
+
+
+        int j = 3;
+        std::string program = "arwain_test";
+        std::string command = "-rerunori";
+        std::string command2 = ".";
+        char* input_array[j] = {program.data(),command.data(), command2.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+
+        // SHould have created new files called slow_file, fast_file, fusion_file
+        EXPECT_TRUE(std::filesystem::exists("./slow_file.txt"));
+        EXPECT_TRUE(std::filesystem::exists("./fast_file.txt"));
+        EXPECT_TRUE(std::filesystem::exists("./fusion_file.txt"));
+    }
+    {
+        std::thread th{
+            []{
+                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+            }
+        };
+        int j = 2;
+        std::string program = "arwain_test";
+        std::string command = "-testlorarx";
+        char* input_array[j] = {program.data(),command.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+        th.join();
+    }
+    SUCCEED();
+    {
+        int j = 2;
+        std::string program = "arwain_test";
+        std::string command = "--help";
+        char* input_array[j] = {program.data(),command.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+    }
+    {
+        int j = 2;
+        std::string program = "arwain_test";
+        std::string command = "--version";
+        char* input_array[j] = {program.data(),command.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+    }
+    {
+        int j = 2;
+        std::string program = "arwain_test";
+        std::string command = "--testimu";
+        char* input_array[j] = {program.data(),command.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+    }
+    {
+        int j = 2;
+        std::string program = "arwain_test";
+        std::string command = "-testloratx";
+        char* input_array[j] = {program.data(),command.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+    }
+    {
+        int j = 2;
+        std::string program = "arwain_test";
+        std::string command = "-testpressure";
+        char* input_array[j] = {program.data(),command.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+    }
+    {
+        int j = 3;
+        std::string program = "arwain_test";
+        std::string command = "-testori";
+        std::string command2 = "10";
+        char* input_array[j] = {program.data(),command.data(), command2.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+    }
+    {
+        int j = 2;
+        std::string program = "arwain_test";
+        std::string command = "-calibg";
+        char* input_array[j] = {program.data(),command.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+    }
+    {
+        int j = 2;
+        std::string program = "arwain_test";
+        std::string command = "-testmag";
+        char* input_array[j] = {program.data(),command.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::FailedMagnetometer);
+    }
+    {
+        int j = 2;
+        std::string program = "arwain_test";
+        std::string command = "-caliba";
+        char* input_array[j] = {program.data(),command.data()};
+        EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
+    }
 }
 
 TEST(arwain__FreeFuncs, setup_log_folder_name_suffix__with_no_name)
