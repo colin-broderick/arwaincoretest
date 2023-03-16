@@ -30,6 +30,7 @@ void ArwainCLI::run()
     }
     while (mode != arwain::OperatingMode::Terminate)
     {
+        sleep_ms(5);
         std::string input;
         std::getline(std::cin, input);
         std::cout << "past get line" << std::endl;
@@ -58,16 +59,18 @@ constexpr int ArwainCLI::s2i(std::string_view input)
 }
 
 /** \brief Reports the current system mode. */
-void ArwainCLI::report_current_mode()
+std::string ArwainCLI::report_current_mode() const
 {
-    std::cout << "Current mode: " << mode << "\n";
+    std::stringstream ss;
+    ss << "Current mode: " << mode << "\n";
+    std::string s = ss.str();
+    return s;
 }
 
 /** \brief Report inability to switch modes and inform of current mode. */
 void ArwainCLI::fail_to_switch_to(arwain::OperatingMode mode)
 {
-    std::cout << "Cannot switch to " << mode << " from current mode\n";
-    report_current_mode();
+    std::cout << "Cannot switch to " << mode << " from current " << get_mode() << "\n";
 }
 
 /** \brief Switches the system to Terminate mode, which instructs all threads to clean up and exit.
@@ -97,7 +100,7 @@ void ArwainCLI::switch_to_inference_mode()
     {
         std::cout << "Already in inference mode" << std::endl;
     }
-    else if (this->velocity_inference_handle->ready())
+    else if (velocity_inference_handle != nullptr && !velocity_inference_handle->ready())
     {
         std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
     }
@@ -106,7 +109,6 @@ void ArwainCLI::switch_to_inference_mode()
         std::cout << "Entering inference mode" << std::endl;
         arwain::setup_log_directory();
         EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
-
     }
     else
     {
@@ -294,10 +296,6 @@ bool ArwainCLI::init()
 
 bool ArwainCLI::join()
 {
-    while (!job_thread.joinable())
-    {
-        sleep_ms(1);
-    }
     if (job_thread.joinable())
     {
         job_thread.join();

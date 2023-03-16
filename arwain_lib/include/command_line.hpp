@@ -12,7 +12,7 @@ class ArwainCLI : public ArwainJob
         void run();
         static constexpr int s2i(std::string_view input);
         bool switch_to_exit_mode();
-        void report_current_mode();
+        std::string report_current_mode() const;
         bool switch_to_idle_autocal_mode();
         void switch_to_inference_mode();
         void core_setup();

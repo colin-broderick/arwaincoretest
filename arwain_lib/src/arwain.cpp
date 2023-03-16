@@ -53,7 +53,6 @@
 // General configuration data.
 namespace arwain
 {
-    OperatingMode system_mode = arwain::OperatingMode::Idle;
     double yaw_offset = 0;
     arwain::Configuration config;
     std::string folder_date_string;
@@ -289,6 +288,11 @@ arwain::ReturnCode arwain::execute_jobs()
     #endif
     ArwainCLI arwain_cli;                                   // Simple command line interface for runtime mode switching.
 
+    while (arwain_cli.get_mode() != arwain::OperatingMode::Terminate)
+    {
+        sleep_ms(100);
+    }
+
     // Set pointers ...
     status_reporting.set_stance_detection_pointer(stance_detection);
     debug_prints.set_stance_detection_pointer(stance_detection);
@@ -323,6 +327,7 @@ arwain::ReturnCode arwain::execute_jobs()
 
 arwain::ReturnCode arwain::calibrate_magnetometers()
 {
+    StandAloneModeRegistrar mode_registrar;
     LIS3MDL<I2CDEVICEDRIVER> magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
     MagnetometerCalibrator calibrator;
     std::cout << "About to start magnetometer calibration." << std::endl;
@@ -330,7 +335,7 @@ arwain::ReturnCode arwain::calibrate_magnetometers()
     sleep_ms(3000);
     std::cout << "Calibration started ..." << std::endl;
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode_registrar.get_mode() != arwain::OperatingMode::Terminate)
     {
         calibrator.feed(magnetometer.read());
         sleep_ms(100);
@@ -536,7 +541,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
 
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
-
+    
     // Determine behaviour from command line arguments.
     InputParser input{argc, argv};
 

@@ -10,6 +10,7 @@
 #include "madgwick.hpp"
 #include "sensor_manager.hpp"
 #include "velocity_prediction.hpp"
+
 #if USE_UUBLA
 #include "uwb_reader.hpp"
 #endif
@@ -146,6 +147,8 @@ arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_ad
 
 arwain::ReturnCode arwain::test_lora_rx()
 {
+    StandAloneModeRegistrar mode_registrar;
+
     LoRa<SPIDEVICEDRIVER> lora{arwain::config.lora_address, true};
 
     if (lora.test_chip() == 0x1A)
@@ -155,7 +158,7 @@ arwain::ReturnCode arwain::test_lora_rx()
 
     std::cout << "Receiving LoRa messages ..." << std::endl;
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate)
+    while (mode_registrar.get_mode() != arwain::OperatingMode::Terminate)
     {
         auto [rx, message] = lora.receive_string(1000);
         if (rx)
@@ -167,6 +170,9 @@ arwain::ReturnCode arwain::test_lora_rx()
     return arwain::ReturnCode::Success;
 }
 
+/** \brief Runs velocity inference for a short time the returns.
+ * NOTE: Currently only works for the CHERI build, due to a zmq issue.
+ */
 arwain::ReturnCode arwain::test_inference()
 {
     SensorManager sensor_manager;
@@ -291,12 +297,13 @@ arwain::ReturnCode arwain::interactive_test()
 #if USE_ROS
 arwain::ReturnCode arwain::test_mag(int argc, char **argv)
 {
+    StandAloneModeRegistrar mode_registrar;
     ros::NodeHandle nh;
     auto pub = nh.advertise<geometry_msgs::Vector3Stamped>("/imu/mag", 1000);
 
     LIS3MDL magn{arwain::config.magn_address, arwain::config.magn_bus};
 
-    while (arwain::system_mode != arwain::OperatingMode::Terminate && ros::ok())
+    while (mode_registrar.get_mode() != arwain::OperatingMode::Terminate && ros::ok())
     {
         Vector3 reading = magn.read();
         geometry_msgs::Vector3Stamped msg;
