@@ -1,2 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
 project(arwain_thread)
-add_library(${PROJECT_NAME} arwain_thread.cpp)
+include_directories(include)
+add_library(${PROJECT_NAME} src/arwain_thread.cpp)
+if(UNIT_TESTS)
+    message("Building ${PROJECT_NAME} with test coverage")
+endif()

@@ -1,35 +1,39 @@
 cmake_minimum_required(VERSION 3.16)
 project(arwain_lib)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 add_definitions(-DUSE_NCS2)
 set(CMAKE_CXX_STANDARD 17)
 
-set(SRC_FILES
-    calibration.cpp
-    stance.cpp
-    velocity_prediction.cpp
-    altimeter.cpp
-    imu_reader.cpp
-    std_output.cpp
-    transmit_lora.cpp
-    multi_imu.cpp
-    arwain.cpp
-    arwain_tests.cpp
-    command_line.cpp
-    configuration.cpp
-    arwain_utils.cpp
-    activity_metric.cpp
-)
+include_directories(include)
+
+file(GLOB SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
+list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/arwain_lib/src/realsense.cpp)
+
 if(USE_UUBLA)
-set(SRC_FILES ${SRC_FILES} uwb_reader.cpp)
+set(SRC_FILES ${SRC_FILES} src/uwb_reader.cpp)
+else()
+list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/arwain_lib/src/uwb_reader.cpp)
 endif()
 if(USE_REALSENSE)
-set(SRC_FILES ${SRC_FILES} realsense.cpp)
+set(SRC_FILES ${SRC_FILES} src/realsense.cpp)
 endif()
 
 add_library(arwain_lib ${SRC_FILES})
 
-target_link_libraries(arwain_lib stdc++fs)
+if(UNIT_TESTS)
+    target_link_libraries(${PROJECT_NAME} GTest::gtest)
+    if(NOT CHERI)
+        message("Building ${PROJECT_NAME} with test coverage")
+        target_compile_options(${PROJECT_NAME} PRIVATE -ftest-coverage -fprofile-arcs -Wfatal-errors)
+    endif()
+endif()
+
+if(NOT CHERI)
+target_link_libraries(${PROJECT_NAME} stdc++fs)
+target_link_libraries(${PROJECT_NAME} zmq)
+endif()
 include_directories(
     ../vector3
     ../quaternion
