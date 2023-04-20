@@ -127,8 +127,8 @@ endif()
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
 target_compile_options(${PROJECT_NAME}_test PRIVATE        -Wno-psabi -Wall -Wshadow -Wextra -ftest-coverage -fprofile-arcs)
-target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES} -lgcov                         i2c zmq stdc++fs pthread boost_system tensorflow-lite flatbuffers)
-target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --coverage GTest::gtest i2c zmq stdc++fs pthread boost_system tensorflow-lite flatbuffers)
+target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES} -lgcov                         i2c stdc++fs pthread boost_system tensorflow-lite flatbuffers)
+target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --coverage GTest::gtest i2c stdc++fs pthread boost_system tensorflow-lite flatbuffers)
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)
