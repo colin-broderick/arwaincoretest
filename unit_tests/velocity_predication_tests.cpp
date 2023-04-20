@@ -33,8 +33,7 @@ TEST(PositionVelocityInference, init__success)
 
 /** \brief If the config.no_inference option is on, then init() should return
  * immediately with a false having taken no action. The job_thread should not
- * be joinable because it should never have started. If the ncs2 option is on,
- * it has its own thread which should also not be joinable.
+ * be joinable because it should never have started.
  */
 TEST(PositionVelocityInference, init__failure)
 {
@@ -43,9 +42,6 @@ TEST(PositionVelocityInference, init__failure)
     PositionVelocityInference inference;
     EXPECT_FALSE(inference.init());
     EXPECT_FALSE(inference.job_thread.joinable());
-    #if USE_NCS2
-    EXPECT_FALSE(inference.ncs2_thread.joinable());
-    #endif
     EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     inference.join();
 }
@@ -74,28 +70,11 @@ TEST(PositionVelocityInference, run_idle)
     inferrer.join();
 }
 
-#if USE_NCS2
-/** \brief Before core_setup, the socket pointers context and responder should be null.
- * After core_setup, they should be non-null (but we don't know exactly what they should be).
- */
-TEST(PositionVelocityInference, core_setup)
-{
-    // arwain::config.no_inference = true;
-    // PositionVelocityInference inferrer;
-    // EXPECT_EQ(inferrer.context, nullptr);
-    // EXPECT_EQ(inferrer.responder, nullptr);
-    // inferrer.core_setup();
-    // EXPECT_NE(inferrer.context, nullptr);
-    // EXPECT_NE(inferrer.responder, nullptr);
-    FAIL();
-}
-#else
 /** \brief This test not yet implemented for the tensorflow case. */
 TEST(PositionVelocityInference, core_setup)
 {
     FAIL();
 }
-#endif
 
 /** \brief The call to setup_inference should open log files and populate them with headers.
  * Before calling, position and velocity should be zero-vectors.
@@ -209,26 +188,3 @@ TEST(PositionVelocityInference, cleanup_inference)
 
     inferrer.join();
 }
-
-#if USE_NCS2
-#if !CHERI
-/** \brief This function just calls a Python script then returns.
- * Nothing else is testable at this stage. In fact it will probably
- * fail to find the script, but we can't test that effectively atm.
- */
-TEST(PositionVelocityInference, py_inference)
-{
-    // The script is called indirectly by the inferrer constructor.
-    arwain::config.no_inference = false;
-    EXPECT_NO_THROW(
-        NCS2Inferrer inferrer;
-        inferrer.ncs2_thread.join();
-    );
-
-    arwain::config.no_inference = true;
-    EXPECT_NO_THROW(
-        NCS2Inferrer inferrer;
-    );
-}
-#endif
-#endif

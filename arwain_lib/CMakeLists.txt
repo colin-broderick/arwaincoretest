@@ -3,7 +3,6 @@ project(arwain_lib)
 
 set(CMAKE_BUILD_TYPE Debug)
 
-add_definitions(-DUSE_NCS2)
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(include)
