@@ -31,7 +31,6 @@ endif()
 
 if(NOT CHERI)
 target_link_libraries(${PROJECT_NAME} stdc++fs)
-target_link_libraries(${PROJECT_NAME} zmq)
 endif()
 include_directories(
     ../vector3
