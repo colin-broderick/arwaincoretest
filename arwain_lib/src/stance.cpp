@@ -314,7 +314,7 @@ void StanceDetector::run(const std::deque<ImuData> &imu_data, const std::deque<V
         gyro_data.push_back(data.gyro);
     }
 
-    // This chops the last N samples off the velocity vector, where N depends on the inference rate of the NCS2.
+    // This chops the last N samples off the velocity vector, where N depends on the inference rate.
     for (unsigned int i = 0; i < arwain::velocity_inference_rate; i++)
     {
         vel_data_local.push_back(*(vel_data.end() - i));

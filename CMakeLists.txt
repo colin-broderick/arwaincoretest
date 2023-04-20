@@ -4,7 +4,6 @@ project(arwain)
 set(CMAKE_BUILD_TYPE Debug)
 find_package(GTest CONFIG REQUIRED)
 
-option(USE_NCS2             "Use the Neural Compute Stick for inference"          OFF)
 option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"          OFF)
 option(USE_ROS              "Use ROS topics to publish diagnostic data"           OFF)
 option(USE_UUBLA            "Include the UUBLA ultra-wideband library"            OFF)
@@ -123,12 +122,6 @@ if(NUMCPP_NO_USE_BOOST)
     add_definitions(-DNUMCPP_NO_USE_BOOST)
 else()
     # TODO This should do find_package(boost) plus includes and links.
-endif()
-
-if(USE_NCS2)
-    message("Using NCS2 for inference")
-    add_definitions(-DUSE_NCS2)
-    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} zmq)
 endif()
 
 ## Set compiler flags

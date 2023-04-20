@@ -139,17 +139,6 @@ void PositionVelocityInference::run_inference()
         velocity_file << time.time_since_epoch().count() << " " << velocity.x << " " << velocity.y << " " << velocity.z << "\n";
         position_file << time.time_since_epoch().count() << " " << position.x << " " << position.y << " " << position.z << "\n";
 
-        // Attempt to keep track of what rate the NCS2 is operating at; it sometimes drops to 7 Hz due to thermal throttling,
-        // and this can affect other systems if it is not considered.
-        if (time.time_since_epoch().count() - last_inference_time > 100000000)
-        {
-            arwain::velocity_inference_rate = 7;
-        }
-        else
-        {
-            arwain::velocity_inference_rate = 20;
-        }
-
         last_inference_time = time.time_since_epoch().count();
 
         // Wait until next tick.
