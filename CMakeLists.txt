@@ -1,22 +1,40 @@
 cmake_minimum_required(VERSION 3.10.2)
 
 project(arwain)
-
+set(CMAKE_BUILD_TYPE Debug)
 find_package(GTest CONFIG REQUIRED)
 
-option(USE_NCS2             "Use the Neural Compute Stick for inference"        OFF)
-option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"        OFF)
-option(USE_ROS              "Use ROS topics to publish diagnostic data"         OFF)
-option(USE_UUBLA            "Include the UUBLA ultra-wideband library"          OFF)
-option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"     OFF)
-option(UNIT_TESTS           "Make namespace functions public to enable testing" OFF)
+option(USE_NCS2             "Use the Neural Compute Stick for inference"          OFF)
+option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"          OFF)
+option(USE_ROS              "Use ROS topics to publish diagnostic data"           OFF)
+option(USE_UUBLA            "Include the UUBLA ultra-wideband library"            OFF)
+option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"       OFF)
+option(UNIT_TESTS           "Make private class methods public to enable testing" OFF)
+option(CHERI                "Compile with CHERI/Morello compatibility options"    OFF)
+
+find_package(Eigen3 REQUIRED)
+include_directories(EIGEN3_INCLUDE_DIR)
+link_directories(/usr/local64/lib)
+
+add_definitions(-DNUMCPP_NO_USE_BOOST)
+
+include_directories(/usr/local64/include)
+
+if(CHERI)
+    add_definitions(-DCHERI)
+endif()
 
 if(UNIT_TESTS)
     message("Building with all public class methods for test")
+    add_definitions(-DUNIT_TESTS)
     add_definitions(-DTESTABLE=public)
-else()
+    add_definitions(-DI2CDEVICEDRIVER=MockI2CDevice)
+    add_definitions(-DSPIDEVICEDRIVER=MockSpiDevice)
+    else()
     add_definitions(-DTESTABLE=private)
-endif()
+    add_definitions(-DI2CDEVICEDRIVER=LinuxSmbusI2CDevice)
+    add_definitions(-DSPIDEVICEDRIVER=LinuxSpiDevice)
+    endif()
 
 if(USE_REALSENSE)
     message("Using librealsense for T265 camera")
@@ -35,10 +53,28 @@ include_directories(
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl minitrace ips bmp384 lora fusion_filter arwain_thread vector3)
+set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion logger input_parser kalman timers lis3mdl bmp384 lora fusion_filter arwain_thread vector3)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
-include_directories(lora arwain_thread orientation iim42652 orientation_fusion quaternion vector3 logger kalman input_parser timers lis3mdl minitrace ips bmp384 uubla/include arwain_lib /opt/arwain/workspace/tensorflow_src realsense_t265)
+include_directories(
+    lora/include
+    arwain_thread/include
+    orientation/include
+    iim42652/include
+    orientation_fusion/include
+    quaternion/include
+    vector3/include
+    logger/include
+    kalman/include
+    input_parser/include
+    timers/include
+    lis3mdl/include
+    bmp384/include
+    uubla/include
+    arwain_lib/include
+    /opt/arwain/workspace/tensorflow_src
+    realsense_t265/include
+)
 
 if(USE_UUBLA)
     message("Compiling with UUBLA support")
@@ -56,8 +92,6 @@ add_subdirectory(input_parser)
 add_subdirectory(kalman)
 add_subdirectory(timers)
 add_subdirectory(lis3mdl)
-add_subdirectory(minitrace)
-add_subdirectory(ips)
 add_subdirectory(bmp384)
 if(USE_UUBLA)
 add_subdirectory(uubla)
@@ -100,7 +134,7 @@ endif()
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
 target_compile_options(${PROJECT_NAME}_test PRIVATE        -Wno-psabi -Wall -Wshadow -Wextra -ftest-coverage -fprofile-arcs)
-target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES}                                i2c zmq stdc++fs pthread boost_system tensorflow-lite flatbuffers)
+target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES} -lgcov                         i2c zmq stdc++fs pthread boost_system tensorflow-lite flatbuffers)
 target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --coverage GTest::gtest i2c zmq stdc++fs pthread boost_system tensorflow-lite flatbuffers)
 
 ## Install configuration and related files to correct locations.

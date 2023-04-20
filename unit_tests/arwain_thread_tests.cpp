@@ -17,7 +17,7 @@ namespace
     }
 }
 
-TEST(ArwainThread, Constructors)
+TEST(ArwainThread, ArwainThread__all_constructors)
 {
     EXPECT_NO_THROW(
         // "Normal" std thread invokation.
@@ -38,11 +38,15 @@ TEST(ArwainThread, Constructors)
     );
 }
 
-TEST(ArwainThread, SetGetName)
+TEST(ArwainThread, get_name__set_name)
 {
     ArwainThread th(test_func, "TestName");
     std::this_thread::sleep_for(std::chrono::milliseconds{80});
     std::string name = th.get_name();
     th.join();
     EXPECT_EQ(name, "TestName");
+
+    ArwainThread th2(test_func);
+    EXPECT_THROW(th2.set_name("really-quite-a-long-name-that-probably-shouldn't-work"), std::runtime_error);
+    th2.join();
 }

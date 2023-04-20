@@ -2,7 +2,7 @@
 
 #include "floor_tracker.hpp"
 
-TEST(FloorTracker, Constructor)
+TEST(arwain__FloorTracker, FloorTracker)
 {
     Vector3 pos;
     pos.x = 1;
@@ -12,7 +12,7 @@ TEST(FloorTracker, Constructor)
     EXPECT_NO_THROW(arwain::FloorTracker(1,1.0,1.0, pos));
 }
 
-TEST(FloorTracker, Update_Seperation)
+TEST(arwain__FloorTracker, update__separation)
 {
     Vector3 pos;
     pos.x = 1;
@@ -22,7 +22,7 @@ TEST(FloorTracker, Update_Seperation)
     EXPECT_FALSE(tracker.update(pos));
 }
 
-TEST(FloorTracker, Update_Window_Size)
+TEST(arwain__FloorTracker, udpate__window_size)
 {
     Vector3 pos;
     pos.x = 1;
@@ -32,7 +32,7 @@ TEST(FloorTracker, Update_Window_Size)
     EXPECT_FALSE(tracker.update(pos));
 }
 
-TEST(FloorTracker, Update_Drift_Threshold)
+TEST(arwain__FloorTracker, update__drift_threshold)
 {
     Vector3 pos;
     pos.x = 1;

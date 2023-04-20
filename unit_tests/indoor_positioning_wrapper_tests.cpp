@@ -1,105 +1,103 @@
 #include <gtest/gtest.h>
 
 #include "indoor_positioning_wrapper.hpp"
-//#include "floor_tracker.hpp"
-//#include "corner_detector.hpp"
-//#include "logger.hpp"
-//#include "vector3.hpp"
 #include "arwain.hpp"
 
-//public functions
-TEST(Indoor_Positioning_Public, Init_Success)
+/** \brief After running init() successfully, the job thread should be running and joinable. */
+TEST(IndoorPositioningSystem, init__success)
 {
-    /*IndoorPositioningSystem pos_system;
+    FAIL();
+    IndoorPositioningSystem ips;
     arwain::config.use_ips = true;
-    EXPECT_TRUE(pos_system.init());
-    arwain::system_mode = arwain::OperatingMode::Terminate;
-    pos_system.join();*/
-
-    FAIL();
+    EXPECT_TRUE(ips.init());
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    ips.join();
 }
 
-TEST(Indoor_Positioning_Public, Init_Failure)
+TEST(IndoorPositioningSystem, init__failure)
 {
-    /*IndoorPositioningSystem pos_system;
+    FAIL();
     arwain::config.use_ips = false;
-    EXPECT_FALSE(pos_system.init());
-    arwain::system_mode = arwain::OperatingMode::Terminate;
-    pos_system.join();*/
-
-    FAIL();
+    IndoorPositioningSystem ips;
+    EXPECT_FALSE(ips.init());
 }
 
-TEST(Indoor_Positioning_Public, Join)
+TEST(IndoorPositioningSystem, join)
 {
+    arwain::config.use_ips = true;
     IndoorPositioningSystem pos_system;
-    //pos_system.init();
-    arwain::system_mode = arwain::OperatingMode::Terminate;
+    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     EXPECT_NO_THROW(pos_system.join());
 }
 
-//private functions
-TEST(Indoor_Positioning_Private, Core_Setup)
+TEST(IndoorPositioningSystem, core_setup)
 {
     FAIL(); // function not implemented yet!
 }
 
-TEST(Indoor_Positioning_Private, Setup_Inference)
+TEST(IndoorPositioningSystem, setup_inference)
 {
     FAIL(); // function not implemented yet!
 }
 
-TEST(Indoor_Positioning_Private, Cleanup_Inference)
+TEST(IndoorPositioningSystem, cleanup_inference)
 {
     FAIL(); // function not implemented yet!
 }
 
-TEST(Indoor_Positioning_Private, Run_Idle)
+TEST(IndoorPositioningSystem, run_idle)
 {
     FAIL(); // function not implemented yet!
 }
 
-TEST(Indoor_Positioning_Private, Run_Inference)
+TEST(IndoorPositioningSystem, run_inference)
 {
     FAIL(); // function not implemented yet!
 }
 
-TEST(Indoor_Positioning_Private, Run)
+TEST(IndoorPositioningSystem, run)
 {
     FAIL(); // function not implemented yet!
 }
 
 //public wrapper functions
-TEST(Indoor_Positioning_Wrapper, Update)
+TEST(IndoorPositioningWrapper, udpate)
 {
     FAIL(); // function not implemented yet!
 }
 
-TEST(Indoor_Positioning_Wrapper, getPosition)
+TEST(IndoorPositioningWrapper, get_position)
 {
     IndoorPositioningSystem::IndoorPositioningWrapper wrapper;
+    wrapper.m_x = 1.0f;
+    wrapper.m_y = 1.0f;
+    wrapper.m_z = 1.0f;
+
     Vector3 pos{1.0, 1.0, 1.0};
 
-    EXPECT_EQ(pos, wrapper.getPosition());
+    EXPECT_EQ(pos, wrapper.get_position());
 }
 
-TEST(Indoor_Positioning_Wrapper, getX)
+TEST(IndoorPositioningWrapper, get_x)
 {
     IndoorPositioningSystem::IndoorPositioningWrapper wrapper;
+    wrapper.m_x = 1.0f;
     double x = 1.0;
-    EXPECT_EQ(x, wrapper.getX());
+    EXPECT_EQ(x, wrapper.get_x());
 }
 
-TEST(Indoor_Positioning_Wrapper, getY)
+TEST(IndoorPositioningWrapper, get_y)
 {
     IndoorPositioningSystem::IndoorPositioningWrapper wrapper;
+    wrapper.m_y = 1.0f;
     double y = 1.0;
-    EXPECT_EQ(y, wrapper.getY());
+    EXPECT_EQ(y, wrapper.get_y());
 }
 
-TEST(Indoor_Positioning_Wrapper, getZ)
+TEST(IndoorPositioningWrapper, get_z)
 {
     IndoorPositioningSystem::IndoorPositioningWrapper wrapper;
+    wrapper.m_z = 1.0f;
     double z = 1.0;
-    EXPECT_EQ(z, wrapper.getZ());
+    EXPECT_EQ(z, wrapper.get_z());
 }

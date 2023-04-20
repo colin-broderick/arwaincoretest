@@ -38,7 +38,7 @@ namespace Random
 /** \brief Test that the 4-element quaternion constructor produces valid output.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, FourElementConstructor)
+TEST(Quaternion, Quaternion__w_x_y_z)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -60,7 +60,7 @@ TEST(Quaternion, FourElementConstructor)
  * wolframalpha, e.g. https://www.wolframalpha.com/input/?i=inverse+of+quaternion+1%2B0i%2B0j%2B2k+**+%28-1i%2B3%2B4j%2B3k%29
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, Inverse)
+TEST(Quaternion, inverse)
 {
     // Quaternion inverse is the same as conjugate for unit quaternion.
     for (int i = 0; i < 1000; i++)
@@ -120,7 +120,7 @@ TEST(Quaternion, Inverse)
 /** \brief Quaternions add element-wise.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, Sum)
+TEST(Quaternion, addition_operator)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -139,7 +139,7 @@ TEST(Quaternion, Sum)
  * is the axis about which the rotation is performed.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, AxisAngleConstructor)
+TEST(Quaternion, Quaternion__axis_angle)
 {
     /*
     The axis-angle constructor should produce the following quaternion:
@@ -176,7 +176,7 @@ TEST(Quaternion, AxisAngleConstructor)
 /** \brief The default quaternion constructor creates the unit real quaternion.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, DefaultConstructor)
+TEST(Quaternion, Quaternion)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -192,7 +192,7 @@ TEST(Quaternion, DefaultConstructor)
  * will be equal to the supplied vector.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, VectorConstructor)
+TEST(Quaternion, Quaternion__vector)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -208,7 +208,7 @@ TEST(Quaternion, VectorConstructor)
 /** \brief The quaternion dot product is the same as for other vectors, i.e. the sum of element-wise products.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, DotProduct)
+TEST(Quaternion, dot)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -225,7 +225,7 @@ TEST(Quaternion, DotProduct)
  * is only defined for unit quaternions.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, AngleBetween)
+TEST(Quaternion, angle_between)
 {
 
     for (int i = 0; i < 1000; i++)
@@ -245,7 +245,7 @@ TEST(Quaternion, AngleBetween)
 /** \brief Test subtraction of two quaternions. Quaternion subtraction is element-wise.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, SubtractionOperator)
+TEST(Quaternion, subtraction_operator)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -264,7 +264,7 @@ TEST(Quaternion, SubtractionOperator)
 /** \brief Test unary subtraction i.e. negation of a quaternion. All elements are negated.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, UnarySubtraction)
+TEST(Quaternion, unary_subtraction)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -281,7 +281,7 @@ TEST(Quaternion, UnarySubtraction)
 /** \brief A unit quaternion has norm of one, within the tolerances of floating point arithmetic.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, IsNormal)
+TEST(Quaternion, is_normal)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -289,15 +289,15 @@ TEST(Quaternion, IsNormal)
         Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         q1 = q1.unit();
 
-        EXPECT_TRUE(q1.isNormal());
-        EXPECT_FALSE(q2.isNormal());
+        EXPECT_TRUE(q1.is_normal());
+        EXPECT_FALSE(q2.is_normal());
     }
 }
 
 /** \brief The vector part of a quaternion is simply a 3-vector formed of elements [x, y, z].
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, VectorPart)
+TEST(Quaternion, vector_part)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -316,7 +316,7 @@ TEST(Quaternion, VectorPart)
 /** \brief Two quaternions are equal if all of their elements are equal.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, EqualityOperator)
+TEST(Quaternion, equality_operator)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -362,7 +362,7 @@ TEST(Quaternion, EqualityOperator)
 /** \brief We can send a string representation of a quaternion using the stream operators.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, OutputStreamOperator)
+TEST(Quaternion, ostream)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -375,7 +375,7 @@ TEST(Quaternion, OutputStreamOperator)
  * https://colin-broderick.medium.com/deriving-the-quaternion-product-a22858c40921
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, Product)
+TEST(Quaternion, product_operator)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -411,7 +411,7 @@ TEST(Quaternion, Product)
  * https://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, SLERP)
+TEST(Quaternion, slerp)
 {
     {
         Quaternion q1{1, 0, 0, 0};
@@ -456,7 +456,7 @@ TEST(Quaternion, SLERP)
 /** \brief Quaternion::nslerp calls Quaternion::slerp, then normalizes the result before returning.
  * \return 0 for test pass, 1 for test fail.
  */
-TEST(Quaternion, NSLERP)
+TEST(Quaternion, nslerp)
 {
     for (int i = 0; i < 1000; i++)
     {
@@ -464,6 +464,6 @@ TEST(Quaternion, NSLERP)
         Quaternion q2{Random::Double(), Random::Double(), Random::Double(), Random::Double()};
         double t = Random::DoubleBetween(0, 1);
         Quaternion q3 = Quaternion::nslerp(q1, q2, t);
-        EXPECT_TRUE(q3.isNormal());
+        EXPECT_TRUE(q3.is_normal());
     }
 }
