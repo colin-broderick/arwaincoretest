@@ -1,6 +1,11 @@
 #ifndef PREDICT_VELOCITY_H
 #define PREDICT_VELOCITY_H
 
+#include <tensorflow/lite/interpreter.h>
+#include <tensorflow/lite/kernels/register.h>
+#include <tensorflow/lite/model.h>
+#include <tensorflow/lite/tools/gen_op_registration.h>
+
 #include "arwain.hpp"
 
 class PositionVelocityInference

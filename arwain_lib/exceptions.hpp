@@ -1,6 +1,8 @@
 #ifndef _ARWAIN_EXCEPTIONS_HPP
 #define _ARWAIN_EXCEPTIONS_HPP
 
+#include <stdexcept>
+
 class NotImplemented : public std::logic_error
 {
     public:

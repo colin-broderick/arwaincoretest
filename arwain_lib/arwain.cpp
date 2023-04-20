@@ -2,6 +2,7 @@
 #include <iostream>
 #include <filesystem>
 #include <iomanip>
+#include <map>
 #include <thread>
 #include <cmath>
 #include <tuple>
@@ -569,6 +570,19 @@ static void sigint_handler(int signal)
         std::cout << "\nReceived SIGINT - closing\n" << "\n";
         arwain::system_mode = arwain::OperatingMode::Terminate;
     }
+}
+
+namespace arwain
+{
+    std::map<arwain::ReturnCode, std::string> ErrorMessages = {
+        {arwain::ReturnCode::Success, "Success."},
+        {arwain::ReturnCode::FailedIMU, "Could not communicate with IMU."},
+        {arwain::ReturnCode::FailedConfiguration, "Configuration failed."},
+        {arwain::ReturnCode::FailedMagnetometer, "Could not communicate with magnetometer."},
+        {arwain::ReturnCode::NoConfigurationFile, "Could not find configuration file."},
+        {arwain::ReturnCode::NoInferenceXML, "Inference model XML file not found."},
+        {arwain::ReturnCode::IMUReadError, "Encountered error reading IMU."},
+    };
 }
 
 /** \brief ARWAIN entry point. */

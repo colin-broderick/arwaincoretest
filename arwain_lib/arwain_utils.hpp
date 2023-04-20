@@ -4,7 +4,6 @@
 #include <chrono>
 #include <thread>
 #include <deque>
-#include <map>
 
 void sleep_ms(int ms);
 
@@ -36,16 +35,6 @@ namespace arwain
         NoConfigurationFile = -4,
         NoInferenceXML = -5,
         IMUReadError = -6
-    };
-
-    inline std::map<arwain::ReturnCode, std::string> ErrorMessages = {
-        {arwain::ReturnCode::Success, "Success."},
-        {arwain::ReturnCode::FailedIMU, "Could not communicate with IMU."},
-        {arwain::ReturnCode::FailedConfiguration, "Configuration failed."},
-        {arwain::ReturnCode::FailedMagnetometer, "Could not communicate with magnetometer."},
-        {arwain::ReturnCode::NoConfigurationFile, "Could not find configuration file."},
-        {arwain::ReturnCode::NoInferenceXML, "Inference model XML file not found."},
-        {arwain::ReturnCode::IMUReadError, "Encountered error reading IMU."},
     };
 
     /** \brief Computes a true rolling average as values are fed in.
