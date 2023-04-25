@@ -158,11 +158,6 @@ void PositionVelocityInference::cleanup_inference()
     velocity_file.close();
 }
 
-bool PositionVelocityInference::ready()
-{
-    return ready_for_inference;
-}
-
 bool PositionVelocityInference::init()
 {
     core_setup();

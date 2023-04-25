@@ -182,12 +182,6 @@ arwain::ReturnCode arwain::test_inference()
 
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50, "arwain_test_infer"};
 
-    std::cout << "Waiting for the AI engine to become ready...\n";
-    while (!inferrer.ready())
-    {
-        loop_scheduler.await();
-    }
-    std::cout << "AI engine ready\n";
     loop_scheduler.await();
 
     Timers::CountdownTimer loop_timer{3000};

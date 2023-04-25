@@ -18,8 +18,6 @@ class PositionVelocityInference : public ArwainJob
         void run();
         void cleanup_inference();
 
-        bool ready_for_inference = false;
-        
         std::unique_ptr<tflite::FlatBufferModel> model;
         tflite::ops::builtin::BuiltinOpResolver resolver;
         std::unique_ptr<tflite::Interpreter> interpreter;
@@ -40,7 +38,6 @@ class PositionVelocityInference : public ArwainJob
 
     public:
         PositionVelocityInference();
-        bool ready();
         bool init();
         bool join();
 };
