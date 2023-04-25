@@ -100,10 +100,6 @@ void ArwainCLI::switch_to_inference_mode()
     {
         std::cout << "Already in inference mode" << std::endl;
     }
-    else if (velocity_inference_handle != nullptr && !velocity_inference_handle->ready())
-    {
-        std::cout << "Not yet ready for inference; wait a few seconds and try again ..." << std::endl;
-    }
     else if (mode == arwain::OperatingMode::Idle)
     {
         std::cout << "Entering inference mode" << std::endl;
