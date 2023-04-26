@@ -98,16 +98,25 @@ namespace EventManager
 class StandAloneModeRegistrar
 {
     public:
+        /** \brief The constructor registers the objects's callback() function with
+         * the switch_mode_event event in the EventManager.
+         */
         StandAloneModeRegistrar()
         {
             deregistration_key = EventManager::switch_mode_event.add_callback(
                 std::bind(&StandAloneModeRegistrar::callback, this, std::placeholders::_1)
             );
         }
+        
+        /** \brief Deregisteres the event callback up destruction of object. */
         ~StandAloneModeRegistrar()
         {
             EventManager::switch_mode_event.remove_callback(deregistration_key);
         }
+
+        /** \brief Get the current Arwain system mode.
+         * \return Current Arwain system mode.
+         */
         arwain::OperatingMode get_mode() const
         {
             return mode;
