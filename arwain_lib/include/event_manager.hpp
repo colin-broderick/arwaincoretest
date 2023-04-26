@@ -6,6 +6,26 @@
 #include <mutex>
 
 #include "arwain_modes.hpp"
+#include "vector3.hpp"
+
+template <class FuncSig, class InvokeArg> class Event;
+
+template<class FuncSig, class InvokeArg>
+class EventRegistrationHandle
+{
+    public:
+        EventRegistrationHandle(uint64_t key, Event<FuncSig, InvokeArg>* key_provider_event)
+        : m_key(key), m_event(key_provider_event)
+        {
+        }
+        ~EventRegistrationHandle()
+        {
+            m_event->remove_callback(m_key);
+        }
+    private:
+        uint64_t m_key = 0;
+        Event<FuncSig, InvokeArg>* m_event;
+};
 
 /** \brief A synchronous event manager allowing an unlimited number of callback registrations.
  *
@@ -20,7 +40,6 @@ template <class FuncSig, class InvokeArg>
 class Event
 {
     public:
-
         /** \brief Register a new callback.
          * \param func A function pointer to the function to be called when the event
          * is triggered.
@@ -88,6 +107,12 @@ namespace EventManager
 {
     /** \brief Subscribe to this event to trigger a callback when Arwain system mode changes. */
     inline Event<void(arwain::OperatingMode), arwain::OperatingMode> switch_mode_event;
+
+    /** \brief Subscribe to this event to trigger a callback when new velocity data is available. */
+    inline Event<void(Vector3), Vector3> new_arwain_velocity_event;
+
+    /** \brief Subscribe to this event to trigger a callback when new position data is available. */
+    inline Event<void(Vector3), Vector3> new_arwain_position_event;
 }
 
 /** \brief This class exists to provide a means to track system mode in the cases where no
