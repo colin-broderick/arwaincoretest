@@ -10,7 +10,7 @@ struct ImuData;
 /** \brief Memory safe wrapper of std::deque which automatically pops the
  * first element to maintain a fixed size.
  * 
- * This container is primarily designed to meet the needs of the Arwain job
+ * This container is primarily designed to meet the needs of the ArwainJob
  * threads. They store data for a fixed period of time (i.e. these containers
  * have fixed length), and the oldest element in the container is automatically
  * removed each time new data is added.
