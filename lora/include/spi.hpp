@@ -1,7 +1,7 @@
 #ifndef _GREEVE_SPI_INERFACE
 #define _GREEVE_SPI_INERFACE
 
-#include "spi_interface.hpp"
+#include "arwain/spi_interface.hpp"
 
 #if !UNIT_TESTS
 class LinuxSpiDevice : public I_SPI

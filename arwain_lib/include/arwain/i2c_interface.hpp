@@ -6,13 +6,11 @@
 #include <fcntl.h>
 #include <cstring>
 
-#if !CHERI
-    extern "C"
-    {
-        #include <linux/i2c-dev.h>
-        #include <i2c/smbus.h>
-    }
-#endif
+extern "C"
+{
+    #include <linux/i2c-dev.h>
+    #include <i2c/smbus.h>
+}
 
 /** \brief I2C interface defintion. */
 class I_I2C

@@ -4,12 +4,11 @@ project(arwain)
 set(CMAKE_BUILD_TYPE Debug)
 find_package(GTest CONFIG REQUIRED)
 
-option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"          OFF)
+option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"          ON)
 option(USE_ROS              "Use ROS topics to publish diagnostic data"           OFF)
 option(USE_UUBLA            "Include the UUBLA ultra-wideband library"            OFF)
 option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"       OFF)
-option(UNIT_TESTS           "Make private class methods public to enable testing" OFF)
-option(CHERI                "Compile with CHERI/Morello compatibility options"    OFF)
+option(UNIT_TESTS           "Make private class methods public to enable testing" ON)
 
 find_package(Eigen3 REQUIRED)
 include_directories(EIGEN3_INCLUDE_DIR)
@@ -18,10 +17,6 @@ link_directories(/usr/local64/lib)
 add_definitions(-DNUMCPP_NO_USE_BOOST)
 
 include_directories(/usr/local64/include)
-
-if(CHERI)
-    add_definitions(-DCHERI)
-endif()
 
 if(UNIT_TESTS)
     message("Building with all public class methods for test")

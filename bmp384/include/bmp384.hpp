@@ -8,7 +8,7 @@
 #include <sstream>
 #include <iostream>
 
-#include "i2c_interface.hpp"
+#include "arwain/i2c_interface.hpp"
 
 // ADDRESSES ------------------------------------------
 

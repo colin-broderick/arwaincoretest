@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <eigen3/Eigen/Dense>
 
-#include "i2c_interface.hpp"
+#include "arwain/i2c_interface.hpp"
 #include "vector3.hpp"
 
 // CONSTANTS ===================================================================

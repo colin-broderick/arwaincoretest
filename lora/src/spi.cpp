@@ -6,10 +6,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <cstring>
-
-#if !CHERI
 #include <linux/spi/spidev.h>
-#endif
 
 #include "spi.hpp"
 
