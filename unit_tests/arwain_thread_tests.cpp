@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <chrono>
 
-#include "arwain_thread.hpp"
+#include "arwain/thread.hpp"
 
 namespace
 {

@@ -1,10 +1,11 @@
 #include <gtest/gtest.h>
 #include <chrono>
 
-#include "arwain.hpp"
-#include "exceptions.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/exceptions.hpp"
+#include "arwain/std_output.hpp"
+
 #include "input_parser.hpp"
-#include "std_output.hpp"
 
 extern std::streambuf* original_cout_buffer;
 

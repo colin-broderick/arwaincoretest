@@ -3,8 +3,8 @@
 #include <string_view>
 #include <iostream>
 
-#include "command_line.hpp"
-#include "velocity_prediction.hpp"
+#include "arwain/command_line.hpp"
+#include "arwain/velocity_prediction.hpp"
 
 extern std::streambuf* original_cout_buffer;
 

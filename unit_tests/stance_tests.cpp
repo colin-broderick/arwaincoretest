@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "stance.hpp"
-#include "arwain.hpp"
+#include "arwain/stance.hpp"
+#include "arwain/arwain.hpp"
 
 TEST(StanceDetection, StanceDetection)
 {

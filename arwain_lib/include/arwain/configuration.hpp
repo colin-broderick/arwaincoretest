@@ -8,10 +8,11 @@
 #include <fstream>
 #include <filesystem>
 
+#include "arwain/utils.hpp"
+
 #include "input_parser.hpp"
 #include "vector3.hpp"
 #include "lora.hpp"
-#include "arwain_utils.hpp"
 
 /** \brief Configuration struct for whole programme. */
 namespace arwain

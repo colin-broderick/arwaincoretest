@@ -6,7 +6,7 @@
 #include <tensorflow/lite/model.h>
 #include <tensorflow/lite/tools/gen_op_registration.h>
 
-#include "arwain.hpp"
+#include "arwain/arwain.hpp"
 
 class PositionVelocityInference : public ArwainJob
 {

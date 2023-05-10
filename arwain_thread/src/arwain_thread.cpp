@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "arwain_thread.hpp"
+#include "arwain/thread.hpp"
 
 /** \brief Sets the name of the underlying thread.
  * \param name The name to assign to the thread, max 12 characters.

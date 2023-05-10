@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "arwain.hpp"
-#include "sensor_manager.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/sensor_manager.hpp"
 
 extern std::streambuf* original_cout_buffer;
 

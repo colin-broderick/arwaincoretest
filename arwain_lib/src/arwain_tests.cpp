@@ -1,15 +1,16 @@
 #include <thread>
 #include <chrono>
 
-#include "arwain.hpp"
-#include "arwain_tests.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/tests.hpp"
+#include "arwain/sensor_manager.hpp"
+#include "arwain/velocity_prediction.hpp"
+
 #include "timers.hpp"
 #include "bmp384.hpp"
 #include "iim42652.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
-#include "sensor_manager.hpp"
-#include "velocity_prediction.hpp"
 
 #if USE_UUBLA
 #include "uwb_reader.hpp"

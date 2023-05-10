@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "global_buffer.hpp"
+#include "arwain/global_buffer.hpp"
 
 TEST(GlobalBuffer, GlobalBuffer)
 {

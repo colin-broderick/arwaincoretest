@@ -1,8 +1,8 @@
 #ifndef _ARWAIN_COMMAND_LINE_HPP
 #define _ARWAIN_COMMAND_LINE_HPP
 
-#include "arwain_thread.hpp"
-#include "arwain_job_interface.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/job_interface.hpp"
 
 class PositionVelocityInference;
 

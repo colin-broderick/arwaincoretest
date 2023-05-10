@@ -1,8 +1,9 @@
 #include <gtest/gtest.h>
 
-#include "arwain.hpp"
+#include "arwain/arwain.hpp"
+
 #if USE_UUBLA
-#include "uwb_reader.hpp"
+#include "arwain/uwb_reader.hpp"
 #endif
 
 #if USE_UUBLA

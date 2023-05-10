@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "velocity_prediction.hpp"
-#include "event_manager.hpp"
+#include "arwain/velocity_prediction.hpp"
+#include "arwain/event_manager.hpp"
 
 extern std::streambuf* original_cout_buffer;
 

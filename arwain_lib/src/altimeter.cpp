@@ -1,14 +1,15 @@
 #include <mutex>
 #include <thread>
 
+#include "arwain/arwain.hpp"
+#include "arwain/logger.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/exceptions.hpp"
+#include "arwain/sabatini_altimeter.hpp"
+#include "arwain/altimeter.hpp"
+#include "arwain/utils.hpp"
+
 #include "bmp384.hpp"
-#include "arwain.hpp"
-#include "logger.hpp"
-#include "arwain_thread.hpp"
-#include "exceptions.hpp"
-#include "sabatini_altimeter.hpp"
-#include "altimeter.hpp"
-#include "arwain_utils.hpp"
 #include "timers.hpp"
 
 Altimeter::Altimeter()

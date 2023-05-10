@@ -1,8 +1,9 @@
 #include <gtest/gtest.h>
 #include <tuple>
 
+#include "arwain/calibration.hpp"
+
 #include "vector3.hpp"
-#include "calibration.hpp"
 
 TEST(AccelerometerCalibrator, is_converged)
 {

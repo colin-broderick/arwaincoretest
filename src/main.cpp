@@ -1,4 +1,4 @@
-#include "arwain.hpp"
+#include "arwain/arwain.hpp"
 
 /** \brief Program entry point.
  * \param argc Number of arguments.

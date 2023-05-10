@@ -9,45 +9,42 @@
 
 #if USE_ROS
 #include <ros/ros.h>
-#endif
-
-#if USE_REALSENSE
-#include "realsense.hpp"
-#endif
-
-#include "arwain_tests.hpp"
-#include "arwain_utils.hpp"
-#include "arwain_thread.hpp"
-#include "arwain.hpp"
-#include "input_parser.hpp"
-#include "sensor_manager.hpp"
-#include "velocity_prediction.hpp"
-#include "transmit_lora.hpp"
-#include "std_output.hpp"
-#include "indoor_positioning_wrapper.hpp"
-#include "altimeter.hpp"
-#include "logger.hpp"
-#include "iim42652.hpp"
-#include "madgwick.hpp"
-#include "efaroe.hpp"
-#include "lis3mdl.hpp"
-#include "bmp384.hpp"
-#include "calibration.hpp"
-#include "command_line.hpp"
-#include "std_output.hpp"
-#if USE_UUBLA
-#include "uwb_reader.hpp"
-#endif
-#include "global_buffer.hpp"
-
-#if USE_ROS
-#include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #endif
 
-#include "floor_tracker.hpp"
+#if USE_REALSENSE
+#include "arwain/realsense.hpp"
+#endif
+
+#if USE_UUBLA
+#include "arwain/uwb_reader.hpp"
+#endif
+
+#include "arwain/tests.hpp"
+#include "arwain/utils.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/sensor_manager.hpp"
+#include "arwain/velocity_prediction.hpp"
+#include "arwain/transmit_lora.hpp"
+#include "arwain/std_output.hpp"
+#include "arwain/indoor_positioning_wrapper.hpp"
+#include "arwain/altimeter.hpp"
+#include "arwain/logger.hpp"
+#include "arwain/calibration.hpp"
+#include "arwain/command_line.hpp"
+#include "arwain/std_output.hpp"
+#include "arwain/global_buffer.hpp"
+#include "arwain/floor_tracker.hpp"
+
+#include "input_parser.hpp"
+#include "iim42652.hpp"
+#include "madgwick.hpp"
+#include "efaroe.hpp"
+#include "lis3mdl.hpp"
+#include "bmp384.hpp"
 #include "new_madgwick_FusionAhrs.h"
 #include "new_madgwick_FusionBias.h"
 

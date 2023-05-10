@@ -2,8 +2,9 @@
 #include <chrono>
 #include <tuple>
 
+#include "arwain/calibration.hpp"
+
 #include "vector3.hpp"
-#include "calibration.hpp"
 
 TEST(GyroscopeCalibrator, is_converged)
 {

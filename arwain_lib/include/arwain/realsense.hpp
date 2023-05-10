@@ -1,11 +1,12 @@
 #ifndef _ARWAIN_REALSENSE_HPP
 #define _ARWAIN_REALSENSE_HPP
 
+#include "arwain/tests.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/logger.hpp"
+#include "arwain/job_interface.hpp"
+
 #include "t265.hpp"
-#include "arwain_tests.hpp"
-#include "arwain_thread.hpp"
-#include "logger.hpp"
-#include "arwain_job_interface.hpp"
 
 class CameraController : public ArwainJob
 {

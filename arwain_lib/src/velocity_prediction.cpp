@@ -3,12 +3,12 @@
 #include <cstring>
 #include <eigen3/Eigen/Dense>
 
-#include "velocity_prediction.hpp"
-#include "logger.hpp"
-#include "arwain.hpp"
-#include "exceptions.hpp"
-#include "event_manager.hpp"
-#include "arwain_thread.hpp"
+#include "arwain/velocity_prediction.hpp"
+#include "arwain/logger.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/exceptions.hpp"
+#include "arwain/event_manager.hpp"
+#include "arwain/thread.hpp"
 
 PositionVelocityInference::PositionVelocityInference()
 {

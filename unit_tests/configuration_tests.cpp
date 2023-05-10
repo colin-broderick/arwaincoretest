@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "configuration.hpp"
+#include "arwain/configuration.hpp"
+
 #include "input_parser.hpp"
 
 TEST(arwain__Configuration, Configuration_all)

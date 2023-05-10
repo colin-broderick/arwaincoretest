@@ -1,9 +1,10 @@
 #ifndef _ARWAIN_UWB_READER_HPP
 #define _ARWAIN_UWB_READER_HPP
 
-#include "arwain_thread.hpp"
-#include "uubla.hpp"
-#inlcude "arwain_job_interface"
+#include "arwain/thread.hpp"
+#inlcude "arwain/job_interface"
+
+#include "uubla/uubla.hpp"
 
 class UublaWrapper : public ArwainJob
 {

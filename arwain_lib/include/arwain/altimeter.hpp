@@ -3,11 +3,12 @@
 
 #include <tuple>
 
-#include "sabatini_altimeter.hpp"
+#include "arwain/sabatini_altimeter.hpp"
+#include "arwain/logger.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/job_interface.hpp"
+
 #include "bmp384.hpp"
-#include "logger.hpp"
-#include "arwain_thread.hpp"
-#include "arwain_job_interface.hpp"
 
 class I2CDEVICEDRIVER;
 

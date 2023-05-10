@@ -1,4 +1,4 @@
-#include "logger.hpp"
+#include "arwain/logger.hpp"
 
 /** \brief Construct Logger and open the relevant file.
  * \param file_name The full path of the file to write to.

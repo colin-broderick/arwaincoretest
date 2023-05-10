@@ -1,4 +1,4 @@
-#include "corner_detector.hpp"
+#include "arwain/corner_detector.hpp"
 
 /** \brief Constructor.
  * \param window_size_ The size of the position sample window over which to check for a corner.

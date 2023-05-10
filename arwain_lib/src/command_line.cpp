@@ -1,16 +1,15 @@
 #include <map>
 #include <string_view>
 
-#include "arwain.hpp"
-#include "exceptions.hpp"
-#include "sensor_manager.hpp"
-#include "transmit_lora.hpp"
-#include "altimeter.hpp"
-#include "std_output.hpp"
-#include "velocity_prediction.hpp"
-//#include "arwain_thread.hpp"
-#include "indoor_positioning_wrapper.hpp"
-#include "command_line.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/exceptions.hpp"
+#include "arwain/sensor_manager.hpp"
+#include "arwain/transmit_lora.hpp"
+#include "arwain/altimeter.hpp"
+#include "arwain/std_output.hpp"
+#include "arwain/velocity_prediction.hpp"
+#include "arwain/indoor_positioning_wrapper.hpp"
+#include "arwain/command_line.hpp"
 
 ArwainCLI::ArwainCLI()
 {

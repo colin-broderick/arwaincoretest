@@ -1,6 +1,7 @@
 #include <cmath>
 
-#include "floor_tracker.hpp"
+#include "arwain/floor_tracker.hpp"
+
 #include "vector3.hpp"
 
 /** \brief Constructor. Assumes initial position = 0. */
