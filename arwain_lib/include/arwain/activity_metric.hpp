@@ -1,7 +1,7 @@
 #ifndef _ARWAIN_ACTIVITY_METRIC_HPP
 #define _ARWAIN_ACTIVITY_METRIC_HPP
 
-#include "arwain_utils.hpp"
+#include "arwain/utils.hpp"
 
 class Vector3;
 

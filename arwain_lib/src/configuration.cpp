@@ -1,5 +1,5 @@
-#include "configuration.hpp"
-#include "arwain.hpp"
+#include "arwain/configuration.hpp"
+#include "arwain/arwain.hpp"
 
 /** \brief Create a configuration object based on supplied filename.
  * \param filename The location of the configuration file to read.

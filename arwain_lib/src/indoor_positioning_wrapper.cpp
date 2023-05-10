@@ -3,15 +3,16 @@
 #include <deque>
 #include <thread>
 
-#include "indoor_positioning_wrapper.hpp"
-#include "floor_tracker.hpp"
-#include "corner_detector.hpp"
+#include "arwain/indoor_positioning_wrapper.hpp"
+#include "arwain/floor_tracker.hpp"
+#include "arwain/corner_detector.hpp"
+#include "arwain/exceptions.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/logger.hpp"
+
 #include "timers.hpp"
-#include "logger.hpp"
 #include "vector3.hpp"
-#include "exceptions.hpp"
-#include "arwain_thread.hpp"
-#include "arwain.hpp"
 
 IndoorPositioningSystem::IndoorPositioningSystem()
 {

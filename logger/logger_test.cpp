@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <fstream>
 
-#include "logger.hpp"
+#include "arwain/logger.hpp"
 
 /** \brief Creates a file object, checks file has been created correctly.
  * \return 0 for test pass, 1 for test fail.

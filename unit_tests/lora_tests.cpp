@@ -1,8 +1,9 @@
 #include <gtest/gtest.h>
 
-#include "arwain.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/transmit_lora.hpp"
+
 #include "lora.hpp"
-#include "transmit_lora.hpp"
 
 /** \brief The configure() method is called by the constructor only, and executes
  * various branches depending on the information provided by the constructor.

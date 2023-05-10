@@ -1,7 +1,8 @@
 #include <cmath>
 #include <sstream>
 
-#include "arwain_utils.hpp"
+#include "arwain/utils.hpp"
+
 #include "quaternion.hpp"
 #include "vector3.hpp"
 

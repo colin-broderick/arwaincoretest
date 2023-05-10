@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "std_output.hpp"
-#include "arwain.hpp"
+#include "arwain/std_output.hpp"
+#include "arwain/arwain.hpp"
 
 TEST(DebugPrints, run)
 {

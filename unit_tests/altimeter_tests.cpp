@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "altimeter.hpp"
-#include "arwain.hpp"
-#include "event_manager.hpp"
+#include "arwain/altimeter.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/event_manager.hpp"
 
 /** \brief Test that the init() function in Altimeter correctly executes the true path. */
 TEST(Altimeter, init__success)

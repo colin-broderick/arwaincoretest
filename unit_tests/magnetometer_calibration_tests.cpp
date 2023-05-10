@@ -1,8 +1,9 @@
 #include <gtest/gtest.h>
 #include <chrono>
 
+#include "arwain/calibration.hpp"
+
 #include "vector3.hpp"
-#include "calibration.hpp"
 
 /** \brief Until the 100th feed, the feed_count reflects the number of feeds so far. */
 TEST(MagnetometerCalibrator, feed__less_than_100)

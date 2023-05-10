@@ -1,8 +1,9 @@
 //includes
 #include <cmath>
 
+#include <gtest/gtest.h>
+
 #include "madgwick.hpp"
-#include "gtest/gtest.h"
 
 TEST(arwain__Madgwick, Madgwick)
 {

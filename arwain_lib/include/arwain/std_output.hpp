@@ -3,8 +3,8 @@
 
 #include <tuple>
 
-#include "arwain_thread.hpp"
-#include "arwain_job_interface.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/job_interface.hpp"
 
 class StanceDetection;
 

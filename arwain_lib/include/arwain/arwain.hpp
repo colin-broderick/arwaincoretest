@@ -8,17 +8,19 @@
 #include <sstream>
 #include <iomanip>
 
-#include "arwain_utils.hpp"
-#include "quaternion.hpp"
-#include "stance.hpp"
+#include "arwain/utils.hpp"
+#include "arwain/stance.hpp"
+#include "arwain/configuration.hpp"
+#include "arwain/global_buffer.hpp"
+#include "arwain/activity_metric.hpp"
+#include "arwain/modes.hpp"
+
 #if USE_UUBLA
-#include "uubla.hpp"
+#include "uubla/uubla.hpp"
 #endif
+
+#include "quaternion.hpp"
 #include "lora.hpp"
-#include "configuration.hpp"
-#include "global_buffer.hpp"
-#include "activity_metric.hpp"
-#include "arwain_modes.hpp"
 
 class StanceDetection;
 

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "indoor_positioning_wrapper.hpp"
-#include "arwain.hpp"
+#include "arwain/indoor_positioning_wrapper.hpp"
+#include "arwain/arwain.hpp"
 
 /** \brief After running init() successfully, the job thread should be running and joinable. */
 TEST(IndoorPositioningSystem, init__success)

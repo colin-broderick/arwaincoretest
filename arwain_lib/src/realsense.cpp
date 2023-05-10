@@ -1,7 +1,7 @@
-#include "realsense.hpp"
-#include "exceptions.hpp"
-#include "arwain_thread.hpp"
-#include "logger.hpp"
+#include "arwain/realsense.hpp"
+#include "arwain/exceptions.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/logger.hpp"
 
 CameraController::CameraController()
 {

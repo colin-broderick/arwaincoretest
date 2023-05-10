@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "corner_detector.hpp"
+#include "arwain/corner_detector.hpp"
 
 TEST(arwain__CornerDetector, CornerDetector)
 {

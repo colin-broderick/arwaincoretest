@@ -1,9 +1,10 @@
 #ifndef _ARWAIN_TRANSMIT_LORA_HPP
 #define _ARWAIN_TRANSMIT_LORA_HPP
 
+#include "arwain/logger.hpp"
+#include "arwain/job_interface.hpp"
+
 #include "lora.hpp"
-#include "logger.hpp"
-#include "arwain_job_interface.hpp"
 
 class StanceDetection;
 class UublaWrapper;

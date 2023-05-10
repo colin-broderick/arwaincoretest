@@ -1,7 +1,8 @@
 #include <cmath>
 
-#include "activity_metric.hpp"
-#include "arwain_utils.hpp"
+#include "arwain/activity_metric.hpp"
+#include "arwain/utils.hpp"
+
 #include "vector3.hpp"
 
 /** \brief Constructor. 

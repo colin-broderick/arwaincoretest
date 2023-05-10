@@ -9,13 +9,14 @@
 #include <fstream>
 #include <string>
 
-#include "stance.hpp"
-#include "logger.hpp"
+#include "arwain/stance.hpp"
+#include "arwain/logger.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/exceptions.hpp"
+
 #include "vector3.hpp"
-#include "arwain.hpp"
-#include "arwain_thread.hpp"
 #include "timers.hpp"
-#include "exceptions.hpp"
 
 StanceDetection::StanceDetection()
 {

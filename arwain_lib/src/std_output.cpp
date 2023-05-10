@@ -4,14 +4,15 @@
 #include <mutex>
 #include <deque>
 
-#include "arwain.hpp"
+#include "arwain/arwain.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/exceptions.hpp"
+#include "arwain/std_output.hpp"
+
 #include "vector3.hpp"
 #include "quaternion.hpp"
-#include "arwain_thread.hpp"
 #include "timers.hpp"
 #include "filter.hpp"
-#include "exceptions.hpp"
-#include "std_output.hpp"
 
 DebugPrints::DebugPrints()
 {

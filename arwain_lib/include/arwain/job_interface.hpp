@@ -1,7 +1,7 @@
 #ifndef _ARWAIN_JOB_INTERFACE
 #define _ARWAIN_JOB_INTERFACE
 
-#include "event_manager.hpp"
+#include "arwain/event_manager.hpp"
 
 class ArwainJobInterface
 {
@@ -21,7 +21,7 @@ class ArwainJob : protected ArwainJobInterface
         }
 
     private:
-        uint64_t deregistration_key;
+        uint64_t deregistration_key = 0;
         
     protected:
         arwain::OperatingMode mode = arwain::OperatingMode::Idle;

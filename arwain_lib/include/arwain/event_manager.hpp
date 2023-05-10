@@ -5,7 +5,8 @@
 #include <functional>
 #include <mutex>
 
-#include "arwain_modes.hpp"
+#include "arwain/modes.hpp"
+
 #include "vector3.hpp"
 
 template <class FuncSig, class InvokeArg> class Event;
@@ -53,7 +54,7 @@ class Event
             callbacks[current_key] = func;
             return current_key;
         }
-        
+
         /** \brief Get the count of callbacks registered to this event. 
          * \return Count of registered callbacks.
          */
@@ -108,11 +109,14 @@ namespace EventManager
     /** \brief Subscribe to this event to trigger a callback when Arwain system mode changes. */
     inline Event<void(arwain::OperatingMode), arwain::OperatingMode> switch_mode_event;
 
-    /** \brief Subscribe to this event to trigger a callback when new velocity data is available. */
+    /** \brief Subscribe to this event to trigger a callback when new Arwain velocity data is available. */
     inline Event<void(Vector3), Vector3> new_arwain_velocity_event;
 
-    /** \brief Subscribe to this event to trigger a callback when new position data is available. */
+    /** \brief Subscribe to this event to trigger a callback when new Arwain position data is available. */
     inline Event<void(Vector3), Vector3> new_arwain_position_event;
+
+    /** \brief Subscribe to this event to trigger a callback when new UWB position data is available */
+    inline Event<void(Vector3), Vector3> new_uwb_position_event;
 }
 
 /** \brief This class exists to provide a means to track system mode in the cases where no

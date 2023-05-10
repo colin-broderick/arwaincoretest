@@ -2,14 +2,16 @@
 #include <chrono>
 #include <bitset>
 
-#include "arwain_thread.hpp"
-#include "exceptions.hpp"
-#include "logger.hpp"
-#include "transmit_lora.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/exceptions.hpp"
+#include "arwain/logger.hpp"
+#include "arwain/transmit_lora.hpp"
+#include "arwain/arwain.hpp"
+
 #include "vector3.hpp"
-#include "arwain.hpp"
 #include "lora.hpp"
 #include "timers.hpp"
+
 #if USE_UUBLA
 #include "uwb_reader.hpp"
 #endif

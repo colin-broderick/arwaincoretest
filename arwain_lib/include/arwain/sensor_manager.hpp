@@ -3,13 +3,14 @@
 
 #include <functional>
 
-#include "logger.hpp"
-#include "arwain_thread.hpp"
+#include "arwain/logger.hpp"
+#include "arwain/thread.hpp"
+#include "arwain/utils.hpp"
+#include "arwain/job_interface.hpp"
+
 #include "iim42652.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
-#include "arwain_utils.hpp"
-#include "arwain_job_interface.hpp"
 
 class SensorManager : public ArwainJob
 {
