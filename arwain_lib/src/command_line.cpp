@@ -32,7 +32,6 @@ void ArwainCLI::run()
         sleep_ms(5);
         std::string input;
         std::getline(std::cin, input);
-        std::cout << "past get line" << std::endl;
         parse_cli_input(input);
     }
 }
