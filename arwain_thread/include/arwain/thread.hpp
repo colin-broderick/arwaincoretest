@@ -8,6 +8,11 @@
 class ArwainThread : public std::thread
 {
     public:
+        enum class Cores
+        {
+            Core0 = 0, Core1, Core2, Core3, AllCores
+        };
+
         ArwainThread() = default;
 
         /** \brief Does exactly what std::thread does.
@@ -43,6 +48,7 @@ class ArwainThread : public std::thread
             this->set_name(name_);
         };
 
+        void set_processor_affinity(const std::vector<ArwainThread::Cores>& cores);
         std::string get_name();
 
     TESTABLE:
