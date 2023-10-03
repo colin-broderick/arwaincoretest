@@ -8,7 +8,7 @@ option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"        
 option(USE_ROS              "Use ROS topics to publish diagnostic data"           OFF)
 option(USE_UUBLA            "Include the UUBLA ultra-wideband library"            OFF)
 option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"       OFF)
-option(UNIT_TESTS           "Make private class methods public to enable testing" ON)
+option(UNIT_TESTS           "Make private class methods public to enable testing" OFF)
 
 find_package(Eigen3 REQUIRED)
 include_directories(EIGEN3_INCLUDE_DIR)
@@ -28,7 +28,7 @@ if(UNIT_TESTS)
     add_definitions(-DTESTABLE=private)
     add_definitions(-DI2CDEVICEDRIVER=LinuxSmbusI2CDevice)
     add_definitions(-DSPIDEVICEDRIVER=LinuxSpiDevice)
-    endif()
+endif()
 
 if(USE_REALSENSE)
     message("Using librealsense for T265 camera")
@@ -98,7 +98,9 @@ endif()
 
 ## Executables to build
 add_executable(${PROJECT_NAME} src/main.cpp)
-add_executable(${PROJECT_NAME}_test ${UNIT_TEST_SOURCES})
+if(UNIT_TESTS)
+    add_executable(${PROJECT_NAME}_test ${UNIT_TEST_SOURCES})
+endif()
 
 if(USE_ROS)
     message("Using ROS for diagnostic data topics")
@@ -121,9 +123,13 @@ endif()
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
+if(UNIT_TESTS)
 target_compile_options(${PROJECT_NAME}_test PRIVATE        -Wno-psabi -Wall -Wshadow -Wextra -ftest-coverage -fprofile-arcs)
+endif()
 target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES} -lgcov                         i2c stdc++fs pthread boost_system tensorflow-lite flatbuffers)
+if(UNIT_TESTS)
 target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --coverage GTest::gtest i2c stdc++fs pthread boost_system tensorflow-lite flatbuffers)
+endif()
 
 ## Install configuration and related files to correct locations.
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/build/arwain DESTINATION /usr/bin)
