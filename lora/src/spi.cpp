@@ -7,6 +7,7 @@
 #include <sys/ioctl.h>
 #include <cstring>
 #include <linux/spi/spidev.h>
+#include <iostream>
 
 #include "spi.hpp"
 
@@ -104,24 +105,24 @@ bool LinuxSpiDevice::begin()
     {
         return true;
     }
-    if (m_spidev == nullptr)
-    {
-        return false;
-    }
-    m_spifd = open(m_spidev, O_RDWR);
+
+    m_spifd = open(m_spidev.c_str(), O_RDWR);
 
     if (m_spifd < 0)
     {
+        std::cout << "SPI error: m_spifd < 0" << std::endl;
         return false;
     }
     /* Set SPI_POL and SPI_PHA */
     if (ioctl(m_spifd, SPI_IOC_WR_MODE, &m_spiconfig.mode) < 0)
     {
+        std::cout << "SPI error: ioctl(m_spifd, SPI_IOC_WR_MODE, &m_spiconfig.mode) < 0" << std::endl;
         close(m_spifd);
         return false;
     }
     if (ioctl(m_spifd, SPI_IOC_RD_MODE, &m_spiconfig.mode) < 0)
     {
+        std::cout << "SPI error: ioctl(m_spifd, SPI_IOC_RD_MODE, &m_spiconfig.mode) < 0" << std::endl;
         close(m_spifd);
         return false;
     }
@@ -129,11 +130,13 @@ bool LinuxSpiDevice::begin()
     /* Set bits per word*/
     if (ioctl(m_spifd, SPI_IOC_WR_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0)
     {
+        std::cout << "SPI error: ioctl(m_spifd, SPI_IOC_WR_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0" << std::endl;
         close(m_spifd);
         return false;
     }
     if (ioctl(m_spifd, SPI_IOC_RD_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0)
     {
+        std::cout << "SPI error: ioctl(m_spifd, SPI_IOC_RD_BITS_PER_WORD, &m_spiconfig.bits_per_word) < 0" << std::endl;
         close(m_spifd);
         return false;
     }
@@ -141,11 +144,13 @@ bool LinuxSpiDevice::begin()
     /* Set SPI speed*/
     if (ioctl(m_spifd, SPI_IOC_WR_MAX_SPEED_HZ, &m_spiconfig.speed) < 0)
     {
+        std::cout << "SPI error: ioctl(m_spifd, SPI_IOC_WR_MAX_SPEED_HZ, &m_spiconfig.speed) < 0" << std::endl;
         close(m_spifd);
         return false;
     }
     if (ioctl(m_spifd, SPI_IOC_RD_MAX_SPEED_HZ, &m_spiconfig.speed) < 0)
     {
+        std::cout << "SPI error: ioctl(m_spifd, SPI_IOC_RD_MAX_SPEED_HZ, &m_spiconfig.speed) < 0" << std::endl;
         close(m_spifd);
         return false;
     }
@@ -155,31 +160,14 @@ bool LinuxSpiDevice::begin()
     return true;
 }
 
-LinuxSpiDevice::LinuxSpiDevice(const char *p_spidev)
+LinuxSpiDevice::LinuxSpiDevice(const std::string& p_spidev)
 {
-    m_spidev = nullptr;
-    if (p_spidev != nullptr)
-    {
-        m_spidev = (char *)malloc(strlen(p_spidev) + 1);
-        if (m_spidev != nullptr)
-        {
-            strcpy(m_spidev, p_spidev);
-        }
-    }
-    m_open = false;
+    m_spidev = p_spidev;
 }
 
-LinuxSpiDevice::LinuxSpiDevice(const char *p_spidev, SpiConfig *p_spi_config)
+LinuxSpiDevice::LinuxSpiDevice(const std::string& p_spidev, SpiConfig *p_spi_config)
 {
-    m_spidev = nullptr;
-    if (p_spidev != nullptr)
-    {
-        m_spidev = (char *)malloc(strlen(p_spidev) + 1);
-        if (m_spidev != nullptr)
-        {
-            strcpy(m_spidev, p_spidev);
-        }
-    }
+    m_spidev = p_spidev;
     if (p_spi_config != nullptr)
     {
         memcpy(&m_spiconfig, p_spi_config, sizeof(SpiConfig));
@@ -196,11 +184,6 @@ LinuxSpiDevice::LinuxSpiDevice(const char *p_spidev, SpiConfig *p_spi_config)
 
 LinuxSpiDevice::~LinuxSpiDevice()
 {
-    if (m_spidev != nullptr)
-    {
-        free(m_spidev);
-        m_spidev = nullptr;
-    }
     if (m_open)
     {
         close(m_spifd);

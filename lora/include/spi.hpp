@@ -1,13 +1,15 @@
 #ifndef _GREEVE_SPI_INERFACE
 #define _GREEVE_SPI_INERFACE
 
+#include <string>
+
 #include "arwain/spi_interface.hpp"
 
 #if !UNIT_TESTS
 class LinuxSpiDevice : public I_SPI
 {
     TESTABLE: // Attributes
-        char *m_spidev = nullptr;
+        std::string m_spidev;
         int m_spifd;
         SpiConfig m_spiconfig;
         bool m_open;
@@ -20,8 +22,8 @@ class LinuxSpiDevice : public I_SPI
 
     public:
         LinuxSpiDevice() = default;
-        LinuxSpiDevice(const char *p_spidev);
-        LinuxSpiDevice(const char *p_spidev, SpiConfig *p_spi_config);
+        LinuxSpiDevice(const std::string& p_spidev);
+        LinuxSpiDevice(const std::string& p_spidev, SpiConfig *p_spi_config);
         ~LinuxSpiDevice();
         bool begin();
         bool end();

@@ -14,7 +14,7 @@ LoRa<SpiDeviceClass>::LoRa(const std::string &address, const bool as_receiver, c
 {
     // Create SPI device
     spi_config = SpiConfig{0, 8, 1000000, 0};
-    spi = SpiDeviceClass(address.c_str(), &spi_config);
+    spi = SpiDeviceClass(address, &spi_config);
     if (!spi.begin())
     {
         std::cout << "spi didnt begin" <<std::endl;
