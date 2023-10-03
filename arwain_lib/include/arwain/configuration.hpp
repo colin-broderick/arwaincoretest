@@ -14,9 +14,9 @@
 #include "vector3.hpp"
 #include "lora.hpp"
 
-/** \brief Configuration struct for whole programme. */
 namespace arwain
 {
+    /** \brief Configuration struct for whole programme. */
     class Configuration
     {
     public:
