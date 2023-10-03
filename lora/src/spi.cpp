@@ -92,6 +92,11 @@ int LinuxSpiDevice::read(uint8_t *p_rxbuffer, uint8_t p_rxlen)
     return ioctl(m_spifd, SPI_IOC_MESSAGE(1), spi_message);
 }
 
+bool LinuxSpiDevice::end()
+{
+    // What the feck is this here for?!
+}
+
 bool LinuxSpiDevice::begin()
 {
     /* open spidev device */

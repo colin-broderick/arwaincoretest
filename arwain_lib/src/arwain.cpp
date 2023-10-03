@@ -585,7 +585,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     // Start IMU test mode. This returns so the program will quit when the test is stopped.
     else if (input.contains("--testimu"))
     {
-        ret = arwain::test_imu("/dev/i2c-1", 0x68);
+        ret = arwain::test_imu(input.get_cmd_option("--testimu"), std::stoi(input.get_cmd_option("--addr")));
     }
     else if (input.contains("-testlorarx"))
     {
