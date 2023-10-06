@@ -11,4 +11,3 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 else()
     add_library(${PROJECT_NAME} src/logger.cpp)
 endif()
-
