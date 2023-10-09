@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <arwain/event.hpp>
+
 #include "arwain/velocity_prediction.hpp"
-#include "arwain/event_manager.hpp"
+#include "arwain/events.hpp"
 
 extern std::streambuf* original_cout_buffer;
 
@@ -9,7 +11,7 @@ TEST(PositionVelocityInference, join)
 {
     PositionVelocityInference inference;
     //inference.init();
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     EXPECT_NO_THROW(inference.join());
 }
 
@@ -23,7 +25,7 @@ TEST(PositionVelocityInference, init__success)
     // At this point, the inferrer exists, but init() has not been fully executed.
     // and the job thread(s) is not created.
     arwain::config.no_inference = false;
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     EXPECT_TRUE(inferrer.init());
 
     EXPECT_TRUE(inferrer.job_thread.joinable());
@@ -42,7 +44,7 @@ TEST(PositionVelocityInference, init__failure)
     PositionVelocityInference inference;
     EXPECT_FALSE(inference.init());
     EXPECT_FALSE(inference.job_thread.joinable());
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     inference.join();
 }
 
@@ -66,7 +68,7 @@ TEST(PositionVelocityInference, run_idle)
 {
     PositionVelocityInference inferrer;
     EXPECT_NO_THROW(inferrer.run_idle());
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     inferrer.join();
 }
 
@@ -124,17 +126,17 @@ TEST(PositionVelocityInference, run)
     PositionVelocityInference inferrer;
 
     // If system mode is terminate, run() should return immediately.
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     EXPECT_NO_THROW(inferrer.run());
 
     // If system mode is anything else, run() should loop inside run_idle()
     // and return after the mode is set to Terminate.
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::SelfTest);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::SelfTest);
     std::thread offthread = std::thread{
         [this]()
         {
             std::this_thread::sleep_for(std::chrono::milliseconds{1000});
-            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
     EXPECT_NO_THROW(inferrer.run());
@@ -148,15 +150,15 @@ TEST(PositionVelocityInference, set_mode)
     std::cout.rdbuf(original_cout_buffer);
     {
         arwain::config.no_inference = true;
-        std::cout << EventManager::switch_mode_event.size() << "\n";
+        std::cout << arwain::Events::switch_mode_event.size() << "\n";
         PositionVelocityInference inferrer;
         testing::internal::CaptureStdout();
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         EXPECT_EQ("setmodecalled\n", testing::internal::GetCapturedStdout());
-        std::cout << EventManager::switch_mode_event.size() << "\n";
+        std::cout << arwain::Events::switch_mode_event.size() << "\n";
         inferrer.join();
     }
-    std::cout << EventManager::switch_mode_event.size() << "\n";
+    std::cout << arwain::Events::switch_mode_event.size() << "\n";
     std::cout.rdbuf(nullptr);
 }
 
@@ -184,7 +186,7 @@ TEST(PositionVelocityInference, cleanup_inference)
     EXPECT_FALSE(inferrer.position_file.is_open());
     EXPECT_FALSE(inferrer.velocity_file.is_open());
 
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     inferrer.join();
 }

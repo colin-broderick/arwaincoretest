@@ -2,12 +2,13 @@
 
 #include "arwain/stance.hpp"
 #include "arwain/arwain.hpp"
+#include "arwain/events.hpp"
 
 TEST(StanceDetection, StanceDetection)
 {
     EXPECT_NO_THROW(
         StanceDetection stance;
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         stance.join();
     );
 }
@@ -32,13 +33,13 @@ TEST(StanceDetection, run_inference)
     arwain::Buffers::IMU_BUFFER.push_back({{0, 0, 0}, {0, 0, 0}});
     arwain::Buffers::VELOCITY_BUFFER.push_back({0, 0, 0});
     arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back({1, 0, 0, 0});
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
     stance.core_setup(); // Makes sure the internal stance detector is created.
     std::thread th = std::thread{
         []()
         {
             sleep_ms(500);
-            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
     EXPECT_NO_THROW(stance.run_inference());

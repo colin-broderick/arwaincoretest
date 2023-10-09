@@ -1,7 +1,9 @@
 #ifndef _ARWAIN_JOB_INTERFACE
 #define _ARWAIN_JOB_INTERFACE
 
-#include "arwain/event_manager.hpp"
+#include <arwain/event.hpp>
+
+#include "arwain/events.hpp"
 
 class ArwainJobInterface
 {
@@ -27,7 +29,7 @@ class ArwainJob : protected ArwainJobInterface
         arwain::OperatingMode mode = arwain::OperatingMode::Idle;
         ArwainJob()
         {
-            deregistration_key = EventManager::switch_mode_event.add_callback(
+            deregistration_key = arwain::Events::switch_mode_event.add_callback(
                 std::bind(&ArwainJob::set_mode, this, std::placeholders::_1)
             );
         }
@@ -37,7 +39,7 @@ class ArwainJob : protected ArwainJobInterface
         }
         ~ArwainJob()
         {
-            EventManager::switch_mode_event.remove_callback(deregistration_key);
+            arwain::Events::switch_mode_event.remove_callback(deregistration_key);
         }
 };
 

@@ -5,6 +5,7 @@
 #include "arwain/tests.hpp"
 #include "arwain/sensor_manager.hpp"
 #include "arwain/velocity_prediction.hpp"
+#include "arwain/events.hpp"
 
 #include "timers.hpp"
 #include "bmp384.hpp"
@@ -179,7 +180,7 @@ arwain::ReturnCode arwain::test_inference()
     SensorManager sensor_manager;
     PositionVelocityInference inferrer;
 
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
 
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50, "arwain_test_infer"};
 
@@ -192,7 +193,7 @@ arwain::ReturnCode arwain::test_inference()
         loop_scheduler.await();
     }
 
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     sensor_manager.join();
     inferrer.join();
 
