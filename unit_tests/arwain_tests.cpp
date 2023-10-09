@@ -4,6 +4,7 @@
 #include "arwain/arwain.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/std_output.hpp"
+#include "arwain/events.hpp"
 
 #include "input_parser.hpp"
 
@@ -133,7 +134,7 @@ TEST(arwain__FreeFuncs, test_lora_rx)
     std::thread th{
         []{
             std::this_thread::sleep_for(std::chrono::milliseconds{100});
-            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
 
@@ -187,7 +188,7 @@ TEST(arwain__FreeFuncs, execute_jobs)
 {
     // Turn off all the options we can to prevent deep calls into
     // seconday functions.
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
 
     arwain::config.no_imu = true;
     arwain::config.no_inference = true;
@@ -201,7 +202,7 @@ TEST(arwain__FreeFuncs, execute_jobs)
         []()
         {
             sleep_ms(15000);
-            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
 
@@ -221,7 +222,7 @@ TEST(arwain__FreeFuncs, calibrate_magnetometers)
         []()
         {
             sleep_ms(15000);
-            EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
     EXPECT_EQ(arwain::calibrate_magnetometers(), arwain::ReturnCode::Success);
@@ -322,7 +323,7 @@ TEST(FreeFuncs, arwain_main)
         std::thread th{
             []{
                 std::this_thread::sleep_for(std::chrono::milliseconds{100});
-                EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+                arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
             }
         };
         int j = 2;
@@ -502,7 +503,7 @@ TEST(FreeFuncs, sigint_handler)
 {
     // We need an ArwainJob to check the mode of, so I create a DebugPrints object.
     DebugPrints dbg;
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
     EXPECT_TRUE((dbg.get_mode() == arwain::OperatingMode::Idle));
     sigint_handler(SIGINT);
     EXPECT_TRUE((dbg.get_mode() == arwain::OperatingMode::Terminate));

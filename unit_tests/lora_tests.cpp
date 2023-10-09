@@ -2,6 +2,7 @@
 
 #include "arwain/arwain.hpp"
 #include "arwain/transmit_lora.hpp"
+#include "arwain/events.hpp"
 
 #include "lora.hpp"
 
@@ -118,7 +119,7 @@ TEST(StatusReporting, setup_inference)
     EXPECT_TRUE(std::filesystem::exists("./lora_log.txt"));
     std::filesystem::remove("./lora_log.txt");
     EXPECT_FALSE(std::filesystem::exists("./lora_log.txt"));
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     status.join();
 }
 
@@ -138,21 +139,21 @@ TEST(StatusReporting, set_stance_detection_pointer)
     EXPECT_EQ(status.stance_detection_handle, nullptr);
     EXPECT_NO_THROW(status.set_stance_detection_pointer(stance));
     EXPECT_NE(status.stance_detection_handle, nullptr);
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     stance.join();
     status.join();
 }
 
 TEST(StatusReporting, run_inference)
 {
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
     arwain::config.no_lora = false;
     StanceDetection stance;
     StatusReporting status;
     status.set_stance_detection_pointer(stance);
     std::thread th = std::thread{[](){
         sleep_ms(3000);
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     }};
     status.join();
     stance.join();

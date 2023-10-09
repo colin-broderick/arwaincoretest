@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "arwain/arwain.hpp"
+#include "arwain/events.hpp"
 
 #if USE_UUBLA
 #include "arwain/uwb_reader.hpp"
@@ -13,7 +14,7 @@ TEST(UWB_Reader, Init_Both_Conditions_False)
     /*arwain::config.use_uwb_positioning = false;
     arwain::config.node_id = 1;
     EXPECT_FALSE(UublaWrapper::init());
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     UublaWrapper::join();*/
 
     FAIL(); //SEG FAULT TO BE SORTED FIRST!!!

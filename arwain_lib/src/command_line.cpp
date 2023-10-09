@@ -10,6 +10,7 @@
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/indoor_positioning_wrapper.hpp"
 #include "arwain/command_line.hpp"
+#include "arwain/events.hpp"
 
 ArwainCLI::ArwainCLI()
 {
@@ -18,7 +19,7 @@ ArwainCLI::ArwainCLI()
 
 void ArwainCLI::force_switch_to_idle_autocal_mode()
 {
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
 }
 
 void ArwainCLI::run()
@@ -79,7 +80,7 @@ void ArwainCLI::fail_to_switch_to(arwain::OperatingMode mode)
 bool ArwainCLI::switch_to_exit_mode()
 {
     std::cout << "Cleaning up before closing, please wait ..." << std::endl;
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     return true;
 }
 
@@ -102,7 +103,7 @@ void ArwainCLI::switch_to_inference_mode()
     {
         std::cout << "Entering inference mode" << std::endl;
         arwain::setup_log_directory();
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
     }
     else
     {
@@ -122,7 +123,7 @@ bool ArwainCLI::switch_to_idle_autocal_mode()
     if (mode == arwain::OperatingMode::Inference)
     {
         std::cout << "Entering idle mode" << std::endl;
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Idle);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
         return true;
     }
     else
@@ -146,7 +147,7 @@ bool ArwainCLI::switch_to_gyro_calib_mode()
     {
         std::cout << "Starting gyroscope calibration" << std::endl;
         // FIXTODAY ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::GyroscopeCalibration);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::GyroscopeCalibration);
         return true;
     }
 }
@@ -165,7 +166,7 @@ bool ArwainCLI::switch_to_mag_calib_mode()
     {
         std::cout << "Starting magnetometer calibration" << std::endl;
         // FIXTODAY ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::MagnetometerCalibration);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::MagnetometerCalibration);
         return true;
     }
 }
@@ -183,7 +184,7 @@ bool ArwainCLI::switch_to_accel_calib_mode()
     else
     {
         std::cout << "Starting accelerometer calibration" << std::endl;
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::AccelerometerCalibration);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::AccelerometerCalibration);
         return true;
     }
 }
@@ -201,7 +202,7 @@ bool ArwainCLI::switch_to_data_collection_mode()
     else
     {
         std::cout << "Starting data collection calibration" << std::endl;
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::DataCollection);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::DataCollection);
         return true;
     }
 }

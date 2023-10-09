@@ -38,6 +38,7 @@
 #include "arwain/std_output.hpp"
 #include "arwain/global_buffer.hpp"
 #include "arwain/floor_tracker.hpp"
+#include "arwain/events.hpp"
 
 #include "input_parser.hpp"
 #include "iim42652.hpp"
@@ -524,7 +525,7 @@ void sigint_handler(int signal)
     if (signal == SIGINT)
     {
         std::cout << "\nReceived SIGINT - closing\n" << "\n";
-        EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     }
 }
 

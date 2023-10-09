@@ -2,6 +2,7 @@
 
 #include "arwain/indoor_positioning_wrapper.hpp"
 #include "arwain/arwain.hpp"
+#include "arwain/events.hpp"
 
 /** \brief After running init() successfully, the job thread should be running and joinable. */
 TEST(IndoorPositioningSystem, init__success)
@@ -10,7 +11,7 @@ TEST(IndoorPositioningSystem, init__success)
     IndoorPositioningSystem ips;
     arwain::config.use_ips = true;
     EXPECT_TRUE(ips.init());
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     ips.join();
 }
 
@@ -26,7 +27,7 @@ TEST(IndoorPositioningSystem, join)
 {
     arwain::config.use_ips = true;
     IndoorPositioningSystem pos_system;
-    EventManager::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     EXPECT_NO_THROW(pos_system.join());
 }
 
