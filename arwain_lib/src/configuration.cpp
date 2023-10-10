@@ -205,7 +205,7 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     return arwain::ReturnCode::Success;
 }
 
-arwain::Configuration::Configuration(const InputParser& input)
+arwain::Configuration::Configuration(const arwain::InputParser& input)
 {    
     // Enable/disable stdout logging.
     if (input.contains("-lstd"))

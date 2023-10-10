@@ -40,7 +40,8 @@
 #include "arwain/floor_tracker.hpp"
 #include "arwain/events.hpp"
 
-#include "input_parser.hpp"
+#include <arwain/input_parser.hpp>
+
 #include "iim42652.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
@@ -253,7 +254,7 @@ void arwain::setup_log_directory()
  * not contain -name, the folder_date_string_suffix is set to an empty string.
  * \param input An InputParser object which may or may not contain the -name parameter.
  */
-void arwain::setup_log_folder_name_suffix(const InputParser& input)
+void arwain::setup_log_folder_name_suffix(const arwain::InputParser& input)
 {
     if (input.contains("-name"))
     {
@@ -555,7 +556,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     std::signal(SIGINT, sigint_handler);
     
     // Determine behaviour from command line arguments.
-    InputParser input{argc, argv};
+    arwain::InputParser input{argc, argv};
 
     // Output help text if requested.
     if (input.contains("--help") || input.contains("-h"))

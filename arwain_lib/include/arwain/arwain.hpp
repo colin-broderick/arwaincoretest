@@ -8,6 +8,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include <arwain/input_parser.hpp>
+
 #include "arwain/utils.hpp"
 #include "arwain/stance.hpp"
 #include "arwain/configuration.hpp"
@@ -27,12 +29,12 @@ class StanceDetection;
 namespace arwain
 {
     enum class ReturnCode;
+    class InputParser;
 }
 
 arwain::ReturnCode arwain_main(int argc, char** argv);
 
 class Vector3;
-class InputParser;
 struct ImuData;
 
 namespace arwain::BufferSizes
@@ -83,7 +85,7 @@ namespace arwain
     extern RollingAverage rolling_average_accel_z_for_altimeter;
     extern ActivityMetric activity_metric;
 
-    void setup_log_folder_name_suffix(const InputParser& input);
+    void setup_log_folder_name_suffix(const arwain::InputParser& input);
     arwain::ReturnCode execute_jobs();
     arwain::ReturnCode rerun_orientation_filter(const std::string& data_location);
     arwain::ReturnCode rerun_floor_tracker(const std::string& data_location);

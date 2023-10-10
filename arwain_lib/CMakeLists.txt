@@ -35,7 +35,6 @@ include_directories(
     ../logger
     ../lora
     ../uubla/include
-    ../input_parser
     ../arwain_thread
     ../bmp384
     ../iim42652
