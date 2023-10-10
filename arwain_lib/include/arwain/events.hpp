@@ -1,7 +1,7 @@
 #ifndef _ARWAIN_EVENTS
 #define _ARWAIN_EVENTS
 
-#include <arwain/event.hpp>
+#include <arwain/event_manager.hpp>
 
 #include "arwain/modes.hpp"
 

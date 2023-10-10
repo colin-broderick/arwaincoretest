@@ -3,7 +3,7 @@
 #include <cstring>
 #include <eigen3/Eigen/Dense>
 
-#include <arwain/event.hpp> 
+#include <arwain/event_manager.hpp> 
 
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/logger.hpp"

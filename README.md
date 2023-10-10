@@ -16,3 +16,8 @@ The project can also be built on any standard Linux machine provided dependencie
 
 input_parser 0.1
 arwain_logger 
+arwain_event
+
+## Third party libraries
+
+libeigen3

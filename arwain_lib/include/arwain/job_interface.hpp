@@ -1,7 +1,7 @@
 #ifndef _ARWAIN_JOB_INTERFACE
 #define _ARWAIN_JOB_INTERFACE
 
-#include <arwain/event.hpp>
+#include <arwain/event_manager.hpp>
 
 #include "arwain/events.hpp"
 
