@@ -60,7 +60,6 @@ include_directories(
     timers/include
     lis3mdl/include
     bmp384/include
-    uubla/include
     arwain_lib/include
     /opt/arwain/workspace/tensorflow_src
     realsense_t265/include
@@ -79,9 +78,6 @@ add_subdirectory(kalman)
 add_subdirectory(timers)
 add_subdirectory(lis3mdl)
 add_subdirectory(bmp384)
-if(USE_UUBLA)
-add_subdirectory(uubla)
-endif()
 add_subdirectory(arwain_thread)
 add_subdirectory(arwain_lib)
 if(USE_REALSENSE)
