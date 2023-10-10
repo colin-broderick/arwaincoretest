@@ -5,9 +5,9 @@
 #include <algorithm>
 
 #include <arwain/input_parser.hpp>
+#include <arwain/quaternion.hpp>
 
 #include "efaroe.hpp"
-#include "quaternions.hpp"
 
 #define PI 3.14159265359
 

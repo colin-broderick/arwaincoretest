@@ -4,7 +4,7 @@
 #include <random>
 #include <functional>
 
-#include "quaternion.hpp"
+#include <arwain/quaternion.hpp>
 
 namespace Random
 {
