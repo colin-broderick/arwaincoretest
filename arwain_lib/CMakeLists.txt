@@ -31,10 +31,7 @@ target_link_libraries(${PROJECT_NAME} stdc++fs)
 
 include_directories(
     ../vector3
-    ../quaternion
-    ../logger
     ../lora
-    ../uubla/include
     ../arwain_thread
     ../bmp384
     ../iim42652

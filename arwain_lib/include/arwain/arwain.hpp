@@ -11,16 +11,16 @@
 #include <arwain/input_parser.hpp>
 #include <arwain/quaternion.hpp>
 
+#if USE_UUBLA
+#include <uubla/uubla.hpp>
+#endif
+
 #include "arwain/utils.hpp"
 #include "arwain/stance.hpp"
 #include "arwain/configuration.hpp"
 #include "arwain/global_buffer.hpp"
 #include "arwain/activity_metric.hpp"
 #include "arwain/modes.hpp"
-
-#if USE_UUBLA
-#include "uubla/uubla.hpp"
-#endif
 
 #include "lora.hpp"
 
