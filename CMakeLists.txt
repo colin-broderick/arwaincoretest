@@ -47,7 +47,7 @@ include_directories(
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver quaternion arwain_logger input_parser kalman timers lis3mdl bmp384 lora fusion_filter arwain_thread vector3)
+set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter iim42652_driver arwain_logger input_parser kalman timers lis3mdl bmp384 lora fusion_filter arwain_thread arwain_math)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
 include_directories(
@@ -56,8 +56,6 @@ include_directories(
     orientation/include
     iim42652/include
     orientation_fusion/include
-    quaternion/include
-    vector3/include
     kalman/include
     timers/include
     lis3mdl/include
@@ -76,9 +74,7 @@ endif()
 
 add_subdirectory(iim42652)
 add_subdirectory(orientation)
-add_subdirectory(vector3)
 add_subdirectory(lora)
-add_subdirectory(quaternion)
 add_subdirectory(kalman)
 add_subdirectory(timers)
 add_subdirectory(lis3mdl)

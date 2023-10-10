@@ -9,9 +9,9 @@
 #include <filesystem>
 
 #include <arwain/input_parser.hpp>
+#include <arwain/vector3.hpp>
 
 #include "arwain/utils.hpp"
-#include "vector3.hpp"
 #include "lora.hpp"
 
 namespace arwain

@@ -1,9 +1,9 @@
 #include <cmath>
 
+#include <arwain/vector3.hpp>
+
 #include "arwain/activity_metric.hpp"
 #include "arwain/utils.hpp"
-
-#include "vector3.hpp"
 
 /** \brief Constructor. 
  * \param ag_window_size_ How many accelerometer and gyro readings over which to calculate the

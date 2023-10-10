@@ -1,8 +1,8 @@
 #include <cmath>
 
-#include "arwain/floor_tracker.hpp"
+#include <arwain/vector3.hpp>
 
-#include "vector3.hpp"
+#include "arwain/floor_tracker.hpp"
 
 /** \brief Constructor. Assumes initial position = 0. */
 arwain::FloorTracker::FloorTracker(int window_size_, double drift_threshold_, double min_separation_)

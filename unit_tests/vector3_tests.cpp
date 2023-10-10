@@ -1,7 +1,7 @@
 #include <random>
 #include <gtest/gtest.h>
 
-#include "vector3.hpp"
+#include <arwain/vector3.hpp>
 
 namespace Random
 {

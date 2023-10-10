@@ -3,8 +3,8 @@
 
 #include "arwain/utils.hpp"
 
-#include "quaternion.hpp"
-#include "vector3.hpp"
+#include <arwain/quaternion.hpp>
+#include <arwain/vector3.hpp>
 
 void sleep_ms(int ms)
 {

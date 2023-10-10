@@ -2,7 +2,7 @@
 
 #include "arwain/activity_metric.hpp"
 
-#include "vector3.hpp"
+#include <arwain/vector3.hpp>
 
 TEST(ActivityMetric, feed_gyro)
 {

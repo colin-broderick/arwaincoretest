@@ -7,12 +7,12 @@
 #include <mutex>
 #include <deque>
 
+#include <arwain/vector3.hpp>
+#include <arwain/quaternion.hpp>
+
 #include "arwain/logger.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/job_interface.hpp"
-
-#include "quaternion.hpp"
-#include "vector3.hpp"
 #include "iim42652.hpp"
 
 class StanceDetector

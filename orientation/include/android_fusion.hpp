@@ -4,8 +4,8 @@
 #include <vector>
 #include <eigen3/Eigen/Dense>
 
-#include "quaternion.hpp"
-#include "vector3.hpp"
+#include <arwain/quaternion.hpp>
+#include <arwain/vector3.hpp>
 
 enum FUSION_MODE
 {

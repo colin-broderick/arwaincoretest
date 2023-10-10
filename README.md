@@ -17,6 +17,7 @@ The project can also be built on any standard Linux machine provided dependencie
 input_parser 0.1
 arwain_logger 
 arwain_event
+arwain_math 0.1
 
 ## Third party libraries
 
