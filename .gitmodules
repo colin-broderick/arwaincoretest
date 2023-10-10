@@ -2,7 +2,3 @@
 	path = uubla
 	url = https://bitbucket.org/arwain/uublacpp
         branch = master
-[submodule "vector3"]
-	path = vector3
-	url = https://bitbucket.org/arwain/vector3
-        branch = master
