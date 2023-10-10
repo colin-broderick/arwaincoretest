@@ -9,6 +9,7 @@
 #include <iomanip>
 
 #include <arwain/input_parser.hpp>
+#include <arwain/quaternion.hpp>
 
 #include "arwain/utils.hpp"
 #include "arwain/stance.hpp"
@@ -21,7 +22,6 @@
 #include "uubla/uubla.hpp"
 #endif
 
-#include "quaternion.hpp"
 #include "lora.hpp"
 
 class StanceDetection;
