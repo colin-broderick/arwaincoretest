@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 #include <chrono>
 
+#include <arwain/input_parser.hpp>
+
 #include "arwain/arwain.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/std_output.hpp"
 #include "arwain/events.hpp"
-
-#include "input_parser.hpp"
 
 extern std::streambuf* original_cout_buffer;
 
@@ -407,7 +407,7 @@ TEST(arwain__FreeFuncs, setup_log_folder_name_suffix__with_no_name)
     std::string command = "hello";
     std::string parameter = "1";
     char* input_array[3] = {program.data(), command.data(), parameter.data()};
-    InputParser parser(j, input_array);
+    arwain::InputParser parser(j, input_array);
 
     arwain::setup_log_folder_name_suffix(parser);
     std::string empty = "";
@@ -422,7 +422,7 @@ TEST(arwain__FreeFuncs, setup_log_folder_name_suffix__with_name)
     std::string command = "-name";
     std::string parameter = "example";
     char* input_array[3] = {program.data(),command.data(), parameter.data()};
-    InputParser parser(j, input_array);
+    arwain::InputParser parser(j, input_array);
 
     arwain::setup_log_folder_name_suffix(parser);
     std::string name = "example";

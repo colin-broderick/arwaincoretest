@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "arwain/configuration.hpp"
+#include <arwain/input_parser.hpp>
 
-#include "input_parser.hpp"
+#include "arwain/configuration.hpp"
 
 TEST(arwain__Configuration, Configuration_all)
 {
@@ -31,7 +31,7 @@ TEST(arwain__Configuration, Configuration_all)
     };
     int count = 8;
 
-    InputParser input_parser{count, strings};
+    arwain::InputParser input_parser{count, strings};
     EXPECT_NO_THROW(
         (arwain::Configuration{input_parser})
     );
@@ -58,7 +58,7 @@ TEST(arwain__Configuration, read_from_file__invalid_file)
         text7.data()
     };
     int count = 8;
-    InputParser input_parser{count, strings};
+    arwain::InputParser input_parser{count, strings};
 
     arwain::Configuration conf{input_parser};
     EXPECT_TRUE((arwain::ReturnCode::NoConfigurationFile == conf.read_from_file()));
@@ -86,7 +86,7 @@ TEST(arwain__Configuration, read_from_file__valid_file)
         text7.data()
     };
     int count = 8;
-    InputParser input_parser{count, strings};
+    arwain::InputParser input_parser{count, strings};
 
     arwain::Configuration conf{input_parser};
     EXPECT_TRUE((arwain::ReturnCode::Success == conf.read_from_file()));
@@ -113,7 +113,7 @@ TEST(arwain__Configuration, replace)
         text7.data()
     };
     int count = 8;
-    InputParser input_parser{count, strings};
+    arwain::InputParser input_parser{count, strings};
 
     arwain::Configuration conf{input_parser};
     EXPECT_NO_THROW(conf.replace("mag_scale_x", 1));
@@ -140,7 +140,7 @@ TEST(arwain__Configuration, read_option__invalid_option)
         text7.data()
     };
     int count = 8;
-    InputParser input_parser{count, strings};
+    arwain::InputParser input_parser{count, strings};
 
     arwain::Configuration conf{input_parser};
     double val_storage = 0;

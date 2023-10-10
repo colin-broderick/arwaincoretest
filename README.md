@@ -9,3 +9,10 @@ The primary build target is a custom Linux environment built using Yocto to run 
 5. Run `bitbake arwain-core` or `bitbake arwain-core-dev` to build a full image.
 
 The project can also be built on any standard Linux machine provided dependencies are available. Key dependencies are libi2c, spidev, Eigen, gtest, and NumCpp.
+
+# Dependencies
+
+## Arwain/Greeve libraries
+
+input_parser 0.1
+arwain_logger 

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "input_parser.hpp"
+#include <arwain/input_parser.hpp>
 
 /** \brief Creates a parser object with a given command, then checks command has been stored correctly.
  * \return 0 for test pass, 1 for test fail.
@@ -11,7 +11,7 @@ TEST(InputParser, InputParser)
     std::string program = "arwain_test";
     std::string command = "hello";
     char* input_array[2] = {program.data(),command.data()};
-    InputParser parser(j, input_array);
+    arwain::InputParser parser(j, input_array);
     
     EXPECT_TRUE(parser.contains("hello"));
 }
@@ -27,7 +27,7 @@ TEST(InputParser, get_cmd_option)
     std::string command = "hello";
     std::string paramater = "1";
     char* input_array[3] = {program.data(),command.data(), paramater.data()};
-    InputParser parser(j, input_array);
+    arwain::InputParser parser(j, input_array);
 
     EXPECT_EQ(parser.get_cmd_option("hello"), "1");
 }
@@ -41,7 +41,7 @@ TEST(InputParser, get_cmd_option__error)
     std::string program = "arwain_test";
     std::string command = "hello";
     char* input_array[2] = {program.data(),command.data()};
-    InputParser parser(j, input_array);
+    arwain::InputParser parser(j, input_array);
 
     EXPECT_EQ(parser.get_cmd_option("hello"), "");
 }
@@ -55,7 +55,7 @@ TEST(InputParser, contains__error)
     std::string program = "arwain_test";
     std::string command = "hello";
     char* input_array[2] = {program.data(),command.data()};
-    InputParser parser(j, input_array);
+    arwain::InputParser parser(j, input_array);
 
     EXPECT_FALSE(parser.contains("bye"));
 }

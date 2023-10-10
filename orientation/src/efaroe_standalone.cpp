@@ -4,8 +4,9 @@
 #include <sstream>
 #include <algorithm>
 
+#include <arwain/input_parser.hpp>
+
 #include "efaroe.hpp"
-#include "input_parser.hpp"
 #include "quaternions.hpp"
 
 #define PI 3.14159265359
@@ -16,7 +17,7 @@ float beta = 0.1;
 int main(int argc, char **argv)
 {
     // Create input parser.
-    InputParser input_parser{argc, argv};
+    arwain::InputParser input_parser{argc, argv};
     
     std::string line;   // Stores a line from the file being processed.
     int count = 0;      // Counts how many lines have been processed.

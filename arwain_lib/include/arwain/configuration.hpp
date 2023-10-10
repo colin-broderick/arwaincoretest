@@ -8,9 +8,9 @@
 #include <fstream>
 #include <filesystem>
 
-#include "arwain/utils.hpp"
+#include <arwain/input_parser.hpp>
 
-#include "input_parser.hpp"
+#include "arwain/utils.hpp"
 #include "vector3.hpp"
 #include "lora.hpp"
 
@@ -21,7 +21,7 @@ namespace arwain
     {
     public:
         Configuration(){};
-        Configuration(const InputParser &input);
+        Configuration(const arwain::InputParser &input);
         arwain::ReturnCode read_from_file();
 
     public:
