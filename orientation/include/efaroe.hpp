@@ -17,8 +17,9 @@ https://www.sciencedirect.com/science/article/pii/S0888327019303012
 #include <iostream>
 #include <math.h>
 
-#include "vector3.hpp"
-#include "quaternion.hpp"
+#include <arwain/vector3.hpp>
+#include <arwain/quaternion.hpp>
+
 #include "filter.hpp"
 
 namespace arwain

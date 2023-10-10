@@ -3,7 +3,8 @@
 
 #include <NumCpp.hpp>
 
-#include "vector3.hpp"
+#include <arwain/vector3.hpp>
+
 #include "kalman.hpp"
 
 /** \brief Calibration tool for a 3-axis digital magnetometer. */

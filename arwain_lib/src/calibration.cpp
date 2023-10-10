@@ -2,10 +2,10 @@
 #include <tuple>
 #include <vector>
 
+#include <arwain/vector3.hpp>
+
 #include "arwain/calibration.hpp"
 #include "arwain/utils.hpp"
-
-#include "vector3.hpp"
 
 /** \brief Computes the coverage percentage of a sphere by counting the number of non-zero
  * entries in the coverage array. Each index in the array corresponds to an equal-area region

@@ -1,13 +1,13 @@
 #ifndef INDOOR_POSITIONING_WRAPPER_H
 #define INDOOR_POSITIONING_WRAPPER_H
 
-#include "arwain/logger.hpp"
+#include <arwain/vector3.hpp>
+#include <arwain/logger.hpp>
+
 #include "arwain/corner_detector.hpp"
 #include "arwain/floor_tracker.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/job_interface.hpp"
-
-#include "vector3.hpp"
 
 class IndoorPositioningSystem : public ArwainJob
 {

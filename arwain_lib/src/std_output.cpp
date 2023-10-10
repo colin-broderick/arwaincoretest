@@ -4,13 +4,13 @@
 #include <mutex>
 #include <deque>
 
+#include <arwain/quaternion.hpp>
+#include <arwain/vector3.hpp>
+
 #include "arwain/arwain.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/std_output.hpp"
-
-#include "vector3.hpp"
-#include "quaternion.hpp"
 #include "timers.hpp"
 #include "filter.hpp"
 

@@ -4,7 +4,7 @@
 #include <string>
 #include <deque>
 
-#include "vector3.hpp"
+#include <arwain/vector3.hpp>
 
 namespace arwain
 {

@@ -8,10 +8,10 @@
 #include <chrono>
 #include <thread>
 
-#include "arwain/i2c_interface.hpp"
+#include <arwain/vector3.hpp>
+#include <arwain/quaternion.hpp>
 
-#include "vector3.hpp"
-#include "quaternion.hpp"
+#include "arwain/i2c_interface.hpp"
 
 template <class I2CDeviceClass>
 class LIS3MDL

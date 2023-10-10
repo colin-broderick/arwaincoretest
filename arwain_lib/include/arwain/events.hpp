@@ -2,10 +2,9 @@
 #define _ARWAIN_EVENTS
 
 #include <arwain/event_manager.hpp>
+#include <arwain/vector3.hpp>
 
 #include "arwain/modes.hpp"
-
-#include "vector3.hpp"
 
 namespace arwain::Events
 {

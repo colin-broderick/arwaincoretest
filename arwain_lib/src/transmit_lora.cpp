@@ -2,13 +2,13 @@
 #include <chrono>
 #include <bitset>
 
+#include <arwain/vector3.hpp>
+#include <arwain/logger.hpp>
+
 #include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
-#include "arwain/logger.hpp"
 #include "arwain/transmit_lora.hpp"
 #include "arwain/arwain.hpp"
-
-#include "vector3.hpp"
 #include "lora.hpp"
 #include "timers.hpp"
 

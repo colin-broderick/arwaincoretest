@@ -3,7 +3,7 @@
 
 #include "arwain/multi_imu.hpp"
 
-#include "vector3.hpp"
+#include <arwain/vector3.hpp>
 
 Multi_IIM42652::Multi_IIM42652()
 {
