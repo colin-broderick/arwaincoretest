@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <arwain/event.hpp>
+#include <arwain/event_manager.hpp>
 
 #include "arwain/altimeter.hpp"
 #include "arwain/arwain.hpp"
