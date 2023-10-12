@@ -1,6 +1,8 @@
 #include <thread>
 #include <chrono>
 
+#include <arwain/devices/iim42652.hpp>
+
 #include "arwain/arwain.hpp"
 #include "arwain/tests.hpp"
 #include "arwain/sensor_manager.hpp"
@@ -9,7 +11,6 @@
 
 #include "timers.hpp"
 #include "bmp384.hpp"
-#include "iim42652.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
 

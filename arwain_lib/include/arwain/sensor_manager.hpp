@@ -3,12 +3,13 @@
 
 #include <functional>
 
+#include <arwain/devices/iim42652.hpp>
+
 #include "arwain/logger.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/utils.hpp"
 #include "arwain/job_interface.hpp"
 
-#include "iim42652.hpp"
 #include "lis3mdl.hpp"
 #include "madgwick.hpp"
 

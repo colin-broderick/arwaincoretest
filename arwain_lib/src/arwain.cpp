@@ -41,8 +41,8 @@
 #include "arwain/events.hpp"
 
 #include <arwain/input_parser.hpp>
+#include <arwain/devices/iim42652.hpp>
 
-#include "iim42652.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
 #include "lis3mdl.hpp"

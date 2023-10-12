@@ -9,11 +9,11 @@
 
 #include <arwain/vector3.hpp>
 #include <arwain/quaternion.hpp>
+#include <arwain/devices/iim42652.hpp>
 
 #include "arwain/logger.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/job_interface.hpp"
-#include "iim42652.hpp"
 
 class StanceDetector
 {

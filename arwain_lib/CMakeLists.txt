@@ -34,7 +34,6 @@ include_directories(
     ../lora
     ../arwain_thread
     ../bmp384
-    ../iim42652
     ../orientation
     ../timers
     ../lis3mdl

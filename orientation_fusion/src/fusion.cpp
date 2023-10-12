@@ -1,4 +1,5 @@
-#include "IIM42652_driver.hpp"
+#include <arwain/devices/iim42652.hpp>
+
 #include "madgwick.hpp"
 
 #include <thread>

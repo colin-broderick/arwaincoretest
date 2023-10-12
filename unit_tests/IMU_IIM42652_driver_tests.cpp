@@ -1,8 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <arwain/vector3.hpp>
-
-#include "iim42652.hpp"
+#include <arwain/devices/iim42652.hpp>
 
 TEST(IIM42652, IIM42652)
 {

@@ -3,7 +3,9 @@
 #ifndef _ARWAIN_MULTI_IMU_HPP
 #define _ARWAIN_MULTI_IMU_HPP
 
-#include "iim42652.hpp"
+#include <arwain/devices/iim42652.hpp>
+
+#include "i2c_interface.hpp"
 
 class Multi_IIM42652
 {
