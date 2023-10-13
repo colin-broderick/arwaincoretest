@@ -4,6 +4,7 @@
 #include <arwain/devices/bmp384.hpp>
 #include <arwain/logger.hpp>
 
+#include "arwain/i2c_interface.hpp"
 #include "arwain/arwain.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
