@@ -1,8 +1,0 @@
-cmake_minimum_required(VERSION 3.16)
-project(lis3mdl)
-include_directories(include)
-add_library(${PROJECT_NAME} STATIC src/lis3mdl.cpp)
-target_compile_options(${PROJECT_NAME} PRIVATE -Wno-psabi -Wall -Wshadow)
-if(UNIT_TESTS)
-    message("Building ${PROJECT_NAME} with test coverage")
-endif()

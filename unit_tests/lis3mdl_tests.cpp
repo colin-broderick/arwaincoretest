@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "lis3mdl.hpp"
+#include <arwain/devices/lis3mdl.hpp>
 
 TEST(LIS3MDL, LIS3MDL__fail)
 {

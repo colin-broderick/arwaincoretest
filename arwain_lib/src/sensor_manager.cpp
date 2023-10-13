@@ -7,19 +7,20 @@
 #include <thread>
 #include <functional>
 
+#include <arwain/devices/lis3mdl.hpp>
+#include <arwain/logger.hpp>
+
 #include "arwain/arwain.hpp"
 #include "arwain/utils.hpp"
 #include "arwain/sensor_manager.hpp"
 #include "arwain/multi_imu.hpp"
 #include "arwain/calibration.hpp"
-#include "arwain/logger.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 
 #include "madgwick.hpp"
 #include "efaroe.hpp"
 #include "timers.hpp"
-#include "lis3mdl.hpp"
 
 /** \brief Rotates a Vector3 according to a quaternion orientation.
  * \param vec The Vector3 to rotate.

@@ -43,10 +43,10 @@
 #include <arwain/input_parser.hpp>
 #include <arwain/devices/iim42652.hpp>
 #include <arwain/devices/bmp384.hpp>
+#include <arwain/devices/lis3mdl.hpp>
 
 #include "madgwick.hpp"
 #include "efaroe.hpp"
-#include "lis3mdl.hpp"
 #include "new_madgwick_FusionAhrs.h"
 #include "new_madgwick_FusionBias.h"
 

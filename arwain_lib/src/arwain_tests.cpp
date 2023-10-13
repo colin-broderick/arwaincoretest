@@ -3,6 +3,7 @@
 
 #include <arwain/devices/iim42652.hpp>
 #include <arwain/devices/bmp384.hpp>
+#include <arwain/devices/lis3mdl.hpp>
 
 #include "arwain/arwain.hpp"
 #include "arwain/tests.hpp"
@@ -11,7 +12,6 @@
 #include "arwain/events.hpp"
 
 #include "timers.hpp"
-#include "lis3mdl.hpp"
 #include "madgwick.hpp"
 
 #if USE_UUBLA
