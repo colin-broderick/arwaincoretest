@@ -4,9 +4,9 @@
 #include <chrono>
 #include <sstream>
 
-#include "arwain/arwain.hpp"
+#include <arwain/timers.hpp>
 
-#include "timers.hpp"
+#include "arwain/arwain.hpp"
 
 extern std::streambuf* original_cout_buffer;
 

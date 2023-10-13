@@ -5,6 +5,7 @@
 
 #include <arwain/vector3.hpp>
 #include <arwain/logger.hpp>
+#include <arwain/timers.hpp>
 
 #include "arwain/indoor_positioning_wrapper.hpp"
 #include "arwain/floor_tracker.hpp"
@@ -12,7 +13,6 @@
 #include "arwain/exceptions.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/arwain.hpp"
-#include "timers.hpp"
 
 IndoorPositioningSystem::IndoorPositioningSystem()
 {

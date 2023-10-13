@@ -4,6 +4,7 @@
 #include <arwain/devices/iim42652.hpp>
 #include <arwain/devices/bmp384.hpp>
 #include <arwain/devices/lis3mdl.hpp>
+#include <arwain/timers.hpp>
 
 #include "arwain/i2c_interface.hpp"
 #include "arwain/arwain.hpp"
@@ -12,7 +13,6 @@
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/events.hpp"
 
-#include "timers.hpp"
 #include "madgwick.hpp"
 
 #if USE_UUBLA

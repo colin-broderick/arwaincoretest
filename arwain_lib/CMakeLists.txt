@@ -34,7 +34,6 @@ include_directories(
     ../lora
     ../arwain_thread
     ../orientation
-    ../timers
     ../ips
     ../realsense_t265
 )

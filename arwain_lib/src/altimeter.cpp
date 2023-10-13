@@ -3,6 +3,7 @@
 
 #include <arwain/devices/bmp384.hpp>
 #include <arwain/logger.hpp>
+#include <arwain/timers.hpp>
 
 #include "arwain/i2c_interface.hpp"
 #include "arwain/arwain.hpp"
@@ -12,7 +13,6 @@
 #include "arwain/altimeter.hpp"
 #include "arwain/utils.hpp"
 
-#include "timers.hpp"
 
 Altimeter::Altimeter()
 {
