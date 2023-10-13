@@ -47,7 +47,7 @@ include_directories(
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter arwain_logger input_parser kalman timers lis3mdl bmp384 lora fusion_filter arwain_thread arwain_math)
+set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter arwain_logger input_parser kalman timers lis3mdl lora fusion_filter arwain_thread arwain_math)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
 include_directories(
@@ -58,7 +58,6 @@ include_directories(
     kalman/include
     timers/include
     lis3mdl/include
-    bmp384/include
     arwain_lib/include
     /opt/arwain/workspace/tensorflow_src
     realsense_t265/include
@@ -75,7 +74,6 @@ add_subdirectory(lora)
 add_subdirectory(kalman)
 add_subdirectory(timers)
 add_subdirectory(lis3mdl)
-add_subdirectory(bmp384)
 add_subdirectory(arwain_thread)
 add_subdirectory(arwain_lib)
 if(USE_REALSENSE)

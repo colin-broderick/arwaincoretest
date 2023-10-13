@@ -33,7 +33,6 @@ include_directories(
     ../vector3
     ../lora
     ../arwain_thread
-    ../bmp384
     ../orientation
     ../timers
     ../lis3mdl

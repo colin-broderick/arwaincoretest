@@ -8,7 +8,7 @@
 #include "arwain/thread.hpp"
 #include "arwain/job_interface.hpp"
 
-#include "bmp384.hpp"
+#include <arwain/devices/bmp384.hpp>
 
 class I2CDEVICEDRIVER;
 
