@@ -10,6 +10,7 @@
 #include <arwain/devices/lis3mdl.hpp>
 #include <arwain/logger.hpp>
 
+#include "arwain/i2c_interface.hpp"
 #include "arwain/arwain.hpp"
 #include "arwain/utils.hpp"
 #include "arwain/sensor_manager.hpp"

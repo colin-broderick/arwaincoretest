@@ -5,6 +5,7 @@
 #include <arwain/vector3.hpp>
 
 #include "arwain/calibration.hpp"
+#include "arwain/i2c_interface.hpp"
 #include "arwain/utils.hpp"
 
 /** \brief Computes the coverage percentage of a sphere by counting the number of non-zero

@@ -5,6 +5,7 @@
 #include <arwain/devices/bmp384.hpp>
 #include <arwain/devices/lis3mdl.hpp>
 
+#include "arwain/i2c_interface.hpp"
 #include "arwain/arwain.hpp"
 #include "arwain/tests.hpp"
 #include "arwain/sensor_manager.hpp"

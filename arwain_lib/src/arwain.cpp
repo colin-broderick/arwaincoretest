@@ -32,7 +32,6 @@
 #include "arwain/std_output.hpp"
 #include "arwain/indoor_positioning_wrapper.hpp"
 #include "arwain/altimeter.hpp"
-#include "arwain/logger.hpp"
 #include "arwain/calibration.hpp"
 #include "arwain/command_line.hpp"
 #include "arwain/std_output.hpp"
@@ -40,11 +39,13 @@
 #include "arwain/floor_tracker.hpp"
 #include "arwain/events.hpp"
 
+#include <arwain/logger.hpp>
 #include <arwain/input_parser.hpp>
 #include <arwain/devices/iim42652.hpp>
 #include <arwain/devices/bmp384.hpp>
 #include <arwain/devices/lis3mdl.hpp>
 
+#include "arwain/i2c_interface.hpp"
 #include "madgwick.hpp"
 #include "efaroe.hpp"
 #include "new_madgwick_FusionAhrs.h"

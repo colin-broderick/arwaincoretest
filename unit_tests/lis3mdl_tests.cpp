@@ -2,6 +2,8 @@
 
 #include <arwain/devices/lis3mdl.hpp>
 
+#include "arwain/i2c_interface.hpp"
+
 TEST(LIS3MDL, LIS3MDL__fail)
 {
     // Construct with invalid bus name.
