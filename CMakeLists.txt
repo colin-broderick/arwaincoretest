@@ -36,14 +36,23 @@ if(USE_REALSENSE)
     add_definitions(-DUSE_REALSENSE)
 endif()
 
-# TODO : Additional includes for tensorflow. These need to be tidied up.
-include_directories(
-    /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/onnxruntime/usr/include/onnxruntime/core/session
-    /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/onnxruntime/usr/include/onnxruntime/core/providers/vsi_npu
-    /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/tensorflow-lite-vx-delegate/usr/include/tensorflow-lite-vx-delegate
-    /opt/yocto/imx-yocto-bsp/build/tmp/work/armv8a-poky-linux/flatbuffers/1.12.0-r0/image/usr/include/
-    /opt/yocto/imx-yocto-bsp/build/tmp/sysroots-components/armv8a/tensorflow-lite/usr/lib
-)
+option(BUILT_WITH_YOCTO "When building under yocto/bitbake we don't need to pull tflite" OFF)
+if(BUILT_WITH_YOCTO)
+else()
+    include(FetchContent)
+    FetchContent_Declare(
+            tensorflow
+            GIT_REPOSITORY https://github.com/tensorflow/tensorflow.git
+            GIT_PROGRESS TRUE
+            GIT_SHALLOW TRUE
+            GIT_TAG v2.10.0
+            SOURCE_SUBDIR tensorflow/lite
+    )
+    FetchContent_MakeAvailable(tensorflow)
+
+    include_directories(./build/_deps/tensorflow-src)
+    include_directories(./build/flatbuffers/include)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -57,7 +66,6 @@ include_directories(
     orientation_fusion/include
     kalman/include
     arwain_lib/include
-    /opt/arwain/workspace/tensorflow_src
     realsense_t265/include
 )
 
