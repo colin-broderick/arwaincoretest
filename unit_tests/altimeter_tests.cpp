@@ -5,9 +5,10 @@
 #include "arwain/altimeter.hpp"
 #include "arwain/arwain.hpp"
 #include "arwain/events.hpp"
+#include "test_base.hpp"
 
 /** \brief Test that the init() function in Altimeter correctly executes the true path. */
-TEST(Altimeter, init__success)
+HARDWARE_TEST(Altimeter, init__success)
 {
     // First create the altimeter in an uninitalized state.
     arwain::config.no_pressure = true;
@@ -26,7 +27,7 @@ TEST(Altimeter, init__success)
 /** \brief If pressure is disabled, init returns false and the rest of the
  * class is uninitialized.
  */
-TEST(Altimeter, init__fail)
+HARDWARE_TEST(Altimeter, init__fail)
 {
     arwain::config.no_pressure = true;
     Altimeter altimeter;
@@ -36,7 +37,7 @@ TEST(Altimeter, init__fail)
 }
 
 /** \brief Test that alimeter.join returns the expected value depending on system state. */
-TEST(Altimeter, join)
+HARDWARE_TEST(Altimeter, join)
 {
     {
         arwain::config.no_pressure = true;
@@ -56,7 +57,7 @@ TEST(Altimeter, join)
     }
 }
 
-TEST(Altimeter, Altimeter)
+HARDWARE_TEST(Altimeter, Altimeter)
 {
     EXPECT_NO_THROW(
         Altimeter alt;
@@ -66,7 +67,7 @@ TEST(Altimeter, Altimeter)
 }
 
 /** \brief Hit each branch of the run method. */
-TEST(Altimeter, run)
+HARDWARE_TEST(Altimeter, run)
 {
     // By creating an altimeter and switching to each of various modes, we run each branch
     // of the run() method.
@@ -84,7 +85,7 @@ TEST(Altimeter, run)
 }
 
 /** \brief Test achieves coverage of core_setup function but needs to check state. */
-TEST(Altimeter, core_setup)
+HARDWARE_TEST(Altimeter, core_setup)
 {
     arwain::config.no_pressure = true;
     Altimeter alt;
@@ -92,7 +93,7 @@ TEST(Altimeter, core_setup)
     alt.join();
 }
 
-TEST(Altimeter, run_inference)
+HARDWARE_TEST(Altimeter, run_inference)
 {
     // Should go straight into the inference loop and then terminate after a delay.
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
@@ -104,7 +105,7 @@ TEST(Altimeter, run_inference)
 }
 
 /** \brief Check the run_idle function runs until mode tells it to stop. */
-TEST(Altimeter, run_idle)
+HARDWARE_TEST(Altimeter, run_idle)
 {
     // Create an initialized altimeter.
     arwain::config.no_pressure = false;
@@ -130,7 +131,7 @@ TEST(Altimeter, run_idle)
 }
 
 /** \brief Opens a log file and puts a header into it. */
-TEST(Altimeter, setup_inference)
+HARDWARE_TEST(Altimeter, setup_inference)
 {
     arwain::config.no_pressure = true;
     Altimeter altimeter;
@@ -146,7 +147,7 @@ TEST(Altimeter, setup_inference)
     altimeter.join();
 }
 
-TEST(Altimeter, cleanup_inference)
+HARDWARE_TEST(Altimeter, cleanup_inference)
 {
     arwain::config.no_pressure = true;
     Altimeter altimeter;

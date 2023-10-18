@@ -7,6 +7,7 @@
 #include "arwain/exceptions.hpp"
 #include "arwain/std_output.hpp"
 #include "arwain/events.hpp"
+#include "test_base.hpp"
 
 extern std::streambuf* original_cout_buffer;
 
@@ -115,12 +116,12 @@ TEST(FreeFuncs, sleep_ms)
     EXPECT_LT(duration, 26000000);
 }
 
-TEST(arwain__FreeFuncs, test_pressure)
+HARDWARE_TEST(arwain__FreeFuncs, test_pressure)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_pressure());
 }
 
-TEST(arwain__FreeFuncs, test_imu)
+HARDWARE_TEST(arwain__FreeFuncs, test_imu)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_imu("/dev/null", 1));
 }
@@ -128,7 +129,7 @@ TEST(arwain__FreeFuncs, test_imu)
 /** \brief Cannot test the main loop inside test_lora_rx, since that's waiting on hardware returning something.
  * Therefore, mode is set terminate to skip the loop. Full coverage is not achieved.
  */
-TEST(arwain__FreeFuncs, test_lora_rx)
+HARDWARE_TEST(arwain__FreeFuncs, test_lora_rx)
 {
     // Set mode to terminate after a short delay.
     std::thread th{
@@ -142,12 +143,12 @@ TEST(arwain__FreeFuncs, test_lora_rx)
     th.join();
 }
 
-TEST(arwain__FreeFuncs, test_inference)
+HARDWARE_TEST(arwain__FreeFuncs, test_inference)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_inference());
 }
 
-TEST(arwain__FreeFuncs, test_mag)
+HARDWARE_TEST(arwain__FreeFuncs, test_mag)
 {
     // TODO Incomplete coverage because chip ID returned by func is not 0x3D.
     EXPECT_EQ(arwain::ReturnCode::FailedMagnetometer, arwain::test_mag());
@@ -184,7 +185,7 @@ TEST(arwain__FreeFuncs, setup_log_directory)
     std::filesystem::remove("./tempfile.txt");
 }
 
-TEST(arwain__FreeFuncs, execute_jobs)
+HARDWARE_TEST(arwain__FreeFuncs, execute_jobs)
 {
     // Turn off all the options we can to prevent deep calls into
     // seconday functions.
@@ -210,7 +211,7 @@ TEST(arwain__FreeFuncs, execute_jobs)
     th.join();
 }
 
-TEST(arwain__FreeFuncs, calibrate_accelerometers_simple)
+HARDWARE_TEST(arwain__FreeFuncs, calibrate_accelerometers_simple)
 {
     EXPECT_TRUE((arwain::calibrate_accelerometers_simple() == arwain::ReturnCode::Success));
 }
@@ -229,12 +230,12 @@ TEST(arwain__FreeFuncs, calibrate_magnetometers)
     th.join();
 }
 
-TEST(arwain__FreeFuncs, test_lora_tx)
+HARDWARE_TEST(arwain__FreeFuncs, test_lora_tx)
 {
     arwain::test_lora_tx();
 }
 
-TEST(arwain__FreeFuncs, test_ori)
+HARDWARE_TEST(arwain__FreeFuncs, test_ori)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::test_ori(1));
 }
@@ -287,7 +288,7 @@ TEST(arwain__FreeFuncs, apply_quat_rotor_to_vector3)
     EXPECT_NO_THROW(arwain::apply_quat_rotor_to_vector3(v, q));
 }
 
-TEST(FreeFuncs, arwain_main)
+HARDWARE_TEST(FreeFuncs, arwain_main)
 {
     {
         // Create file to operate on
@@ -476,7 +477,7 @@ TEST(arwain__FreeFuncs, rerun_floor_tracker)
     EXPECT_TRUE(std::filesystem::exists("./pos_out.txt"));
 }
 
-TEST(arwain__FreeFuncs, calibrate_gyroscopes_offline)
+HARDWARE_TEST(arwain__FreeFuncs, calibrate_gyroscopes_offline)
 {
     EXPECT_EQ(arwain::ReturnCode::Success, arwain::calibrate_gyroscopes_offline());
 }
