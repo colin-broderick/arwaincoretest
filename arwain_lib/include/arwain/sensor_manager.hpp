@@ -36,10 +36,10 @@ class SensorManager : public ArwainJob
 
         ArwainThread job_thread;
         ArwainThread quick_madgwick_convergence_thread;
-        IIM42652<I2CDEVICEDRIVER> imu1;
-        IIM42652<I2CDEVICEDRIVER> imu2;
-        IIM42652<I2CDEVICEDRIVER> imu3;
-        LIS3MDL<I2CDEVICEDRIVER> magnetometer;
+        IIM42652<LinuxSmbusI2CDevice> imu1;
+        IIM42652<LinuxSmbusI2CDevice> imu2;
+        IIM42652<LinuxSmbusI2CDevice> imu3;
+        LIS3MDL<LinuxSmbusI2CDevice> magnetometer;
         arwain::Madgwick madgwick_filter_1;
         arwain::Madgwick madgwick_filter_mag_1;
 

@@ -329,7 +329,7 @@ arwain::ReturnCode arwain::execute_jobs()
 arwain::ReturnCode arwain::calibrate_magnetometers()
 {
     StandAloneModeRegistrar mode_registrar;
-    LIS3MDL<I2CDEVICEDRIVER> magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
+    LIS3MDL<LinuxSmbusI2CDevice> magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
     MagnetometerCalibrator calibrator;
     std::cout << "About to start magnetometer calibration." << std::endl;
     std::cout << "Move the device through all orientations; press Ctrl+C when done." << std::endl;
@@ -373,7 +373,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
 {
     Vector3 results;
 
-    IIM42652<I2CDEVICEDRIVER> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu1.get_bus() << " at 0x" << std::hex << imu1.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator1;
     while (!calibrator1.is_converged())
@@ -386,7 +386,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     arwain::config.replace("gyro1_bias_y", results.y);
     arwain::config.replace("gyro1_bias_z", results.z);
 
-    IIM42652<I2CDEVICEDRIVER> imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu2.get_bus() << " at 0x" << std::hex << imu2.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator2;
     while (!calibrator2.is_converged())
@@ -399,7 +399,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     arwain::config.replace("gyro2_bias_y", results.y);
     arwain::config.replace("gyro2_bias_z", results.z);
 
-    IIM42652<I2CDEVICEDRIVER> imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu3.get_bus() << " at 0x" << std::hex << imu3.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator3;
     while (!calibrator3.is_converged())
@@ -457,9 +457,9 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
     std::cout << "\t" << arwain::config.imu3_bus << " at 0x" << std::hex << arwain::config.imu3_address << std::endl;
     std::cout << std::dec << std::endl;
 
-    IIM42652<I2CDEVICEDRIVER> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
-    IIM42652<I2CDEVICEDRIVER> imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
-    IIM42652<I2CDEVICEDRIVER> imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
 
     AccelerometerCalibrator calib1;
     AccelerometerCalibrator calib2;

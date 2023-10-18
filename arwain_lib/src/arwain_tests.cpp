@@ -83,7 +83,7 @@ arwain::ReturnCode arwain::test_uubla_2()
 
 arwain::ReturnCode arwain::test_pressure()
 {
-    BMP384<I2CDEVICEDRIVER> bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
+    BMP384<LinuxSmbusI2CDevice> bmp384{arwain::config.pressure_address, arwain::config.pressure_bus};
 
     // Set up timing.
 
@@ -92,7 +92,7 @@ arwain::ReturnCode arwain::test_pressure()
 
     auto [pressure, temperature] = bmp384.read();
     pressure = pressure - arwain::config.pressure_offset;
-    altitude = BMP384<I2CDEVICEDRIVER>::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
+    altitude = BMP384<LinuxSmbusI2CDevice>::calculate_altitude(pressure / 100.0, temperature, arwain::config.sea_level_pressure);
 
     sleep_ms(50);
 
@@ -103,7 +103,7 @@ arwain::ReturnCode arwain::test_pressure()
     {
         auto [new_pressure, new_temperature] = bmp384.read();
         new_pressure = new_pressure - arwain::config.pressure_offset;
-        double new_alt = BMP384<I2CDEVICEDRIVER>::calculate_altitude(new_pressure / 100.0, new_temperature, arwain::config.sea_level_pressure);
+        double new_alt = BMP384<LinuxSmbusI2CDevice>::calculate_altitude(new_pressure / 100.0, new_temperature, arwain::config.sea_level_pressure);
         altitude = factor * altitude + (1.0 - factor) * new_alt;
 
         std::cout << "Pressure:    " << new_pressure / 100.0 << " hPa" << std::endl;
@@ -123,7 +123,7 @@ arwain::ReturnCode arwain::test_pressure()
 arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_address)
 {
     // Initialize the IMU.
-    IIM42652<I2CDEVICEDRIVER> imu{i2c_address, i2c_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu{i2c_address, i2c_bus};
     imu.set_accel_bias(arwain::config.accel1_bias.x, arwain::config.accel1_bias.y, arwain::config.accel1_bias.z);
     imu.set_accel_scale(arwain::config.accel1_scale.x, arwain::config.accel1_scale.y, arwain::config.accel1_scale.z);
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
@@ -319,7 +319,7 @@ arwain::ReturnCode arwain::test_mag(int argc, char **argv)
 /** \brief Checks that the correct chip ID can be read from the magnetometer. If so, reads and prints orientation until interrupted. */
 arwain::ReturnCode arwain::test_mag()
 {
-    LIS3MDL<I2CDEVICEDRIVER> magn{arwain::config.magn_address, arwain::config.magn_bus};
+    LIS3MDL<LinuxSmbusI2CDevice> magn{arwain::config.magn_address, arwain::config.magn_bus};
     magn.set_calibration_parameters(
         arwain::config.mag_bias,
         arwain::config.mag_scale,
@@ -378,7 +378,7 @@ arwain::ReturnCode arwain::test_lora_tx()
 
 arwain::ReturnCode arwain::test_ori(int frequency)
 {
-    IIM42652<I2CDEVICEDRIVER> imu{config.imu1_address, config.imu1_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu{config.imu1_address, config.imu1_bus};
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
     imu.enable_auto_calib();
     arwain::Madgwick filter{static_cast<double>(frequency), config.madgwick_beta};

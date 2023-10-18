@@ -18,16 +18,6 @@ add_definitions(-DNUMCPP_NO_USE_BOOST)
 
 include_directories(/usr/local64/include)
 
-if(UNIT_TESTS)
-    message("Building with all public class methods for test")
-    add_definitions(-DUNIT_TESTS)
-    add_definitions(-DI2CDEVICEDRIVER=MockI2CDevice)
-    add_definitions(-DSPIDEVICEDRIVER=MockSpiDevice)
-    else()
-    add_definitions(-DI2CDEVICEDRIVER=LinuxSmbusI2CDevice)
-    add_definitions(-DSPIDEVICEDRIVER=LinuxSpiDevice)
-endif()
-
 if(USE_REALSENSE)
     message("Using librealsense for T265 camera")
     find_package(realsense2 REQUIRED)
@@ -47,14 +37,25 @@ else()
             SOURCE_SUBDIR tensorflow/lite
     )
     FetchContent_MakeAvailable(tensorflow)
-
     include_directories(./build/_deps/tensorflow-src)
     include_directories(./build/flatbuffers/include)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(ALL_ARWAIN_LIBRARIES arwain_lib arwain_rfm95w madgwick_filter efaroe_filter arwain_logger input_parser kalman arwain_timers fusion_filter arwain_thread arwain_math)
+set(ALL_ARWAIN_LIBRARIES
+    arwain_lib
+    arwain_rfm95w
+    madgwick_filter
+    efaroe_filter
+    arwain_logger
+    input_parser
+    kalman
+    arwain_timers
+    fusion_filter
+    arwain_thread
+    arwain_math
+)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
 include_directories(
@@ -82,9 +83,7 @@ endif()
 
 ## Executables to build
 add_executable(${PROJECT_NAME} src/main.cpp)
-if(UNIT_TESTS)
-    add_executable(${PROJECT_NAME}_test ${UNIT_TEST_SOURCES})
-endif()
+add_executable(${PROJECT_NAME}_test ${UNIT_TEST_SOURCES})
 
 if(USE_ROS)
     message("Using ROS for diagnostic data topics")
@@ -107,13 +106,9 @@ endif()
 
 ## Set compiler flags
 target_compile_options(${PROJECT_NAME}      PRIVATE     -g -Wno-psabi -Wall -Wshadow -Wextra)
-if(UNIT_TESTS)
-target_compile_options(${PROJECT_NAME}_test PRIVATE        -Wno-psabi -Wall -Wshadow -Wextra -ftest-coverage -fprofile-arcs)
-endif()
+target_compile_options(${PROJECT_NAME}_test PRIVATE        -Wno-psabi -Wall -Wshadow -Wextra -ftest-coverage -fprofile-arcs -fno-access-control)
 target_link_libraries(${PROJECT_NAME}      ${ALL_ARWAIN_LIBRARIES} -lgcov                         i2c stdc++fs pthread boost_system tensorflow-lite flatbuffers)
-if(UNIT_TESTS)
 target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --coverage GTest::gtest i2c stdc++fs pthread boost_system tensorflow-lite flatbuffers)
-endif()
 
 ## Install configuration and related files to correct locations.
 install(TARGETS ${PROJECT_NAME} DESTINATION /usr/bin)

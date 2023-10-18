@@ -7,10 +7,9 @@
 #include "arwain/logger.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/job_interface.hpp"
+#include "arwain/i2c_interface.hpp"
 
 #include <arwain/devices/bmp384.hpp>
-
-class I2CDEVICEDRIVER;
 
 class Altimeter : public ArwainJob
 {
@@ -29,7 +28,7 @@ class Altimeter : public ArwainJob
 
         ArwainThread job_thread;
         arwain::Logger pressure_log;
-        BMP384<I2CDEVICEDRIVER> bmp384;
+        BMP384<LinuxSmbusI2CDevice> bmp384;
         arwain::Filters::SabatiniAltimeter sabatini_filter;
 
     public:
