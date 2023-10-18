@@ -43,7 +43,7 @@ namespace arwain
             double yaw;
             bool angles_computed;
             
-        TESTABLE:
+        private:
             constexpr static double sample_frequency_default = 512.0;
             constexpr static double beta_default = 0.1;
             void compute_angles();

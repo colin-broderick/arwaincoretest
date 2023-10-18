@@ -10,7 +10,7 @@
 
 class CameraController : public ArwainJob
 {
-    TESTABLE:
+    private:
         void setup_data_collection();
         void cleanup_data_collection();
         void core_setup();

@@ -51,7 +51,7 @@ class ArwainThread : public std::thread
         void set_processor_affinity(const std::vector<ArwainThread::Cores>& cores);
         std::string get_name();
 
-    TESTABLE:
+    private:
         void set_name(const std::string& name);
 };
 

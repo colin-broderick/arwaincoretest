@@ -29,7 +29,7 @@ public:
     }
     MatrixXd kalman_one_cycle(MatrixXd observation, MatrixXd U);
     
-TESTABLE:
+private:
     void set_B(double dt);
     void new_predicted_state();
     void new_state_covariance_matrix();
@@ -61,7 +61,7 @@ class KalmanFilter1D
         double est = 0;
         bool converged = false;
 
-    TESTABLE:
+    private:
         double KG = 0;
         double E_est = 0;
         double E_mea = 0;
@@ -72,7 +72,7 @@ class KalmanFilter1D
         void update(const double measurement, const double measurement_error);
         double get_gain() const;
 
-    TESTABLE:
+    private:
         void update_gain(const double measurement_error);
         void update_estimate(const double measurement);
         void update_estimate_error();

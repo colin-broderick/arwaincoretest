@@ -11,7 +11,7 @@
 
 class IndoorPositioningSystem : public ArwainJob
 {
-    TESTABLE:
+    private:
         void core_setup();
         void setup_inference();
         void cleanup_inference();
@@ -34,7 +34,7 @@ class IndoorPositioningSystem : public ArwainJob
 
     class IndoorPositioningWrapper
     {
-        TESTABLE:
+        private:
             double m_x = 0;
             double m_y = 0;
             double m_z = 0;

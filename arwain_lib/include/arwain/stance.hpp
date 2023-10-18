@@ -45,7 +45,7 @@ class StanceDetector
             Horizontal      // The wearer is horizontally oriented, e.g. prone or crawling.
         };
 
-    TESTABLE:
+    private:
         double m_a_mean_magnitude;
         double m_g_mean_magnitude;
         double m_v_mean_magnitude;
@@ -122,7 +122,7 @@ class StanceDetector
 
 class StanceDetection : public ArwainJob
 {
-    TESTABLE:
+    private:
         void run_test_stance_detector();
         void setup_inference();
         void cleanup_inference();
@@ -133,7 +133,7 @@ class StanceDetection : public ArwainJob
         void run_idle();
         void core_setup();
 
-    TESTABLE:
+    private:
         ArwainThread job_thread;
 
         arwain::Logger stance_file;

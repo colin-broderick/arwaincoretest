@@ -10,7 +10,7 @@
 
 class PositionVelocityInference : public ArwainJob
 {
-    TESTABLE:
+    private:
         void run_inference();
         void run_idle();
         void core_setup();

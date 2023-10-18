@@ -25,7 +25,7 @@ class MagnetometerCalibrator
         std::array<int, 100> get_region_sample_count() const;
         std::array<Vector3, 100> get_region_sample_value() const;
 
-    TESTABLE:
+    private:
         int sphere_coverage(const std::array<int, total_sphere_regions>& region_sample_count) const;
         int sphere_region(const double x, const double y, const double z) const;
         nc::NdArray<double> form_augmented_data_array(const nc::NdArray<double>& data_array);
@@ -47,7 +47,7 @@ class AccelerometerCalibrator
     constexpr static double data_uncertainty = 0.1;
     constexpr static double initial_data_uncertainty = 1.0;
 
-    TESTABLE:
+    private:
         bool converged = false;
         KalmanFilter1D kfx{gravity, initial_data_uncertainty};
         KalmanFilter1D kfy{gravity, initial_data_uncertainty};

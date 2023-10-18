@@ -16,7 +16,7 @@
 
 class SensorManager : public ArwainJob
 {
-    TESTABLE:
+    private:
         void run();
         void run_inference();
         void setup_inference();
@@ -30,7 +30,7 @@ class SensorManager : public ArwainJob
         void run_self_test();
         Vector3 world_align(const Vector3& vec, const Quaternion& rotation);
 
-    TESTABLE:
+    private:
         // Callback to be executed when active gyroscope calibration is complete.
         std::function<void()> post_gyro_calib_callback;
 

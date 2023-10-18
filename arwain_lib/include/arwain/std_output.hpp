@@ -14,7 +14,7 @@ class StanceDetection;
  */
 class DebugPrints : public ArwainJob
 {
-    TESTABLE:
+    private:
         void run();
         void run_inference();
         void run_idle();

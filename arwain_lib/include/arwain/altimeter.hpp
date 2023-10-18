@@ -14,7 +14,7 @@ class I2CDEVICEDRIVER;
 
 class Altimeter : public ArwainJob
 {
-    TESTABLE:
+    private:
         void run();
         void core_setup();
         void run_inference();
@@ -22,7 +22,7 @@ class Altimeter : public ArwainJob
         void setup_inference();
         void cleanup_inference();
 
-    TESTABLE:
+    private:
         double altitude;
         double altitude_zero;
         const double CONSTANT_ROOM_TEMPERATURE = 21 + 273.15; // We are assuming constant ambient temperature in the hypsometric formula for now.

@@ -5,9 +5,7 @@ option(UNIT_TESTS "Make private class methods public to enable testing" OFF)
 
 if(UNIT_TESTS)
     message("Building with all public class methods for test")
-    add_definitions(-DTESTABLE=public)
 else()
-    add_definitions(-DTESTABLE=private)
 endif()
 
 include_directories(include)

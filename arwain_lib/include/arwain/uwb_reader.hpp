@@ -8,7 +8,7 @@
 
 class UublaWrapper : public ArwainJob
 {
-    TESTABLE:
+    private:
         void run_inference();
         void run();
         void setup_inference();

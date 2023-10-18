@@ -8,7 +8,7 @@ class PositionVelocityInference;
 
 class ArwainCLI : public ArwainJob
 {
-    TESTABLE:
+    private:
         void run();
         static constexpr int s2i(std::string_view input);
         bool switch_to_exit_mode();
@@ -25,7 +25,7 @@ class ArwainCLI : public ArwainJob
         bool set_folder_name(const std::string& input);
         void parse_cli_input(const std::string& input);
 
-    TESTABLE:
+    private:
         PositionVelocityInference* velocity_inference_handle = nullptr;
         ArwainThread job_thread;
 
