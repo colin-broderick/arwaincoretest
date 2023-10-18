@@ -4,7 +4,7 @@
 #include "arwain/logger.hpp"
 #include "arwain/job_interface.hpp"
 
-#include "lora.hpp"
+#include <arwain/devices/rfm95w.hpp>
 
 class StanceDetection;
 class UublaWrapper;
@@ -12,7 +12,7 @@ class ArwainThread;
 
 class StatusReporting : public ArwainJob
 {
-	TESTABLE:
+	private:
         void core_setup();
         void run();
         void run_inference();
@@ -21,11 +21,11 @@ class StatusReporting : public ArwainJob
         void cleanup_inference();
         std::chrono::time_point<std::chrono::high_resolution_clock> get_next_time_slot(int node_id);
 
-	TESTABLE:
+	private:
 	    StanceDetection* stance_detection_handle = nullptr;
 		UublaWrapper* uubla_wrapper_handle = nullptr;
         ArwainThread job_thread;
-        LoRa<SPIDEVICEDRIVER> lora;
+        RFM95W<LinuxSpiDevice> lora;
         arwain::Logger lora_file;
 
 	public:

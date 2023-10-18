@@ -56,11 +56,10 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(ALL_ARWAIN_LIBRARIES arwain_lib madgwick_filter efaroe_filter arwain_logger input_parser kalman arwain_timers lora fusion_filter arwain_thread arwain_math)
+set(ALL_ARWAIN_LIBRARIES arwain_lib arwain_rfm95w madgwick_filter efaroe_filter arwain_logger input_parser kalman arwain_timers fusion_filter arwain_thread arwain_math)
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
 include_directories(
-    lora/include
     arwain_thread/include
     orientation/include
     orientation_fusion/include
@@ -76,7 +75,6 @@ if(USE_UUBLA)
 endif()
 
 add_subdirectory(orientation)
-add_subdirectory(lora)
 add_subdirectory(kalman)
 add_subdirectory(arwain_thread)
 add_subdirectory(arwain_lib)

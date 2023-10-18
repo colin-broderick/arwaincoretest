@@ -2,12 +2,11 @@
 #include <iostream>
 
 #include <arwain/input_parser.hpp>
-
-#include "lora.hpp"
+#include <arwain/devices/rfm95w.hpp>
 
 int main(int argc, char* argv[])
 {
-    LoRa<SPIDEVICEDRIVER> transmitter{"/dev/spidev0.1", false};
+    RFM95W<LinuxSpiDevice> transmitter{"/dev/spidev0.1", false};
     arwain::InputParser input{argc, argv};
     if (input.contains("-cmd"))
     {

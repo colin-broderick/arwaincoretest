@@ -153,7 +153,7 @@ arwain::ReturnCode arwain::test_lora_rx()
 {
     StandAloneModeRegistrar mode_registrar;
 
-    LoRa<SPIDEVICEDRIVER> lora{arwain::config.lora_address, true};
+    RFM95W<LinuxSpiDevice> lora{arwain::config.lora_address, true};
 
     if (lora.test_chip() == 0x1A)
     {
@@ -349,7 +349,7 @@ arwain::ReturnCode arwain::test_mag()
 
 arwain::ReturnCode arwain::test_lora_tx()
 {
-    LoRa<SPIDEVICEDRIVER> lora{arwain::config.lora_address, false};
+    RFM95W<LinuxSpiDevice> lora{arwain::config.lora_address, false};
 
     if (lora.test_chip() == 0x1A)
     {

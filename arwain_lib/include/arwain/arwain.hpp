@@ -10,6 +10,7 @@
 
 #include <arwain/input_parser.hpp>
 #include <arwain/quaternion.hpp>
+#include <arwain/devices/rfm95w.hpp>
 
 #if USE_UUBLA
 #include <uubla/uubla.hpp>
@@ -22,7 +23,6 @@
 #include "arwain/activity_metric.hpp"
 #include "arwain/modes.hpp"
 
-#include "lora.hpp"
 
 class StanceDetection;
 

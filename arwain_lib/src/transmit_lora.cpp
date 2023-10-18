@@ -5,12 +5,12 @@
 #include <arwain/vector3.hpp>
 #include <arwain/logger.hpp>
 #include <arwain/timers.hpp>
+#include <arwain/devices/rfm95w.hpp>
 
 #include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/transmit_lora.hpp"
 #include "arwain/arwain.hpp"
-#include "lora.hpp"
 
 #if USE_UUBLA
 #include "uwb_reader.hpp"
@@ -50,7 +50,7 @@ std::chrono::time_point<std::chrono::high_resolution_clock> StatusReporting::get
 
 void StatusReporting::core_setup()
 {
-    lora = LoRa<SPIDEVICEDRIVER>{
+    lora = RFM95W<LinuxSpiDevice>{
         arwain::config.lora_address,
         true,
         arwain::config.lora_rf_frequency,

@@ -123,76 +123,76 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     // Apply LoRa radio frequency setting with default 868 MHz.
     std::string rf = options["lora_rf_frequency"];
     if (rf == "433")
-        this->lora_rf_frequency = LoRa<SPIDEVICEDRIVER>::Frequency::FREQ_433;
+        this->lora_rf_frequency = RFM95W<LinuxSpiDevice>::Frequency::FREQ_433;
     else if (rf == "868")
-        this->lora_rf_frequency = LoRa<SPIDEVICEDRIVER>::Frequency::FREQ_868;
+        this->lora_rf_frequency = RFM95W<LinuxSpiDevice>::Frequency::FREQ_868;
     else if (rf == "915")
-        this->lora_rf_frequency = LoRa<SPIDEVICEDRIVER>::Frequency::FREQ_915;
+        this->lora_rf_frequency = RFM95W<LinuxSpiDevice>::Frequency::FREQ_915;
     else
-        this->lora_rf_frequency = LoRa<SPIDEVICEDRIVER>::Frequency::FREQ_868;
+        this->lora_rf_frequency = RFM95W<LinuxSpiDevice>::Frequency::FREQ_868;
 
     // Apply LoRa spread factor setting with default 12.
     std::string spreadfactor = options["lora_spread_factor"];
     if (spreadfactor == "6")
-        this->lora_spread_factor = LoRa<SPIDEVICEDRIVER>::SpreadFactor::SF_6;
+        this->lora_spread_factor = RFM95W<LinuxSpiDevice>::SpreadFactor::SF_6;
     else if (spreadfactor == "7")
-        this->lora_spread_factor = LoRa<SPIDEVICEDRIVER>::SpreadFactor::SF_7;
+        this->lora_spread_factor = RFM95W<LinuxSpiDevice>::SpreadFactor::SF_7;
     else if (spreadfactor == "8")
-        this->lora_spread_factor = LoRa<SPIDEVICEDRIVER>::SpreadFactor::SF_8;
+        this->lora_spread_factor = RFM95W<LinuxSpiDevice>::SpreadFactor::SF_8;
     else if (spreadfactor == "9")
-        this->lora_spread_factor = LoRa<SPIDEVICEDRIVER>::SpreadFactor::SF_9;
+        this->lora_spread_factor = RFM95W<LinuxSpiDevice>::SpreadFactor::SF_9;
     else if (spreadfactor == "10")
-        this->lora_spread_factor = LoRa<SPIDEVICEDRIVER>::SpreadFactor::SF_10;
+        this->lora_spread_factor = RFM95W<LinuxSpiDevice>::SpreadFactor::SF_10;
     else if (spreadfactor == "11")
-        this->lora_spread_factor = LoRa<SPIDEVICEDRIVER>::SpreadFactor::SF_11;
+        this->lora_spread_factor = RFM95W<LinuxSpiDevice>::SpreadFactor::SF_11;
     else if (spreadfactor == "12")
-        this->lora_spread_factor = LoRa<SPIDEVICEDRIVER>::SpreadFactor::SF_12;
+        this->lora_spread_factor = RFM95W<LinuxSpiDevice>::SpreadFactor::SF_12;
     else
-        this->lora_spread_factor = LoRa<SPIDEVICEDRIVER>::SpreadFactor::SF_12;    
+        this->lora_spread_factor = RFM95W<LinuxSpiDevice>::SpreadFactor::SF_12;    
 
     // Apply LoRa bandwidth setting with default 125k.
     std::string bandwidth = options["lora_bandwidth"];
     if (bandwidth == "7.8")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_7_8K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_7_8K;
     else if (bandwidth == "10.4")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_10_4K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_10_4K;
     else if (bandwidth == "15.6")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_15_6K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_15_6K;
     else if (bandwidth == "20.8")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_20_8K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_20_8K;
     else if (bandwidth == "31.25")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_31_25K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_31_25K;
     else if (bandwidth == "41.7")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_41_7K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_41_7K;
     else if (bandwidth == "62.5")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_62_5K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_62_5K;
     else if (bandwidth == "125")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_125K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_125K;
     else if (bandwidth == "250")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_250K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_250K;
     else if (bandwidth == "500")
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_500K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_500K;
     else
-        this->lora_bandwidth = LoRa<SPIDEVICEDRIVER>::Bandwidth::BW_500K;
+        this->lora_bandwidth = RFM95W<LinuxSpiDevice>::Bandwidth::BW_500K;
 
     // Apply LoRa coding rate with default 48.
     std::string codingrate = options["lora_coding_rate"];
     if (codingrate == "45")
-        this->lora_coding_rate = LoRa<SPIDEVICEDRIVER>::CodingRate::CR_45;
+        this->lora_coding_rate = RFM95W<LinuxSpiDevice>::CodingRate::CR_45;
     else if (codingrate == "46")
-        this->lora_coding_rate = LoRa<SPIDEVICEDRIVER>::CodingRate::CR_46;
+        this->lora_coding_rate = RFM95W<LinuxSpiDevice>::CodingRate::CR_46;
     else if (codingrate == "47")
-        this->lora_coding_rate = LoRa<SPIDEVICEDRIVER>::CodingRate::CR_47;
+        this->lora_coding_rate = RFM95W<LinuxSpiDevice>::CodingRate::CR_47;
     else if (codingrate == "48")
-        this->lora_coding_rate = LoRa<SPIDEVICEDRIVER>::CodingRate::CR_48;
+        this->lora_coding_rate = RFM95W<LinuxSpiDevice>::CodingRate::CR_48;
     else
-        this->lora_coding_rate = LoRa<SPIDEVICEDRIVER>::CodingRate::CR_48;
+        this->lora_coding_rate = RFM95W<LinuxSpiDevice>::CodingRate::CR_48;
 
     // Apply LoRa header mode with implicit as default.
     if (options["lora_header_mode"] == "explicit")
-        this->lora_header_mode = LoRa<SPIDEVICEDRIVER>::HeaderMode::HM_EXPLICIT;
+        this->lora_header_mode = RFM95W<LinuxSpiDevice>::HeaderMode::HM_EXPLICIT;
     else
-        this->lora_header_mode = LoRa<SPIDEVICEDRIVER>::HeaderMode::HM_IMPLICIT;
+        this->lora_header_mode = RFM95W<LinuxSpiDevice>::HeaderMode::HM_IMPLICIT;
 
     std::stringstream(options["lora_sync_word"]) >> this->lora_sync_word;
     std::stringstream(options["lora_enable_crc"]) >> this->lora_enable_crc;

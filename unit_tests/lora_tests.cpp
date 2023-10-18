@@ -4,7 +4,7 @@
 #include "arwain/transmit_lora.hpp"
 #include "arwain/events.hpp"
 
-#include "lora.hpp"
+#include <arwain/devices/rfm95w.hpp>
 
 /** \brief The configure() method is called by the constructor only, and executes
  * various branches depending on the information provided by the constructor.
