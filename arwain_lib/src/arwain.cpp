@@ -292,7 +292,6 @@ arwain::ReturnCode arwain::execute_jobs()
     // Set pointers ...
     status_reporting.set_stance_detection_pointer(stance_detection);
     debug_prints.set_stance_detection_pointer(stance_detection);
-    arwain_cli.set_velocity_inference_pointer(position_velocity_inference);
 
     while (arwain_cli.get_mode() != arwain::OperatingMode::Terminate)
     {

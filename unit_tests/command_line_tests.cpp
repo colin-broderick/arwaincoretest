@@ -76,7 +76,6 @@ TEST(ArwainCLI, s2i__infer)
     std::cin.rdbuf(input.rdbuf());
     PositionVelocityInference inferrer;
     ArwainCLI command_line;
-    command_line.set_velocity_inference_pointer(inferrer);
 
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
@@ -96,7 +95,6 @@ TEST(ArwainCLI, s2i__inference)
     std::cin.rdbuf(input.rdbuf());
     PositionVelocityInference inferrer;
     ArwainCLI command_line;
-    command_line.set_velocity_inference_pointer(inferrer);
 
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
@@ -474,28 +472,6 @@ TEST(ArwainCLI, set_folder_name)
 TEST(ArwainCLI, parse_cli_input)
 {
     SUCCEED(); // Testing indirectly by the tests if std::cin strings.
-}
-
-TEST(ArwainCLI, set_velocity_inference_pointer)
-{
-    arwain::config.inference_model_xml = "/mnt/yocto/x004-yocto/sources/meta-arwain/recipes-arwain/arwain-inference-core/files/models/tflite/model_float32.tflite";
-    arwain::config.no_inference = true;
-    PositionVelocityInference inferrer;
-    std::streambuf *orig = std::cin.rdbuf();
-    std::istringstream input("exit\n");
-    std::cin.rdbuf(input.rdbuf());
-    ArwainCLI cli;
-
-    EXPECT_EQ(cli.velocity_inference_handle, nullptr);
-
-    EXPECT_TRUE(cli.set_velocity_inference_pointer(inferrer));
-
-    EXPECT_NE(cli.velocity_inference_handle, nullptr);
-
-    cli.join();
-    inferrer.join();
-
-    std::cin.rdbuf(orig);
 }
 
 TEST(ArwainCLI, ArwainCLI)

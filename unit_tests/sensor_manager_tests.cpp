@@ -3,10 +3,11 @@
 #include "arwain/arwain.hpp"
 #include "arwain/sensor_manager.hpp"
 #include "arwain/events.hpp"
+#include "test_base.hpp"
 
 extern std::streambuf* original_cout_buffer;
 
-TEST(SensorManager, run_through_modes)
+HARDWARE_TEST(SensorManager, run_through_modes)
 {
     arwain::config.no_imu = false;
     SensorManager sensors;
@@ -28,7 +29,7 @@ TEST(SensorManager, run_through_modes)
     sensors.join();
 }
 
-TEST(SensorManager, join)
+HARDWARE_TEST(SensorManager, join)
 {
     arwain::config.no_imu = true;
     SensorManager reader;
@@ -36,7 +37,7 @@ TEST(SensorManager, join)
     EXPECT_NO_THROW(reader.join());
 }
 
-TEST(SensorManager, init__success)
+HARDWARE_TEST(SensorManager, init__success)
 {
     // std::cout.rdbuf(original_cout_buffer);
 
@@ -65,7 +66,7 @@ static void test_callback()
 
 }
 
-TEST(SensorManager, set_post_gyro_calibration_callback)
+HARDWARE_TEST(SensorManager, set_post_gyro_calibration_callback)
 {
     arwain::config.no_imu = true;
     SensorManager sensors;

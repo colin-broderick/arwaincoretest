@@ -84,14 +84,6 @@ bool ArwainCLI::switch_to_exit_mode()
     return true;
 }
 
-
-bool ArwainCLI::set_velocity_inference_pointer(PositionVelocityInference& velocity)
-{
-    // TODO Should I delete the pointer first?
-    this->velocity_inference_handle = &velocity;
-    return true;
-}
-
 /** \brief Switches the system to Inference mode. Can only be entered from Idle mode. */
 void ArwainCLI::switch_to_inference_mode()
 {

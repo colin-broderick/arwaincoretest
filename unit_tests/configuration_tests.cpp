@@ -61,12 +61,14 @@ TEST(arwain__Configuration, read_from_file__invalid_file)
     arwain::InputParser input_parser{count, strings};
 
     arwain::Configuration conf{input_parser};
-    EXPECT_TRUE((arwain::ReturnCode::NoConfigurationFile == conf.read_from_file()));
+    EXPECT_THROW((arwain::ReturnCode::NoConfigurationFile == conf.read_from_file()), std::runtime_error);
 }
 
 /** \brief A valid configuration file MUST be provided at the specified location. */
 TEST(arwain__Configuration, read_from_file__valid_file)
 {
+    GTEST_SKIP(); // Figure out a way to provide valid file without assuming file is available. Generate one?
+
     std::string text0 = "exename";
     std::string text1 = "--lstd";
     std::string text2 = "--noinf";

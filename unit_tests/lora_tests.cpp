@@ -7,7 +7,7 @@
 
 #include <arwain/devices/rfm95w.hpp>
 
-TEST(StatusReporting, setup_inference)
+HARDWARE_TEST(StatusReporting, setup_inference)
 {
     EXPECT_FALSE(std::filesystem::exists("./lora_log.txt"));
     arwain::config.no_lora = true;
