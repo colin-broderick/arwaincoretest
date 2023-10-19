@@ -335,7 +335,7 @@ TEST(ArwainCLI, switch_to_idle_autocal_mode__from_something_else)
 
 TEST(ArwainCLI, switch_to_inference_mode)
 {
-    GTEST_SKIP(); // Don't know why, but given that this function is never callable directly I don't think I'm worried about it.
+    GTEST_SKIP(); // Fails - Don't know why, but given that this function is never callable directly I don't think I'm worried about it.
 
     // SETUP
     std::streambuf *orig = std::cin.rdbuf();
@@ -352,7 +352,6 @@ TEST(ArwainCLI, switch_to_inference_mode)
     std::cout << command_line.get_mode() << "\n";
     std::cout.rdbuf(nullptr);
     EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Inference));
-
 
     // TEARDOWN
     // arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);

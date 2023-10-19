@@ -39,14 +39,10 @@ HARDWARE_TEST(SensorManager, join)
 
 HARDWARE_TEST(SensorManager, init__success)
 {
-    // std::cout.rdbuf(original_cout_buffer);
-
     arwain::config.no_imu = false;
     SensorManager reader;
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     reader.join();
-
-    // std::cout.rdbuf(nullptr);
 }
 
 HARDWARE_TEST(SensorManager, init__failure)

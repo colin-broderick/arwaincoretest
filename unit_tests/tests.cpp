@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+// These pointers retained as some legacy tests still use them.
+// New tests should print to stringstream or similar instead.
 std::streambuf* original_cout_buffer;
 std::streambuf* original_cerr_buffer;
 
