@@ -49,54 +49,51 @@ TEST(FreeFuncs, clamp_value)
 
 TEST(OperatingMode, ostream)
 {
-    // std::cout is globally turned off so turn it on for this test, then turn it off again at the end.
-    std::cout.rdbuf(original_cout_buffer);
+    std::stringstream ss;
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::AccelerometerCalibration;
-    EXPECT_EQ("Accelerometer calibration", testing::internal::GetCapturedStdout());
-    
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::Inference;
-    EXPECT_EQ("Inference", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::AccelerometerCalibration;
+    EXPECT_EQ("Accelerometer calibration", ss.str());
+    ss.str("");
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::Idle;
-    EXPECT_EQ("Idle/autocalibrating", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::Inference;
+    EXPECT_EQ("Inference", ss.str());
+    ss.str("");
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::Terminate;
-    EXPECT_EQ("Terminate", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::Idle;
+    EXPECT_EQ("Idle/autocalibrating", ss.str());
+    ss.str("");
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::DataCollection;
-    EXPECT_EQ("Data collection", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::Terminate;
+    EXPECT_EQ("Terminate", ss.str());
+    ss.str("");
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::GyroscopeCalibration;
-    EXPECT_EQ("Gyroscope calibration", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::DataCollection;
+    EXPECT_EQ("Data collection", ss.str());
+    ss.str("");
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::MagnetometerCalibration;
-    EXPECT_EQ("Magnetometer calibration", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::GyroscopeCalibration;
+    EXPECT_EQ("Gyroscope calibration", ss.str());
+    ss.str("");
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::TestSerial;
-    EXPECT_EQ("Test serial", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::MagnetometerCalibration;
+    EXPECT_EQ("Magnetometer calibration", ss.str());
+    ss.str("");
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::TestStanceDetector;
-    EXPECT_EQ("Test stance detector", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::TestSerial;
+    EXPECT_EQ("Test serial", ss.str());
+    ss.str("");
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::SelfTest;
-    EXPECT_EQ("Self test", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::TestStanceDetector;
+    EXPECT_EQ("Test stance detector", ss.str());
+    ss.str("");
 
-    testing::internal::CaptureStdout();
-    std::cout << arwain::OperatingMode::InvalidMode;
-    EXPECT_EQ("Mode not specified", testing::internal::GetCapturedStdout());
+    ss << arwain::OperatingMode::SelfTest;
+    EXPECT_EQ("Self test", ss.str());
+    ss.str("");
 
-    std::cout.rdbuf(nullptr);
+    ss << arwain::OperatingMode::InvalidMode;
+    EXPECT_EQ("Mode not specified", ss.str());
+    ss.str("");
 }
 
 TEST(NotImplemented, throw)
