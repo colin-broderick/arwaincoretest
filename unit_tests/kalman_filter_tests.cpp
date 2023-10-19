@@ -67,24 +67,3 @@ TEST(KalmanFilter, kalman_one_cycle)
     // filter.new_predicted_state();
     // filter.new_state_covariance_matrix();
 }
-
-TEST(KalmanFilter1D, KalmanFilter1D)
-{
-    KalmanFilter1D kf1;
-    KalmanFilter1D kf2{1, 1};
-    kf2.update(1, 1);
-    kf2.update_gain(1);
-    kf2.update_estimate(1);
-    kf2.update_estimate_error();
-    kf2.get_gain();
-    SUCCEED();
-}
-
-TEST(KalmanFilter1D, converged)
-{
-    KalmanFilter1D kf;
-    kf.converged = true;
-    kf.update(1, 1);
-    kf.KG = 0.001;
-    kf.update_estimate(1);
-}
