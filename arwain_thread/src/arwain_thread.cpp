@@ -10,7 +10,8 @@ void ArwainThread::set_name(const std::string& name)
     int rc = pthread_setname_np(this->native_handle(), name.data());
     if (rc != 0)
     {
-        throw std::runtime_error{"Failed to set thread name."};
+        // throw std::runtime_error{"Failed to set thread name."};
+        std::cerr << "Failed to set thread name.\n";
     }
 }
 
@@ -23,7 +24,8 @@ std::string ArwainThread::get_name()
     int rc = pthread_getname_np(this->native_handle(), name, 16);
     if (rc != 0)
     {
-        throw std::runtime_error{"Failed to get thread name."};
+        // throw std::runtime_error{"Failed to get thread name."};
+        std::cerr << "Failed to get thread name.\n";
     }
     return std::string{name};
 }
