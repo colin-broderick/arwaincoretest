@@ -11,6 +11,7 @@
 #include <arwain/input_parser.hpp>
 #include <arwain/vector3.hpp>
 #include <arwain/devices/rfm95w.hpp>
+#include <arwain/config_parser.hpp>
 
 #include "arwain/utils.hpp"
 
@@ -104,48 +105,8 @@ namespace arwain
         template <typename T>
         void replace(const std::string &option, const T new_value)
         {
-            std::ifstream infile(this->config_file);
-            std::stringstream outstring;
-
-            std::string line;
-            while (std::getline(infile, line))
-            {
-                auto delimiter = line.find("=");
-                std::string name = line.substr(0, delimiter);
-                if (name == option)
-                {
-                    outstring << name << "=" << std::setprecision(15) << new_value << "\n";
-                }
-                else
-                {
-                    outstring << line << "\n";
-                }
-            }
-            infile.close();
-
-            std::ofstream outfile(this->config_file);
-            outfile << outstring.str();
-            outfile.close();
-        }
-
-        /** \brief Reads an option into the specified storage space in the configuration struct.
-         * \param option String naming the option to parse from the file.
-         * \param storage The storage location of the data read from file, typically a struct member.
-         * \return ARWAIN exist code indiciating success or error.
-         */
-        template <typename T>
-        arwain::ReturnCode read_option(const std::map<std::string, std::string> &options, const std::string &option, T &storage)
-        {
-            try
-            {
-                std::stringstream(options.at(option)) >> storage;
-            }
-            catch (const std::exception& e)
-            {
-                std::cout << "Failed to read option from configuration file\n";
-                throw std::invalid_argument{option};
-            }
-            return arwain::ReturnCode::Success;
+            ConfigParser cfgparser{this->config_file};
+            cfgparser.replace(option, new_value);
         }
     };
 } // end namespace arwain
