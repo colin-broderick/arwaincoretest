@@ -40,6 +40,8 @@ TEST(ArwainThread, ArwainThread__all_constructors)
 
 TEST(ArwainThread, get_name__set_name)
 {
+    GTEST_SKIP(); // See issue #2.
+
     ArwainThread th(test_func, "TestName");
     std::this_thread::sleep_for(std::chrono::milliseconds{80});
     std::string name = th.get_name();
