@@ -250,16 +250,16 @@ void arwain::setup_log_directory()
     arwain::error_log << "time event" << "\n";
 }
 
-/** \brief If the input parser contains -name and a parameter to go with it, sets the global 
+/** \brief If the input parser contains --name and a parameter to go with it, sets the global 
  * arwain::folder_date_string_suffix to the value of the parameter. If the input parser does
- * not contain -name, the folder_date_string_suffix is set to an empty string.
+ * not contain --name, the folder_date_string_suffix is set to an empty string.
  * \param input An InputParser object which may or may not contain the -name parameter.
  */
 void arwain::setup_log_folder_name_suffix(const arwain::InputParser& input)
 {
-    if (input.contains("-name"))
+    if (input.contains("--name"))
     {
-        arwain::folder_date_string_suffix = input.get_cmd_option(("-name"));
+        arwain::folder_date_string_suffix = input.get_cmd_option(("--name"));
     }
     else
     {
@@ -590,7 +590,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     {
         ret = arwain::test_imu(input.get_cmd_option("--testimu"), std::stoi(input.get_cmd_option("--addr")));
     }
-    else if (input.contains("-testlorarx"))
+    else if (input.contains("--testlorarx"))
     {
         ret = arwain::test_lora_rx();
     }
@@ -598,7 +598,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     {
         ret = arwain::test_lora_tx();
     }
-    else if (input.contains("-calibm"))
+    else if (input.contains("--calibm"))
     {
         ret = arwain::calibrate_magnetometers();
     }
@@ -606,34 +606,34 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     {
         ret = arwain::test_pressure();
     }
-    else if (input.contains("-testori"))
+    else if (input.contains("--testori"))
     {
         int rate;
-        const char *rate_str = input.get_cmd_option("-testori").c_str();
+        const char *rate_str = input.get_cmd_option("--testori").c_str();
         rate = std::atoi(rate_str);
         ret = arwain::test_ori(rate);
     }
-    else if (input.contains("-rerunori"))
+    else if (input.contains("--rerunori"))
     {
-        ret = arwain::rerun_orientation_filter(input.get_cmd_option("-rerunori"));
+        ret = arwain::rerun_orientation_filter(input.get_cmd_option("--rerunori"));
     }
-    else if (input.contains("-rerunfloor"))
+    else if (input.contains("--rerunfloor"))
     {
-        ret = arwain::rerun_floor_tracker(input.get_cmd_option("-rerunfloor"));
+        ret = arwain::rerun_floor_tracker(input.get_cmd_option("--rerunfloor"));
     }
 
     // Perform quick calibration of gyroscopes and write to config file.
-    else if (input.contains("-calibg"))
+    else if (input.contains("--calibg"))
     {
         ret = arwain::calibrate_gyroscopes_offline();
     }
 
     // Perform quick calibration of gyroscopes and write to config file.
-    else if (input.contains("-caliba"))
+    else if (input.contains("--caliba"))
     {
         ret = arwain::calibrate_accelerometers_simple();
     }
-    else if (input.contains("-testmag"))
+    else if (input.contains("--testmag"))
     {
         #if USE_ROS
         ret = arwain::test_mag(argc, argv);
@@ -642,7 +642,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
         #endif
     }
     #if USE_UUBLA
-    else if (input.contains("-testuubla"))
+    else if (input.contains("--testuubla"))
     {
         ret = arwain::test_uubla_integration();
     }
@@ -651,7 +651,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     else
     {
         // Attempt to calibrate the gyroscope before commencing other activities.
-        if (input.contains("-calib"))
+        if (input.contains("--calib"))
         {
             arwain::calibrate_gyroscopes_offline();
             arwain::config = arwain::Configuration{input}; // Reread the config file as it has now changed.

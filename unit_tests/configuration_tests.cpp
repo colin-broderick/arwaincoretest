@@ -11,13 +11,13 @@ TEST(arwain__Configuration, Configuration_all)
     );
 
     std::string text0 = "exename";
-    std::string text1 = "-lstd";
-    std::string text2 = "-noinf";
-    std::string text3 = "-nolora";
-    std::string text4 = "-nopressure";
-    std::string text5 = "-noimu";
-    std::string text6 = "-conf";
-    std::string text7 = "-conffile";
+    std::string text1 = "--lstd";
+    std::string text2 = "--noinf";
+    std::string text3 = "--nolora";
+    std::string text4 = "--nopressure";
+    std::string text5 = "--noimu";
+    std::string text6 = "--conf";
+    std::string text7 = "--conffile";
 
     char* strings[8] = {
         text0.data(),
@@ -40,13 +40,13 @@ TEST(arwain__Configuration, Configuration_all)
 TEST(arwain__Configuration, read_from_file__invalid_file)
 {
     std::string text0 = "exename";
-    std::string text1 = "-lstd";
-    std::string text2 = "-noinf";
-    std::string text3 = "-nolora";
-    std::string text4 = "-nopressure";
-    std::string text5 = "-noimu";
-    std::string text6 = "-conf";
-    std::string text7 = "-conffile";
+    std::string text1 = "--lstd";
+    std::string text2 = "--noinf";
+    std::string text3 = "--nolora";
+    std::string text4 = "--nopressure";
+    std::string text5 = "--noimu";
+    std::string text6 = "--conf";
+    std::string text7 = "--conffile";
     char* strings[8] = {
         text0.data(),
         text1.data(),
@@ -68,12 +68,12 @@ TEST(arwain__Configuration, read_from_file__invalid_file)
 TEST(arwain__Configuration, read_from_file__valid_file)
 {
     std::string text0 = "exename";
-    std::string text1 = "-lstd";
-    std::string text2 = "-noinf";
-    std::string text3 = "-nolora";
-    std::string text4 = "-nopressure";
-    std::string text5 = "-noimu";
-    std::string text6 = "-conf";
+    std::string text1 = "--lstd";
+    std::string text2 = "--noinf";
+    std::string text3 = "--nolora";
+    std::string text4 = "--nopressure";
+    std::string text5 = "--noimu";
+    std::string text6 = "--conf";
     std::string text7 = "../arwain.conf";
     char* strings[8] = {
         text0.data(),
@@ -95,12 +95,12 @@ TEST(arwain__Configuration, read_from_file__valid_file)
 TEST(arwain__Configuration, replace)
 {
     std::string text0 = "exename";
-    std::string text1 = "-lstd";
-    std::string text2 = "-noinf";
-    std::string text3 = "-nolora";
-    std::string text4 = "-nopressure";
-    std::string text5 = "-noimu";
-    std::string text6 = "-conf";
+    std::string text1 = "--lstd";
+    std::string text2 = "--noinf";
+    std::string text3 = "--nolora";
+    std::string text4 = "--nopressure";
+    std::string text5 = "--noimu";
+    std::string text6 = "--conf";
     std::string text7 = "../arwain.conf";
     char* strings[8] = {
         text0.data(),

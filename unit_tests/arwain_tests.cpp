@@ -310,7 +310,7 @@ HARDWARE_TEST(FreeFuncs, arwain_main)
 
         int j = 3;
         std::string program = "arwain_test";
-        std::string command = "-rerunori";
+        std::string command = "--rerunori";
         std::string command2 = ".";
         char* input_array[j] = {program.data(),command.data(), command2.data()};
         EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
@@ -329,7 +329,7 @@ HARDWARE_TEST(FreeFuncs, arwain_main)
         };
         int j = 2;
         std::string program = "arwain_test";
-        std::string command = "-testlorarx";
+        std::string command = "--testlorarx";
         char* input_array[j] = {program.data(),command.data()};
         EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
         th.join();
@@ -359,21 +359,21 @@ HARDWARE_TEST(FreeFuncs, arwain_main)
     {
         int j = 2;
         std::string program = "arwain_test";
-        std::string command = "-testloratx";
+        std::string command = "--testloratx";
         char* input_array[j] = {program.data(),command.data()};
         EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
     }
     {
         int j = 2;
         std::string program = "arwain_test";
-        std::string command = "-testpressure";
+        std::string command = "--testpressure";
         char* input_array[j] = {program.data(),command.data()};
         EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
     }
     {
         int j = 3;
         std::string program = "arwain_test";
-        std::string command = "-testori";
+        std::string command = "--testori";
         std::string command2 = "10";
         char* input_array[j] = {program.data(),command.data(), command2.data()};
         EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
@@ -381,21 +381,21 @@ HARDWARE_TEST(FreeFuncs, arwain_main)
     {
         int j = 2;
         std::string program = "arwain_test";
-        std::string command = "-calibg";
+        std::string command = "--calibg";
         char* input_array[j] = {program.data(),command.data()};
         EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
     }
     {
         int j = 2;
         std::string program = "arwain_test";
-        std::string command = "-testmag";
+        std::string command = "--testmag";
         char* input_array[j] = {program.data(),command.data()};
         EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::FailedMagnetometer);
     }
     {
         int j = 2;
         std::string program = "arwain_test";
-        std::string command = "-caliba";
+        std::string command = "--caliba";
         char* input_array[j] = {program.data(),command.data()};
         EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
     }
@@ -420,7 +420,7 @@ TEST(arwain__FreeFuncs, setup_log_folder_name_suffix__with_name)
 {
     int j = 3;
     std::string program = "arwain_test";
-    std::string command = "-name";
+    std::string command = "--name";
     std::string parameter = "example";
     char* input_array[3] = {program.data(),command.data(), parameter.data()};
     arwain::InputParser parser(j, input_array);

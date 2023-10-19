@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     double z_bias = 0;
 
     // Check that a filename has been passed and process optional parameters.
-    if (!input_parser.contains("-file"))
+    if (!input_parser.contains("--file"))
     {
         std::cout << "Usage:\n";
         std::cout << "  ./arwain_file_inference -file <filename> [-beta <beta=0.1>] [-freq <frequency=120>]\n";
@@ -37,25 +37,25 @@ int main(int argc, char **argv)
         std::cout << "  gyro_x, gyro_y, gyro_z, accel_x, accel_y, accel_z, mag_x, mag_y, mag_z\n";
         return 0;
     }
-    if (input_parser.contains("-beta"))
+    if (input_parser.contains("--beta"))
     {
-        std::stringstream(input_parser.get_cmd_option("-beta")) >> beta;
+        std::stringstream(input_parser.get_cmd_option("--beta")) >> beta;
     }
-    if (input_parser.contains("-freq"))
+    if (input_parser.contains("--freq"))
     {
-        std::stringstream(input_parser.get_cmd_option("-freq")) >> frequency;
+        std::stringstream(input_parser.get_cmd_option("--freq")) >> frequency;
     }
-    if (input_parser.contains("-xbias"))
+    if (input_parser.contains("--xbias"))
     {
-        std::stringstream(input_parser.get_cmd_option("-xbias")) >> x_bias;
+        std::stringstream(input_parser.get_cmd_option("--xbias")) >> x_bias;
     }
-    if (input_parser.contains("-ybias"))
+    if (input_parser.contains("--ybias"))
     {
-        std::stringstream(input_parser.get_cmd_option("-ybias")) >> y_bias;
+        std::stringstream(input_parser.get_cmd_option("--ybias")) >> y_bias;
     }
-    if (input_parser.contains("-zbias"))
+    if (input_parser.contains("--zbias"))
     {
-        std::stringstream(input_parser.get_cmd_option("-zbias")) >> z_bias;
+        std::stringstream(input_parser.get_cmd_option("--zbias")) >> z_bias;
     }
 
     // Create orientation filter.
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
     };
 
     // Open input and output file handles.
-    std::string filename = input_parser.get_cmd_option("-file");
+    std::string filename = input_parser.get_cmd_option("--file");
     std::ifstream inputfile{filename};
     std::ofstream outputfile{filename+".processed.csv"};
     outputfile << "Roll, Pitch, Yaw\n";

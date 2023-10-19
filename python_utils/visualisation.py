@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 """
-Pipe the output from arwain -lstd into this process to launch a vpython
+Pipe the output from arwain --lstd into this process to launch a vpython
 visualization of DCM orientation and/or position, e.g.
 
-    ./arwain -lstd | ./visualisation.py
-    ./arwain -lstd -noinf | ./visualisation.py
+    ./arwain --lstd | ./visualisation.py
+    ./arwain --lstd --noinf | ./visualisation.py
 
 For testing purposes only. Requires vpython:
     

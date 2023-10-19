@@ -188,37 +188,37 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
 arwain::Configuration::Configuration(const arwain::InputParser& input)
 {    
     // Enable/disable stdout logging.
-    if (input.contains("-lstd"))
+    if (input.contains("--lstd"))
     {
         this->log_to_stdout = 1;
     }
 
     // Disable/enable velocity inference.
-    if (input.contains("-noinf"))
+    if (input.contains("--noinf"))
     {
         this->no_inference = 1;
     }
 
     // Disable/enable LoRa transmission.
-    if (input.contains("-nolora"))
+    if (input.contains("--nolora"))
     {
         this->no_lora = 1;
     }
 
-    if (input.contains("-nopressure"))
+    if (input.contains("--nopressure"))
     {
         this->no_pressure = 1;
     }
 
     // Disable/enable IMU.
-    if (input.contains("-noimu"))
+    if (input.contains("--noimu"))
     {
         this->no_imu = 1;
     }
 
     // If alternate configuration file supplied, read it instead of default.
-    if (input.contains("-conf"))
+    if (input.contains("--conf"))
     {
-        this->config_file = input.get_cmd_option("-conf");
+        this->config_file = input.get_cmd_option("--conf");
     }
 }
