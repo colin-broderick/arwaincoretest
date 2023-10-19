@@ -4,8 +4,7 @@
 #include <NumCpp.hpp>
 
 #include <arwain/vector3.hpp>
-
-#include "kalman.hpp"
+#include <arwain/kalman_filter_1d.hpp>
 
 /** \brief Calibration tool for a 3-axis digital magnetometer. */
 class MagnetometerCalibrator

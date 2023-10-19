@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <arwain/kalman_filter_1d.hpp>
 #include "kalman.hpp"
 
 TEST(KalmanFilter, kalman_one_cycle)

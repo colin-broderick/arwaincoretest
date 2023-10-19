@@ -71,47 +71,6 @@ MatrixXd KalmanFilter::kalman_one_cycle(MatrixXd observation, MatrixXd U)
     return state_matrix;
 }
 
-KalmanFilter1D::KalmanFilter1D(double initial_estimate, double initial_estimate_error)
-{
-    est = initial_estimate;
-    E_est = initial_estimate_error;
-}
-
-void KalmanFilter1D::update(const double measurement, const double measurement_error)
-{
-    if (converged)
-    {
-        return;
-    }
-    update_gain(measurement_error);
-    update_estimate(measurement);
-    update_estimate_error();
-}
-
-void KalmanFilter1D::update_gain(const double measurement_error)
-{
-    KG = E_est / (E_est + measurement_error);
-}
-
-void KalmanFilter1D::update_estimate(const double measurement)
-{
-    est = est + KG * (measurement - est);
-    if (KG < 0.005)
-    {
-        converged = true;
-    }
-}
-
-void KalmanFilter1D::update_estimate_error()
-{
-    E_est = (1 - KG) * E_est;
-}
-
-double KalmanFilter1D::get_gain() const
-{
-    return this->KG;
-}
-
 // int main()
 // {
 //     KalmanFilter1D kf{68, 2};
