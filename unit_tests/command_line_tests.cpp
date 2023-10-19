@@ -407,17 +407,17 @@ TEST(ArwainCLI, fail_to_switch_to)
 
 TEST(ArwainCLI, switch_to_mag_calib_mode)
 {
-    GTEST_SKIP();
+    GTEST_SKIP(); // TODO
 }
 
 TEST(ArwainCLI, switch_to_accel_calib_mode)
 {
-    GTEST_SKIP();
+    GTEST_SKIP(); // TODO
 }
 
 TEST(ArwainCLI, switch_to_data_collection_mode)
 {
-    GTEST_SKIP();
+    GTEST_SKIP(); // TODO
 }
 
 TEST(ArwainCLI, set_folder_name)

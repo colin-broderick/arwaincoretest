@@ -49,16 +49,13 @@ HARDWARE_TEST(SensorManager, init__success)
     // std::cout.rdbuf(nullptr);
 }
 
-TEST(SensorManager, init__failure)
+HARDWARE_TEST(SensorManager, init__failure)
 {
-    /*
     arwain::config.no_imu = true;
     SensorManager reader;
     EXPECT_FALSE(reader.init());
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     reader.join();
-    */
-   FAIL();
 }
 
 static void test_callback()
