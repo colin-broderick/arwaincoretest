@@ -13,7 +13,13 @@
 #include "arwain/events.hpp"
 
 ArwainCLI::ArwainCLI()
+: ArwainCLI(std::cin)
 {
+}
+
+ArwainCLI::ArwainCLI(const std::istream& stream)
+{
+    in_stream = std::make_shared<std::istream>(stream.rdbuf());
     init();
 }
 
@@ -32,7 +38,7 @@ void ArwainCLI::run()
     {
         sleep_ms(5);
         std::string input;
-        std::getline(std::cin, input);
+        std::getline(*in_stream, input);
         parse_cli_input(input);
     }
 }

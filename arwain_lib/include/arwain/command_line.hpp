@@ -24,12 +24,14 @@ class ArwainCLI : public ArwainJob
         bool switch_to_data_collection_mode();
         bool set_folder_name(const std::string& input);
         void parse_cli_input(const std::string& input);
+        std::shared_ptr<std::istream> in_stream;
 
     private:
         ArwainThread job_thread;
 
     public:
         ArwainCLI();
+        ArwainCLI(const std::istream& stream);
         bool init();
         bool join();
 };
