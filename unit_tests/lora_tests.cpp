@@ -3,6 +3,7 @@
 #include "arwain/arwain.hpp"
 #include "arwain/transmit_lora.hpp"
 #include "arwain/events.hpp"
+#include "test_base.hpp"
 
 #include <arwain/devices/rfm95w.hpp>
 
@@ -23,7 +24,7 @@ TEST(StatusReporting, setup_inference)
     status.join();
 }
 
-TEST(StatusReporting, run_idle)
+HARDWARE_TEST(StatusReporting, run_idle)
 {
     arwain::config.no_lora = true;
     StatusReporting status;
@@ -31,7 +32,7 @@ TEST(StatusReporting, run_idle)
     status.join();
 }
 
-TEST(StatusReporting, set_stance_detection_pointer)
+HARDWARE_TEST(StatusReporting, set_stance_detection_pointer)
 {
     arwain::config.no_lora = true;
     StanceDetection stance;
@@ -44,7 +45,7 @@ TEST(StatusReporting, set_stance_detection_pointer)
     status.join();
 }
 
-TEST(StatusReporting, run_inference)
+HARDWARE_TEST(StatusReporting, run_inference)
 {
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
     arwain::config.no_lora = false;

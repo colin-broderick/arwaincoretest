@@ -216,7 +216,7 @@ HARDWARE_TEST(arwain__FreeFuncs, calibrate_accelerometers_simple)
     EXPECT_TRUE((arwain::calibrate_accelerometers_simple() == arwain::ReturnCode::Success));
 }
 
-TEST(arwain__FreeFuncs, calibrate_magnetometers)
+HARDWARE_TEST(arwain__FreeFuncs, calibrate_magnetometers)
 {
     FAIL();
     std::thread th = std::thread{
