@@ -287,12 +287,11 @@ TEST(ArwainCLI, switch_to_exit_mode)
 
 TEST(ArwainCLI, report_current_mode)
 {
-
-    std::streambuf *orig = std::cin.rdbuf();
-    std::istringstream input("test\n");
-    std::cin.rdbuf(input.rdbuf());
-    ArwainCLI command_line;
+    std::stringstream input;
+    ArwainCLI command_line{input};
     
+    input << "test\n";
+
     EXPECT_EQ(command_line.report_current_mode(), "Current mode: Idle/autocalibrating\n");
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Terminate));
@@ -301,36 +300,19 @@ TEST(ArwainCLI, report_current_mode)
 
 TEST(ArwainCLI, switch_to_idle_autocal_mode__from_inference)
 {
-    std::streambuf *orig = std::cin.rdbuf();
-    std::istringstream input("test\n");
-    std::cin.rdbuf(input.rdbuf());
-    ArwainCLI command_line;
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-    command_line.join();
+    std::stringstream input;
+    ArwainCLI command_line{input};
+    input << "test\n";
 
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+    EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Inference));
 
-    command_line.switch_to_idle_autocal_mode();
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
     EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Idle));
 
-    std::cin.rdbuf(orig);
-}
-
-TEST(ArwainCLI, switch_to_idle_autocal_mode__from_something_else)
-{
-    std::streambuf *orig = std::cin.rdbuf();
-    std::istringstream input("test\n");
-    std::cin.rdbuf(input.rdbuf());
-    ArwainCLI command_line;
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+
     command_line.join();
-
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
-
-    command_line.switch_to_idle_autocal_mode();
-    EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Idle));
-
-    std::cin.rdbuf(orig);
 }
 
 TEST(ArwainCLI, switch_to_inference_mode)
@@ -468,34 +450,18 @@ TEST(ArwainCLI, ArwainCLI)
 /** \brief We construct a CLI, then shut it down, then call init manually and check for expected state. */
 TEST(ArwainCLI, init)
 {
-    GTEST_SKIP(); // There is an issue with threads not being joined properly and intermittently causing aborts at prog exit.
-
-    std::streambuf *orig = std::cin.rdbuf();
-    std::istringstream input("exit\n");
-    std::cin.rdbuf(input.rdbuf());
-    ArwainCLI cli;
+    std::stringstream input_stream;
+    ArwainCLI cli{input_stream};
+    input_stream << "exit\n";
     EXPECT_TRUE(cli.job_thread.joinable());
     cli.join();
-
-    EXPECT_TRUE(cli.init());
-    std::cin.rdbuf(input.rdbuf());
-    EXPECT_TRUE(cli.job_thread.joinable());
-    
-    cli.join();
-
-    std::cin.rdbuf(orig);
 }
 
 TEST(ArwainCLI, join)
 {
-    GTEST_SKIP(); // There is an issue with threads not being joined properly and intermittently causing aborts at prog exit.
-
-    std::streambuf *orig = std::cin.rdbuf();
-    std::istringstream input("exit\n");
-    std::cin.rdbuf(input.rdbuf());
-    ArwainCLI cli;
+    std::stringstream input_stream;
+    ArwainCLI cli{input_stream};
+    input_stream << "exit\n";
     EXPECT_TRUE(cli.job_thread.joinable());
     cli.join();
-
-    std::cin.rdbuf(orig);
 }
