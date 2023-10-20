@@ -361,7 +361,14 @@ TEST(ArwainCLI, force_switch_to_idle_autocal_mode)
 
 TEST(ArwainCLI, switch_to_gyro_calib_mode)
 {
-    GTEST_SKIP();
+    std::stringstream input_stream;
+    ArwainCLI cli{input_stream};
+
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::GyroscopeCalibration);
+    EXPECT_TRUE(cli.get_mode() == arwain::OperatingMode::GyroscopeCalibration);
+    
+    input_stream << "exit\n";
+    cli.join();
 }
 
 TEST(ArwainCLI, fail_to_switch_to)
@@ -371,18 +378,36 @@ TEST(ArwainCLI, fail_to_switch_to)
 
 TEST(ArwainCLI, switch_to_mag_calib_mode)
 {
-    GTEST_SKIP(); // TODO
-}
+    std::stringstream input_stream;
+    ArwainCLI cli{input_stream};
+
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::MagnetometerCalibration);
+    EXPECT_TRUE(cli.get_mode() == arwain::OperatingMode::MagnetometerCalibration);
+    
+    input_stream << "exit\n";
+    cli.join();}
 
 TEST(ArwainCLI, switch_to_accel_calib_mode)
 {
-    GTEST_SKIP(); // TODO
-}
+    std::stringstream input_stream;
+    ArwainCLI cli{input_stream};
+
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::AccelerometerCalibration);
+    EXPECT_TRUE(cli.get_mode() == arwain::OperatingMode::AccelerometerCalibration);
+    
+    input_stream << "exit\n";
+    cli.join();}
 
 TEST(ArwainCLI, switch_to_data_collection_mode)
 {
-    GTEST_SKIP(); // TODO
-}
+    std::stringstream input_stream;
+    ArwainCLI cli{input_stream};
+
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::DataCollection);
+    EXPECT_TRUE(cli.get_mode() == arwain::OperatingMode::DataCollection);
+    
+    input_stream << "exit\n";
+    cli.join();}
 
 TEST(ArwainCLI, set_folder_name)
 {
