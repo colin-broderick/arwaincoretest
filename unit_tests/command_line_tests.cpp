@@ -317,31 +317,14 @@ TEST(ArwainCLI, switch_to_idle_autocal_mode__from_inference)
 
 TEST(ArwainCLI, switch_to_inference_mode)
 {
-    GTEST_SKIP(); // Fails - Don't know why, but given that this function is never callable directly I don't think I'm worried about it.
+    std::stringstream input_stream;
+    ArwainCLI cli{input_stream};
 
-    // SETUP
-    std::streambuf *orig = std::cin.rdbuf();
-    std::istringstream input("test\n");
-    std::cin.rdbuf(input.rdbuf());
-    ArwainCLI command_line;
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-    command_line.join();
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
-
-    // TEST
-    std::cout.rdbuf(original_cout_buffer);
-    command_line.switch_to_inference_mode();
-    std::cout << command_line.get_mode() << "\n";
-    std::cout.rdbuf(nullptr);
-    EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Inference));
-
-    // TEARDOWN
-    // arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-    // std::cout << "about to join\n";
-    // command_line.join();
-    std::cin.rdbuf(orig);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+    EXPECT_TRUE(cli.get_mode() == arwain::OperatingMode::Inference);
     
-    
+    input_stream << "exit\n";
+    cli.join();
 }
 
 TEST(ArwainCLI, core_setup)
