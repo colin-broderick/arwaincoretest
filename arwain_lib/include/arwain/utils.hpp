@@ -22,29 +22,6 @@ struct EulerOrientation
     double yaw;
 };
 
-/** \brief Computes a true rolling average as values are fed in.
- * 
- * Averages will be produced and can be obtained before the window is filled,
- * although this will likely not be a useful value before the averaging window
- * is filled. The method .ready() can be called to confirm that the roller has
- * been fed enough values to fill the window and the average value is therefore
- * valid.
- */
-class RollingAverage
-{
-    public:
-        RollingAverage() = default;
-        RollingAverage(unsigned int window_size_);
-        bool ready();
-        void feed(double value);
-        double get_value();
-
-    private:
-        unsigned int window_size = 0;
-        double current_average = 0;
-        std::deque<double> stack;
-};
-
 namespace arwain
 {
     EulerOrientation compute_euler(Quaternion& quaternion_rotor);

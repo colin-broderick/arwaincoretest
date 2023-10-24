@@ -1,6 +1,8 @@
 #ifndef _ARWAIN_ACTIVITY_METRIC_HPP
 #define _ARWAIN_ACTIVITY_METRIC_HPP
 
+#include <arwain/rolling_average.hpp>
+
 #include "arwain/utils.hpp"
 
 class Vector3;

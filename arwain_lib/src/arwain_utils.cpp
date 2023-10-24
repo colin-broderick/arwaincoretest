@@ -1,10 +1,10 @@
 #include <cmath>
 #include <sstream>
 
-#include "arwain/utils.hpp"
-
 #include <arwain/quaternion.hpp>
 #include <arwain/vector3.hpp>
+
+#include "arwain/utils.hpp"
 
 void sleep_ms(int ms)
 {
@@ -68,33 +68,6 @@ int clamp_value(int value, int minimum, int maximum)
     {
         return value;
     }
-}
-
-RollingAverage::RollingAverage(unsigned int window_size_)
-: window_size(window_size_)
-{
-
-}
-
-bool RollingAverage::ready()
-{
-    return stack.size() == window_size;
-}
-
-void RollingAverage::feed(double value)
-{
-    current_average += value;
-    stack.push_back(value);
-    if (stack.size() > window_size)
-    {
-        current_average -= stack.front() ;
-        stack.pop_front();
-    }
-}
-
-double RollingAverage::get_value()
-{
-    return current_average / static_cast<double>(window_size);
 }
 
 double unwrap_phase_radians(double new_angle, double previous_angle)
