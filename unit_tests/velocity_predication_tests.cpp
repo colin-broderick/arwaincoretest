@@ -149,22 +149,15 @@ TEST(PositionVelocityInference, run)
 
 TEST(PositionVelocityInference, set_mode)
 {
-    GTEST_SKIP(); // This is a really dumb test. Write a better one.
     arwain::config.inference_model_xml = "/mnt/yocto/x004-yocto/sources/meta-arwain/recipes-arwain/arwain-inference-core/files/models/tflite/model_float32.tflite";
-
-    std::cout.rdbuf(original_cout_buffer);
     {
         arwain::config.no_inference = true;
-        std::cout << arwain::Events::switch_mode_event.size() << "\n";
         PositionVelocityInference inferrer;
-        testing::internal::CaptureStdout();
+        EXPECT_TRUE((inferrer.get_mode() == arwain::OperatingMode::Idle));
         arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-        EXPECT_EQ("setmodecalled\n", testing::internal::GetCapturedStdout());
-        std::cout << arwain::Events::switch_mode_event.size() << "\n";
+        EXPECT_TRUE((inferrer.get_mode() == arwain::OperatingMode::Terminate));
         inferrer.join();
     }
-    std::cout << arwain::Events::switch_mode_event.size() << "\n";
-    std::cout.rdbuf(nullptr);
 }
 
 /** \brief After the cleanup_inference() call, position and velocity
