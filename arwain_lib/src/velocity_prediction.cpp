@@ -23,7 +23,7 @@ void PositionVelocityInference::core_setup()
     
     // TODO Create inferencer.
     // If the model file cannot be found or loaded, set mode to terminate and break loop.
-    model = tflite::FlatBufferModel::BuildFromFile(arwain::config.inference_model_xml.c_str());
+    model = tflite::FlatBufferModel::BuildFromFile(arwain::config.inference_model_path.c_str());
     if (!model)
     {
         std::cout << "Failed to map model\n";
