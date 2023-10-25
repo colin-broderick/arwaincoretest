@@ -59,7 +59,7 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     cfgparser.read_option("use_magnetometer", this->use_magnetometer);
     cfgparser.read_option("log_magnetometer", this->log_magnetometer);
     cfgparser.read_option("use_ips", this->use_ips);
-    cfgparser.read_option("npu_vel_weight_confidence", this->npu_vel_weight_confidence);
+    cfgparser.read_option("nn_vel_weight_confidence", this->nn_vel_weight_confidence);
     cfgparser.read_option("madgwick_beta", this->madgwick_beta);
     cfgparser.read_option("madgwick_beta_conv", this->madgwick_beta_conv);
     cfgparser.read_option("orientation_filter", this->orientation_filter);
