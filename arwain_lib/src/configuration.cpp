@@ -69,7 +69,7 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     cfgparser.read_option("uubla_baud_rate", this->uubla_baud_rate);
     cfgparser.read_option("uubla_serial_port", this->uubla_serial_port);
 
-    // We want to fail out if the model XML file cannot be found.
+    // We want to fail out if the model file cannot be found.
     cfgparser.read_option("inference_model_path", this->inference_model_path);
     if (!std::filesystem::exists(this->inference_model_path))
     {

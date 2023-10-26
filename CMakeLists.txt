@@ -56,19 +56,15 @@ set(ALL_ARWAIN_LIBRARIES
     efaroe_filter
     arwain_logger
     input_parser
-    kalman
     arwain_timers
     fusion_filter
-    arwain_thread
     arwain_math
 )
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
 include_directories(
-    arwain_thread/include
     orientation/include
     orientation_fusion/include
-    kalman/include
     arwain_lib/include
     realsense_t265/include
 )
@@ -80,8 +76,7 @@ if(USE_UUBLA)
 endif()
 
 add_subdirectory(orientation)
-add_subdirectory(kalman)
-add_subdirectory(arwain_thread)
+
 add_subdirectory(arwain_lib)
 if(USE_REALSENSE)
 add_subdirectory(realsense_t265)
