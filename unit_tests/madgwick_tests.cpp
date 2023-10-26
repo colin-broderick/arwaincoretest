@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "madgwick.hpp"
+#include <arwain/orientation/madgwick.hpp>
 
 TEST(arwain__Madgwick, Madgwick)
 {

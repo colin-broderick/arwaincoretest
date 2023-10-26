@@ -5,14 +5,14 @@
 
 #include <arwain/devices/iim42652.hpp>
 #include <arwain/devices/lis3mdl.hpp>
+#include <arwain/orientation/madgwick.hpp>
+#include <arwain/logger.hpp>
 
 #include "arwain/i2c_interface.hpp"
-#include "arwain/logger.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/utils.hpp"
 #include "arwain/job_interface.hpp"
 
-#include "madgwick.hpp"
 
 class SensorManager : public ArwainJob
 {

@@ -7,12 +7,12 @@
 #include <arwain/quaternion.hpp>
 #include <arwain/vector3.hpp>
 #include <arwain/timers.hpp>
+#include <arwain/orientation/filter.hpp>
 
 #include "arwain/arwain.hpp"
 #include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/std_output.hpp"
-#include "filter.hpp"
 
 DebugPrints::DebugPrints()
 {

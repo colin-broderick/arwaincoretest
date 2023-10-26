@@ -5,6 +5,7 @@
 #include <arwain/devices/bmp384.hpp>
 #include <arwain/devices/lis3mdl.hpp>
 #include <arwain/timers.hpp>
+#include <arwain/orientation/madgwick.hpp>
 
 #include "arwain/i2c_interface.hpp"
 #include "arwain/arwain.hpp"
@@ -12,8 +13,6 @@
 #include "arwain/sensor_manager.hpp"
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/events.hpp"
-
-#include "madgwick.hpp"
 
 #if USE_UUBLA
 #include "uwb_reader.hpp"

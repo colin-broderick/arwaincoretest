@@ -44,12 +44,12 @@
 #include <arwain/devices/iim42652.hpp>
 #include <arwain/devices/bmp384.hpp>
 #include <arwain/devices/lis3mdl.hpp>
+#include <arwain/orientation/madgwick.hpp>
+#include <arwain/orientation/efaroe.hpp>
+#include <arwain/orientation/new_madgwick_FusionAhrs.h>
+#include <arwain/orientation/new_madgwick_FusionBias.h>
 
 #include "arwain/i2c_interface.hpp"
-#include "madgwick.hpp"
-#include "efaroe.hpp"
-#include "new_madgwick_FusionAhrs.h"
-#include "new_madgwick_FusionBias.h"
 
 // General configuration data.
 namespace arwain

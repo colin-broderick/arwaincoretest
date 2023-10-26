@@ -10,6 +10,8 @@
 #include <arwain/devices/lis3mdl.hpp>
 #include <arwain/logger.hpp>
 #include <arwain/timers.hpp>
+#include <arwain/orientation/madgwick.hpp>
+#include <arwain/orientation/efaroe.hpp>
 
 #include "arwain/i2c_interface.hpp"
 #include "arwain/arwain.hpp"
@@ -20,8 +22,6 @@
 #include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 
-#include "madgwick.hpp"
-#include "efaroe.hpp"
 
 /** \brief Rotates a Vector3 according to a quaternion orientation.
  * \param vec The Vector3 to rotate.

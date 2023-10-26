@@ -20,6 +20,8 @@ add_definitions(-DNUMCPP_NO_USE_BOOST)
 
 include_directories(/usr/local64/include)
 
+include(CTest)
+
 if(THREAD_NAMES)
     message("Thread naming is enabled (unstable, for debug only)")
     add_definitions(-DTHREAD_NAMES)
@@ -52,19 +54,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(ALL_ARWAIN_LIBRARIES
     arwain_lib
     arwain_rfm95w
-    madgwick_filter
-    efaroe_filter
     arwain_logger
     input_parser
     arwain_timers
-    fusion_filter
     arwain_math
+    arwain_orientation
 )
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
 include_directories(
-    orientation/include
-    orientation_fusion/include
     arwain_lib/include
     realsense_t265/include
 )
@@ -74,8 +72,6 @@ if(USE_UUBLA)
     set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} uubla)
     add_definitions(-DUSE_UUBLA)
 endif()
-
-add_subdirectory(orientation)
 
 add_subdirectory(arwain_lib)
 if(USE_REALSENSE)
@@ -114,3 +110,5 @@ target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --cove
 ## Install configuration and related files to correct locations.
 install(TARGETS ${PROJECT_NAME} DESTINATION /usr/bin)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/models/tflite/model_float32.tflite DESTINATION /etc)
+
+add_test(NAME arwain_test COMMAND arwain_test)
