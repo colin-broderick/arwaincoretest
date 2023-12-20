@@ -20,6 +20,22 @@ arwain_event
 arwain_math 0.1
 iim42652
 
+arwain/vector3.hpp
+arwain/devices/bmp384.hpp
+arwain/devices/iim42652.hpp
+arwain/logger.hpp
+arwain/input_parser.hpp
+arwain/timers.hpp
+arwain/devices/lis3mdl.hpp
+arwain/devices/rfm95w.hpp
+arwain/orientation/madgwick.hpp
+arwain/event_manager.hpp
+arwain/config_parser.hpp
+
 ## Third party libraries
 
 libeigen3
+
+libeigen3
+NumCpp
+yaml-cpp
