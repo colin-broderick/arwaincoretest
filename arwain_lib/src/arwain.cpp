@@ -81,6 +81,22 @@ namespace arwain::Buffers
     GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
 
+std::array<double, 3> vec_to_array3(std::vector<double> in_vector)
+{
+    if (in_vector.size() == 3)
+    {
+        return {
+            in_vector[0],
+            in_vector[1],
+            in_vector[2],
+        };
+    }
+    else
+    {
+        throw std::exception{};
+    }
+}
+
 /** \brief Reads the position.txt file from the given location, and 
  * runs the floor tracking algorithm against that data.
  */
@@ -350,15 +366,12 @@ arwain::ReturnCode arwain::calibrate_magnetometers()
     std::cout << scale[2][0] << " " << scale[2][1] << " " << scale[2][2] << std::endl;
     std::cout << std::endl;
 
-    arwain::config.replace("mag_bias_x", bias[0]);
-    arwain::config.replace("mag_bias_y", bias[1]);
-    arwain::config.replace("mag_bias_z", bias[2]);
-    arwain::config.replace("mag_scale_x", scale[0][0]);
-    arwain::config.replace("mag_scale_y", scale[1][1]);
-    arwain::config.replace("mag_scale_z", scale[2][2]);
-    arwain::config.replace("mag_scale_xy", scale[0][1]);
-    arwain::config.replace("mag_scale_xz", scale[0][2]);
-    arwain::config.replace("mag_scale_yz", scale[1][2]);
+    arwain::config.replace("magnetometer/calibration/bias", vec_to_array3(bias));
+
+    std::array<double, 3> mag_scale_xyz = {scale[0][0], scale[1][1], scale[2][2]};
+    arwain::config.replace("magnetometer/calibration/scale", mag_scale_xyz);
+    std::array<double, 3> mag_scale_cross = {scale[0][1], scale[0][2], scale[1][2]};
+    arwain::config.replace("magnetometer/calibration/cross_scale", mag_scale_cross);
 
     std::cout << "Magnetometer calibration complete" << std::endl;
     return arwain::ReturnCode::Success;
@@ -381,9 +394,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
         sleep_ms(5);
     }
     results = calibrator1.get_params();
-    arwain::config.replace("gyro1_bias_x", results.x);
-    arwain::config.replace("gyro1_bias_y", results.y);
-    arwain::config.replace("gyro1_bias_z", results.z);
+    arwain::config.replace("imu1/calibration/gyro_bias", results.to_array());
 
     IIM42652<LinuxSmbusI2CDevice> imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu2.get_bus() << " at 0x" << std::hex << imu2.get_address() << "; please wait\n";
@@ -394,9 +405,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
         sleep_ms(5);
     }
     results = calibrator2.get_params();
-    arwain::config.replace("gyro2_bias_x", results.x);
-    arwain::config.replace("gyro2_bias_y", results.y);
-    arwain::config.replace("gyro2_bias_z", results.z);
+    arwain::config.replace("imu2/calibration/gyro_bias", results.to_array());
 
     IIM42652<LinuxSmbusI2CDevice> imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
     std::cout << "Calibrating gyroscope on " << imu3.get_bus() << " at 0x" << std::hex << imu3.get_address() << "; please wait\n";
@@ -407,9 +416,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
         sleep_ms(5);
     }
     results = calibrator3.get_params();
-    arwain::config.replace("gyro3_bias_x", results.x);
-    arwain::config.replace("gyro3_bias_y", results.y);
-    arwain::config.replace("gyro3_bias_z", results.z);
+    arwain::config.replace("imu3/calibration/gyro_bias", results.to_array());
 
     std::cout << std::dec;
     std::cout << "Gyroscope calibration complete.\n";
@@ -491,26 +498,14 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
     // TODO Detect and remove outliers.
 
     // Log to config file.
-    arwain::config.replace("accel1_bias_x", bias_1.x);
-    arwain::config.replace("accel1_bias_y", bias_1.y);
-    arwain::config.replace("accel1_bias_z", bias_1.z);
-    arwain::config.replace("accel1_scale_x", scale_1.x);
-    arwain::config.replace("accel1_scale_y", scale_1.y);
-    arwain::config.replace("accel1_scale_z", scale_1.z);
+    arwain::config.replace("imu1/calibration/accel_bias", bias_1.to_array());
+    arwain::config.replace("imu1/calibration/accel_scale", scale_1.to_array());
 
-    arwain::config.replace("accel2_bias_x", bias_2.x);
-    arwain::config.replace("accel2_bias_y", bias_2.y);
-    arwain::config.replace("accel2_bias_z", bias_2.z);
-    arwain::config.replace("accel2_scale_x", scale_2.x);
-    arwain::config.replace("accel2_scale_y", scale_2.y);
-    arwain::config.replace("accel2_scale_z", scale_2.z);
+    arwain::config.replace("imu2/calibration/accel_bias", bias_2.to_array());
+    arwain::config.replace("imu2/calibration/accel_scale", scale_2.to_array());
 
-    arwain::config.replace("accel3_bias_x", bias_3.x);
-    arwain::config.replace("accel3_bias_y", bias_3.y);
-    arwain::config.replace("accel3_bias_z", bias_3.z);
-    arwain::config.replace("accel3_scale_x", scale_3.x);
-    arwain::config.replace("accel3_scale_y", scale_3.y);
-    arwain::config.replace("accel3_scale_z", scale_3.z);
+    arwain::config.replace("imu3/calibration/accel_bias", bias_3.to_array());
+    arwain::config.replace("imu3/calibration/accel_scale", scale_3.to_array());
 
     std::cout << "Calibration complete and logged to config file\n";
 

@@ -39,3 +39,4 @@ libeigen3
 libeigen3
 NumCpp
 yaml-cpp
+Boost

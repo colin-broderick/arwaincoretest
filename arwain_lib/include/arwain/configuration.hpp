@@ -106,7 +106,8 @@ namespace arwain
         void replace(const std::string &option, const T new_value)
         {
             ConfigParser cfgparser{this->config_file};
-            cfgparser.replace(option, new_value);
+            cfgparser.replace(option,new_value);
+            cfgparser.write_to_file();
         }
     };
 } // end namespace arwain
