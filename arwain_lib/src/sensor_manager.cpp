@@ -33,6 +33,8 @@ Vector3 SensorManager::world_align(const Vector3& vec, const Quaternion& rotatio
     return arwain::apply_quat_rotor_to_vector3(vec, rotation);
 }
 
+std::array<double, 3> vec_to_array3(std::vector<double> in_vector);
+
 /** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does sleep if in non-relevant mode. */
 void SensorManager::run()
 {
@@ -98,9 +100,7 @@ bool calibrate_gyroscope_bias(IIM42652<LinuxSmbusI2CDevice>& imu)
     Vector3 gyroscope_bias = calibrator.get_params();
 
     arwain::config.gyro1_bias = gyroscope_bias;
-    arwain::config.replace("gyro1_bias_x", gyroscope_bias.x);
-    arwain::config.replace("gyro1_bias_y", gyroscope_bias.y);
-    arwain::config.replace("gyro1_bias_z", gyroscope_bias.z);
+    arwain::config.replace("imu1/calibration/gyro_bias", gyroscope_bias.to_array());
     
     imu.set_gyro_bias(
         arwain::config.gyro1_bias.x,
@@ -183,15 +183,12 @@ void SensorManager::run_magn_calibration()
     std::cout << std::endl;
 
     // Write results into config in memory, and to file.
-    arwain::config.replace("mag_bias_x", bias[0]);
-    arwain::config.replace("mag_bias_y", bias[1]);
-    arwain::config.replace("mag_bias_z", bias[2]);
-    arwain::config.replace("mag_scale_x", scale[0][0]);
-    arwain::config.replace("mag_scale_y", scale[1][1]);
-    arwain::config.replace("mag_scale_z", scale[2][2]);
-    arwain::config.replace("mag_scale_xy", scale[0][1]);
-    arwain::config.replace("mag_scale_xz", scale[0][2]);
-    arwain::config.replace("mag_scale_yz", scale[1][2]);
+    arwain::config.replace("magnetometer/calibration/bias", vec_to_array3(bias));
+
+    std::array<double, 3> scale_xyz = {scale[0][0], scale[1][1], scale[2][2]};
+    arwain::config.replace("magnetometer/calibration/scale", scale_xyz);
+    std::array<double, 3> cross_scale = {scale[0][1], scale[0][2], scale[1][2]};
+    arwain::config.replace("magnetometer/calibration/cross_scale", cross_scale);
     arwain::config.mag_bias = {bias[0], bias[1], bias[2]};
     arwain::config.mag_scale = {scale[0][0], scale[1][1], scale[2][2]};
     arwain::config.mag_scale_xy = scale[0][1];
