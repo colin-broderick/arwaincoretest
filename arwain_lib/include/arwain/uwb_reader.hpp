@@ -4,7 +4,7 @@
 #include <uubla/uubla.hpp>
 
 #include "arwain/thread.hpp"
-#include "arwain/job_interface"
+#include "arwain/job_interface.hpp"
 
 class UublaWrapper : public ArwainJob
 {
@@ -24,8 +24,12 @@ class UublaWrapper : public ArwainJob
 
     public:
         UublaWrapper();
-        void join();
+        bool join() override;
         double get_distance(const int position);
+        Vector3 get_own_position() const;
+        Vector3 get_node_position(const int node_id) const;
+        std::thread serial_reader_th; // TODO Need a way to stop thread - maybe std::stop_token
+
 };
 
 #endif
