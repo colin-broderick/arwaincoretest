@@ -48,7 +48,7 @@ else()
     include_directories(./build/flatbuffers/include)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(ALL_ARWAIN_LIBRARIES
     arwain_lib
