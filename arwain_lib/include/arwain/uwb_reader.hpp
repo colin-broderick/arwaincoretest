@@ -26,7 +26,7 @@ class UublaWrapper : public ArwainJob
         bool join() override;
         double get_distance(const int position);
         Vector3 get_own_position() const;
-        Vector3 get_node_position(const int node_id) const;
+        Vector3 get_node_position(const std::string& node_name) const;
         std::jthread serial_reader_th;
 };
 

@@ -117,8 +117,7 @@ Vector3 UublaWrapper::get_own_position() const
     return {0, 0, 0};
 }
 
-Vector3 UublaWrapper::get_node_position(const int node_id) const
+Vector3 UublaWrapper::get_node_position(const std::string& node_name) const
 {
-    // TODO
-    return {0, 0, 0};
+    return uubla->get_node_position(node_name);
 }
