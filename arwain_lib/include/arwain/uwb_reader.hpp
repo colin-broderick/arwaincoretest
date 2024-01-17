@@ -28,8 +28,7 @@ class UublaWrapper : public ArwainJob
         double get_distance(const int position);
         Vector3 get_own_position() const;
         Vector3 get_node_position(const int node_id) const;
-        std::thread serial_reader_th; // TODO Need a way to stop thread - maybe std::stop_token
-
+        std::jthread serial_reader_th;
 };
 
 #endif

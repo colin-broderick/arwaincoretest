@@ -56,12 +56,12 @@ void UublaWrapper::setup_inference()
     uubla->set_ewma_gain(0.1);
     // uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
     // uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
-    serial_reader_th = std::thread{serial_reader_fn, uubla, "port", 115200};
+    serial_reader_th = std::jthread{serial_reader_fn, uubla, "port", 115200};
 }
 
 void UublaWrapper::cleanup_inference()
 {
-    // serial_reader_th.join(); // TODO Make this work; need a way to stop thread
+    serial_reader_th.request_stop();
 }
 
 void UublaWrapper::run_inference()
