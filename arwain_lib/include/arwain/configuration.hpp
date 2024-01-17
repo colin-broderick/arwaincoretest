@@ -48,9 +48,9 @@ namespace arwain
         double mag_scale_xy;
         double mag_scale_xz;
         double mag_scale_yz;
-        int use_magnetometer;                         // Whether to use the magnetometer for orientation filtering.
-        int log_magnetometer;                         // Whether to take and log magnetometer readings.
-        int use_ips;                                  // Whether to use the indoor positioning system (floor levelling, corner detection, etc).
+        bool use_magnetometer;                         // Whether to use the magnetometer for orientation filtering.
+        bool log_magnetometer;                         // Whether to take and log magnetometer readings.
+        bool use_ips;                                  // Whether to use the indoor positioning system (floor levelling, corner detection, etc).
         double nn_vel_weight_confidence;             // Relative confidence in NPU vs. IMU integration for velocity predictions, 1 being 100% NPU, 0 being 100% integration.
         double madgwick_beta;                         // Madgwick filter gain parameter.
         double madgwick_beta_conv;                    // Madgwick gain while magnetmometer converges.
@@ -90,11 +90,11 @@ namespace arwain
         int node_id;                                  // A unique ID number for the node.
         double altitude_filter_weight;
         double pressure_offset;
-        int correct_with_yaw_diff = 0;
-        int use_uwb_positioning = 0;
+        bool correct_with_yaw_diff = 0;
+        bool use_uwb_positioning = 0;
         double altimeter_z_accel_stdev;
         double pressure_altitude_stdev;
-        int use_rs2 = 0;
+        bool use_rs2 = 0;
         int uubla_baud_rate;
         std::string uubla_serial_port;
 
