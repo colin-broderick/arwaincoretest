@@ -19,7 +19,7 @@ class UublaWrapper : public ArwainJob
 
     private:
         ArwainThread job_thread;
-        UUBLA::Network* uubla;
+        std::unique_ptr<UUBLA::Network> uubla;
 
     public:
         UublaWrapper();

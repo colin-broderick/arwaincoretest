@@ -20,7 +20,7 @@ UublaWrapper::UublaWrapper()
 
 void UublaWrapper::core_setup()
 {
-    uubla = new UUBLA::Network;
+    uubla = std::make_unique<UUBLA::Network>();
 }
 
 void UublaWrapper::run_idle()
@@ -56,7 +56,7 @@ void UublaWrapper::setup_inference()
     uubla->set_ewma_gain(0.1);
     // uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
     // uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
-    serial_reader_th = std::jthread{serial_reader_fn, uubla, "port", 115200};
+    serial_reader_th = std::jthread{serial_reader_fn, uubla.get(), "port", 115200};
 }
 
 void UublaWrapper::cleanup_inference()
@@ -91,7 +91,6 @@ bool UublaWrapper::init()
 
 bool UublaWrapper::join()
 {
-    delete uubla;
     while (!job_thread.joinable())
     {
         sleep_ms(1);
