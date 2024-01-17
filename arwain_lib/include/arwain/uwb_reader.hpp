@@ -19,7 +19,6 @@ class UublaWrapper : public ArwainJob
 
     private:
         ArwainThread job_thread;
-        ArwainThread solver_th;
         UUBLA::Network* uubla;
 
     public:
