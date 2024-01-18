@@ -5,7 +5,7 @@
 
 #include "arwain/events.hpp"
 
-class ArwainJobInterface
+class IArwainJob
 {
   public:
         virtual bool init() = 0;
@@ -14,7 +14,8 @@ class ArwainJobInterface
         virtual void run() = 0;
 };
 
-class ArwainJob : protected ArwainJobInterface
+
+class ArwainJob : protected IArwainJob
 {
     public:
         arwain::OperatingMode get_mode() const
