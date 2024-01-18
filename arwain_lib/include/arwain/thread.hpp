@@ -4,8 +4,8 @@
 #include <thread>
 #include <vector>
 
-/** \brief A wrapper around std::thread which provides the ability to set thread name. */
-class ArwainThread : public std::thread
+/** \brief A wrapper around std::jthread which provides the ability to set thread name. */
+class ArwainThread : public std::jthread
 {
     public:
         enum class Cores
@@ -15,12 +15,12 @@ class ArwainThread : public std::thread
 
         ArwainThread() = default;
 
-        /** \brief Does exactly what std::thread does.
+        /** \brief Does exactly what std::jthread does.
          * \param func A callable object (generally a function), which will be run in a new thread.
          */
         template <class Callable>
         ArwainThread(Callable func)
-        : std::thread(func)
+        : std::jthread(func)
         {
 
         };
@@ -31,7 +31,7 @@ class ArwainThread : public std::thread
          */
         template <class Callable>
         ArwainThread(Callable func, const std::string& name_)
-        : std::thread(func)
+        : std::jthread(func)
         {
             this->set_name(name_);
         };
@@ -43,7 +43,7 @@ class ArwainThread : public std::thread
          */
         template <class Callable, class... Args>
         ArwainThread(Callable func, const std::string& name_, Args&&... args)
-        : std::thread(func, args...)
+        : std::jthread(func, args...)
         {
             this->set_name(name_);
         };
