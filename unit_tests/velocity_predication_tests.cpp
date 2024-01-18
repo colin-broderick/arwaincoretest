@@ -134,7 +134,7 @@ TEST(PositionVelocityInference, run)
     // If system mode is anything else, run() should loop inside run_idle()
     // and return after the mode is set to Terminate.
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::SelfTest);
-    std::thread offthread = std::thread{
+    std::jthread offthread = std::jthread{
         [this]()
         {
             std::this_thread::sleep_for(std::chrono::milliseconds{1000});
@@ -143,7 +143,6 @@ TEST(PositionVelocityInference, run)
     };
     EXPECT_NO_THROW(inferrer.run());
     
-    offthread.join();
     inferrer.join();
 }
 

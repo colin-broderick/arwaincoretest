@@ -129,7 +129,7 @@ HARDWARE_TEST(arwain__FreeFuncs, test_imu)
 HARDWARE_TEST(arwain__FreeFuncs, test_lora_rx)
 {
     // Set mode to terminate after a short delay.
-    std::thread th{
+    std::jthread th{
         []{
             std::this_thread::sleep_for(std::chrono::milliseconds{100});
             arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
@@ -137,7 +137,6 @@ HARDWARE_TEST(arwain__FreeFuncs, test_lora_rx)
     };
 
     EXPECT_TRUE(arwain::ReturnCode::Success == arwain::test_lora_rx());
-    th.join();
 }
 
 HARDWARE_TEST(arwain__FreeFuncs, test_inference)
@@ -196,7 +195,7 @@ HARDWARE_TEST(arwain__FreeFuncs, execute_jobs)
     arwain::config.use_ips = false;
 
     // Invoke the terminate event AFTER jobs are started.
-    std::thread th = std::thread{
+    std::jthread th = std::jthread{
         []()
         {
             sleep_ms(15000);
@@ -205,7 +204,6 @@ HARDWARE_TEST(arwain__FreeFuncs, execute_jobs)
     };
 
     EXPECT_EQ(arwain::execute_jobs(), arwain::ReturnCode::Success);
-    th.join();
 }
 
 HARDWARE_TEST(arwain__FreeFuncs, calibrate_accelerometers_simple)
@@ -216,7 +214,7 @@ HARDWARE_TEST(arwain__FreeFuncs, calibrate_accelerometers_simple)
 HARDWARE_TEST(arwain__FreeFuncs, calibrate_magnetometers)
 {
     FAIL();
-    std::thread th = std::thread{
+    std::jthread th = std::jthread{
         []()
         {
             sleep_ms(15000);
@@ -224,7 +222,6 @@ HARDWARE_TEST(arwain__FreeFuncs, calibrate_magnetometers)
         }
     };
     EXPECT_EQ(arwain::calibrate_magnetometers(), arwain::ReturnCode::Success);
-    th.join();
 }
 
 HARDWARE_TEST(arwain__FreeFuncs, test_lora_tx)
@@ -318,7 +315,7 @@ HARDWARE_TEST(FreeFuncs, arwain_main)
         EXPECT_TRUE(std::filesystem::exists("./fusion_file.txt"));
     }
     {
-        std::thread th{
+        std::jthread th{
             []{
                 std::this_thread::sleep_for(std::chrono::milliseconds{100});
                 arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
@@ -329,7 +326,6 @@ HARDWARE_TEST(FreeFuncs, arwain_main)
         std::string command = "--testlorarx";
         char* input_array[j] = {program.data(),command.data()};
         EXPECT_EQ(arwain_main(j, input_array), arwain::ReturnCode::Success);
-        th.join();
     }
     SUCCEED();
     {

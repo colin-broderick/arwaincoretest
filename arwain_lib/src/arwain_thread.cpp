@@ -56,7 +56,7 @@ void ArwainThread::set_processor_affinity(const std::vector<ArwainThread::Cores>
     }
 
     // Work out how many cores there are.
-    int cpu_count = std::thread::hardware_concurrency();
+    int cpu_count = std::jthread::hardware_concurrency();
 
     // Make sure all ints are less than core number
     for (const ArwainThread::Cores& cpu_number : cores)

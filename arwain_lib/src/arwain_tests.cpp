@@ -66,14 +66,13 @@ arwain::ReturnCode arwain::test_uubla_integration()
 
     // Start the solver and run for 20 seconds.
     uubla.start_reading();
-    std::thread solver_th{solver_fn, &uubla};
+    std::jthread solver_th{solver_fn, &uubla};
     
     sleep_ms(10000);
 
     // Cleanup and exit.
     std::cout << "Stopping UUBLA network" << "\n";
     uubla.stop();
-    solver_th.join();
 
     return arwain::ReturnCode::Success;
 }
