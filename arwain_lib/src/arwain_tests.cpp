@@ -39,6 +39,14 @@ static EulerOrientation computer_euler_degrees(Quaternion& q)
 #if USE_UUBLA
 arwain::ReturnCode arwain::test_uubla_integration()
 {
+    return arwain::ReturnCode::FailedConfiguration;
+
+    // TODO This test needs an update to work wiht latest version of uublacpp
+    //
+    //
+    //
+    //
+    
     std::cout << "Creating UUBLA network and running for 10 seconds\n";
     std::cout << "Connect an UUBLA node and observe output\n";
 

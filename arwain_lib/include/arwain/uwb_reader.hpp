@@ -4,7 +4,7 @@
 #include <uubla/uubla.hpp>
 
 #include "arwain/thread.hpp"
-#include "arwain/job_interface"
+#include "arwain/job_interface.hpp"
 
 class UublaWrapper : public ArwainJob
 {
@@ -19,13 +19,15 @@ class UublaWrapper : public ArwainJob
 
     private:
         ArwainThread job_thread;
-        ArwainThread solver_th;
-        UUBLA::Network* uubla;
+        std::unique_ptr<UUBLA::Network> uubla;
 
     public:
         UublaWrapper();
-        void join();
+        bool join() override;
         double get_distance(const int position);
+        Vector3 get_own_position() const;
+        Vector3 get_node_position(const std::string& node_name) const;
+        std::jthread serial_reader_th;
 };
 
 #endif

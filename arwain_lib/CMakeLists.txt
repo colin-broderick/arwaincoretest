@@ -3,18 +3,13 @@ project(arwain_lib)
 
 set(CMAKE_BUILD_TYPE Debug)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 include_directories(include)
 
 file(GLOB SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
 list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/arwain_lib/src/realsense.cpp)
 
-if(USE_UUBLA)
-set(SRC_FILES ${SRC_FILES} src/uwb_reader.cpp)
-else()
-list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/arwain_lib/src/uwb_reader.cpp)
-endif()
 if(USE_REALSENSE)
 set(SRC_FILES ${SRC_FILES} src/realsense.cpp)
 endif()

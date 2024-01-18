@@ -6,7 +6,6 @@ find_package(GTest CONFIG REQUIRED)
 
 option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"                     ON)
 option(USE_ROS              "Use ROS topics to publish diagnostic data"                      OFF)
-option(USE_UUBLA            "Include the UUBLA ultra-wideband library"                       OFF)
 option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"                  OFF)
 option(UNIT_TESTS           "Make private class methods public to enable testing"            OFF)
 option(THREAD_NAMES         "Enable thread naming code - debug only, not stable"             OFF)
@@ -49,7 +48,7 @@ else()
     include_directories(./build/flatbuffers/include)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(ALL_ARWAIN_LIBRARIES
     arwain_lib
@@ -60,6 +59,7 @@ set(ALL_ARWAIN_LIBRARIES
     arwain_math
     arwain_orientation
     arwain_config
+    uubla
 )
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")
 
@@ -67,12 +67,6 @@ include_directories(
     arwain_lib/include
     realsense_t265/include
 )
-
-if(USE_UUBLA)
-    message("Compiling with UUBLA support")
-    set(ALL_ARWAIN_LIBRARIES ${ALL_ARWAIN_LIBRARIES} uubla)
-    add_definitions(-DUSE_UUBLA)
-endif()
 
 add_subdirectory(arwain_lib)
 if(USE_REALSENSE)

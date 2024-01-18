@@ -11,6 +11,8 @@
 #include "arwain/transmit_lora.hpp"
 #include "arwain/uwb_reader.hpp"
 
+#include "uubla/utils.hpp"
+
 UublaWrapper::UublaWrapper()
 {
     init();
@@ -18,10 +20,7 @@ UublaWrapper::UublaWrapper()
 
 void UublaWrapper::core_setup()
 {
-    uubla = new UUBLA::Network{
-        arwain::config.uubla_serial_port,
-        arwain::config.uubla_baud_rate
-    };
+    uubla = std::make_unique<UUBLA::Network>();
 }
 
 void UublaWrapper::run_idle()
@@ -53,27 +52,31 @@ void UublaWrapper::run()
 
 void UublaWrapper::setup_inference()
 {
-    uubla->configure("force_z_zero", true);
-    uubla->configure("ewma_gain", 0.1);
-    uubla->add_node_callback = inform_new_uubla_node;
-    uubla->remove_node_callback = inform_remove_uubla_node;
-    uubla->start_reading(); // Start as in start reading the serial port. TODO investigate this function for possible leaks.
-    solver_th = ArwainThread{solver_fn, "arwain_uub2_th", uubla};
+    uubla->force_plane(true);
+    uubla->set_ewma_gain(0.1);
+    // uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
+    // uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
+    serial_reader_th = std::jthread{serial_reader_fn, uubla.get(), "port", 115200};
 }
 
 void UublaWrapper::cleanup_inference()
 {
-    uubla->join();
-    solver_th.join();
+    serial_reader_th.request_stop();
 }
 
 void UublaWrapper::run_inference()
 {
     setup_inference();
     
+    // TODO: Get the framerate (30) from somewhere sensible, or hard code?
+    IntervalTimer<std::chrono::milliseconds> timer{1000/30};
+
     while (mode != arwain::OperatingMode::Terminate)
     {
-        sleep_ms(10);
+        uubla->process_queue();
+        uubla->solve_map();
+        uubla->process_callbacks();
+        timer.await();
     }
 
     cleanup_inference();
@@ -86,9 +89,8 @@ bool UublaWrapper::init()
     return true;
 }
 
-void UublaWrapper::join()
+bool UublaWrapper::join()
 {
-    delete uubla;
     while (!job_thread.joinable())
     {
         sleep_ms(1);
@@ -96,10 +98,25 @@ void UublaWrapper::join()
     if (job_thread.joinable())
     {
         job_thread.join();
+        return true;
     }
+    return false;
 }
 
 double UublaWrapper::get_distance(const int position)
 {
-    return uubla->get_distance(position);
+    // TODO Do we still need this function?  Library doesn't support it.
+    // return uubla->get_distance(position);
+    return 0;
+}
+
+Vector3 UublaWrapper::get_own_position() const
+{
+    // return get_node_position(own_id); // TODO
+    return {0, 0, 0};
+}
+
+Vector3 UublaWrapper::get_node_position(const std::string& node_name) const
+{
+    return uubla->get_node_position(node_name);
 }

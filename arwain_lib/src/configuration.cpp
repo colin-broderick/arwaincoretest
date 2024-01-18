@@ -1,5 +1,7 @@
 #include <arwain/config_parser.hpp>
 
+#include <arwain/vector3.hpp>
+
 #include "arwain/configuration.hpp"
 #include "arwain/arwain.hpp"
 
@@ -12,7 +14,7 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     ConfigParser cfgparser{this->config_file};
 
     // Read all options into the configuration object.
-    this->active_threshold = cfgparser.read_option<int>("stance/active_threshold");
+    this->active_threshold = cfgparser.read_option<double>("stance/active_threshold");
     this->walking_threshold = cfgparser.read_option<double>("stance/walking_threshold");
     this->running_threshold = cfgparser.read_option<double>("stance/running_threshold");
     this->crawling_threshold = cfgparser.read_option<double>("stance/crawling_threshold");
@@ -36,29 +38,25 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     this->mag_bias = Vector3::from_array(cfgparser.read_option<std::array<double, 3>>("magnetometer/calibration/bias"));
     this->mag_scale = Vector3::from_array(cfgparser.read_option<std::array<double, 3>>("magnetometer/calibration/scale"));
 
-    //TODO: query
-    this->mag_scale_xy = cfgparser.read_option<double>("magnetometer/calibration/cross_scale");
-    this->mag_scale_xz = cfgparser.read_option<double>("magnetometer/calibration/cross_scale");
-    this->mag_scale_yz = cfgparser.read_option<double>("magnetometer/calibration/cross_scale");
+    //TODO: Convert mag_scale_xy (global) to a Vector or matrix or something suitable
+    auto mag_scale_xy_local = cfgparser.read_option<std::array<double, 3>>("magnetometer/calibration/cross_scale");
+    this->mag_scale_xy = mag_scale_xy_local[0];
+    this->mag_scale_xz = mag_scale_xy_local[1];
+    this->mag_scale_yz = mag_scale_xy_local[2];
 
-    this->use_magnetometer = cfgparser.read_option<int>("orientation/use_magnetometer");
-    this->log_magnetometer = cfgparser.read_option<int>("magnetometer/log_magnetometer");
-    this->use_ips = cfgparser.read_option<int>("indoor_positioning_system/use_ips");
-    this->nn_vel_weight_confidence = cfgparser.read_option<double>("inference/nn_vel_weight_confidence");
+    this->use_magnetometer = cfgparser.read_option<bool>("orientation/use_magnetometer");
+    this->log_magnetometer = cfgparser.read_option<bool>("magnetometer/log_magnetometer");
+    this->use_ips = cfgparser.read_option<bool>("indoor_positioning_system/use_ips");
+    this->nn_vel_weight_confidence = cfgparser.read_option<double>("inference/npu_vel_weight_confidence");
     this->madgwick_beta = cfgparser.read_option<double>("orientation/madgwick/beta");
     this->madgwick_beta_conv = cfgparser.read_option<double>("orientation/madgwick/beta_conv");
     this->orientation_filter = cfgparser.read_option<std::string>("orientation/filter");
     this->altimeter_z_accel_stdev = cfgparser.read_option<double>("altimeter/calibration/altimeter_z_accel_stdev");
     this->pressure_altitude_stdev = cfgparser.read_option<double>("altimeter/calibration/pressure_altitude_stdev");
-    this->use_rs2 = cfgparser.read_option<int>("intel_rs2/use_rs2");
-
-    // //cfgparser.read_option("uubla_baud_rate", this->uubla_baud_rate); TODO: query - is this going to the right place?
-    // cfgparser.read_option({"uwb","serial_port","baud_rate"}, this->uubla_baud_rate);
-    // //cfgparser.read_option("uubla_serial_port", this->uubla_serial_port); TODO: query - is this going to the right place?
-    // cfgparser.read_option({"uwb","serial_port","address"},this->uubla_serial_port);
+    this->use_rs2 = cfgparser.read_option<bool>("intel_rs2/use_rs2");
 
     this->uubla_baud_rate = cfgparser.read_option<int>("uwb/serial_port/baud_rate");
-    this->uubla_serial_port = cfgparser.read_option<int>("uwb/serial_port/address");
+    this->uubla_serial_port = cfgparser.read_option<std::string>("uwb/serial_port/address");
 
     // We want to fail out if the model file cannot be found.
     this->inference_model_path = cfgparser.read_option<std::string>("inference/inference_model_path");
@@ -84,10 +82,10 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     this->pressure_offset = cfgparser.read_option<double>("pressure_sensor/calibration/bias");
 
     this->pressure_offset = cfgparser.read_option<double>("altimeter/calibration/pressure_altitude_stdev");
-    this->correct_with_yaw_diff = cfgparser.read_option<int>("orientation/correct_with_yaw_diff");
+    this->correct_with_yaw_diff = cfgparser.read_option<bool>("orientation/correct_with_yaw_diff");
 
     // UWB options.
-    this->use_uwb_positioning = cfgparser.read_option<int>("uwb/use_uwb_positioning");
+    this->use_uwb_positioning = cfgparser.read_option<bool>("uwb/use_uwb_positioning");
 
     // Apply LoRa settings
     this->lora_tx_power = cfgparser.read_option<int>("lora/radio/tx_power");

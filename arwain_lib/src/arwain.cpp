@@ -18,10 +18,7 @@
 #include "arwain/realsense.hpp"
 #endif
 
-#if USE_UUBLA
 #include "arwain/uwb_reader.hpp"
-#endif
-
 #include "arwain/tests.hpp"
 #include "arwain/utils.hpp"
 #include "arwain/thread.hpp"
@@ -50,6 +47,7 @@
 #include <arwain/orientation/new_madgwick_FusionBias.h>
 
 #include "arwain/i2c_interface.hpp"
+#include "arwain/hybrid_positioner.hpp"
 
 // General configuration data.
 namespace arwain
@@ -297,9 +295,8 @@ arwain::ReturnCode arwain::execute_jobs()
     DebugPrints debug_prints;
     Altimeter altimeter;                                    // Uses the BMP384 sensor to determine altitude.
     IndoorPositioningSystem indoor_positioning_system;      // Floor, stair, corner snapping.
-    #if USE_UUBLA
-    UublaWrapper uubla_wrapper;                                   // Enable this node to operate as an UUBLA master node.
-    #endif
+    UublaWrapper uubla_wrapper;                             // Enable this node to operate as an UUBLA master node.
+    HybridPositioner hybrid_positioner;
     #if USE_REALSENSE
     CameraController camera_controller;
     #endif
