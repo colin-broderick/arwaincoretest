@@ -1,6 +1,8 @@
 #ifndef _ARWAIN_COMMAND_LINE_HPP
 #define _ARWAIN_COMMAND_LINE_HPP
 
+#include <thread>
+
 #include "arwain/job_interface.hpp"
 
 class PositionVelocityInference;
@@ -28,7 +30,7 @@ class ArwainCLI : public ArwainJob, protected IArwainJobSpec
         void run_idle() override;
         void setup_inference() override;
         bool cleanup_inference() override;
-        
+
     private:
         std::jthread job_thread;
 

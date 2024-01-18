@@ -2,6 +2,7 @@
 #define _ARWAIN_STD_OUTPUT_HPP
 
 #include <tuple>
+#include <thread>
 
 #include "arwain/job_interface.hpp"
 

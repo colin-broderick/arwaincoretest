@@ -1,6 +1,8 @@
 #ifndef INDOOR_POSITIONING_WRAPPER_H
 #define INDOOR_POSITIONING_WRAPPER_H
 
+#include <thread>
+
 #include <arwain/vector3.hpp>
 #include <arwain/logger.hpp>
 
