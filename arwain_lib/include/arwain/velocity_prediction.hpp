@@ -8,7 +8,7 @@
 
 #include "arwain/arwain.hpp"
 
-class PositionVelocityInference : public ArwainJob
+class PositionVelocityInference : public ArwainJob, protected IArwainJobSpec
 {
     private:
         void run_inference();

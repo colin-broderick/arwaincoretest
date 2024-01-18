@@ -47,6 +47,7 @@
 #include <arwain/orientation/new_madgwick_FusionBias.h>
 
 #include "arwain/i2c_interface.hpp"
+#include "arwain/hybrid_positioner.hpp"
 
 // General configuration data.
 namespace arwain
@@ -295,6 +296,7 @@ arwain::ReturnCode arwain::execute_jobs()
     Altimeter altimeter;                                    // Uses the BMP384 sensor to determine altitude.
     IndoorPositioningSystem indoor_positioning_system;      // Floor, stair, corner snapping.
     UublaWrapper uubla_wrapper;                             // Enable this node to operate as an UUBLA master node.
+    HybridPositioner hybrid_positioner;
     #if USE_REALSENSE
     CameraController camera_controller;
     #endif
