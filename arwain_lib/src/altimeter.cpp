@@ -7,7 +7,6 @@
 
 #include "arwain/i2c_interface.hpp"
 #include "arwain/arwain.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/sabatini_altimeter.hpp"
 #include "arwain/altimeter.hpp"
@@ -25,9 +24,9 @@ void Altimeter::setup_inference()
     pressure_log << "time pressure temperature altitude\n";
 }
 
-void Altimeter::cleanup_inference()
+bool Altimeter::cleanup_inference()
 {
-    pressure_log.close();
+    return pressure_log.close();
 }
 
 void Altimeter::run_inference()
@@ -126,7 +125,7 @@ bool Altimeter::init()
     {
         job_thread.join();
     }
-    job_thread = ArwainThread{&Altimeter::run, "arwain_altr_th", this};
+    job_thread = std::jthread{std::bind_front(&Altimeter::run, this)};
     return true;
 }
 

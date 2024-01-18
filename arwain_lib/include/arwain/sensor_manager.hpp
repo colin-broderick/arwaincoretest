@@ -9,23 +9,22 @@
 #include <arwain/logger.hpp>
 
 #include "arwain/i2c_interface.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/utils.hpp"
 #include "arwain/job_interface.hpp"
 
 
-class SensorManager : public ArwainJob
+class SensorManager : public ArwainJob, protected IArwainJobSpec
 {
     private:
-        void run();
-        void run_inference();
-        void setup_inference();
-        arwain::ReturnCode cleanup_inference();
+        void run() override;
+        void run_inference() override;
+        void setup_inference() override;
+        bool cleanup_inference() override;
+        void core_setup() override;
+        void run_idle() override;
         void run_gyro_calibration();
         void run_magn_calibration();
-        void core_setup();
         void run_accel_calibration();
-        void run_idle();
         void run_test_stance_detector();
         void run_self_test();
         Vector3 world_align(const Vector3& vec, const Quaternion& rotation);
@@ -34,8 +33,8 @@ class SensorManager : public ArwainJob
         // Callback to be executed when active gyroscope calibration is complete.
         std::function<void()> post_gyro_calib_callback;
 
-        ArwainThread job_thread;
-        ArwainThread quick_madgwick_convergence_thread;
+        std::jthread job_thread;
+        std::jthread quick_madgwick_convergence_thread;
         IIM42652<LinuxSmbusI2CDevice> imu1;
         IIM42652<LinuxSmbusI2CDevice> imu2;
         IIM42652<LinuxSmbusI2CDevice> imu3;

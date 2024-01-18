@@ -7,7 +7,6 @@
 #include <arwain/timers.hpp>
 #include <arwain/devices/rfm95w.hpp>
 
-#include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/transmit_lora.hpp"
 #include "arwain/arwain.hpp"
@@ -75,9 +74,9 @@ void StatusReporting::setup_inference()
     lora_file << "time x y z alerts" << "\n";
 }
 
-void StatusReporting::cleanup_inference()
+bool StatusReporting::cleanup_inference()
 {
-    lora_file.close();
+    return lora_file.close();
 }
 
 void StatusReporting::run_idle()
@@ -196,7 +195,7 @@ bool StatusReporting::init()
     {
         job_thread.join();
     }
-    job_thread = ArwainThread{&StatusReporting::run, "arwain_stat_th", this};
+    job_thread = std::jthread{std::bind_front(&StatusReporting::run, this)};
     return true;
 }
 

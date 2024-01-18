@@ -283,7 +283,7 @@ void ArwainCLI::core_setup()
 bool ArwainCLI::init()
 {
     core_setup();
-    job_thread = ArwainThread{&ArwainCLI::run, "arwain_cmdl_th", this};
+    job_thread = std::jthread{std::bind_front(&ArwainCLI::run, this)};
     return true;
 }
 
@@ -295,4 +295,25 @@ bool ArwainCLI::join()
         return true;
     }
     return false;
+}
+
+void ArwainCLI::run_inference()
+{
+    // To satisfy interface
+}
+
+void ArwainCLI::run_idle()
+{
+    // To satisfy interface
+}
+
+void ArwainCLI::setup_inference()
+{
+    // To satisfy interface
+}
+
+bool ArwainCLI::cleanup_inference()
+{
+    // To satisfy interface
+    return true;
 }

@@ -27,7 +27,6 @@ target_link_libraries(${PROJECT_NAME} stdc++fs)
 include_directories(
     ../vector3
     ../lora
-    ../arwain_thread
     ../orientation
     ../ips
     ../realsense_t265

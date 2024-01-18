@@ -21,7 +21,6 @@
 #include "arwain/uwb_reader.hpp"
 #include "arwain/tests.hpp"
 #include "arwain/utils.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/arwain.hpp"
 #include "arwain/sensor_manager.hpp"
 #include "arwain/velocity_prediction.hpp"

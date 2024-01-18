@@ -21,7 +21,7 @@ class IArwainJobSpec
         virtual void run_inference() = 0;
         virtual void run_idle() = 0;
         virtual void setup_inference() = 0;
-        virtual void cleanup_inference() = 0;
+        virtual bool cleanup_inference() = 0;
 };
 
 class ArwainJob : protected IArwainJob

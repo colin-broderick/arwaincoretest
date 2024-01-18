@@ -8,23 +8,22 @@
 
 class StanceDetection;
 class UublaWrapper;
-class ArwainThread;
 
-class StatusReporting : public ArwainJob
+class StatusReporting : public ArwainJob, protected IArwainJobSpec
 {
 	private:
-        void core_setup();
-        void run();
-        void run_inference();
-        void run_idle();
-        void setup_inference();
-        void cleanup_inference();
+        void core_setup() override;
+        void run() override;
+        void run_inference() override;
+        void run_idle() override;
+        void setup_inference() override;
+        bool cleanup_inference() override;
         std::chrono::time_point<std::chrono::high_resolution_clock> get_next_time_slot(int node_id);
 
 	private:
 	    StanceDetection* stance_detection_handle = nullptr;
 		UublaWrapper* uubla_wrapper_handle = nullptr;
-        ArwainThread job_thread;
+        std::jthread job_thread;
         RFM95W<LinuxSpiDevice> lora;
         arwain::Logger lora_file;
 
