@@ -15,7 +15,6 @@
 #include "arwain/stance.hpp"
 #include "arwain/logger.hpp"
 #include "arwain/arwain.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 
 StanceDetection::StanceDetection()
@@ -29,9 +28,9 @@ void StanceDetection::setup_inference()
     stance_file << "time freefall entangled attitude stance\n";
 }
 
-void StanceDetection::cleanup_inference()
+bool StanceDetection::cleanup_inference()
 {
-    stance_file.close();
+    return stance_file.close();
 }
 
 void StanceDetection::run_inference()
@@ -161,7 +160,7 @@ void StanceDetection::core_setup()
 bool StanceDetection::init()
 {
     core_setup();
-    job_thread = ArwainThread{&StanceDetection::run, "arwain_stnc_th", this};
+    job_thread = std::jthread{std::bind_front(&StanceDetection::run, this)};
     return true;
 }
 

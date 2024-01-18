@@ -1,25 +1,26 @@
 #ifndef INDOOR_POSITIONING_WRAPPER_H
 #define INDOOR_POSITIONING_WRAPPER_H
 
+#include <thread>
+
 #include <arwain/vector3.hpp>
 #include <arwain/logger.hpp>
 
 #include "arwain/corner_detector.hpp"
 #include "arwain/floor_tracker.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/job_interface.hpp"
 
-class IndoorPositioningSystem : public ArwainJob
+class IndoorPositioningSystem : public ArwainJob, protected IArwainJobSpec
 {
     private:
-        void core_setup();
-        void setup_inference();
-        void cleanup_inference();
-        void run_idle();
-        void run_inference();
-        void run();
+        void core_setup() override;
+        void setup_inference() override;
+        bool cleanup_inference() override;
+        void run_idle() override;
+        void run_inference() override;
+        void run() override;
 
-        ArwainThread job_thread;
+        std::jthread job_thread;
         arwain::Logger corner_log;
         arwain::Logger tracked_floor_log;
         arwain::CornerDetector corner_detector{11, 115.0, 0.20}; // 11 * 0.2 means a window of 11 points separated by at least 20 cm each, so about 2 m total.

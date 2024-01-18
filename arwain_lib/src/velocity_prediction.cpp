@@ -9,7 +9,6 @@
 #include "arwain/logger.hpp"
 #include "arwain/arwain.hpp"
 #include "arwain/exceptions.hpp"
-#include "arwain/thread.hpp"
 
 PositionVelocityInference::PositionVelocityInference()
 {
@@ -151,12 +150,11 @@ void PositionVelocityInference::run_inference()
     cleanup_inference();
 }
 
-void PositionVelocityInference::cleanup_inference()
+bool PositionVelocityInference::cleanup_inference()
 {
     position = {0, 0, 0};
     velocity = {0, 0, 0};
-    position_file.close();
-    velocity_file.close();
+    return position_file.close() && velocity_file.close();
 }
 
 bool PositionVelocityInference::init()
@@ -166,7 +164,7 @@ bool PositionVelocityInference::init()
     {
         job_thread.join();
     }
-    job_thread = ArwainThread{&PositionVelocityInference::run, "arwain_infr_th", this};
+    job_thread = std::jthread{std::bind_front(&PositionVelocityInference::run, this)};
     return true;
 }
 

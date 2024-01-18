@@ -117,7 +117,7 @@ HARDWARE_TEST(Altimeter, run_idle)
 
     // Start a thread that will change the system mode to terminate after specified time,
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
-    std::thread mode_thread = std::thread{
+    std::jthread mode_thread = std::jthread{
         []()
         {
             std::this_thread::sleep_for(std::chrono::milliseconds{1000});
@@ -127,7 +127,6 @@ HARDWARE_TEST(Altimeter, run_idle)
 
     // And run the idle loop until it quits.
     EXPECT_NO_THROW(altimeter.run_idle());
-    mode_thread.join();
 }
 
 /** \brief Opens a log file and puts a header into it. */

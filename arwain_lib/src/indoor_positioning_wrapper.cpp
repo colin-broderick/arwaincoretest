@@ -11,7 +11,6 @@
 #include "arwain/floor_tracker.hpp"
 #include "arwain/corner_detector.hpp"
 #include "arwain/exceptions.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/arwain.hpp"
 
 IndoorPositioningSystem::IndoorPositioningSystem()
@@ -31,10 +30,9 @@ void IndoorPositioningSystem::setup_inference()
     tracked_floor_log << "time x, y, z\n" ;
 }
 
-void IndoorPositioningSystem::cleanup_inference()
+bool IndoorPositioningSystem::cleanup_inference()
 {
-    corner_log.close();
-    tracked_floor_log.close();
+    return corner_log.close() && tracked_floor_log.close();
 }
 
 void IndoorPositioningSystem::run_inference()
@@ -99,7 +97,7 @@ bool IndoorPositioningSystem::init()
     {
         job_thread.join();
     }
-    job_thread = ArwainThread{&IndoorPositioningSystem::run, "arwain_ips_th", this};
+    job_thread = std::jthread{std::bind_front(&IndoorPositioningSystem::run, this)};
     return true;
 }
 

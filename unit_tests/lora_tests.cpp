@@ -52,12 +52,11 @@ HARDWARE_TEST(StatusReporting, run_inference)
     StanceDetection stance;
     StatusReporting status;
     status.set_stance_detection_pointer(stance);
-    std::thread th = std::thread{[](){
+    std::jthread th = std::jthread{[](){
         sleep_ms(3000);
         arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     }};
     status.join();
     stance.join();
-    th.join();
     std::filesystem::remove("./lora_log.txt");
 }

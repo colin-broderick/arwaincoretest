@@ -35,7 +35,7 @@ TEST(StanceDetection, run_inference)
     arwain::Buffers::QUAT_ORIENTATION_BUFFER.push_back({1, 0, 0, 0});
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
     stance.core_setup(); // Makes sure the internal stance detector is created.
-    std::thread th = std::thread{
+    std::jthread th = std::jthread{
         []()
         {
             sleep_ms(500);
@@ -43,7 +43,6 @@ TEST(StanceDetection, run_inference)
         }
     };
     EXPECT_NO_THROW(stance.run_inference());
-    th.join();
     stance.join();
 }
 

@@ -11,12 +11,12 @@
 class PositionVelocityInference : public ArwainJob, protected IArwainJobSpec
 {
     private:
-        void run_inference();
-        void run_idle();
-        void core_setup();
-        void setup_inference();
-        void run();
-        void cleanup_inference();
+        void run_inference() override;
+        void run_idle() override;
+        void core_setup() override;
+        void setup_inference() override;
+        void run() override;
+        bool cleanup_inference() override;
 
         std::unique_ptr<tflite::FlatBufferModel> model;
         tflite::ops::builtin::BuiltinOpResolver resolver;
@@ -32,14 +32,14 @@ class PositionVelocityInference : public ArwainJob, protected IArwainJobSpec
         arwain::Logger velocity_file;
         arwain::Logger position_file;
 
-        ArwainThread job_thread;
+        std::jthread job_thread;
 
         uint64_t last_inference_time = 0;
 
     public:
         PositionVelocityInference();
-        bool init();
-        bool join();
+        bool init() override;
+        bool join() override;
 };
 
 #endif

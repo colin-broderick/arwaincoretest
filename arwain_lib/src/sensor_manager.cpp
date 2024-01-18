@@ -19,7 +19,6 @@
 #include "arwain/sensor_manager.hpp"
 #include "arwain/multi_imu.hpp"
 #include "arwain/calibration.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 
 
@@ -364,7 +363,7 @@ void SensorManager::setup_inference()
 }
 
 /** \brief Closes file handles for arwain::Logger objects. */
-arwain::ReturnCode SensorManager::cleanup_inference()
+bool SensorManager::cleanup_inference()
 {
     bool closed_files = true;
 
@@ -380,14 +379,7 @@ arwain::ReturnCode SensorManager::cleanup_inference()
     closed_files |= imu_calib_file_2.close();
     closed_files |= imu_calib_file_3.close();
 
-    if (closed_files)
-    {
-        return arwain::ReturnCode::Success;
-    }
-    else
-    {
-        return arwain::ReturnCode::IOError;
-    }
+    return closed_files;
 }
 
 void SensorManager::core_setup()
@@ -426,7 +418,7 @@ void SensorManager::core_setup()
     // After the specificed period has passed, set the magnetic filter gain to the standard value.
     // This thread is joined when the namespace is joined, to simulate a destructor cleanup.
     // TODO Note that this may not be thread safe; if the program exists before this thread finishes, I'm not sure of destruction order. Investigate.
-    quick_madgwick_convergence_thread = ArwainThread{
+    quick_madgwick_convergence_thread = std::jthread{
         [this]()
         {
             std::this_thread::sleep_for(std::chrono::milliseconds{5000});
@@ -444,7 +436,7 @@ SensorManager::SensorManager()
 bool SensorManager::init()
 {
     core_setup();
-    job_thread = ArwainThread{&SensorManager::run, "arwain_imu_th", this};
+    job_thread = std::jthread{std::bind_front(&SensorManager::run, this)};
     return true;
 }
 

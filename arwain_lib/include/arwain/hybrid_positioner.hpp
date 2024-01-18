@@ -16,7 +16,7 @@ class HybridPositioner : public ArwainJob, protected IArwainJobSpec
         bool init() override
         {
             core_setup();
-            job_thread = ArwainThread{&HybridPositioner::run, "arwain_hybr_th", this};
+            job_thread = std::jthread{std::bind_front(&HybridPositioner::run, this)};
             return true;
         }
 
@@ -32,9 +32,6 @@ class HybridPositioner : public ArwainJob, protected IArwainJobSpec
 
         void run() override
         {
-            // TODO Convert all the run functions to take a stop_token - will require fixing arwainthread.
-            // THis is a stub to satisfy the IArwainJobSpec interface - will be corrected when we
-            // update all inheriting classes to use jthread and std::stop_token
             while (mode != arwain::OperatingMode::Terminate)
             {
                 switch (mode)
@@ -97,13 +94,13 @@ class HybridPositioner : public ArwainJob, protected IArwainJobSpec
             hybrid_pos_log << "time x y z\n"; // TODO Consider exactly what to log.
         }
 
-        void cleanup_inference() override
+        bool cleanup_inference() override
         {
-            hybrid_pos_log.close();
+            return hybrid_pos_log.close();
         }
 
     private:
-        ArwainThread job_thread;
+        std::jthread job_thread;
         arwain::Logger hybrid_pos_log;
 };
 

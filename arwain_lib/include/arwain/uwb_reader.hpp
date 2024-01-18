@@ -3,22 +3,21 @@
 
 #include <uubla/uubla.hpp>
 
-#include "arwain/thread.hpp"
 #include "arwain/job_interface.hpp"
 
-class UublaWrapper : public ArwainJob
+class UublaWrapper : public ArwainJob, protected IArwainJobSpec
 {
     private:
-        void run_inference();
-        void run();
-        void setup_inference();
-        void run_idle();
-        void core_setup();
-        void cleanup_inference();
-        bool init();
+        void run_inference() override;
+        void run() override;
+        void setup_inference() override;
+        void run_idle() override;
+        void core_setup() override;
+        bool cleanup_inference() override;
+        bool init() override;
 
     private:
-        ArwainThread job_thread;
+        std::jthread job_thread;
         std::unique_ptr<UUBLA::Network> uubla;
 
     public:

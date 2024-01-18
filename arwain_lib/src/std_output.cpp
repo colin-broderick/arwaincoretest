@@ -10,7 +10,6 @@
 #include <arwain/orientation/filter.hpp>
 
 #include "arwain/arwain.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/std_output.hpp"
 
@@ -45,9 +44,9 @@ void DebugPrints::setup_inference()
 
 }
 
-void DebugPrints::cleanup_inference()
+bool DebugPrints::cleanup_inference()
 {
-
+    return true;
 }
 
 bool DebugPrints::set_stance_detection_pointer(StanceDetection& stance)
@@ -116,7 +115,7 @@ void DebugPrints::core_setup()
 bool DebugPrints::init()
 {
     core_setup();
-    job_thread = ArwainThread{&DebugPrints::run, "arwain_cout_th", this};
+    job_thread = std::jthread{std::bind_front(&DebugPrints::run, this)};
     return true;
 }
 

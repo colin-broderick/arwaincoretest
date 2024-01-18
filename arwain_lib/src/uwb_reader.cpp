@@ -7,7 +7,6 @@
 #include "arwain/serial.hpp"
 #include "arwain/logger.hpp"
 #include "arwain/exceptions.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/transmit_lora.hpp"
 #include "arwain/uwb_reader.hpp"
 
@@ -59,9 +58,10 @@ void UublaWrapper::setup_inference()
     serial_reader_th = std::jthread{serial_reader_fn, uubla.get(), "port", 115200};
 }
 
-void UublaWrapper::cleanup_inference()
+bool UublaWrapper::cleanup_inference()
 {
     serial_reader_th.request_stop();
+    return true;
 }
 
 void UublaWrapper::run_inference()
@@ -85,7 +85,7 @@ void UublaWrapper::run_inference()
 bool UublaWrapper::init()
 {
     core_setup();
-    job_thread = ArwainThread{&UublaWrapper::run, "arwain_uubla_th", this};
+    job_thread = std::jthread{std::bind_front(&UublaWrapper::run, this)};
     return true;
 }
 

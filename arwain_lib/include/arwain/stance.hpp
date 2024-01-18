@@ -12,7 +12,6 @@
 #include <arwain/devices/iim42652.hpp>
 
 #include "arwain/logger.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/job_interface.hpp"
 
 class StanceDetector
@@ -120,21 +119,21 @@ class StanceDetector
         FallState get_falling_status();
 };
 
-class StanceDetection : public ArwainJob
+class StanceDetection : public ArwainJob, protected IArwainJobSpec
 {
     private:
+        void setup_inference() override;
+        bool cleanup_inference() override;
+        void run_inference() override;
+        void run() override;
+        void run_idle() override;
+        void core_setup() override;
         void run_test_stance_detector();
-        void setup_inference();
-        void cleanup_inference();
-        void run_inference();
-        void run();
         void setup_test_stance_detector();
         void cleanup_stance_detector();
-        void run_idle();
-        void core_setup();
 
     private:
-        ArwainThread job_thread;
+        std::jthread job_thread;
 
         arwain::Logger stance_file;
 

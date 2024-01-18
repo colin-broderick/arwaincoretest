@@ -1,6 +1,5 @@
 #include "arwain/realsense.hpp"
 #include "arwain/exceptions.hpp"
-#include "arwain/thread.hpp"
 #include "arwain/logger.hpp"
 
 CameraController::CameraController()
@@ -68,7 +67,7 @@ void CameraController::run()
 bool CameraController::init()
 {
     core_setup();
-    job_thread = ArwainThread{&CameraController::run, "arwain_cmra_th", this};
+    job_thread = std::jthread{std::bind_front(&CameraController::run, this)};
     return true;
 }
 
