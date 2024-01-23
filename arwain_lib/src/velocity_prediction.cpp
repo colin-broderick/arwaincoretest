@@ -9,10 +9,17 @@
 #include "arwain/logger.hpp"
 #include "arwain/arwain.hpp"
 #include "arwain/exceptions.hpp"
+#include "arwain/service_manager.hpp"
 
 PositionVelocityInference::PositionVelocityInference()
 {
+    ServiceManager::register_service(this, service_name);
     init();
+}
+
+PositionVelocityInference::~PositionVelocityInference()
+{
+    ServiceManager::unregister_service(service_name);
 }
 
 void PositionVelocityInference::core_setup()

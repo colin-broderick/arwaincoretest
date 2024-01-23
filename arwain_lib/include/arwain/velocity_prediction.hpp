@@ -38,8 +38,10 @@ class PositionVelocityInference : public ArwainJob, protected IArwainJobSpec
 
     public:
         PositionVelocityInference();
+        ~PositionVelocityInference();
         bool init() override;
         bool join() override;
+        static inline std::string service_name = "PositionInference";
 };
 
 #endif
