@@ -1,4 +1,7 @@
 #include "arwain/hybrid_positioner.hpp"
+#include "arwain/velocity_prediction.hpp"
+#include "arwain/uwb_reader.hpp"
+#include "arwain/service_manager.hpp"
 
 HybridPositioner::HybridPositioner()
 {
@@ -59,9 +62,20 @@ void HybridPositioner::run_inference()
 
     while (mode == arwain::OperatingMode::Inference)
     {
-        // TODO Probably need to also consider orientation.
-        hyb.update({}, {});
         sleep_ms(10);
+        
+        auto inf = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
+        auto uwb = ServiceManager::get_service<UublaWrapper>(UublaWrapper::service_name);
+
+        if (!inf || !uwb)
+        {
+            continue;
+        }
+
+        hyb.update(
+            inf->get_position(),
+            uwb->get_own_position()
+        );
     }
 
     cleanup_inference();
@@ -96,7 +110,9 @@ Vector3 HybridPositioner::get_position() const
 Vector3 HybridPositioner::PositionHybridizer::update(Vector3 inertial_position, Vector3 uwb_position)
 {
     // TODO
-    return (inertial_position + uwb_position) / 2.0;
+    return (
+        inertial_position + uwb_position
+    ) / 2.0;
 }
 
 Vector3 HybridPositioner::PositionHybridizer::get_position() const

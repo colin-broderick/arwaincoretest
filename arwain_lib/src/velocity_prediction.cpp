@@ -10,6 +10,7 @@
 #include "arwain/arwain.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/service_manager.hpp"
+#include "arwain/velocity_prediction.hpp"
 
 PositionVelocityInference::PositionVelocityInference()
 {
@@ -185,6 +186,11 @@ bool PositionVelocityInference::join()
     return false;
 
     delete input;
+}
+
+Vector3 PositionVelocityInference::get_position() const
+{
+    return position;
 }
 
 /** \brief Estimate the hidden state of a system given a physical model and occasional measurements.

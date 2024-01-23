@@ -8,7 +8,7 @@ TEST(ServiceManager, register_unregister)
     // This is safe as long as 'job' is never dereferenced.
     IArwainJob* job;
     ServiceManager::register_service(job, "A");
-    EXPECT_EQ(job, ServiceManager::get_service("A"));
+    EXPECT_EQ(job, ServiceManager::get_service<IArwainJob>("A"));
     ServiceManager::unregister_service("A");
-    EXPECT_EQ(ServiceManager::get_service("A"), nullptr);
+    EXPECT_EQ(ServiceManager::get_service<IArwainJob>("A"), nullptr);
 }
