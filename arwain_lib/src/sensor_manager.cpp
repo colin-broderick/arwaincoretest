@@ -21,6 +21,7 @@
 #include "arwain/calibration.hpp"
 #include "arwain/exceptions.hpp"
 
+#include "arwain/service_manager.hpp"
 
 /** \brief Rotates a Vector3 according to a quaternion orientation.
  * \param vec The Vector3 to rotate.
@@ -429,7 +430,13 @@ void SensorManager::core_setup()
 
 SensorManager::SensorManager()
 {
+    ServiceManager::register_service(this, service_name);
     init();
+}
+
+SensorManager::~SensorManager()
+{
+    ServiceManager::unregister_service(service_name);
 }
 
 /** \brief Does overall initialization and sets up the job thread. */
