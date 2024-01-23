@@ -9,12 +9,19 @@
 #include "arwain/exceptions.hpp"
 #include "arwain/transmit_lora.hpp"
 #include "arwain/uwb_reader.hpp"
+#include "arwain/service_manager.hpp"
 
 #include "uubla/utils.hpp"
 
 UublaWrapper::UublaWrapper()
 {
+    ServiceManager::register_service(this, service_name);
     init();
+}
+
+UublaWrapper::~UublaWrapper()
+{
+    ServiceManager::unregister_service(service_name);
 }
 
 void UublaWrapper::core_setup()
