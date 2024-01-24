@@ -12,3 +12,9 @@ TEST(ServiceManager, register_unregister)
     ServiceManager::unregister_service("A");
     EXPECT_EQ(ServiceManager::get_service<IArwainJob>("A"), nullptr);
 }
+
+int main(int argc, char** argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}

@@ -16,18 +16,11 @@ endif()
 
 add_library(arwain_lib ${SRC_FILES})
 
-if(UNIT_TESTS)
-    target_link_libraries(${PROJECT_NAME} GTest::gtest)
-    message("Building ${PROJECT_NAME} with test coverage")
-    target_compile_options(${PROJECT_NAME} PRIVATE -ftest-coverage -fprofile-arcs -Wfatal-errors)
-endif()
+include(tests.cmake)
 
 target_link_libraries(${PROJECT_NAME} stdc++fs)
 
 include_directories(
-    ../vector3
-    ../lora
-    ../orientation
     ../ips
     ../realsense_t265
 )
