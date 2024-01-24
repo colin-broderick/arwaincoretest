@@ -3,6 +3,7 @@ find_package(GTest CONFIG REQUIRED)
 
 set(test_list
     service_manager
+    activity_metric
 )
 
 foreach(file IN LISTS test_list)
