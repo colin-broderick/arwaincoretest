@@ -8,17 +8,36 @@
 
 namespace arwain::Events
 {
+    struct Vector3EventWithDt
+    {
+        /** \brief Vector3 data, usually position or velocity depending on
+         * context, but could be anything that may be represented as a Vector3.
+         */
+        union
+        {
+            Vector3 position;
+            Vector3 velocity;
+            Vector3 acceleration;
+            Vector3 data;
+        };
+
+        /** \brief Time in seconds since last data event. Should bypass any
+         * need for event respondents to track time data.
+         */
+        double dt;
+    };
+
     /** \brief Subscribe to this event to trigger a callback when Arwain system mode changes. */
     inline Event<arwain::OperatingMode> switch_mode_event;
 
     /** \brief Subscribe to this event to trigger a callback when new Arwain velocity data is available. */
-    inline Event<Vector3> new_arwain_velocity_event;
+    inline Event<Vector3EventWithDt> new_arwain_velocity_event;
 
     /** \brief Subscribe to this event to trigger a callback when new Arwain position data is available. */
-    inline Event<Vector3> new_arwain_position_event;
+    inline Event<Vector3EventWithDt> new_arwain_position_event;
 
     /** \brief Subscribe to this event to trigger a callback when new UWB position data is available */
-    inline Event<Vector3> new_uwb_position_event;
+    inline Event<Vector3EventWithDt> new_uwb_position_event;
 }
 
 /** \brief This class exists to provide a means to track system mode in the cases where no

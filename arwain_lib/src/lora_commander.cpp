@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[])
 {
-    RFM95W<LinuxSpiDevice> transmitter{"/dev/spidev0.1", false};
+    RFM95W<LinuxSpiDevice> transmitter{"/dev/spidev0.1", AsReceiver::No};
     arwain::InputParser input{argc, argv};
     if (input.contains("--cmd"))
     {

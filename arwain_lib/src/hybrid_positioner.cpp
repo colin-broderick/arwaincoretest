@@ -2,10 +2,35 @@
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/uwb_reader.hpp"
 #include "arwain/service_manager.hpp"
+#include "arwain/events.hpp"
 
 HybridPositioner::HybridPositioner()
+: vel_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+    std::bind(&HybridPositioner::new_inertial_velocity_callback, this, std::placeholders::_1)
+    )},
+  pos_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+    std::bind(&HybridPositioner::new_uwb_position_callback, this, std::placeholders::_1)
+    )}
 {
     init();
+}
+
+HybridPositioner::~HybridPositioner()
+{
+    // TODO Should be easy enough to create an RAII type for registrations that won't need explicit deletion.
+    arwain::Events::new_arwain_velocity_event.remove_callback(vel_event_id);
+    arwain::Events::new_uwb_position_event.remove_callback(pos_event_id);
+}
+
+void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3EventWithDt inertial_velocity)
+{
+    hyb.position = hyb.position + inertial_velocity.velocity * inertial_velocity.dt;
+}
+
+void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWithDt uwb_position)
+{
+    static double gain = 0;
+    hyb.position = hyb.position + gain * (hyb.position - uwb_position.position);
 }
 
 bool HybridPositioner::init()
@@ -17,12 +42,12 @@ bool HybridPositioner::init()
 
 bool HybridPositioner::join()
 {
-    if (job_thread.joinable())
-    {
-        job_thread.join();
-        return true;
-    }
     return false; // This won't need to return a bool if it's based on jthread and autojoins - it either returns or fails, not both.
+}
+
+void HybridPositioner::run_idle()
+{
+    sleep_ms(10);
 }
 
 void HybridPositioner::run()
@@ -31,20 +56,12 @@ void HybridPositioner::run()
     {
         switch (mode)
         {
-        case arwain::OperatingMode::GyroscopeCalibration:
-        case arwain::OperatingMode::MagnetometerCalibration:
-        case arwain::OperatingMode::TestStanceDetector:
-        case arwain::OperatingMode::AccelerometerCalibration:
-        case arwain::OperatingMode::SelfTest:
-        case arwain::OperatingMode::Idle:
-            run_idle();
-            break;
-        case arwain::OperatingMode::Inference:
-            run_inference();
-            break;
-        default:
-            sleep_ms(10);
-            break;
+            case arwain::OperatingMode::Inference:
+                run_inference();
+                break;
+            default:
+                sleep_ms(10);
+                break;
         }
     }
 }
@@ -56,39 +73,20 @@ void HybridPositioner::core_setup()
 
 void HybridPositioner::run_inference()
 {
+    // The things I do here probably seem pointless but matching the pattern
+    // of the other ArwainJobs was the easiest way to get the job done. Changes will
+    // need to consider a refactor of the whole ArwainJob inheritance pattern.
+
     setup_inference();
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{100, "hybrid_position_timer"}; // TODO Consider timing.
+    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{100, "hybrid_position_timer"};
 
     while (mode == arwain::OperatingMode::Inference)
     {
         sleep_ms(10);
-        
-        auto inf = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
-        auto uwb = ServiceManager::get_service<UublaWrapper>(UublaWrapper::service_name);
-
-        if (!inf || !uwb)
-        {
-            continue;
-        }
-
-        hyb.update(
-            inf->get_position(),
-            uwb->get_own_position()
-        );
     }
 
     cleanup_inference();
-}
-
-void HybridPositioner::run_idle()
-{
-    while (mode == arwain::OperatingMode::Idle)
-    // TODO This loop condition is flawed since several modes can bring us here,
-    // and several modes can bring us out.
-    {
-        sleep_ms(10);
-    }
 }
 
 void HybridPositioner::setup_inference()
@@ -109,10 +107,8 @@ Vector3 HybridPositioner::get_position() const
 
 Vector3 HybridPositioner::PositionHybridizer::update(Vector3 inertial_position, Vector3 uwb_position)
 {
-    // TODO
-    return (
-        inertial_position + uwb_position
-    ) / 2.0;
+    // TODO The concept of an update function may be unnecessary.
+    return Vector3::Zero;
 }
 
 Vector3 HybridPositioner::PositionHybridizer::get_position() const

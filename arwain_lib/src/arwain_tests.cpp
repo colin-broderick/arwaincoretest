@@ -159,7 +159,7 @@ arwain::ReturnCode arwain::test_lora_rx()
 {
     StandAloneModeRegistrar mode_registrar;
 
-    RFM95W<LinuxSpiDevice> lora{arwain::config.lora_address, true};
+    RFM95W<LinuxSpiDevice> lora{arwain::config.lora_address, AsReceiver::No};
 
     if (lora.test_chip() == 0x1A)
     {
@@ -170,10 +170,10 @@ arwain::ReturnCode arwain::test_lora_rx()
 
     while (mode_registrar.get_mode() != arwain::OperatingMode::Terminate)
     {
-        auto [rx, message] = lora.receive_string(1000);
-        if (rx)
+        auto message = lora.receive_string(1000);
+        if (message)
         {
-            std::cout << message << std::endl;
+            std::cout << message.value() << std::endl;
         }
     }
 
@@ -355,7 +355,7 @@ arwain::ReturnCode arwain::test_mag()
 
 arwain::ReturnCode arwain::test_lora_tx()
 {
-    RFM95W<LinuxSpiDevice> lora{arwain::config.lora_address, false};
+    RFM95W<LinuxSpiDevice> lora{arwain::config.lora_address, AsReceiver::No};
 
     if (lora.test_chip() == 0x1A)
     {

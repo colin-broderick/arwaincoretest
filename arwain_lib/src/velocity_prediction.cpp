@@ -11,6 +11,9 @@
 #include "arwain/exceptions.hpp"
 #include "arwain/service_manager.hpp"
 #include "arwain/velocity_prediction.hpp"
+#include "arwain/service_manager.hpp"
+#include "arwain/uwb_reader.hpp"
+#include "arwain/hybrid_positioner.hpp"
 
 PositionVelocityInference::PositionVelocityInference()
 {
@@ -118,7 +121,8 @@ void PositionVelocityInference::run_inference()
         {
             velocity.z = 0.0;
         }
-        // Feed the activity metrix.
+        // Feed the activity metric.
+        // TODO Maybe this can be pulled out and an event triggered instead.
         arwain::activity_metric.feed_velocity(velocity);
 
         Vector3 average_acceleration{0, 0, 0};
@@ -139,7 +143,9 @@ void PositionVelocityInference::run_inference()
                 velocity.z
             };
         }
+
         position = position + dt * velocity;
+        arwain::Events::new_arwain_velocity_event.invoke({velocity, dt});
 
         arwain::Buffers::POSITION_BUFFER.push_back(position);
 

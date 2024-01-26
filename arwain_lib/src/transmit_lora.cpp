@@ -51,7 +51,7 @@ void StatusReporting::core_setup()
 {
     lora = RFM95W<LinuxSpiDevice>{
         arwain::config.lora_address,
-        true,
+        AsReceiver::No,
         arwain::config.lora_rf_frequency,
         arwain::config.lora_bandwidth,
         arwain::config.lora_spread_factor

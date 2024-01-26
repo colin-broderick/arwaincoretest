@@ -57,7 +57,7 @@ namespace arwain
     std::string folder_date_string_suffix;
     arwain::Logger error_log;
     unsigned int velocity_inference_rate = 20;
-    RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*200)}; // TODO 200 is IMU sample rate, remove magic number
+    RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*(1000/arwain::Intervals::IMU_READING_INTERVAL))};
     ActivityMetric activity_metric{200, 20};
 }
 

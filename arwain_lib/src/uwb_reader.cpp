@@ -83,6 +83,7 @@ void UublaWrapper::run_inference()
         uubla->process_queue();
         uubla->solve_map();
         uubla->process_callbacks();
+        arwain::Events::new_uwb_position_event.invoke({get_own_position(), 0}); // TODO This 0 needs to be a dt
         timer.await();
     }
 
