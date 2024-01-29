@@ -47,7 +47,7 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     this->use_magnetometer = cfgparser.read_option<bool>("orientation/use_magnetometer");
     this->log_magnetometer = cfgparser.read_option<bool>("magnetometer/log_magnetometer");
     this->use_ips = cfgparser.read_option<bool>("indoor_positioning_system/use_ips");
-    this->nn_vel_weight_confidence = cfgparser.read_option<double>("inference/npu_vel_weight_confidence");
+    this->nn_vel_weight_confidence = cfgparser.read_option<double>("inference/nn_vel_weight_confidence");
     this->madgwick_beta = cfgparser.read_option<double>("orientation/madgwick/beta");
     this->madgwick_beta_conv = cfgparser.read_option<double>("orientation/madgwick/beta_conv");
     this->orientation_filter = cfgparser.read_option<std::string>("orientation/filter");
