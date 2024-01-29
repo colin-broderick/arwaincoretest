@@ -34,7 +34,7 @@ namespace arwain
         FailedConfiguration = -2,
         FailedMagnetometer = -3,
         NoConfigurationFile = -4,
-        NoInferenceXML = -5,
+        NoInferenceFile = -5,
         IMUReadError = -6,
         IOError = -7,
         PressureReadError = -8,

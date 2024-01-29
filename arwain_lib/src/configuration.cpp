@@ -13,6 +13,13 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
 {
     ConfigParser cfgparser{this->config_file};
 
+    // We want to fail out if the model file cannot be found.
+    this->inference_model_path = cfgparser.read_option<std::string>("inference/inference_model_path");
+    if (!std::filesystem::exists(this->inference_model_path))
+    {
+        return arwain::ReturnCode::NoInferenceFile;
+    }
+
     // Read all options into the configuration object.
     this->active_threshold = cfgparser.read_option<double>("stance/active_threshold");
     this->walking_threshold = cfgparser.read_option<double>("stance/walking_threshold");
@@ -57,13 +64,6 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
 
     this->uubla_baud_rate = cfgparser.read_option<int>("uwb/serial_port/baud_rate");
     this->uubla_serial_port = cfgparser.read_option<std::string>("uwb/serial_port/address");
-
-    // We want to fail out if the model file cannot be found.
-    this->inference_model_path = cfgparser.read_option<std::string>("inference/inference_model_path");
-    if (!std::filesystem::exists(this->inference_model_path))
-    {
-        return arwain::ReturnCode::NoInferenceXML;
-    }
 
     this->sea_level_pressure = cfgparser.read_option<double>("altimeter/calibration/sea_level_pressure");
     this->imu1_bus = cfgparser.read_option<std::string>("imu1/i2c/bus");

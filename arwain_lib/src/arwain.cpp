@@ -529,7 +529,7 @@ namespace arwain
         {arwain::ReturnCode::FailedConfiguration, "Configuration failed."},
         {arwain::ReturnCode::FailedMagnetometer, "Could not communicate with magnetometer."},
         {arwain::ReturnCode::NoConfigurationFile, "Could not find configuration file."},
-        {arwain::ReturnCode::NoInferenceXML, "Inference model XML file not found."},
+        {arwain::ReturnCode::NoInferenceFile, "Inference model file not found."},
         {arwain::ReturnCode::IMUReadError, "Encountered error reading IMU."},
     };
 }
@@ -567,6 +567,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     {
         std::cout << "Got an error when reading config file:\n";
         std::cout << arwain::ErrorMessages[ret] << std::endl;
+        return ret;
     }
     
     if (input.contains("--fulltest") || input.contains("-f"))

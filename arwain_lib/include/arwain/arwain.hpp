@@ -122,7 +122,7 @@ namespace arwain
         "     1             Successfully executed\n"
         "    -1             IMU failed to start\n"
         "    -2             Problem reading configuration file\n"
-        "    -3             Inference model XML not found";
+        "    -3             Inference model not found";
 }
 
 namespace arwain::Buffers
