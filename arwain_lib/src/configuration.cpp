@@ -73,7 +73,7 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     this->imu2_address = cfgparser.read_option<int>("imu2/i2c/address");
     this->imu3_address = cfgparser.read_option<int>("imu3/i2c/address");
     this->magn_address = cfgparser.read_option<int>("magnetometer/i2c/address");
-    this->magn_bus = cfgparser.read_option<int>("magnetometer/i2c/bus");
+    this->magn_bus = cfgparser.read_option<std::string>("magnetometer/i2c/bus");
     this->pressure_address = cfgparser.read_option<int>("pressure_sensor/i2c/address");
     this->pressure_bus = cfgparser.read_option<std::string>("pressure_sensor/i2c/bus");
     this->lora_address = cfgparser.read_option<std::string>("lora/spi/address");
@@ -168,7 +168,7 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
         this->lora_header_mode = RFM95W<LinuxSpiDevice>::HeaderMode::HM_IMPLICIT;
 
     this->lora_sync_word = cfgparser.read_option<int>("lora/radio/sync_word");
-    this->lora_enable_crc = cfgparser.read_option<int>("lora/radio/enable_crc");
+    this->lora_enable_crc = cfgparser.read_option<bool>("lora/radio/enable_crc");
 
     if (this->log_to_stdout)
     {
