@@ -21,6 +21,8 @@ UublaWrapper::UublaWrapper()
 
 UublaWrapper::~UublaWrapper()
 {
+    UUBLA::run_flag = false;
+
     ServiceManager::unregister_service(service_name);
 }
 
@@ -62,12 +64,12 @@ void UublaWrapper::setup_inference()
     uubla->set_ewma_gain(0.1);
     // uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
     // uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
-    serial_reader_th = std::jthread{serial_reader_fn, uubla.get(), "port", 115200};
+    serial_reader_th = std::jthread{serial_reader_fn, uubla.get(), arwain::config.uubla_serial_port, 115200};
 }
 
 bool UublaWrapper::cleanup_inference()
 {
-    serial_reader_th.request_stop();
+    // serial_reader_th.request_stop();
     return true;
 }
 
@@ -78,7 +80,7 @@ void UublaWrapper::run_inference()
     // TODO: Get the framerate (30) from somewhere sensible, or hard code?
     IntervalTimer<std::chrono::milliseconds> timer{1000/30};
 
-    while (mode != arwain::OperatingMode::Terminate)
+    while (mode == arwain::OperatingMode::Inference)
     {
         uubla->process_queue();
         uubla->solve_map();
