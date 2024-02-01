@@ -83,7 +83,8 @@ void HybridPositioner::run_inference()
 
     while (mode == arwain::OperatingMode::Inference)
     {
-        sleep_ms(10);
+        hybrid_pos_log << loop_scheduler.count() << ' ' << hyb.position.x << ' ' << hyb.position.y << ' ' << hyb.position.z << '\n';
+        loop_scheduler.await();
     }
 
     cleanup_inference();
