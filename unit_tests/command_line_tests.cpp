@@ -292,7 +292,7 @@ TEST(ArwainCLI, report_current_mode)
     
     input << "test\n";
 
-    EXPECT_EQ(command_line.report_current_mode(), "Current mode: Idle/autocalibrating\n");
+    EXPECT_EQ(command_line.report_current_mode(), arwain::OperatingMode::Idle);
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     EXPECT_TRUE((command_line.get_mode() == arwain::OperatingMode::Terminate));
     command_line.join();

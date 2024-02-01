@@ -64,12 +64,9 @@ constexpr int ArwainCLI::s2i(std::string_view input)
 }
 
 /** \brief Reports the current system mode. */
-std::string ArwainCLI::report_current_mode() const
+arwain::OperatingMode ArwainCLI::report_current_mode() const
 {
-    std::stringstream ss;
-    ss << "Current mode: " << mode << "\n";
-    std::string s = ss.str();
-    return s;
+    return mode;
 }
 
 /** \brief Report inability to switch modes and inform of current mode. */
@@ -106,7 +103,7 @@ void ArwainCLI::switch_to_inference_mode()
     else
     {
         std::cout << "Cannot switch to inference from current mode\n";
-        report_current_mode();
+        std::cout << "Current mode: " << report_current_mode() << '\n';
     }
 }
 
@@ -215,8 +212,8 @@ bool ArwainCLI::set_folder_name(const std::string& input)
 {
     if (mode != arwain::OperatingMode::Idle)
     {
-        std::cout << "Folder name can only be changed from idle mode" << std::endl;
-        report_current_mode();
+        std::cout << "Folder name can only be changed from idle mode\n";
+        std::cout << "Current mode: " << report_current_mode() << '\n';
         return false;
     }
 
@@ -250,7 +247,7 @@ void ArwainCLI::parse_cli_input(const std::string& input)
             switch_to_idle_autocal_mode();
             break;
         case s2i("mode"):
-            report_current_mode();
+            std::cout << "Current mode: "<< report_current_mode() << '\n';
             break;
         case s2i("calibg"):
             switch_to_gyro_calib_mode();

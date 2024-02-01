@@ -8,7 +8,7 @@ HybridPositioner::HybridPositioner()
 : vel_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
     std::bind(&HybridPositioner::new_inertial_velocity_callback, this, std::placeholders::_1)
     )},
-  pos_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+  pos_event_id{arwain::Events::new_uwb_position_event.add_callback(
     std::bind(&HybridPositioner::new_uwb_position_callback, this, std::placeholders::_1)
     )}
 {

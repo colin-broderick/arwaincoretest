@@ -30,6 +30,8 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     this->struggle_threshold = cfgparser.read_option<double>("stance/struggle_threshold");
     this->freefall_sensitivity = cfgparser.read_option<double>("stance/freefall_sensitivity");
     
+    this->hybrid_position_gain = cfgparser.read_option<double>("hybrid_position_gain");
+
     this->accel1_bias = Vector3::from_array(cfgparser.read_option<std::array<double, 3>>("imu1/calibration/accel_bias"));
     this->accel2_bias = Vector3::from_array(cfgparser.read_option<std::array<double, 3>>("imu2/calibration/accel_bias"));
     this->accel3_bias = Vector3::from_array(cfgparser.read_option<std::array<double, 3>>("imu3/calibration/accel_bias"));
