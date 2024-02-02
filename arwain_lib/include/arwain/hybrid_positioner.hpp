@@ -26,6 +26,7 @@ class HybridPositioner : public ArwainJob, protected IArwainJobSpec
         bool init() override;
         bool join() override;
         Vector3 get_position() const;
+        static inline std::string service_name = "HybridPositioner";
 
     private:
         PositionHybridizer hyb;
@@ -37,7 +38,7 @@ class HybridPositioner : public ArwainJob, protected IArwainJobSpec
     private:
         uint64_t vel_event_id = 0;
         uint64_t pos_event_id = 0;
-    
+
     private:
         void run() override;
         void core_setup() override;

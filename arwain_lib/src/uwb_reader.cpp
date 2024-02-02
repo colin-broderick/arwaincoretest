@@ -10,25 +10,119 @@
 #include "arwain/transmit_lora.hpp"
 #include "arwain/uwb_reader.hpp"
 #include "arwain/service_manager.hpp"
+#include "arwain/hybrid_positioner.hpp"
+
+#include "arwain/websocket.hpp"
+#include "arwain/ws_includes.hpp"
 
 #include "uubla/utils.hpp"
+#include "uubla/events.hpp"
+
+UUBLA::Network* l_uubla = nullptr;
+
+void position_callback(int nodeID, double x, double y, double z)
+{
+    if (l_uubla == nullptr)
+    {
+        return;
+    }
+
+    std::string str_node_id = UUBLA::Node::name_from_int(nodeID);
+
+    if (l_uubla->get_nodes().count(str_node_id) == 0)
+    {
+        return;
+    }
+
+    UUBLA::Node& node = l_uubla->get_nodes().at(str_node_id);
+    node.fix_position();
+    node.set_position({x, y, z});
+}
+
+#define PUBLISH_HYBRID_POSITIONS
+
+void publish_positions(arwain::WebSocketServer& server, UUBLA::Network& uubla)
+{
+    Message<PositionData> message;
+
+#ifdef PUBLISH_UUBLA_POSITIONS
+    auto data = uubla.get_nodes();
+    for (auto& [k, v] : data)
+    {
+        Vector3 pos = v.get_position();
+        message.set_header({v.id(), MessageType::position, {123, 123}});
+        message.set_data({pos.x, pos.y, pos.z, v.position_fixed() ? 1 : 0});
+        // server.add_history(message);
+        server.send_message(message.to_string());
+    }
+
+#elif defined(PUBLISH_HYBRID_POSITIONS)
+    auto hyb = ServiceManager::get_service<HybridPositioner>("HybridPositioner");
+    if (hyb)
+    {
+        auto pos = hyb->get_position();
+
+        message.set_header({2, MessageType::position, {123, 123}});
+        message.set_data({pos.x, pos.z, pos.y, 0});
+        server.send_message(message.to_string());
+    }
+
+#endif
+}
+
+void state_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssServer::Connection> cn, std::string& msg)
+{
+    Header header;
+    header.deserialise(msg);
+
+    switch (header.type)
+    {
+        case MessageType::history_request:
+            // ws->send_history();
+            break;
+        case MessageType::position:
+        {
+            Message<PositionData> position_message;
+            position_message.deserialize(msg);
+            position_callback(
+                position_message.get_header().node_id,
+                position_message.get_data().X,
+                position_message.get_data().Y,
+                position_message.get_data().Z);
+            break;
+        }
+        case MessageType::rotation:
+            // TODO
+            break;
+        case MessageType::stance:
+            // TODO
+            break;
+    }
+}
+
+std::unique_ptr<arwain::WebSocketServer> server;
 
 UublaWrapper::UublaWrapper()
 {
     ServiceManager::register_service(this, service_name);
+
+    // The websocket server exists to receive position data from the Unity front end.
+    // Upon reception, data is fed to the UUBLA instance running here and there it is
+    // used for solving for tag position.
+    server = std::make_unique<arwain::WebSocketServer>(8081, state_messages_callback);
     init();
 }
 
 UublaWrapper::~UublaWrapper()
 {
     UUBLA::run_flag = false;
-
     ServiceManager::unregister_service(service_name);
 }
 
 void UublaWrapper::core_setup()
 {
-    uubla = std::make_unique<UUBLA::Network>();
+    m_uubla = std::make_unique<UUBLA::Network>();
+    l_uubla = m_uubla.get();
 }
 
 void UublaWrapper::run_idle()
@@ -60,11 +154,11 @@ void UublaWrapper::run()
 
 void UublaWrapper::setup_inference()
 {
-    uubla->force_plane(true);
-    uubla->set_ewma_gain(0.1);
-    // uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
-    // uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
-    serial_reader_th = std::jthread{serial_reader_fn, uubla.get(), arwain::config.uubla_serial_port, 115200};
+    m_uubla->force_plane(true);
+    m_uubla->set_ewma_gain(0.1);
+    // m_uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
+    // m_uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
+    serial_reader_th = std::jthread{serial_reader_fn, m_uubla.get(), arwain::config.uubla_serial_port, 115200};
 }
 
 bool UublaWrapper::cleanup_inference()
@@ -76,15 +170,16 @@ bool UublaWrapper::cleanup_inference()
 void UublaWrapper::run_inference()
 {
     setup_inference();
-    
+
     // TODO: Get the framerate (30) from somewhere sensible, or hard code?
     IntervalTimer<std::chrono::milliseconds> timer{1000/30};
 
     while (mode == arwain::OperatingMode::Inference)
     {
-        uubla->process_queue();
-        uubla->solve_map();
-        uubla->process_callbacks();
+        m_uubla->process_queue();
+        m_uubla->solve_map();
+        m_uubla->process_callbacks();
+        publish_positions(*server, *m_uubla);
         arwain::Events::new_uwb_position_event.invoke({get_own_position(), 0}); // TODO This 0 needs to be a dt
         timer.await();
     }
@@ -116,17 +211,17 @@ bool UublaWrapper::join()
 double UublaWrapper::get_distance(const int position)
 {
     // TODO Do we still need this function?  Library doesn't support it.
-    // return uubla->get_distance(position);
+    // return m_uubla->get_distance(position);
     return 0;
 }
 
 Vector3 UublaWrapper::get_own_position() const
 {
-    // return get_node_position(own_id); // TODO
-    return {0, 0, 0};
+    // TODO Remove hard-coded 0002; get from config.
+    return m_uubla->get_node_position("0002"); // return get_node_position(own_id); // TODO
 }
 
 Vector3 UublaWrapper::get_node_position(const std::string& node_name) const
 {
-    return uubla->get_node_position(node_name);
+    return m_uubla->get_node_position(node_name);
 }

@@ -21,7 +21,7 @@ class UublaWrapper : public ArwainJob, protected IArwainJobSpec
     private:
         std::jthread job_thread;
         arwain::Logger uwb_log;
-        std::unique_ptr<UUBLA::Network> uubla;
+        std::unique_ptr<UUBLA::Network> m_uubla;
 
     public:
         UublaWrapper();

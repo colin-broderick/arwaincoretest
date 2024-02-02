@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "arwain/hybrid_positioner.hpp"
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/uwb_reader.hpp"
@@ -12,6 +14,7 @@ HybridPositioner::HybridPositioner()
     std::bind(&HybridPositioner::new_uwb_position_callback, this, std::placeholders::_1)
     )}
 {
+    ServiceManager::register_service(this, HybridPositioner::service_name);
     init();
 }
 
@@ -20,6 +23,7 @@ HybridPositioner::~HybridPositioner()
     // TODO Should be easy enough to create an RAII type for registrations that won't need explicit deletion.
     arwain::Events::new_arwain_velocity_event.remove_callback(vel_event_id);
     arwain::Events::new_uwb_position_event.remove_callback(pos_event_id);
+    ServiceManager::unregister_service(HybridPositioner::service_name);
 }
 
 void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3EventWithDt inertial_velocity)
@@ -29,8 +33,8 @@ void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3Eve
 
 void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWithDt uwb_position)
 {
-    static double gain = 0;
-    hyb.position = hyb.position + gain * (hyb.position - uwb_position.position);
+    // TODO Need to think about the dt since frequency of updates is unknown and irregular.
+    hyb.position = hyb.position - arwain::config.hybrid_position_gain * (hyb.position - uwb_position.position);
 }
 
 bool HybridPositioner::init()

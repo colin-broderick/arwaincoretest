@@ -5,6 +5,8 @@ set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_CXX_STANDARD 20)
 
+find_package(OpenSSL REQUIRED)
+
 include_directories(include)
 
 file(GLOB SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
@@ -18,7 +20,7 @@ add_library(arwain_lib ${SRC_FILES})
 
 include(tests.cmake)
 
-target_link_libraries(${PROJECT_NAME} stdc++fs)
+target_link_libraries(${PROJECT_NAME} stdc++fs arwain_websocket OpenSSL::SSL OpenSSL::Crypto )
 
 include_directories(
     ../ips

@@ -23,7 +23,7 @@ class IArwainJobSpec
         virtual bool cleanup_inference() = 0;
 };
 
-class ArwainJob : protected IArwainJob
+class ArwainJob : public IArwainJob
 {
     public:
         arwain::OperatingMode get_mode() const
@@ -31,10 +31,8 @@ class ArwainJob : protected IArwainJob
             return mode;
         }
 
-    private:
         uint64_t deregistration_key = 0;
         
-    protected:
         arwain::OperatingMode mode = arwain::OperatingMode::Idle;
         ArwainJob()
         {
