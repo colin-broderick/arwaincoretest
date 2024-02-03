@@ -122,6 +122,24 @@ void HybridPositioner::core_setup()
     // Currently no core_setup to do; might come later.
 }
 
+std::vector<PositionICP> gbuffer_to_icp(const GlobalBuffer<Vector3, 20>& gbuffer)
+{
+    std::vector<PositionICP> icp_buffer;
+    for (auto& element : gbuffer.get_data())
+    {
+        icp_buffer.push_back({element.x, element.y, element.z});
+    }
+    return icp_buffer;
+}
+
+std::optional<double> arwain_icp_wrapper(const GlobalBuffer<Vector3, 20>& inertial_positions, const GlobalBuffer<Vector3, 20>& uwb_positions)
+{
+    // TODO This wrapper business can all be eliminated if we have arwain_icp take sensible types.
+    auto icp_inertial_positions = gbuffer_to_icp(inertial_positions);
+    auto icp_uwb_positions = gbuffer_to_icp(uwb_positions);
+    return arwain_icp_2d(icp_inertial_positions, icp_uwb_positions);
+}
+
 void HybridPositioner::run_inference()
 {
     // The things I do here probably seem pointless but matching the pattern
@@ -132,9 +150,19 @@ void HybridPositioner::run_inference()
 
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{100, "hybrid_position_timer"};
 
+    auto loop_count = 0;
     while (mode == arwain::OperatingMode::Inference)
     {
+        if (loop_count % 50 == 0)
+        {
+            auto new_angular_correction = arwain_icp_wrapper(inertial_positions, uwb_positions);
+            if (new_angular_correction)
+            {
+                current_angular_correction = new_angular_correction.value();
+            }
+        }
         hybrid_pos_log << loop_scheduler.count() << ' ' << hyb.position.x << ' ' << hyb.position.y << ' ' << hyb.position.z << '\n';
+        loop_count++;
         loop_scheduler.await();
     }
 
