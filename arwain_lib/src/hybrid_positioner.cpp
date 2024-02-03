@@ -26,14 +26,17 @@ Current_angular_correction is updated every frame.
 */
 
 
-
+static std::vector<Vector3> inertial_positions;
+static std::vector<Vector3> uwb_positions;
 
 HybridPositioner::HybridPositioner()
-    : vel_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+    : imu_vel_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
           std::bind(&HybridPositioner::new_inertial_velocity_callback, this, std::placeholders::_1))},
-      pos_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+      imu_pos_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+          std::bind(&HybridPositioner::new_inertial_position_callback, this, std::placeholders::_1))},
+      uwb_pos_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
           std::bind(&HybridPositioner::new_uwb_position_callback, this, std::placeholders::_1))},
-      rot_event_id{arwain::Events::new_orientation_data_event.add_callback(
+      imu_rot_event_id{arwain::Events::new_orientation_data_event.add_callback(
           std::bind(&HybridPositioner::new_orientation_data_callback, this, std::placeholders::_1))}
 {
     ServiceManager::register_service(this, HybridPositioner::service_name);
@@ -43,9 +46,10 @@ HybridPositioner::HybridPositioner()
 HybridPositioner::~HybridPositioner()
 {
     // TODO Should be easy enough to create an RAII type for registrations that won't need explicit deletion.
-    arwain::Events::new_arwain_velocity_event.remove_callback(vel_event_id);
-    arwain::Events::new_uwb_position_event.remove_callback(pos_event_id);
-    arwain::Events::new_orientation_data_event.remove_callback(rot_event_id);
+    arwain::Events::new_arwain_velocity_event.remove_callback(imu_vel_event_id);
+    arwain::Events::new_uwb_position_event.remove_callback(uwb_pos_event_id);
+    arwain::Events::new_orientation_data_event.remove_callback(imu_rot_event_id);
+    arwain::Events::new_arwain_position_event.remove_callback(imu_pos_event_id);
     ServiceManager::unregister_service(HybridPositioner::service_name);
 }
 
@@ -54,10 +58,16 @@ void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3Eve
     hyb.position = hyb.position + inertial_velocity.velocity * inertial_velocity.dt;
 }
 
-void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWithDt uwb_position)
+void HybridPositioner::new_inertial_position_callback(arwain::Events::Vector3EventWithDt inertial_event)
+{
+    inertial_positions.push_back(inertial_event.position);
+}
+
+void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWithDt uwb_event)
 {
     // TODO Need to think about the dt since frequency of updates is unknown and irregular.
-    hyb.position = hyb.position - arwain::config.hybrid_position_gain * (hyb.position - uwb_position.position);
+    uwb_positions.push_back(uwb_event.position);
+    hyb.position = hyb.position - arwain::config.hybrid_position_gain * (hyb.position - uwb_event.position);
 }
 
 void HybridPositioner::new_orientation_data_callback(arwain::Events::RotorEventWithDt rotor_data)
