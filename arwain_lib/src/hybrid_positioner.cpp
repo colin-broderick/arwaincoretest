@@ -140,6 +140,28 @@ std::optional<double> arwain_icp_wrapper(const GlobalBuffer<Vector3, 20>& inerti
     return arwain_icp_2d(icp_inertial_positions, icp_uwb_positions);
 }
 
+constexpr double degrees_0 = 0;
+constexpr double degrees_180 = 3.14159265359;
+constexpr double degrees_90 = degrees_180 / 2.0;
+constexpr double degrees_270 = degrees_180 * 3.0 / 2.0;
+constexpr double degrees_360 = degrees_0;
+
+/** \brief If the computed correction is more than 90° different form the old one, we have probably
+ * computed the smaller wrong angle instead of the large right angle. Subtract 180° from the proposed
+ * correction to point back in the right direction.
+ */
+auto update_correction(double new_angle, double old_angle)
+{
+    if (std::abs(new_angle - old_angle) > degrees_90)
+    {
+        return new_angle - degrees_180;
+    }
+    else
+    {
+        return new_angle;
+    }
+}
+
 void HybridPositioner::run_inference()
 {
     // The things I do here probably seem pointless but matching the pattern
@@ -158,7 +180,7 @@ void HybridPositioner::run_inference()
             auto new_angular_correction = arwain_icp_wrapper(inertial_positions, uwb_positions);
             if (new_angular_correction)
             {
-                current_angular_correction = new_angular_correction.value();
+                current_angular_correction = update_correction(new_angular_correction.value(), current_angular_correction);
             }
         }
         hybrid_pos_log << loop_scheduler.count() << ' ' << hyb.position.x << ' ' << hyb.position.y << ' ' << hyb.position.z << '\n';
