@@ -26,7 +26,7 @@ class ServiceManager
 
             if (ServiceManager::services.contains(service_name))
             {
-                return dynamic_cast<T*>(services.at(service_name));
+                return static_cast<T*>(services.at(service_name));
             }
             else
             {

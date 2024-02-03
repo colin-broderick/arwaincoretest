@@ -7,16 +7,15 @@
 
 class IArwainJob
 {
-  public:
+    public:
         virtual bool init() = 0;
         virtual bool join() = 0;
-  protected:
         virtual void run() = 0;
 };
 
 class IArwainJobSpec
 {
-    protected:
+    public:
         virtual void core_setup() = 0;
         virtual void run_inference() = 0;
         virtual void run_idle() = 0;
@@ -24,7 +23,7 @@ class IArwainJobSpec
         virtual bool cleanup_inference() = 0;
 };
 
-class ArwainJob : protected IArwainJob
+class ArwainJob : public IArwainJob
 {
     public:
         arwain::OperatingMode get_mode() const
@@ -32,10 +31,8 @@ class ArwainJob : protected IArwainJob
             return mode;
         }
 
-    private:
         uint64_t deregistration_key = 0;
         
-    protected:
         arwain::OperatingMode mode = arwain::OperatingMode::Idle;
         ArwainJob()
         {

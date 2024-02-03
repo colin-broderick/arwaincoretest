@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "arwain/hybrid_positioner.hpp"
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/uwb_reader.hpp"
@@ -32,6 +34,7 @@ HybridPositioner::HybridPositioner()
       rot_event_id{arwain::Events::new_orientation_data_event.add_callback(
           std::bind(&HybridPositioner::new_orientation_data_callback, this, std::placeholders::_1))}
 {
+    ServiceManager::register_service(this, HybridPositioner::service_name);
     init();
 }
 
@@ -41,6 +44,7 @@ HybridPositioner::~HybridPositioner()
     arwain::Events::new_arwain_velocity_event.remove_callback(vel_event_id);
     arwain::Events::new_uwb_position_event.remove_callback(pos_event_id);
     arwain::Events::new_orientation_data_event.remove_callback(rot_event_id);
+    ServiceManager::unregister_service(HybridPositioner::service_name);
 }
 
 void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3EventWithDt inertial_velocity)
@@ -50,8 +54,8 @@ void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3Eve
 
 void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWithDt uwb_position)
 {
-    static double gain = 0;
-    hyb.position = hyb.position + gain * (hyb.position - uwb_position.position);
+    // TODO Need to think about the dt since frequency of updates is unknown and irregular.
+    hyb.position = hyb.position - arwain::config.hybrid_position_gain * (hyb.position - uwb_position.position);
 }
 
 void HybridPositioner::new_orientation_data_callback(arwain::Events::RotorEventWithDt rotor_data)
@@ -109,7 +113,8 @@ void HybridPositioner::run_inference()
 
     while (mode == arwain::OperatingMode::Inference)
     {
-        sleep_ms(10);
+        hybrid_pos_log << loop_scheduler.count() << ' ' << hyb.position.x << ' ' << hyb.position.y << ' ' << hyb.position.z << '\n';
+        loop_scheduler.await();
     }
 
     cleanup_inference();

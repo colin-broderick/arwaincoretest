@@ -34,6 +34,7 @@ namespace arwain
         double gravity;              // Magnitude of local gravity, e.g. 9.81.
         double struggle_threshold;   // Heuristic parameter used to determine when a subject may be in distress. NOT YET WELL DEFINED.
         double freefall_sensitivity; // The sensitivity to freefall detection.
+        double hybrid_position_gain;
         Vector3 accel1_bias;         // The systematic bias in measurements from accelerometer 1.
         Vector3 accel2_bias;         // The systematic bias in measurements from accelerometer 2.
         Vector3 accel3_bias;         // The systematic bias in measurements from accelerometer 3.
@@ -66,7 +67,7 @@ namespace arwain
         std::string lora_address;                     // spidev address of SX1276.
         int lora_sync_word;                           // LoRa sync word.
         RFM95W<LinuxSpiDevice>::HeaderMode lora_header_mode;            // LoRa header mode, implicit or explicit.
-        int lora_enable_crc;                          //  Whether to add CRC to LoRa messages.
+        bool lora_enable_crc;                          //  Whether to add CRC to LoRa messages.
         std::string inference_model_path;              // The location of the inference model file.
         double sea_level_pressure;                    // Sea level pressure near the region of interest.
         int log_to_stdout = 0;                        // Whether to show printed output on the console.

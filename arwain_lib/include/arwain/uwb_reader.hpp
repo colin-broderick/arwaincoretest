@@ -1,6 +1,8 @@
 #ifndef _ARWAIN_UWB_READER_HPP
 #define _ARWAIN_UWB_READER_HPP
 
+#include <arwain/logger.hpp>
+
 #include <uubla/uubla.hpp>
 
 #include "arwain/job_interface.hpp"
@@ -18,7 +20,8 @@ class UublaWrapper : public ArwainJob, protected IArwainJobSpec
 
     private:
         std::jthread job_thread;
-        std::unique_ptr<UUBLA::Network> uubla;
+        arwain::Logger uwb_log;
+        std::unique_ptr<UUBLA::Network> m_uubla;
 
     public:
         UublaWrapper();
