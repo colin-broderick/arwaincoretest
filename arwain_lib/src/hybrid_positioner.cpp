@@ -47,9 +47,21 @@ HybridPositioner::~HybridPositioner()
     ServiceManager::unregister_service(HybridPositioner::service_name);
 }
 
-void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3EventWithDt inertial_velocity)
+void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3EventWithDt inertial_event)
 {
-    hyb.position = hyb.position + inertial_velocity.velocity * inertial_velocity.dt;
+    auto rotor = Quaternion{current_angular_correction, Vector3::Axis::Z.to_array()};
+    auto quat_vec = Quaternion{
+        0,
+        inertial_event.velocity.x,
+        inertial_event.velocity.y,
+        inertial_event.velocity.z
+    };
+    auto rotated_quat = rotor * quat_vec * rotor.conjugate();
+    auto rotated_vec = Vector3{rotated_quat.x, rotated_quat.y, rotated_quat.z};
+    // TODO Need simpler more usable rotors. It's fine to let Quaternion and Vector3 know about
+    // each other now that they're part of the same core library.
+
+    hyb.position = hyb.position + rotated_vec * inertial_event.dt;
 }
 
 void HybridPositioner::new_inertial_position_callback(arwain::Events::Vector3EventWithDt inertial_event)
