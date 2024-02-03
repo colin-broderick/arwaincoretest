@@ -7,9 +7,7 @@
 #include "arwain/uwb_reader.hpp"
 #include "arwain/service_manager.hpp"
 #include "arwain/events.hpp"
-
-
-
+#include "arwain/global_buffer.hpp"
 
 /*
 Keep 10-second record of pure uwb position
@@ -18,16 +16,12 @@ Remap both so originate at (0, 0, 0).
 Do ICP to deduce best rotation of inertial onto UWB.
 All new points rotated by current_angular_correction.
 Current_angular_correction is updated every frame.
-
-
-
-
-
 */
 
-
-static std::vector<Vector3> inertial_positions;
-static std::vector<Vector3> uwb_positions;
+/** \brief These buffers keep a short record of a subsample of positions from these two sources. */
+static GlobalBuffer<Vector3, 20> inertial_positions;
+static GlobalBuffer<Vector3, 20> uwb_positions;
+double time_between_pushes = 0.5 /* seconds */;
 
 HybridPositioner::HybridPositioner()
     : imu_vel_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
@@ -60,13 +54,26 @@ void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3Eve
 
 void HybridPositioner::new_inertial_position_callback(arwain::Events::Vector3EventWithDt inertial_event)
 {
-    inertial_positions.push_back(inertial_event.position);
+    static double time_since_push = 0;
+    time_since_push += inertial_event.dt;
+    if (time_since_push > time_between_pushes)
+    {
+        inertial_positions.push_back(inertial_event.position);
+        time_since_push -= time_between_pushes;
+    }
 }
 
 void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWithDt uwb_event)
 {
     // TODO Need to think about the dt since frequency of updates is unknown and irregular.
-    uwb_positions.push_back(uwb_event.position);
+    static double time_since_push = 0;
+    time_since_push += uwb_event.dt;
+    if (time_since_push > time_between_pushes)
+    {
+        uwb_positions.push_back(uwb_event.position);
+        time_since_push -= time_between_pushes;
+    }
+
     hyb.position = hyb.position - arwain::config.hybrid_position_gain * (hyb.position - uwb_event.position);
 }
 
