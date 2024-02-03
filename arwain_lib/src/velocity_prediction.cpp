@@ -145,6 +145,7 @@ void PositionVelocityInference::run_inference()
         }
 
         position = position + dt * velocity;
+        arwain::Events::new_arwain_position_event.invoke({position, dt});
         arwain::Events::new_arwain_velocity_event.invoke({velocity, dt});
 
         arwain::Buffers::POSITION_BUFFER.push_back(position);
