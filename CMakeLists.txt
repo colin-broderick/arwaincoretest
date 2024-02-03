@@ -59,6 +59,7 @@ set(ALL_ARWAIN_LIBRARIES
     arwain_math
     arwain_orientation
     arwain_config
+    arwain_icp
     uubla
 )
 file(GLOB UNIT_TEST_SOURCES CONFIGURE_DEPENDS "unit_tests/*.cpp")

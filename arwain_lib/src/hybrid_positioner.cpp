@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <arwain/icp.hpp>
+
 #include "arwain/hybrid_positioner.hpp"
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/uwb_reader.hpp"
