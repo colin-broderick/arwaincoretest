@@ -237,6 +237,14 @@ void SensorManager::run_idle()
         arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
 
         madgwick_filter_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
+        arwain::Events::new_orientation_data_event.invoke(
+            {Quaternion{
+                 madgwick_filter_1.get_w(),
+                 madgwick_filter_1.get_x(),
+                 madgwick_filter_1.get_y(),
+                 madgwick_filter_1.get_z(),
+             },
+             0.0});
         madgwick_filter_mag_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
 
         // Extract Euler orientation from filters.
@@ -299,6 +307,14 @@ void SensorManager::run_inference()
         arwain::Buffers::IMU_BUFFER.push_back({accel_data1, gyro_data1});
 
         madgwick_filter_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z);
+        arwain::Events::new_orientation_data_event.invoke(
+            {Quaternion{
+                 madgwick_filter_1.get_w(),
+                 madgwick_filter_1.get_x(),
+                 madgwick_filter_1.get_y(),
+                 madgwick_filter_1.get_z(),
+             },
+             0.0});
         madgwick_filter_mag_1.update(time_count, gyro_data1.x, gyro_data1.y, gyro_data1.z, accel_data1.x, accel_data1.y, accel_data1.z, magnet.x, magnet.y, magnet.z);
 
         // Extract Euler orientation from filters.

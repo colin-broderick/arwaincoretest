@@ -4,13 +4,33 @@
 #include "arwain/service_manager.hpp"
 #include "arwain/events.hpp"
 
+
+
+
+/*
+Keep 10-second record of pure uwb position
+Keep 10-second record of pure inertial position.
+Remap both so originate at (0, 0, 0).
+Do ICP to deduce best rotation of inertial onto UWB.
+All new points rotated by current_angular_correction.
+Current_angular_correction is updated every frame.
+
+
+
+
+
+*/
+
+
+
+
 HybridPositioner::HybridPositioner()
-: vel_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
-    std::bind(&HybridPositioner::new_inertial_velocity_callback, this, std::placeholders::_1)
-    )},
-  pos_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
-    std::bind(&HybridPositioner::new_uwb_position_callback, this, std::placeholders::_1)
-    )}
+    : vel_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+          std::bind(&HybridPositioner::new_inertial_velocity_callback, this, std::placeholders::_1))},
+      pos_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+          std::bind(&HybridPositioner::new_uwb_position_callback, this, std::placeholders::_1))},
+      rot_event_id{arwain::Events::new_orientation_data_event.add_callback(
+          std::bind(&HybridPositioner::new_orientation_data_callback, this, std::placeholders::_1))}
 {
     init();
 }
@@ -20,6 +40,7 @@ HybridPositioner::~HybridPositioner()
     // TODO Should be easy enough to create an RAII type for registrations that won't need explicit deletion.
     arwain::Events::new_arwain_velocity_event.remove_callback(vel_event_id);
     arwain::Events::new_uwb_position_event.remove_callback(pos_event_id);
+    arwain::Events::new_orientation_data_event.remove_callback(rot_event_id);
 }
 
 void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3EventWithDt inertial_velocity)
@@ -31,6 +52,11 @@ void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWit
 {
     static double gain = 0;
     hyb.position = hyb.position + gain * (hyb.position - uwb_position.position);
+}
+
+void HybridPositioner::new_orientation_data_callback(arwain::Events::RotorEventWithDt rotor_data)
+{
+    
 }
 
 bool HybridPositioner::init()

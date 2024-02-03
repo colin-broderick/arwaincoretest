@@ -60,14 +60,18 @@ void UublaWrapper::setup_inference()
 {
     uubla->force_plane(true);
     uubla->set_ewma_gain(0.1);
+    run_flag = true;
     // uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
     // uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
     serial_reader_th = std::jthread{serial_reader_fn, uubla.get(), "port", 115200};
 }
 
+std::atomic<bool> runflag = true;
+
 bool UublaWrapper::cleanup_inference()
 {
-    serial_reader_th.request_stop();
+    run_flag = false;
+    // serial_reader_th.request_stop();
     return true;
 }
 
