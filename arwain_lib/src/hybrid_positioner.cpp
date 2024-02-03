@@ -86,7 +86,7 @@ void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWit
         time_since_push -= time_between_pushes;
     }
 
-    hyb.position = hyb.position - arwain::config.hybrid_position_gain * (hyb.position - uwb_event.position);
+    hyb.position = hyb.position - arwain::config.hybrid_position_gain * (hyb.position - uwb_event.position) * uwb_event.dt;
 }
 
 void HybridPositioner::new_orientation_data_callback(arwain::Events::RotorEventWithDt rotor_data)

@@ -175,15 +175,18 @@ void UublaWrapper::run_inference()
     setup_inference();
 
     // TODO: Get the framerate (30) from somewhere sensible, or hard code?
-    IntervalTimer<std::chrono::milliseconds> timer{1000/30};
+    IntervalTimer<std::chrono::milliseconds> timer{1000 / 30};
 
+    auto last_count = timer.count();
     while (mode == arwain::OperatingMode::Inference)
     {
         m_uubla->process_queue();
         m_uubla->solve_map();
         m_uubla->process_callbacks();
         publish_positions(*server, *m_uubla);
-        arwain::Events::new_uwb_position_event.invoke({get_own_position(), 0}); // TODO This 0 needs to be a dt
+        auto now_count = timer.count();
+        arwain::Events::new_uwb_position_event.invoke({get_own_position(), (now_count - last_count) / 1000.0});
+        last_count = now_count;
         timer.await();
     }
 
