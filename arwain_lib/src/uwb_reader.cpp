@@ -161,7 +161,8 @@ UublaWrapper::UublaWrapper()
     // used for solving for tag position.
     websocket_server = std::make_unique<arwain::WebSocketServer>(8081, state_messages_callback);
     dash_server = std::make_unique<arwain::WebSocketServer>(8082, dash_messages_callback);
-    init();
+    core_setup();
+    job_thread = std::jthread{std::bind_front(&UublaWrapper::run, this)};
 }
 
 UublaWrapper::~UublaWrapper()
@@ -315,13 +316,6 @@ void UublaWrapper::run_inference()
     }
 
     cleanup_inference();
-}
-
-bool UublaWrapper::init()
-{
-    core_setup();
-    job_thread = std::jthread{std::bind_front(&UublaWrapper::run, this)};
-    return true;
 }
 
 bool UublaWrapper::join()

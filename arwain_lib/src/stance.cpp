@@ -19,7 +19,8 @@
 
 StanceDetection::StanceDetection()
 {
-    init();
+    core_setup();
+    job_thread = std::jthread{std::bind_front(&StanceDetection::run, this)};
 }
 
 void StanceDetection::setup_inference()
@@ -155,13 +156,6 @@ void StanceDetection::core_setup()
         arwain::config.active_threshold,
         arwain::config.struggle_threshold
     };
-}
-
-bool StanceDetection::init()
-{
-    core_setup();
-    job_thread = std::jthread{std::bind_front(&StanceDetection::run, this)};
-    return true;
 }
 
 StanceDetector::FallState StanceDetection::get_falling_state()

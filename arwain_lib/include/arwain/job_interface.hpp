@@ -8,7 +8,6 @@
 class IArwainJob
 {
     public:
-        virtual bool init() = 0;
         virtual bool join() = 0;
         virtual void run() = 0;
 };

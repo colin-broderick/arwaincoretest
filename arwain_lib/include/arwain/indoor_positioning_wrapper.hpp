@@ -29,9 +29,6 @@ class IndoorPositioningSystem : public ArwainJob, protected IArwainJobSpec
     public:
         IndoorPositioningSystem();
         bool join() override;
-        bool init() override;
-
-    
 
     class IndoorPositioningWrapper
     {

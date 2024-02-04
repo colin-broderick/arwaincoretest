@@ -23,7 +23,6 @@ class HybridPositioner : public ArwainJob, protected IArwainJobSpec
     public:
         HybridPositioner();
         ~HybridPositioner();
-        bool init() override;
         bool join() override;
         Vector3 get_position() const;
         static inline std::string service_name = "HybridPositioner";

@@ -4,7 +4,8 @@
 
 CameraController::CameraController()
 {
-    init();
+    core_setup();
+    job_thread = std::jthread{std::bind_front(&CameraController::run, this)};
 }
 
 void CameraController::setup_data_collection()
@@ -62,13 +63,6 @@ void CameraController::run()
                 break;
         }
     }
-}
-
-bool CameraController::init()
-{
-    core_setup();
-    job_thread = std::jthread{std::bind_front(&CameraController::run, this)};
-    return true;
 }
 
 void CameraController::join()

@@ -37,7 +37,8 @@ HybridPositioner::HybridPositioner()
           std::bind(&HybridPositioner::new_orientation_data_callback, this, std::placeholders::_1))}
 {
     ServiceManager::register_service(this, HybridPositioner::service_name);
-    init();
+    core_setup();
+    job_thread = std::jthread{std::bind_front(&HybridPositioner::run, this)};
 }
 
 HybridPositioner::~HybridPositioner()
@@ -107,13 +108,6 @@ void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWit
 void HybridPositioner::new_orientation_data_callback(arwain::Events::RotorEventWithDt rotor_data)
 {
     
-}
-
-bool HybridPositioner::init()
-{
-    core_setup();
-    job_thread = std::jthread{std::bind_front(&HybridPositioner::run, this)};
-    return true;
 }
 
 bool HybridPositioner::join()

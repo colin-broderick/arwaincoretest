@@ -32,7 +32,6 @@ class Altimeter : public ArwainJob, protected IArwainJobSpec
 
     public:
         Altimeter();
-        bool init();
         bool join();
 };
 

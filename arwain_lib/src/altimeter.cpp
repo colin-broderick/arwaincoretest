@@ -15,7 +15,12 @@
 
 Altimeter::Altimeter()
 {
-    init();
+    core_setup();
+    if (job_thread.joinable())
+    {
+        job_thread.join();
+    }
+    job_thread = std::jthread{std::bind_front(&Altimeter::run, this)};
 }
 
 void Altimeter::setup_inference()
@@ -116,17 +121,6 @@ void Altimeter::core_setup()
         sleep_ms(50);
     }
     altitude_zero = altitude;
-}
-
-bool Altimeter::init()
-{
-    core_setup();
-    if (job_thread.joinable())
-    {
-        job_thread.join();
-    }
-    job_thread = std::jthread{std::bind_front(&Altimeter::run, this)};
-    return true;
 }
 
 /** \brief Returns true of the job_thread was successfully joined, and false if the

@@ -452,21 +452,14 @@ void SensorManager::core_setup()
 SensorManager::SensorManager()
 {
     ServiceManager::register_service(this, service_name);
-    init();
+    core_setup();
+    job_thread = std::jthread{std::bind_front(&SensorManager::run, this)};
+    pin_thread(job_thread, 2);
 }
 
 SensorManager::~SensorManager()
 {
     ServiceManager::unregister_service(service_name);
-}
-
-/** \brief Does overall initialization and sets up the job thread. */
-bool SensorManager::init()
-{
-    core_setup();
-    job_thread = std::jthread{std::bind_front(&SensorManager::run, this)};
-    pin_thread(job_thread, 2);
-    return true;
 }
 
 void SensorManager::set_post_gyro_calibration_callback(std::function<void()> func)
