@@ -49,13 +49,25 @@ HybridPositioner::~HybridPositioner()
 
 void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3EventWithDt inertial_event)
 {
-    auto rotor = Quaternion{current_angular_correction, Vector3::Axis::Z.to_array()};
-    auto rotated_vec = arwain::apply_quat_rotor_to_vector3(inertial_event.position, rotor);
-    hyb.position = hyb.position + rotated_vec * inertial_event.dt;
+    if (arwain::config.hybrid_heading_compute)
+    {   // Rotate the velocity vector according to current best guess heading correction, then integrate velocity.
+        auto rotor = Quaternion{current_angular_correction, Vector3::Axis::Z.to_array()};
+        auto rotated_velocity = arwain::apply_quat_rotor_to_vector3(inertial_event.velocity, rotor);
+        hyb.position = hyb.position + rotated_velocity * inertial_event.dt;
+    }
+    else
+    {   // Integrate raw velocity - this is equivalent to standard inertial navigation.
+        hyb.position = hyb.position + inertial_event.velocity * inertial_event.dt;
+    }
 }
 
 void HybridPositioner::new_inertial_position_callback(arwain::Events::Vector3EventWithDt inertial_event)
 {
+    if (!arwain::config.hybrid_position_compute)
+    {
+        return;
+    }
+
     static double time_since_push = 0;
     time_since_push += inertial_event.dt;
     if (time_since_push > time_between_pushes)
@@ -67,7 +79,11 @@ void HybridPositioner::new_inertial_position_callback(arwain::Events::Vector3Eve
 
 void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWithDt uwb_event)
 {
-    // TODO Need to think about the dt since frequency of updates is unknown and irregular.
+    if (!arwain::config.hybrid_position_compute)
+    {
+        return;
+    }
+
     static double time_since_push = 0;
     time_since_push += uwb_event.dt;
     if (time_since_push > time_between_pushes)
@@ -175,6 +191,12 @@ void HybridPositioner::run_inference()
     auto loop_count = 0;
     while (mode == arwain::OperatingMode::Inference)
     {
+        if (!arwain::config.hybrid_heading_compute)
+        {
+            loop_scheduler.await();
+            continue;
+        }
+
         if (loop_count % 50 == 0)
         {
             auto new_angular_correction = arwain_icp_wrapper(inertial_positions, uwb_positions);
