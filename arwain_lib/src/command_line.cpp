@@ -141,7 +141,6 @@ bool ArwainCLI::switch_to_gyro_calib_mode()
     else
     {
         std::cout << "Starting gyroscope calibration" << std::endl;
-        // FIXTODAY ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
         arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::GyroscopeCalibration);
         return true;
     }

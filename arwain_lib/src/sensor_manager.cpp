@@ -51,6 +51,7 @@ void SensorManager::run()
         {
             case arwain::OperatingMode::GyroscopeCalibration:
                 run_gyro_calibration();
+                arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
                 break;
             case arwain::OperatingMode::MagnetometerCalibration:
                 run_magn_calibration();
@@ -84,7 +85,7 @@ void SensorManager::run()
  * \return Will return false if autocalibration is turned onm, and calibration could not be
  * performed. Return true if calibration is performed.
  */
-bool calibrate_gyroscope_bias(IIM42652<LinuxSmbusI2CDevice>& imu)
+bool calibrate_gyroscope_bias(IIM42652<LinuxSmbusI2CDevice>& imu, std::string configaddress)
 {
     if (imu.auto_calib_enabled())
     {
@@ -98,12 +99,14 @@ bool calibrate_gyroscope_bias(IIM42652<LinuxSmbusI2CDevice>& imu)
     while (!calibrator.is_converged())
     {
         calibrator.feed(imu.read_imu().gyro);
+        sleep_ms(5);
     }
     Vector3 gyroscope_bias = calibrator.get_params();
 
     arwain::config.gyro1_bias = gyroscope_bias;
-    arwain::config.replace("imu1/calibration/gyro_bias", gyroscope_bias.to_array());
+    arwain::config.replace(configaddress, gyroscope_bias.to_array());
     
+    // TODO This is wrong but I'm leaving it for another day - we're only using imu1 at the moment anyway
     imu.set_gyro_bias(
         arwain::config.gyro1_bias.x,
         arwain::config.gyro1_bias.y,
@@ -130,9 +133,9 @@ void SensorManager::run_gyro_calibration()
     imu2.set_gyro_bias(0, 0, 0);
     imu3.set_gyro_bias(0, 0, 0);
     
-    bool success = calibrate_gyroscope_bias(imu1);
-    success |= calibrate_gyroscope_bias(imu2);
-    success |= calibrate_gyroscope_bias(imu3);
+    bool success = calibrate_gyroscope_bias(imu1, "imu1/calibration/gyro_bias");
+    success |= calibrate_gyroscope_bias(imu2, "imu2/calibration/gyro_bias");
+    success |= calibrate_gyroscope_bias(imu3, "imu3/calibration/gyro_bias");
 
     // The ARWAIN application uses several threads. It is possible in principle for the autocalibration state
     // to be changed before active calibration has finished. This should not be allowed as invalid calibration

@@ -389,7 +389,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     results = calibrator1.get_params();
     arwain::config.replace("imu1/calibration/gyro_bias", results.to_array());
 
-    IIM42652<LinuxSmbusI2CDevice> imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
     std::cout << "Calibrating gyroscope on " << imu2.get_bus() << " at 0x" << std::hex << imu2.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator2;
     while (!calibrator2.is_converged())
@@ -400,7 +400,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     results = calibrator2.get_params();
     arwain::config.replace("imu2/calibration/gyro_bias", results.to_array());
 
-    IIM42652<LinuxSmbusI2CDevice> imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
     std::cout << "Calibrating gyroscope on " << imu3.get_bus() << " at 0x" << std::hex << imu3.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator3;
     while (!calibrator3.is_converged())
