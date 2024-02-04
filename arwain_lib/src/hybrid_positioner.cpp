@@ -26,9 +26,9 @@ double time_between_pushes = 0.5 /* seconds */;
 HybridPositioner::HybridPositioner()
     : imu_vel_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
           std::bind(&HybridPositioner::new_inertial_velocity_callback, this, std::placeholders::_1))},
-      imu_pos_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+      imu_pos_event_id{arwain::Events::new_arwain_position_event.add_callback(
           std::bind(&HybridPositioner::new_inertial_position_callback, this, std::placeholders::_1))},
-      uwb_pos_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
+      uwb_pos_event_id{arwain::Events::new_uwb_position_event.add_callback(
           std::bind(&HybridPositioner::new_uwb_position_callback, this, std::placeholders::_1))},
       imu_rot_event_id{arwain::Events::new_orientation_data_event.add_callback(
           std::bind(&HybridPositioner::new_orientation_data_callback, this, std::placeholders::_1))}
@@ -63,7 +63,9 @@ void HybridPositioner::new_inertial_velocity_callback(arwain::Events::Vector3Eve
 
 void HybridPositioner::new_inertial_position_callback(arwain::Events::Vector3EventWithDt inertial_event)
 {
-    if (!arwain::config.hybrid_position_compute)
+    // This might seem like a mistake since I am checking heading config in the inertial position callback.
+    // It is correct. Heading correction is what the inertial positions are used for in the hybrid localizer.
+    if (!arwain::config.hybrid_heading_compute)
     {
         return;
     }
@@ -188,7 +190,7 @@ void HybridPositioner::run_inference()
 
     Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{100, "hybrid_position_timer"};
 
-    auto loop_count = 0;
+    auto loop_count = 1;
     while (mode == arwain::OperatingMode::Inference)
     {
         if (!arwain::config.hybrid_heading_compute)

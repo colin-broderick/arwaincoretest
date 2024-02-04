@@ -62,8 +62,8 @@ void publish_positions(arwain::WebSocketServer& server, UUBLA::Network& uubla)
     {
         auto pos = hyb->get_position();
 
-        message.set_header({2, MessageType::position, {123, 123}});
-        message.set_data({pos.x, pos.z, pos.y, 0});
+        message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
+        message.set_data({pos.x, pos.y, pos.z, 0});
         server.send_message(message.to_string());
     }
 
@@ -142,6 +142,8 @@ UublaWrapper::~UublaWrapper()
 void UublaWrapper::core_setup()
 {
     m_uubla = std::make_unique<UUBLA::Network>();
+    // TODO Make this optional from config file
+    m_uubla->force_plane(false);
     l_uubla = m_uubla.get();
 }
 
@@ -152,8 +154,7 @@ void UublaWrapper::run_idle()
 
 void UublaWrapper::run()
 {
-    // TODO Currently configured to act as an UUBLA master; need to generalize.
-    if (!arwain::config.use_uwb_positioning || arwain::config.node_id != 2)
+    if (!arwain::config.use_uwb_positioning || !(arwain::config.node_id < 10))
     {
         return;
     }
@@ -176,7 +177,6 @@ void pin_thread(std::jthread& th, int core_number);
 
 void UublaWrapper::setup_inference()
 {
-    m_uubla->force_plane(true);
     m_uubla->set_ewma_gain(0.1);
     // m_uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
     // m_uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
@@ -208,7 +208,9 @@ void UublaWrapper::run_inference()
         m_uubla->process_callbacks();
         publish_positions(*server, *m_uubla);
         auto now_count = timer.count();
-        arwain::Events::new_uwb_position_event.invoke({get_own_position(), (now_count - last_count) / 1000.0});
+        // TODO This is because interval timer.count doesn't return the milisecond count as it should.
+        // Consider also the timing in other inetval timer locations before making changes.
+        arwain::Events::new_uwb_position_event.invoke({get_own_position(), (now_count - last_count) / 1000.0 / 1000.0 / 1000.0});
         last_count = now_count;
         timer.await();
     }
@@ -246,8 +248,11 @@ double UublaWrapper::get_distance(const int position)
 
 Vector3 UublaWrapper::get_own_position() const
 {
-    // TODO Remove hard-coded 0002; get from config.
-    return m_uubla->get_node_position("0002"); // return get_node_position(own_id); // TODO
+    return m_uubla->get_node_position(
+        UUBLA::Node::name_from_int(
+            arwain::config.node_id
+        )
+    );
 }
 
 Vector3 UublaWrapper::get_node_position(const std::string& node_name) const
