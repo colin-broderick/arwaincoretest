@@ -34,6 +34,8 @@ namespace arwain
         double gravity;              // Magnitude of local gravity, e.g. 9.81.
         double struggle_threshold;   // Heuristic parameter used to determine when a subject may be in distress. NOT YET WELL DEFINED.
         double freefall_sensitivity; // The sensitivity to freefall detection.
+        bool hybrid_position_compute;
+        bool hybrid_heading_compute;
         double hybrid_position_gain;
         Vector3 accel1_bias;         // The systematic bias in measurements from accelerometer 1.
         Vector3 accel2_bias;         // The systematic bias in measurements from accelerometer 2.
