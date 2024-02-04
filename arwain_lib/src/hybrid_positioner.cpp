@@ -19,9 +19,12 @@ Current_angular_correction is updated every frame.
 */
 
 /** \brief These buffers keep a short record of a subsample of positions from these two sources. */
-static GlobalBuffer<Vector3, 20> inertial_positions;
-static GlobalBuffer<Vector3, 20> uwb_positions;
-double time_between_pushes = 0.5 /* seconds */;
+namespace
+{
+    GlobalBuffer<Vector3, 20> inertial_positions;
+    GlobalBuffer<Vector3, 20> uwb_positions;
+    double time_between_pushes = 0.5 /* seconds */;
+}
 
 HybridPositioner::HybridPositioner()
     : imu_vel_event_id{arwain::Events::new_arwain_velocity_event.add_callback(
@@ -79,8 +82,12 @@ void HybridPositioner::new_inertial_position_callback(arwain::Events::Vector3Eve
     }
 }
 
+static bool uwb_positions_supplied = false;
+
 void HybridPositioner::new_uwb_position_callback(arwain::Events::Vector3EventWithDt uwb_event)
 {
+    uwb_positions_supplied = true;
+
     if (!arwain::config.hybrid_position_compute)
     {
         return;
@@ -150,12 +157,20 @@ std::vector<PositionICP> gbuffer_to_icp(const GlobalBuffer<Vector3, 20>& gbuffer
     return icp_buffer;
 }
 
-std::optional<double> arwain_icp_wrapper(const GlobalBuffer<Vector3, 20>& inertial_positions, const GlobalBuffer<Vector3, 20>& uwb_positions)
+std::optional<ICPResult> arwain_icp_wrapper(const GlobalBuffer<Vector3, 20>& inertial_positions, const GlobalBuffer<Vector3, 20>& uwb_positions)
 {
     // TODO This wrapper business can all be eliminated if we have arwain_icp take sensible types.
     auto icp_inertial_positions = gbuffer_to_icp(inertial_positions);
     auto icp_uwb_positions = gbuffer_to_icp(uwb_positions);
-    return arwain_icp_2d(icp_inertial_positions, icp_uwb_positions);
+    try
+    {
+        return arwain_icp_2d(icp_inertial_positions, icp_uwb_positions);
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "Error running ICP: " << e.what() << '\n';
+        return std::nullopt;
+    }
 }
 
 constexpr double degrees_0 = 0;
@@ -180,6 +195,25 @@ auto update_correction(double new_angle, double old_angle)
     }
 }
 
+bool uwb_safe()
+{
+    static bool is_safe = false;
+    if (is_safe)
+    {
+        return is_safe;
+    }
+
+    for (auto& pos : uwb_positions.get_data())
+    {
+        if (pos != Vector3::Zero)
+        {
+            is_safe = true;
+            return is_safe;
+        }
+    }
+    return is_safe;
+}
+
 void HybridPositioner::run_inference()
 {
     // The things I do here probably seem pointless but matching the pattern
@@ -199,12 +233,19 @@ void HybridPositioner::run_inference()
             continue;
         }
 
+        if (!uwb_safe())
+        {
+            loop_scheduler.await();
+            continue;
+        }
+
         if (loop_count % 50 == 0)
         {
             auto new_angular_correction = arwain_icp_wrapper(inertial_positions, uwb_positions);
-            if (new_angular_correction)
+            if (new_angular_correction && new_angular_correction.value().confidence < 1.0)
             {
-                current_angular_correction = update_correction(new_angular_correction.value(), current_angular_correction);
+                std::cout << new_angular_correction.value().angle << " " << new_angular_correction.value().confidence << '\n';
+                current_angular_correction = update_correction(new_angular_correction.value().angle, current_angular_correction);
             }
         }
         hybrid_pos_log << loop_scheduler.count() << ' ' << hyb.position.x << ' ' << hyb.position.y << ' ' << hyb.position.z << '\n';

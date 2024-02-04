@@ -64,6 +64,7 @@ void publish_positions(arwain::WebSocketServer& server, UUBLA::Network& uubla)
 
         message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
         message.set_data({pos.x, pos.y, pos.z, 0});
+        // std::cout << message.to_string() << '\n';
         server.send_message(message.to_string());
     }
 
