@@ -319,27 +319,6 @@ arwain::ReturnCode arwain::execute_jobs()
         sleep_ms(100);
     }
 
-    std::cout << "sensor_manager.join(); " << std::endl;
-    sensor_manager.join();
-    std::cout << "position_velocity_inference.join(); " << std::endl;
-    position_velocity_inference.join();
-    std::cout << "stance_detection.join(); " << std::endl;
-    stance_detection.join();
-    // std::cout << "status_reporting.join(); " << std::endl; // Some issue joining this thread.
-    // status_reporting.join();
-    // std::cout << "debug_prints.join(); " << std::endl;
-    // debug_prints.join();
-    std::cout << "altimeter.join(); " << std::endl;
-    altimeter.join();
-    std::cout << "indoor_positioning_system.join(); " << std::endl;
-    indoor_positioning_system.join();
-    #if USE_REALSENSE
-    camera_controller.join();
-    #endif
-    std::cout << "arwain_cli.join();" << std::endl;
-    arwain_cli.join();
-    std::cout << "All threads joined" << std::endl;
-
     return arwain::ReturnCode::Success;
 }
 
