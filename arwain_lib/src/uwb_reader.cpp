@@ -137,7 +137,7 @@ void UublaWrapper::core_setup()
 {
     m_uubla = std::make_unique<UUBLA::Network>();
     // TODO Make this optional from config file
-    m_uubla->force_plane(false);
+    m_uubla->force_plane(arwain::config.force_z_zero);
     l_uubla = m_uubla.get();
 }
 

@@ -26,6 +26,7 @@ namespace arwain
         arwain::ReturnCode read_from_file();
 
     public:
+        bool force_z_zero;
         std::string pos_to_publish;
         double active_threshold;     // Heuristic parameter used to distinguish types of motion at similar speeds. NOT YET WELL DEFINED.
         double walking_threshold;    // Velocity while vertical above which a subject is inferred to be walking.
