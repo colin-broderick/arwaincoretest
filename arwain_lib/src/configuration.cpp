@@ -20,6 +20,8 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
         return arwain::ReturnCode::NoInferenceFile;
     }
 
+    this->pos_to_publish = cfgparser.read_option<std::string>("pos_to_publish");
+
     // Read all options into the configuration object.
     this->active_threshold = cfgparser.read_option<double>("stance/active_threshold");
     this->walking_threshold = cfgparser.read_option<double>("stance/walking_threshold");

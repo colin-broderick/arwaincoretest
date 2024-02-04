@@ -81,6 +81,10 @@ void PositionVelocityInference::setup_inference()
     position_file << "time x y z" << "\n";
 }
 
+// TODO Move all the tensorflow stuff out of the header and into this file.
+// Should dramatically improve build times. Currently anything that includes
+// the header has to deal with all the tensorflow shit.
+
 void PositionVelocityInference::run_inference()
 {
     setup_inference();

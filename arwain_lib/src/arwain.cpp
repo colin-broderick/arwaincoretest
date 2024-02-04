@@ -280,6 +280,9 @@ void arwain::setup_log_folder_name_suffix(const arwain::InputParser& input)
     }
 }
 
+std::unique_ptr<HybridPositioner> hybrid_positioner;
+std::unique_ptr<UublaWrapper> uubla_wrapper;
+
 /** \brief Creates the ARWAIN job threads and then blocks until those threads are ended by setting
  * their modes to arwain::OperatingMode::Terminate.
  * \return ARWAIN return code indiciating success or failure.
@@ -294,8 +297,14 @@ arwain::ReturnCode arwain::execute_jobs()
     // DebugPrints debug_prints;
     Altimeter altimeter;                                    // Uses the BMP384 sensor to determine altitude.
     IndoorPositioningSystem indoor_positioning_system;      // Floor, stair, corner snapping.
-    UublaWrapper uubla_wrapper;                             // Enable this node to operate as an UUBLA master node.
-    HybridPositioner hybrid_positioner;
+    uubla_wrapper = std::make_unique<UublaWrapper>();       // Enable this node to operate as an UUBLA master node.
+
+    // If neither of the hybrid subsystems are enabled, no point loading the hybridizer.
+    if (arwain::config.hybrid_heading_compute || arwain::config.hybrid_position_compute)
+    {
+        hybrid_positioner = std::make_unique<HybridPositioner>();
+    }
+
     #if USE_REALSENSE
     CameraController camera_controller;
     #endif

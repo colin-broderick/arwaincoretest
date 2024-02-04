@@ -11,6 +11,7 @@
 #include "arwain/uwb_reader.hpp"
 #include "arwain/service_manager.hpp"
 #include "arwain/hybrid_positioner.hpp"
+#include "arwain/velocity_prediction.hpp"
 
 #include "arwain/websocket.hpp"
 #include "arwain/ws_includes.hpp"
@@ -41,34 +42,45 @@ void position_callback(int nodeID, double x, double y, double z)
 
 #define PUBLISH_HYBRID_POSITIONS
 
-void publish_positions(arwain::WebSocketServer& server, UUBLA::Network& uubla)
+void publish_positions_on_websocket(arwain::WebSocketServer& server, UUBLA::Network& uubla)
 {
     Message<PositionData> message;
 
-#ifdef PUBLISH_UUBLA_POSITIONS
-    auto data = uubla.get_nodes();
-    for (auto& [k, v] : data)
+    if (arwain::config.pos_to_publish == "uubla")
     {
-        Vector3 pos = v.get_position();
-        message.set_header({v.id(), MessageType::position, {123, 123}});
-        message.set_data({pos.x, pos.y, pos.z, v.position_fixed() ? 1 : 0});
-        // server.add_history(message);
-        server.send_message(message.to_string());
+        auto data = uubla.get_nodes();
+        for (auto& [k, v] : data)
+        {
+            Vector3 pos = v.get_position();
+            message.set_header({v.id(), MessageType::position, {123, 123}});
+            message.set_data({pos.x, pos.y, pos.z, v.position_fixed() ? 1 : 0});
+            // server.add_history(message);
+            server.send_message(message.to_string());
+        }
     }
-
-#elif defined(PUBLISH_HYBRID_POSITIONS)
-    auto hyb = ServiceManager::get_service<HybridPositioner>("HybridPositioner");
-    if (hyb)
+    else if (arwain::config.pos_to_publish == "hybrid")
     {
-        auto pos = hyb->get_position();
-
-        message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
-        message.set_data({pos.x, pos.y, pos.z, 0});
-        // std::cout << message.to_string() << '\n';
-        server.send_message(message.to_string());
+        auto hyb = ServiceManager::get_service<HybridPositioner>(HybridPositioner::service_name);
+        if (hyb)
+        {
+            auto pos = hyb->get_position();
+            message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
+            message.set_data({pos.x, pos.y, pos.z, 0});
+            // std::cout << message.to_string() << '\n';
+            server.send_message(message.to_string());
+        }
     }
-
-#endif
+    else if (arwain::config.pos_to_publish == "inertial")
+    {
+        auto inferrer = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
+        if (inferrer)
+        {
+            auto pos = inferrer->get_position();
+            message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
+            message.set_data({pos.x, pos.y, pos.z, 0});
+            server.send_message(message.to_string());
+        }
+    }
 }
 
 void state_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssServer::Connection> cn, std::string& msg)
@@ -101,34 +113,16 @@ void state_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssSer
     }
 }
 
-// void fn(UUBLA::Events::SerialEventData data)
-// {
-//     // std::cout << data.line << '\n';
-// }
-
-// void newpos(UUBLA::Events::PositionEventData data)
-// {
-//     // std::cout << "new position computed\n";
-// }
-
-// namespace
-// {
-//     uint64_t eventkey_serial = 0;
-//     uint64_t eventkey_position = 0;
-// }
-
-std::unique_ptr<arwain::WebSocketServer> server;
+std::unique_ptr<arwain::WebSocketServer> websocket_server;
 
 UublaWrapper::UublaWrapper()
 {
     ServiceManager::register_service(this, service_name);
-    // auto eventkey_serial = UUBLA::Events::serial_event.add_callback(fn);
-    // auto eventkey_position = UUBLA::Events::position_event.add_callback(newpos);
 
     // The websocket server exists to receive position data from the Unity front end.
     // Upon reception, data is fed to the UUBLA instance running here and there it is
     // used for solving for tag position.
-    server = std::make_unique<arwain::WebSocketServer>(8081, state_messages_callback);
+    websocket_server = std::make_unique<arwain::WebSocketServer>(8081, state_messages_callback);
     init();
 }
 
@@ -190,29 +184,44 @@ std::atomic<bool> runflag = true;
 bool UublaWrapper::cleanup_inference()
 {
     UUBLA::run_flag = false;
-    // serial_reader_th.request_stop();
     return true;
+}
+
+void publish_inertial_on_uwb()
+{
+    auto inf = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
+    if (inf)
+    {
+        auto pos = inf->get_position();
+        UUBLA::add_to_send_queue({pos, arwain::config.node_id});
+    }
 }
 
 void UublaWrapper::run_inference()
 {
     setup_inference();
 
-    // TODO: Get the framerate (30) from somewhere sensible, or hard code?
+    // TODO: Get the framerate (30?) from somewhere sensible, or hard code?
     IntervalTimer<std::chrono::milliseconds> timer{1000 / 15 /* hz */};
 
     auto last_count = timer.count();
     while (mode == arwain::OperatingMode::Inference)
     {
-        m_uubla->process_queue();
-        m_uubla->solve_map();
-        m_uubla->process_callbacks();
-        publish_positions(*server, *m_uubla);
-        auto now_count = timer.count();
-        // TODO This is because interval timer.count doesn't return the milisecond count as it should.
-        // Consider also the timing in other inetval timer locations before making changes.
-        arwain::Events::new_uwb_position_event.invoke({get_own_position(), (now_count - last_count) / 1000.0 / 1000.0 / 1000.0});
-        last_count = now_count;
+        if (arwain::config.use_uwb_positioning)
+        {
+            m_uubla->process_queue();
+            m_uubla->solve_map();
+            m_uubla->process_callbacks();
+            auto now_count = timer.count();
+            // TODO This is because interval timer.count doesn't return the milisecond count as it should.
+            // Consider also the timing in other inetval timer locations before making changes.
+            arwain::Events::new_uwb_position_event.invoke({get_own_position(), (now_count - last_count) / 1000.0 / 1000.0 / 1000.0});
+            last_count = now_count;
+        }
+
+        // We still want to publish positions over WebSocket, even if we aren't using UWB positioning.
+        publish_positions_on_websocket(*websocket_server, *m_uubla);
+        // publish_inertial_on_uwb();
         timer.await();
     }
 
