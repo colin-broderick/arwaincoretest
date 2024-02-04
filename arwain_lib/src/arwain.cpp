@@ -282,6 +282,14 @@ void arwain::setup_log_folder_name_suffix(const arwain::InputParser& input)
 
 std::unique_ptr<HybridPositioner> hybrid_positioner;
 std::unique_ptr<UublaWrapper> uubla_wrapper;
+std::unique_ptr<SensorManager> sensor_manager;
+std::unique_ptr<PositionVelocityInference> position_velocity_inference;
+std::unique_ptr<StanceDetection> stance_detection;                       // Stance, freefall, entanglement detection.
+std::unique_ptr<Altimeter> altimeter;                                    // Uses the BMP384 sensor to determine altitude.
+std::unique_ptr<IndoorPositioningSystem> indoor_positioning_system;      // Floor, stair, corner snapping.
+std::unique_ptr<ArwainCLI> arwain_cli;                                   // Simple command line interface for runtime mode switching.
+std::unique_ptr<StatusReporting> status_reporting;                       // LoRa packet transmissions.
+// std::unique_ptr<CameraController> camera_controller;
 
 /** \brief Creates the ARWAIN job threads and then blocks until those threads are ended by setting
  * their modes to arwain::OperatingMode::Terminate.
@@ -290,14 +298,13 @@ std::unique_ptr<UublaWrapper> uubla_wrapper;
 arwain::ReturnCode arwain::execute_jobs()
 {
     // Start worker threads.
-    SensorManager sensor_manager;                            // Reading IMU data, updating orientation filters.
-    PositionVelocityInference position_velocity_inference;  // Velocity and position inference.
-    StanceDetection stance_detection;                       // Stance, freefall, entanglement detection.
-    // StatusReporting status_reporting;                       // LoRa packet transmissions.
-    // DebugPrints debug_prints;
-    Altimeter altimeter;                                    // Uses the BMP384 sensor to determine altitude.
-    IndoorPositioningSystem indoor_positioning_system;      // Floor, stair, corner snapping.
-    uubla_wrapper = std::make_unique<UublaWrapper>();       // Enable this node to operate as an UUBLA master node.
+    sensor_manager = std::make_unique<SensorManager>();                             // Reading IMU data, updating orientation filters.
+    position_velocity_inference = std::make_unique<PositionVelocityInference>();    // Velocity and position inference.
+    stance_detection = std::make_unique<StanceDetection>();;                        // Stance, freefall, entanglement detection.
+    altimeter = std::make_unique<Altimeter>();                                      // Uses the BMP384 sensor to determine altitude.
+    indoor_positioning_system = std::make_unique<IndoorPositioningSystem>();        // Floor, stair, corner snapping.
+    uubla_wrapper = std::make_unique<UublaWrapper>();                               // Enable this node to operate as an UUBLA master node.
+    // status_reporting = std::make_unique<StatusReporting>();                      // LoRa packet transmissions.
 
     // If neither of the hybrid subsystems are enabled, no point loading the hybridizer.
     if (arwain::config.hybrid_heading_compute || arwain::config.hybrid_position_compute)
@@ -306,15 +313,11 @@ arwain::ReturnCode arwain::execute_jobs()
     }
 
     #if USE_REALSENSE
-    CameraController camera_controller;
+    camera_controller = std::make_unique<CameraController>(); 
     #endif
-    ArwainCLI arwain_cli;                                   // Simple command line interface for runtime mode switching.
+    arwain_cli = std::make_unique<ArwainCLI>();                                   // Simple command line interface for runtime mode switching.
 
-    // Set pointers ...
-    // status_reporting.set_stance_detection_pointer(stance_detection);
-    // debug_prints.set_stance_detection_pointer(stance_detection);
-
-    while (arwain_cli.get_mode() != arwain::OperatingMode::Terminate)
+    while (arwain_cli->get_mode() != arwain::OperatingMode::Terminate)
     {
         sleep_ms(100);
     }
