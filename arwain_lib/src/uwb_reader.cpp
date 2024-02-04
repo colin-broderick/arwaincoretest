@@ -100,11 +100,29 @@ void state_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssSer
     }
 }
 
+// void fn(UUBLA::Events::SerialEventData data)
+// {
+//     // std::cout << data.line << '\n';
+// }
+
+// void newpos(UUBLA::Events::PositionEventData data)
+// {
+//     // std::cout << "new position computed\n";
+// }
+
+// namespace
+// {
+//     uint64_t eventkey_serial = 0;
+//     uint64_t eventkey_position = 0;
+// }
+
 std::unique_ptr<arwain::WebSocketServer> server;
 
 UublaWrapper::UublaWrapper()
 {
     ServiceManager::register_service(this, service_name);
+    // auto eventkey_serial = UUBLA::Events::serial_event.add_callback(fn);
+    // auto eventkey_position = UUBLA::Events::position_event.add_callback(newpos);
 
     // The websocket server exists to receive position data from the Unity front end.
     // Upon reception, data is fed to the UUBLA instance running here and there it is
@@ -117,6 +135,8 @@ UublaWrapper::~UublaWrapper()
 {
     UUBLA::run_flag = false;
     ServiceManager::unregister_service(service_name);
+    // UUBLA::Events::serial_event.remove_callback(eventkey_serial);
+    // UUBLA::Events::position_event.remove_callback(eventkey_position);
 }
 
 void UublaWrapper::core_setup()
