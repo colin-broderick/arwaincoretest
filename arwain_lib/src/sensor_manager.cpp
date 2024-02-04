@@ -35,6 +35,8 @@ Vector3 SensorManager::world_align(const Vector3& vec, const Quaternion& rotatio
 
 std::array<double, 3> vec_to_array3(std::vector<double> in_vector);
 
+void pin_thread(std::jthread& th, int core_number);
+
 /** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does sleep if in non-relevant mode. */
 void SensorManager::run()
 {
@@ -460,6 +462,7 @@ bool SensorManager::init()
 {
     core_setup();
     job_thread = std::jthread{std::bind_front(&SensorManager::run, this)};
+    pin_thread(job_thread, 2);
     return true;
 }
 

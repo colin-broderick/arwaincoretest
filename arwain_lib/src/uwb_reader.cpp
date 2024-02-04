@@ -172,6 +172,8 @@ void UublaWrapper::run()
     }
 }
 
+void pin_thread(std::jthread& th, int core_number);
+
 void UublaWrapper::setup_inference()
 {
     m_uubla->force_plane(true);
@@ -179,6 +181,7 @@ void UublaWrapper::setup_inference()
     // m_uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
     // m_uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
     serial_reader_th = std::jthread{serial_reader_fn, m_uubla.get(), arwain::config.uubla_serial_port, 115200};
+    pin_thread(serial_reader_th, 3);
 }
 
 std::atomic<bool> runflag = true;
