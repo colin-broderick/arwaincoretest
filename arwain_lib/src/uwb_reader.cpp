@@ -66,7 +66,6 @@ void publish_positions_on_websocket(arwain::WebSocketServer& server, UUBLA::Netw
             auto pos = hyb->get_position();
             message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
             message.set_data({pos.x, pos.y, pos.z, 0});
-            // std::cout << message.to_string() << '\n';
             server.send_message(message.to_string());
         }
     }
@@ -149,10 +148,10 @@ void UublaWrapper::run_idle()
 
 void UublaWrapper::run()
 {
-    if (!arwain::config.use_uwb_positioning || !(arwain::config.node_id < 10))
-    {
-        return;
-    }
+    // if (!arwain::config.use_uwb_positioning || !(arwain::config.node_id < 10))
+    // {
+    //     return;
+    // }
 
     while (mode != arwain::OperatingMode::Terminate)
     {
@@ -213,7 +212,7 @@ void UublaWrapper::run_inference()
             m_uubla->solve_map();
             m_uubla->process_callbacks();
             auto now_count = timer.count();
-            // TODO This is because interval timer.count doesn't return the milisecond count as it should.
+            // TODO The maths below is because interval timer.count doesn't return the milisecond count as it should.
             // Consider also the timing in other inetval timer locations before making changes.
             arwain::Events::new_uwb_position_event.invoke({get_own_position(), (now_count - last_count) / 1000.0 / 1000.0 / 1000.0});
             last_count = now_count;
