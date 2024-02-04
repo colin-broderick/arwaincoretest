@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <thread>
 
 #include "arwain/arwain.hpp"
 #include "arwain/serial.hpp"
@@ -113,6 +114,43 @@ void state_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssSer
 }
 
 std::unique_ptr<arwain::WebSocketServer> websocket_server;
+std::unique_ptr<arwain::WebSocketServer> dash_server;
+
+void dash_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssServer::Connection> cn, std::string& msg)
+{
+    Header header;
+    header.deserialise(msg);
+
+    switch (header.type)
+    {
+        case MessageType::configuration:
+        {
+            Message<ConfigurationData> config_message;
+            auto& data = config_message.deserialize(msg);
+
+            if (!std::isnan(data.spring_factor))
+            {
+                UUBLA::Configuration::set_overtight_spring_factor(data.spring_factor);
+            }
+            if (!std::isnan(data.maximum_expected_rssi))
+            {
+                UUBLA::Configuration::set_max_expected_rssi(data.maximum_expected_rssi);
+            }
+            if (!std::isnan(data.minimum_viable_rssi))
+            {
+                UUBLA::Configuration::set_min_viable_rssi(data.minimum_viable_rssi);
+            }
+            if (!std::isnan(data.position_gain))
+            {
+                UUBLA::Configuration::set_position_gain(data.position_gain);
+            }
+            break;
+        }
+        default:
+            // Nothing else handled on this socket
+            break;
+    }
+}
 
 UublaWrapper::UublaWrapper()
 {
@@ -122,6 +160,7 @@ UublaWrapper::UublaWrapper()
     // Upon reception, data is fed to the UUBLA instance running here and there it is
     // used for solving for tag position.
     websocket_server = std::make_unique<arwain::WebSocketServer>(8081, state_messages_callback);
+    dash_server = std::make_unique<arwain::WebSocketServer>(8082, dash_messages_callback);
     init();
 }
 
@@ -196,16 +235,62 @@ void publish_inertial_on_uwb()
     }
 }
 
+TimeStamp get_time()
+{
+    auto now = std::chrono::high_resolution_clock::now().time_since_epoch();
+    return {
+        std::chrono::duration_cast<std::chrono::seconds>(now).count(),
+        std::chrono::duration_cast<std::chrono::nanoseconds>(now).count() % 1'000'000'000
+    };
+}
+
+std::string state_string(UUBLA::Network* uubla)
+{
+    JsonObject message;
+
+    auto time = get_time();
+    message["header"]["message_type"] = MessageType::diagnostic;
+    message["header"]["Node_ID"] = 0xEF;
+    message["header"]["time_stamp"]["seconds"] = time.seconds;
+    message["header"]["time_stamp"]["nanoseconds"] = time.nanoseconds;
+
+    for (auto& [trusting_node_name, node] : uubla->get_nodes())
+    {
+        for (auto& [trusted_node_name, trust] : node.beacon_trust)
+        {
+            message["data"]["trust"][trusting_node_name][trusted_node_name] = trust;
+            if (node.beacon_trust.size() > 0)
+            {
+                message["data"]["rssi"][trusting_node_name][trusted_node_name] = uubla->distances[trusted_node_name+trusting_node_name].rssi;
+                message["data"]["rssi_band"][trusting_node_name][trusted_node_name] = UUBLA::bandify_rssi(uubla->distances[trusted_node_name+trusting_node_name].rssi);
+                message["data"]["range"][trusting_node_name][trusted_node_name] = uubla->distances[trusted_node_name+trusting_node_name].distance;
+            }
+        }
+    }
+    for (auto& [node_name, node] : uubla->get_nodes())
+    {
+        auto pos = node.get_position();
+        message["data"]["position"][node_name]["x"] = pos.x;
+        message["data"]["position"][node_name]["y"] = pos.y;
+        message["data"]["position"][node_name]["z"] = pos.z;
+    }
+
+    return message.dump();
+}
+
 void UublaWrapper::run_inference()
 {
     setup_inference();
 
     // TODO: Get the framerate (30?) from somewhere sensible, or hard code?
-    IntervalTimer<std::chrono::milliseconds> timer{1000 / 15 /* hz */};
+    IntervalTimer<std::chrono::milliseconds> timer{1000 / (15 /* hz */)};
 
     auto last_count = timer.count();
+    auto frame_counter = 0;
     while (mode == arwain::OperatingMode::Inference)
     {
+        frame_counter++;
+
         if (arwain::config.use_uwb_positioning)
         {
             m_uubla->process_queue();
@@ -216,6 +301,11 @@ void UublaWrapper::run_inference()
             // Consider also the timing in other inetval timer locations before making changes.
             arwain::Events::new_uwb_position_event.invoke({get_own_position(), (now_count - last_count) / 1000.0 / 1000.0 / 1000.0});
             last_count = now_count;
+        }
+
+        if (frame_counter % 3 == 0)
+        {
+            dash_server->send_message(state_string(m_uubla.get()));
         }
 
         // We still want to publish positions over WebSocket, even if we aren't using UWB positioning.
