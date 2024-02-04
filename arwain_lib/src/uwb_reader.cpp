@@ -198,7 +198,7 @@ void UublaWrapper::run_inference()
     setup_inference();
 
     // TODO: Get the framerate (30) from somewhere sensible, or hard code?
-    IntervalTimer<std::chrono::milliseconds> timer{1000 / 30};
+    IntervalTimer<std::chrono::milliseconds> timer{1000 / 15 /* hz */};
 
     auto last_count = timer.count();
     while (mode == arwain::OperatingMode::Inference)
