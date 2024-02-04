@@ -290,8 +290,8 @@ arwain::ReturnCode arwain::execute_jobs()
     SensorManager sensor_manager;                            // Reading IMU data, updating orientation filters.
     PositionVelocityInference position_velocity_inference;  // Velocity and position inference.
     StanceDetection stance_detection;                       // Stance, freefall, entanglement detection.
-    StatusReporting status_reporting;                       // LoRa packet transmissions.
-    DebugPrints debug_prints;
+    // StatusReporting status_reporting;                       // LoRa packet transmissions.
+    // DebugPrints debug_prints;
     Altimeter altimeter;                                    // Uses the BMP384 sensor to determine altitude.
     IndoorPositioningSystem indoor_positioning_system;      // Floor, stair, corner snapping.
     UublaWrapper uubla_wrapper;                             // Enable this node to operate as an UUBLA master node.
@@ -302,8 +302,8 @@ arwain::ReturnCode arwain::execute_jobs()
     ArwainCLI arwain_cli;                                   // Simple command line interface for runtime mode switching.
 
     // Set pointers ...
-    status_reporting.set_stance_detection_pointer(stance_detection);
-    debug_prints.set_stance_detection_pointer(stance_detection);
+    // status_reporting.set_stance_detection_pointer(stance_detection);
+    // debug_prints.set_stance_detection_pointer(stance_detection);
 
     while (arwain_cli.get_mode() != arwain::OperatingMode::Terminate)
     {
@@ -316,17 +316,14 @@ arwain::ReturnCode arwain::execute_jobs()
     position_velocity_inference.join();
     std::cout << "stance_detection.join(); " << std::endl;
     stance_detection.join();
-    std::cout << "status_reporting.join(); " << std::endl;
-    status_reporting.join();
-    std::cout << "debug_prints.join(); " << std::endl;
-    debug_prints.join();
+    // std::cout << "status_reporting.join(); " << std::endl; // Some issue joining this thread.
+    // status_reporting.join();
+    // std::cout << "debug_prints.join(); " << std::endl;
+    // debug_prints.join();
     std::cout << "altimeter.join(); " << std::endl;
     altimeter.join();
     std::cout << "indoor_positioning_system.join(); " << std::endl;
     indoor_positioning_system.join();
-    #if USE_UUBLA
-    uubla_wrapper.join();
-    #endif
     #if USE_REALSENSE
     camera_controller.join();
     #endif
