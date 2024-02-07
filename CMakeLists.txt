@@ -44,6 +44,8 @@ endif()
 
 include(arwain_libs.cmake)
 
+provide_library("https://github.com/dpilger26/NumCpp.git" numcpp Version_2.12.1)
+
 if(BUILT_WITH_YOCTO)
 else()
     FetchContent_Declare(
