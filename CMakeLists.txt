@@ -14,6 +14,17 @@ find_package(Eigen3 REQUIRED)
 include_directories(EIGEN3_INCLUDE_DIR)
 link_directories(/usr/local64/lib)
 
+include(FetchContent)
+FetchContent_Declare(
+    simple-websocket-server
+    SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/sws/simple-websocket-server
+    GIT_REPOSITORY https://gitlab.com/eidheim/Simple-WebSocket-Server
+    GIT_PROGRESS TRUE
+    GIT_SHALLOW TRUE
+    GIT_TAG v2.0.2)
+FetchContent_MakeAvailable(simple-websocket-server)
+include_directories(${CMAKE_BINARY_DIR}/_deps/sws)
+
 add_definitions(-DNUMCPP_NO_USE_BOOST)
 
 include_directories(/usr/local64/include)
@@ -30,8 +41,6 @@ if(USE_REALSENSE)
     find_package(realsense2 REQUIRED)
     add_definitions(-DUSE_REALSENSE)
 endif()
-
-include(FetchContent)
 
 include(arwain_libs.cmake)
 
