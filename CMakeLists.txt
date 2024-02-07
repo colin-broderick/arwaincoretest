@@ -10,24 +10,9 @@ option(UNIT_TESTS           "Make private class methods public to enable testing
 option(THREAD_NAMES         "Enable thread naming code - debug only, not stable"             OFF)
 option(BUILT_WITH_YOCTO     "When building under yocto/bitbake we don't need to pull tflite" OFF)
 
-find_package(Eigen3 REQUIRED)
-include_directories(EIGEN3_INCLUDE_DIR)
-link_directories(/usr/local64/lib)
-
-include(FetchContent)
-FetchContent_Declare(
-    simple-websocket-server
-    SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/sws/simple-websocket-server
-    GIT_REPOSITORY https://gitlab.com/eidheim/Simple-WebSocket-Server
-    GIT_PROGRESS TRUE
-    GIT_SHALLOW TRUE
-    GIT_TAG v2.0.2)
-FetchContent_MakeAvailable(simple-websocket-server)
-include_directories(${CMAKE_BINARY_DIR}/_deps/sws)
-
 add_definitions(-DNUMCPP_NO_USE_BOOST)
 
-include_directories(/usr/local64/include)
+include(arwain_libs.cmake)
 
 include(CTest)
 
@@ -40,25 +25,6 @@ if(USE_REALSENSE)
     message("Using librealsense for T265 camera")
     find_package(realsense2 REQUIRED)
     add_definitions(-DUSE_REALSENSE)
-endif()
-
-include(arwain_libs.cmake)
-
-provide_library("https://github.com/dpilger26/NumCpp.git" numcpp Version_2.12.1)
-
-if(BUILT_WITH_YOCTO)
-else()
-    FetchContent_Declare(
-            tensorflow
-            GIT_REPOSITORY https://github.com/tensorflow/tensorflow.git
-            GIT_PROGRESS TRUE
-            GIT_SHALLOW TRUE
-            GIT_TAG v2.10.0
-            SOURCE_SUBDIR tensorflow/lite
-    )
-    FetchContent_MakeAvailable(tensorflow)
-    include_directories(./build/_deps/tensorflow-src)
-    include_directories(./build/flatbuffers/include)
 endif()
 
 set(CMAKE_CXX_STANDARD 20)
