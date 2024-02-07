@@ -1,5 +1,3 @@
-set(FETCHCONTENT_QUIET FALSE)
-
 function(provide_library url as_name tag)
     FetchContent_Declare(
         ${as_name}
@@ -11,6 +9,7 @@ function(provide_library url as_name tag)
     include_directories(${${as_name}_SOURCE_DIR}/include)
 endfunction()
 
+provide_library("https://bitbucket.org/arwain/arwain_math"          arwain_math         master)
 provide_library("https://bitbucket.org/arwain/arwain_config"        arwain_config       master)
 provide_library("https://bitbucket.org/arwain/bmp384"               bmp384              master)
 provide_library("https://bitbucket.org/arwain/logger"               logger              master)
