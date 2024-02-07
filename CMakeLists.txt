@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10.2)
 
 project(arwain)
-set(CMAKE_BUILD_TYPE Debug)
 find_package(GTest CONFIG REQUIRED)
 
 option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"                     ON)
@@ -32,9 +31,12 @@ if(USE_REALSENSE)
     add_definitions(-DUSE_REALSENSE)
 endif()
 
+include(FetchContent)
+
+include(arwain_libs.cmake)
+
 if(BUILT_WITH_YOCTO)
 else()
-    include(FetchContent)
     FetchContent_Declare(
             tensorflow
             GIT_REPOSITORY https://github.com/tensorflow/tensorflow.git
