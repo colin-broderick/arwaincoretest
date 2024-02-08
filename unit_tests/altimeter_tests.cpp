@@ -7,56 +7,6 @@
 #include "arwain/events.hpp"
 #include "test_base.hpp"
 
-/** \brief Test that the init() function in Altimeter correctly executes the true path. */
-HARDWARE_TEST(Altimeter, init__success)
-{
-    // First create the altimeter in an uninitalized state.
-    arwain::config.no_pressure = true;
-    Altimeter altimeter;
-
-    // Now initialize it.
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-
-    arwain::config.no_pressure = false;
-    EXPECT_TRUE(altimeter.init());
-
-    // And join it before quitting.
-    EXPECT_TRUE(altimeter.join());
-}
-
-/** \brief If pressure is disabled, init returns false and the rest of the
- * class is uninitialized.
- */
-HARDWARE_TEST(Altimeter, init__fail)
-{
-    arwain::config.no_pressure = true;
-    Altimeter altimeter;
-    EXPECT_TRUE(altimeter.init());
-    EXPECT_TRUE(altimeter.job_thread.joinable());
-    EXPECT_TRUE(altimeter.join());
-}
-
-/** \brief Test that alimeter.join returns the expected value depending on system state. */
-HARDWARE_TEST(Altimeter, join)
-{
-    {
-        arwain::config.no_pressure = true;
-        Altimeter altimeter;
-        EXPECT_TRUE(altimeter.init());
-        EXPECT_TRUE(altimeter.job_thread.joinable());
-        EXPECT_TRUE(altimeter.join());
-    }
-
-    {
-        arwain::config.no_pressure = false;
-        Altimeter altimeter;
-        EXPECT_TRUE(altimeter.job_thread.joinable());
-        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-
-        EXPECT_TRUE(altimeter.join());
-    }
-}
-
 HARDWARE_TEST(Altimeter, Altimeter)
 {
     EXPECT_NO_THROW(

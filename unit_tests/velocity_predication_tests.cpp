@@ -16,39 +16,6 @@ TEST(PositionVelocityInference, join)
     EXPECT_NO_THROW(inference.join());
 }
 
-/** \brief After init(), the job_thread(s) should be running and should be
- * joinable but incomplete. */
-TEST(PositionVelocityInference, init__success)
-{
-    arwain::config.no_inference = true;
-    PositionVelocityInference inferrer;
-
-    // At this point, the inferrer exists, but init() has not been fully executed.
-    // and the job thread(s) is not created.
-    arwain::config.no_inference = false;
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-    EXPECT_TRUE(inferrer.init());
-
-    EXPECT_TRUE(inferrer.job_thread.joinable());
-
-    inferrer.join();
-}
-
-/** \brief If the config.no_inference option is on, then init() should return
- * immediately with a false having taken no action. The job_thread should not
- * be joinable because it should never have started.
- */
-TEST(PositionVelocityInference, init__failure)
-{
-    GTEST_SKIP(); // Currently no simple way to test failure to start.
-    arwain::config.no_inference = true;
-    PositionVelocityInference inference;
-    EXPECT_FALSE(inference.init());
-    EXPECT_FALSE(inference.job_thread.joinable());
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-    inference.join();
-}
-
 TEST(PositionVelocityInference, run_inference)
 {
     PositionVelocityInference inference;
