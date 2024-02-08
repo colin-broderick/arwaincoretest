@@ -48,5 +48,5 @@ provide_library("git@bitbucket.org:arwain/arwain_event"         arwain_event    
 provide_library("git@bitbucket.org:arwain/uublacpp"             uublacpp            temp17)
 provide_library("git@bitbucket.org:arwain/lis3mdl"              lis3mdl             master)
 provide_library("git@bitbucket.org:arwain/arwain_orientation"   arwain_orientation  master)
-provide_library("git@bitbucket.org:arwain/arwain_icp"           arwain_icp          modern)
+provide_library("git@bitbucket.org:arwain/arwain_icp"           arwain_icp          master)
 provide_library("git@bitbucket.org:arwain/arwain_websocket"     arwain_websocket    master)
