@@ -69,7 +69,7 @@ TEST(ArwainCLI, s2i__quit)
 TEST(ArwainCLI, s2i__infer)
 {
 
-    arwain::config.inference_model_path = "/mnt/yocto/x004-yocto/sources/meta-arwain/recipes-arwain/arwain-inference-core/files/models/tflite/model_float32.tflite";
+    arwain::config.inference_model_path = "../models/tflite/model_float32.tflite";
 
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("infer\n");
@@ -88,7 +88,7 @@ TEST(ArwainCLI, s2i__infer)
 
 TEST(ArwainCLI, s2i__inference)
 {
-    arwain::config.inference_model_path = "/mnt/yocto/x004-yocto/sources/meta-arwain/recipes-arwain/arwain-inference-core/files/models/tflite/model_float32.tflite";
+    arwain::config.inference_model_path = "../models/tflite/model_float32.tflite";
 
     std::streambuf *orig = std::cin.rdbuf();
     std::istringstream input("inference\n");
