@@ -8,6 +8,7 @@ pipelines:
           - 'self.hosted'
           - 'linux'
         script:
+          - apt install libyaml-cpp-dev
           - mkdir build
           - cd build
           - cmake .. -DCMAKE_BUILD_TYPE=Release
