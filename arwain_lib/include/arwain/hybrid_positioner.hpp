@@ -23,7 +23,6 @@ class HybridPositioner : public ArwainJob, protected IArwainJobSpec
     public:
         HybridPositioner();
         ~HybridPositioner();
-        bool init() override;
         bool join() override;
         Vector3 get_position() const;
         static inline std::string service_name = "HybridPositioner";
@@ -33,12 +32,17 @@ class HybridPositioner : public ArwainJob, protected IArwainJobSpec
         std::jthread job_thread;
         arwain::Logger hybrid_pos_log;
         void new_inertial_velocity_callback(arwain::Events::Vector3EventWithDt uwb_position);
+        void new_inertial_position_callback(arwain::Events::Vector3EventWithDt uwb_position);
         void new_uwb_position_callback(arwain::Events::Vector3EventWithDt inertial_velocity);
+        void new_orientation_data_callback(arwain::Events::RotorEventWithDt rotor_data);
 
     private:
-        uint64_t vel_event_id = 0;
-        uint64_t pos_event_id = 0;
-
+        uint64_t imu_pos_event_id = 0;
+        uint64_t imu_vel_event_id = 0;
+        uint64_t imu_rot_event_id = 0;
+        uint64_t uwb_pos_event_id = 0;
+        double current_angular_correction = 0;
+    
     private:
         void run() override;
         void core_setup() override;

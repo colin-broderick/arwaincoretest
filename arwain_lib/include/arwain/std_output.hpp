@@ -29,8 +29,7 @@ class DebugPrints : public ArwainJob, protected IArwainJobSpec
     public:
         bool set_stance_detection_pointer(StanceDetection& stance);
         DebugPrints();
-        bool init();
-        bool join();
+        bool join() override;
 };
 
 #endif

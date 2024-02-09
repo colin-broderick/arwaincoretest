@@ -15,7 +15,12 @@
 
 IndoorPositioningSystem::IndoorPositioningSystem()
 {
-    init();
+    core_setup();
+    if (job_thread.joinable())
+    {
+        job_thread.join();
+    }
+    job_thread = std::jthread{std::bind_front(&IndoorPositioningSystem::run, this)};
 }
 
 void IndoorPositioningSystem::core_setup()
@@ -88,17 +93,6 @@ void IndoorPositioningSystem::run()
             break;
         }
     }
-}
-
-bool IndoorPositioningSystem::init()
-{
-    core_setup();
-    if (job_thread.joinable())
-    {
-        job_thread.join();
-    }
-    job_thread = std::jthread{std::bind_front(&IndoorPositioningSystem::run, this)};
-    return true;
 }
 
 bool IndoorPositioningSystem::join()

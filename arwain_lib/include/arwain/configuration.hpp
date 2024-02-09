@@ -26,6 +26,8 @@ namespace arwain
         arwain::ReturnCode read_from_file();
 
     public:
+        bool force_z_zero;
+        std::string pos_to_publish;
         double active_threshold;     // Heuristic parameter used to distinguish types of motion at similar speeds. NOT YET WELL DEFINED.
         double walking_threshold;    // Velocity while vertical above which a subject is inferred to be walking.
         double running_threshold;    // Velocity while vertical above which a subject is inferred to be running.
@@ -34,6 +36,8 @@ namespace arwain
         double gravity;              // Magnitude of local gravity, e.g. 9.81.
         double struggle_threshold;   // Heuristic parameter used to determine when a subject may be in distress. NOT YET WELL DEFINED.
         double freefall_sensitivity; // The sensitivity to freefall detection.
+        bool hybrid_position_compute;
+        bool hybrid_heading_compute;
         double hybrid_position_gain;
         Vector3 accel1_bias;         // The systematic bias in measurements from accelerometer 1.
         Vector3 accel2_bias;         // The systematic bias in measurements from accelerometer 2.

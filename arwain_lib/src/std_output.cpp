@@ -15,7 +15,8 @@
 
 DebugPrints::DebugPrints()
 {
-    init();
+    core_setup();
+    job_thread = std::jthread{std::bind_front(&DebugPrints::run, this)};
 }
 
 void DebugPrints::run()
@@ -110,13 +111,6 @@ void DebugPrints::run_idle()
 
 void DebugPrints::core_setup()
 {
-}
-    
-bool DebugPrints::init()
-{
-    core_setup();
-    job_thread = std::jthread{std::bind_front(&DebugPrints::run, this)};
-    return true;
 }
 
 bool DebugPrints::join()

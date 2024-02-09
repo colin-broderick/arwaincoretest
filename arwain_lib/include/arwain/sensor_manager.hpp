@@ -60,8 +60,7 @@ class SensorManager : public ArwainJob, protected IArwainJobSpec
     public:
         SensorManager();
         ~SensorManager();
-        bool init();
-        bool join();
+        bool join() override;
         void set_post_gyro_calibration_callback(std::function<void()> func);
         static inline std::string service_name = "SensorManager";
 };

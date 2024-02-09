@@ -280,6 +280,17 @@ void arwain::setup_log_folder_name_suffix(const arwain::InputParser& input)
     }
 }
 
+std::unique_ptr<HybridPositioner> hybrid_positioner;
+std::unique_ptr<UublaWrapper> uubla_wrapper;
+std::unique_ptr<SensorManager> sensor_manager;
+std::unique_ptr<PositionVelocityInference> position_velocity_inference;
+std::unique_ptr<StanceDetection> stance_detection;                       // Stance, freefall, entanglement detection.
+std::unique_ptr<Altimeter> altimeter;                                    // Uses the BMP384 sensor to determine altitude.
+std::unique_ptr<IndoorPositioningSystem> indoor_positioning_system;      // Floor, stair, corner snapping.
+std::unique_ptr<ArwainCLI> arwain_cli;                                   // Simple command line interface for runtime mode switching.
+std::unique_ptr<StatusReporting> status_reporting;                       // LoRa packet transmissions.
+// std::unique_ptr<CameraController> camera_controller;
+
 /** \brief Creates the ARWAIN job threads and then blocks until those threads are ended by setting
  * their modes to arwain::OperatingMode::Terminate.
  * \return ARWAIN return code indiciating success or failure.
@@ -287,52 +298,29 @@ void arwain::setup_log_folder_name_suffix(const arwain::InputParser& input)
 arwain::ReturnCode arwain::execute_jobs()
 {
     // Start worker threads.
-    SensorManager sensor_manager;                            // Reading IMU data, updating orientation filters.
-    PositionVelocityInference position_velocity_inference;  // Velocity and position inference.
-    StanceDetection stance_detection;                       // Stance, freefall, entanglement detection.
-    StatusReporting status_reporting;                       // LoRa packet transmissions.
-    DebugPrints debug_prints;
-    Altimeter altimeter;                                    // Uses the BMP384 sensor to determine altitude.
-    IndoorPositioningSystem indoor_positioning_system;      // Floor, stair, corner snapping.
-    UublaWrapper uubla_wrapper;                             // Enable this node to operate as an UUBLA master node.
-    HybridPositioner hybrid_positioner;
+    sensor_manager = std::make_unique<SensorManager>();                             // Reading IMU data, updating orientation filters.
+    position_velocity_inference = std::make_unique<PositionVelocityInference>();    // Velocity and position inference.
+    stance_detection = std::make_unique<StanceDetection>();;                        // Stance, freefall, entanglement detection.
+    altimeter = std::make_unique<Altimeter>();                                      // Uses the BMP384 sensor to determine altitude.
+    indoor_positioning_system = std::make_unique<IndoorPositioningSystem>();        // Floor, stair, corner snapping.
+    uubla_wrapper = std::make_unique<UublaWrapper>();                               // Enable this node to operate as an UUBLA master node.
+    // status_reporting = std::make_unique<StatusReporting>();                      // LoRa packet transmissions.
+
+    // If neither of the hybrid subsystems are enabled, no point loading the hybridizer.
+    if (arwain::config.hybrid_heading_compute || arwain::config.hybrid_position_compute)
+    {
+        hybrid_positioner = std::make_unique<HybridPositioner>();
+    }
+
     #if USE_REALSENSE
-    CameraController camera_controller;
+    camera_controller = std::make_unique<CameraController>(); 
     #endif
-    ArwainCLI arwain_cli;                                   // Simple command line interface for runtime mode switching.
+    arwain_cli = std::make_unique<ArwainCLI>();                                   // Simple command line interface for runtime mode switching.
 
-    // Set pointers ...
-    status_reporting.set_stance_detection_pointer(stance_detection);
-    debug_prints.set_stance_detection_pointer(stance_detection);
-
-    while (arwain_cli.get_mode() != arwain::OperatingMode::Terminate)
+    while (arwain_cli->get_mode() != arwain::OperatingMode::Terminate)
     {
         sleep_ms(100);
     }
-
-    std::cout << "sensor_manager.join(); " << std::endl;
-    sensor_manager.join();
-    std::cout << "position_velocity_inference.join(); " << std::endl;
-    position_velocity_inference.join();
-    std::cout << "stance_detection.join(); " << std::endl;
-    stance_detection.join();
-    std::cout << "status_reporting.join(); " << std::endl;
-    status_reporting.join();
-    std::cout << "debug_prints.join(); " << std::endl;
-    debug_prints.join();
-    std::cout << "altimeter.join(); " << std::endl;
-    altimeter.join();
-    std::cout << "indoor_positioning_system.join(); " << std::endl;
-    indoor_positioning_system.join();
-    #if USE_UUBLA
-    uubla_wrapper.join();
-    #endif
-    #if USE_REALSENSE
-    camera_controller.join();
-    #endif
-    std::cout << "arwain_cli.join();" << std::endl;
-    arwain_cli.join();
-    std::cout << "All threads joined" << std::endl;
 
     return arwain::ReturnCode::Success;
 }
@@ -392,7 +380,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     results = calibrator1.get_params();
     arwain::config.replace("imu1/calibration/gyro_bias", results.to_array());
 
-    IIM42652<LinuxSmbusI2CDevice> imu2{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
     std::cout << "Calibrating gyroscope on " << imu2.get_bus() << " at 0x" << std::hex << imu2.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator2;
     while (!calibrator2.is_converged())
@@ -403,7 +391,7 @@ arwain::ReturnCode arwain::calibrate_gyroscopes_offline()
     results = calibrator2.get_params();
     arwain::config.replace("imu2/calibration/gyro_bias", results.to_array());
 
-    IIM42652<LinuxSmbusI2CDevice> imu3{arwain::config.imu1_address, arwain::config.imu1_bus};
+    IIM42652<LinuxSmbusI2CDevice> imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
     std::cout << "Calibrating gyroscope on " << imu3.get_bus() << " at 0x" << std::hex << imu3.get_address() << "; please wait\n";
     GyroscopeCalibrator calibrator3;
     while (!calibrator3.is_converged())

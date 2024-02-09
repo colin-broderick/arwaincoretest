@@ -3,6 +3,7 @@
 
 #include <arwain/event_manager.hpp>
 #include <arwain/vector3.hpp>
+#include <arwain/quaternion.hpp>
 
 #include "arwain/modes.hpp"
 
@@ -20,9 +21,20 @@ namespace arwain::Events
             Vector3 acceleration;
             Vector3 data;
         };
-
         /** \brief Time in seconds since last data event. Should bypass any
-         * need for event respondents to track time data.
+         * need for event respondents to track time data. The producer
+         * is responsible for ensuring the dt is correct.
+         */
+        double dt;
+    };
+
+    struct RotorEventWithDt
+    {
+        /** \brief Any data that can be represented as a quaternion. */
+        Quaternion rotor;
+        /** \brief Time in seconds since last data event. Should bypass
+         * any need for event respondenets to track time data. The producer
+         * is responsible for ensuring the dt is correct.
          */
         double dt;
     };
@@ -38,6 +50,9 @@ namespace arwain::Events
 
     /** \brief Subscribe to this event to trigger a callback when new UWB position data is available */
     inline Event<Vector3EventWithDt> new_uwb_position_event;
+
+    /** \brief Subscribe to this event to trigger a callback when the main system orientition filter is updated. */
+    inline Event<RotorEventWithDt> new_orientation_data_event;
 }
 
 /** \brief This class exists to provide a means to track system mode in the cases where no
@@ -47,44 +62,42 @@ namespace arwain::Events
  */
 class StandAloneModeRegistrar
 {
-    public:
-        /** \brief The constructor registers the objects's callback() function with
-         * the switch_mode_event event in the EventManager.
-         */
-        StandAloneModeRegistrar()
-        {
-            deregistration_key = arwain::Events::switch_mode_event.add_callback(
-                std::bind(&StandAloneModeRegistrar::callback, this, std::placeholders::_1)
-            );
-        }
-        
-        /** \brief Deregisteres the event callback up destruction of object. */
-        ~StandAloneModeRegistrar()
-        {
-            arwain::Events::switch_mode_event.remove_callback(deregistration_key);
-        }
+public:
+    /** \brief The constructor registers the objects's callback() function with
+     * the switch_mode_event event in the EventManager.
+     */
+    StandAloneModeRegistrar()
+    {
+        deregistration_key = arwain::Events::switch_mode_event.add_callback(std::bind(&StandAloneModeRegistrar::callback, this, std::placeholders::_1));
+    }
 
-        /** \brief Get the current Arwain system mode.
-         * \return Current Arwain system mode.
-         */
-        arwain::OperatingMode get_mode() const
-        {
-            return mode;
-        }
+    /** \brief Deregisteres the event callback up destruction of object. */
+    ~StandAloneModeRegistrar()
+    {
+        arwain::Events::switch_mode_event.remove_callback(deregistration_key);
+    }
 
-    private:
-        /** \brief Key used to deregister the callback when this class's destructor is called. */
-        uint64_t deregistration_key = 0;
+    /** \brief Get the current Arwain system mode.
+     * \return Current Arwain system mode.
+     */
+    arwain::OperatingMode get_mode() const
+    {
+        return mode;
+    }
 
-        /** \brief Current Arwain system mode, updated when the callback is called. */
-        arwain::OperatingMode mode = arwain::OperatingMode::Idle;
+private:
+    /** \brief Key used to deregister the callback when this class's destructor is called. */
+    uint64_t deregistration_key = 0;
 
-    private:
-        /** \brief Called when the switch_mode_event is triggered. Sets the internal system mode. */
-        void callback(arwain::OperatingMode new_mode)
-        {
-            mode = new_mode;
-        }
+    /** \brief Current Arwain system mode, updated when the callback is called. */
+    arwain::OperatingMode mode = arwain::OperatingMode::Idle;
+
+private:
+    /** \brief Called when the switch_mode_event is triggered. Sets the internal system mode. */
+    void callback(arwain::OperatingMode new_mode)
+    {
+        mode = new_mode;
+    }
 };
 
 #endif

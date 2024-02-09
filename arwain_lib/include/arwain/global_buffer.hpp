@@ -33,7 +33,7 @@ class GlobalBuffer
         /** \brief Get a copy of internal buffer as an std::deque.
          * \return std::deque<DataType>, a copy of the internal buffer.
          */
-        std::deque<DataType> get_data()
+        std::deque<DataType> get_data() const
         {
             std::lock_guard<std::mutex> lock_guard{lock};
             return data;
@@ -70,7 +70,7 @@ class GlobalBuffer
 
     private:
         /** \brief All accessors lock this mutex to provide memory safety. */
-        std::mutex lock;
+        mutable std::mutex lock;
         
         /** \brief Internal storage, std::deque of fixed size. */
         std::deque<DataType> data;

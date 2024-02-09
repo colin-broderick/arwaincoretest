@@ -31,8 +31,7 @@ class StatusReporting : public ArwainJob, protected IArwainJobSpec
 		StatusReporting();
 		bool set_stance_detection_pointer(StanceDetection& stance);
 		bool set_uubla_wrapper_handle(UublaWrapper& uubla);
-		bool init();
-		bool join();
+		bool join() override;
 };
 
 namespace arwain

@@ -146,8 +146,7 @@ class StanceDetection : public ArwainJob, protected IArwainJobSpec
 
     public:
         StanceDetection();
-        bool init();
-        bool join();
+        bool join() override;
         StanceDetector::FallState get_falling_state();
         StanceDetector::EntangleState get_entangled_state();
         StanceDetector::Attitude get_attitude();

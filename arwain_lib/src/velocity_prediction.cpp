@@ -15,10 +15,29 @@
 #include "arwain/uwb_reader.hpp"
 #include "arwain/hybrid_positioner.hpp"
 
+void pin_thread(std::jthread& th, int core_number)
+{
+    pthread_t native_handle = static_cast<pthread_t>(th.native_handle());
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_number, &cpuset);
+    int result = pthread_setaffinity_np(native_handle, sizeof(cpu_set_t), &cpuset);
+    if (result != 0)
+    {
+        std::cerr << "Could not set thread affinity: " << result << '\n';
+    }
+}
+
 PositionVelocityInference::PositionVelocityInference()
 {
     ServiceManager::register_service(this, service_name);
-    init();
+    core_setup();
+    if (job_thread.joinable())
+    {
+        job_thread.join();
+    }
+    job_thread = std::jthread{std::bind_front(&PositionVelocityInference::run, this)};
+    pin_thread(job_thread, 1);
 }
 
 PositionVelocityInference::~PositionVelocityInference()
@@ -80,6 +99,10 @@ void PositionVelocityInference::setup_inference()
     velocity_file << "time x y z" << "\n";
     position_file << "time x y z" << "\n";
 }
+
+// TODO Move all the tensorflow stuff out of the header and into this file.
+// Should dramatically improve build times. Currently anything that includes
+// the header has to deal with all the tensorflow shit.
 
 void PositionVelocityInference::run_inference()
 {
@@ -145,6 +168,7 @@ void PositionVelocityInference::run_inference()
         }
 
         position = position + dt * velocity;
+        arwain::Events::new_arwain_position_event.invoke({position, dt});
         arwain::Events::new_arwain_velocity_event.invoke({velocity, dt});
 
         arwain::Buffers::POSITION_BUFFER.push_back(position);
@@ -169,17 +193,6 @@ bool PositionVelocityInference::cleanup_inference()
     position = {0, 0, 0};
     velocity = {0, 0, 0};
     return position_file.close() && velocity_file.close();
-}
-
-bool PositionVelocityInference::init()
-{
-    core_setup();
-    if (job_thread.joinable())
-    {
-        job_thread.join();
-    }
-    job_thread = std::jthread{std::bind_front(&PositionVelocityInference::run, this)};
-    return true;
 }
 
 bool PositionVelocityInference::join()

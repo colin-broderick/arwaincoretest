@@ -16,7 +16,6 @@ class UublaWrapper : public ArwainJob, protected IArwainJobSpec
         void run_idle() override;
         void core_setup() override;
         bool cleanup_inference() override;
-        bool init() override;
 
     private:
         std::jthread job_thread;

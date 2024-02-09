@@ -37,7 +37,6 @@ class ArwainCLI : public ArwainJob, protected IArwainJobSpec
     public:
         ArwainCLI();
         ArwainCLI(const std::istream& stream);
-        bool init();
         bool join();
 };
 

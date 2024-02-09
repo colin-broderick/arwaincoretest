@@ -33,7 +33,12 @@ std::ostream& operator<<(std::ostream& stream, arwain::PosePacket packet)
 
 StatusReporting::StatusReporting()
 {
-    init();
+    core_setup();
+    if (job_thread.joinable())
+    {
+        job_thread.join();
+    }
+    job_thread = std::jthread{std::bind_front(&StatusReporting::run, this)};
 }
 
 /** \brief Computes the next slot in the LoRa schedule where this node is allowed to transmit LoRa messages. */
@@ -186,17 +191,6 @@ void StatusReporting::run()
                 break;
         }
     }
-}
-
-bool StatusReporting::init()
-{
-    core_setup();
-    if (job_thread.joinable())
-    {
-        job_thread.join();
-    }
-    job_thread = std::jthread{std::bind_front(&StatusReporting::run, this)};
-    return true;
 }
 
 bool StatusReporting::join()

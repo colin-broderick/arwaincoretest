@@ -20,6 +20,10 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
         return arwain::ReturnCode::NoInferenceFile;
     }
 
+    this->pos_to_publish = cfgparser.read_option<std::string>("pos_to_publish");
+
+    this->force_z_zero = cfgparser.read_option<bool>("uwb/force_z_zero");
+
     // Read all options into the configuration object.
     this->active_threshold = cfgparser.read_option<double>("stance/active_threshold");
     this->walking_threshold = cfgparser.read_option<double>("stance/walking_threshold");
@@ -30,7 +34,9 @@ arwain::ReturnCode arwain::Configuration::read_from_file()
     this->struggle_threshold = cfgparser.read_option<double>("stance/struggle_threshold");
     this->freefall_sensitivity = cfgparser.read_option<double>("stance/freefall_sensitivity");
     
-    this->hybrid_position_gain = cfgparser.read_option<double>("hybrid_position_gain");
+    this->hybrid_position_compute = cfgparser.read_option<bool>("hybrid_position/position");
+    this->hybrid_heading_compute = cfgparser.read_option<bool>("hybrid_position/heading");
+    this->hybrid_position_gain = cfgparser.read_option<double>("hybrid_position/gain");
 
     this->accel1_bias = Vector3::from_array(cfgparser.read_option<std::array<double, 3>>("imu1/calibration/accel_bias"));
     this->accel2_bias = Vector3::from_array(cfgparser.read_option<std::array<double, 3>>("imu2/calibration/accel_bias"));

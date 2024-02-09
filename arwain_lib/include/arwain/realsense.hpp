@@ -26,9 +26,7 @@ class CameraController : public ArwainJob, protected IArwainJobSpec
 
     public:
         CameraController();
-        bool init() override;
         void join() override;
-
 };
 
 #endif

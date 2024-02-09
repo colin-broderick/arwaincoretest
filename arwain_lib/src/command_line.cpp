@@ -20,7 +20,8 @@ ArwainCLI::ArwainCLI()
 ArwainCLI::ArwainCLI(const std::istream& stream)
 {
     in_stream = std::make_shared<std::istream>(stream.rdbuf());
-    init();
+    core_setup();
+    job_thread = std::jthread{std::bind_front(&ArwainCLI::run, this)};
 }
 
 void ArwainCLI::force_switch_to_idle_autocal_mode()
@@ -141,7 +142,6 @@ bool ArwainCLI::switch_to_gyro_calib_mode()
     else
     {
         std::cout << "Starting gyroscope calibration" << std::endl;
-        // FIXTODAY ImuProcessing::set_post_gyro_calibration_callback(std::function<void()>(force_switch_to_idle_autocal_mode));
         arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::GyroscopeCalibration);
         return true;
     }
@@ -275,13 +275,6 @@ void ArwainCLI::parse_cli_input(const std::string& input)
 
 void ArwainCLI::core_setup()
 {
-}
-
-bool ArwainCLI::init()
-{
-    core_setup();
-    job_thread = std::jthread{std::bind_front(&ArwainCLI::run, this)};
-    return true;
 }
 
 bool ArwainCLI::join()
