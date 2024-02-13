@@ -1,0 +1,15 @@
+image: colinbroderick/arwain-build-env:1.0
+
+pipelines:
+  default:
+    - step:
+        name: Build and test release binary
+        runs-on:
+          - 'self.hosted'
+          - 'linux'
+        script:
+          - apt install libyaml-cpp-dev nlohmann-json3-dev -y
+          - mkdir build
+          - cd build
+          - cmake .. -DCMAKE_BUILD_TYPE=Release
+          - make arwain
