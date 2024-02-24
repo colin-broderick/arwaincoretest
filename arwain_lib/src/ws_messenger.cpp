@@ -184,6 +184,7 @@ void Message<ConfigurationData>::set_data(ConfigurationData data)
 #include "arwain/hybrid_positioner.hpp"
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/uwb_reader.hpp"
+#include "arwain/ws_messenger.hpp"
 
 std::unique_ptr<arwain::WebSocketServer> websocket_server;
 std::unique_ptr<arwain::WebSocketServer> dash_server;
@@ -195,6 +196,14 @@ TimeStamp get_time()
         std::chrono::duration_cast<std::chrono::seconds>(now).count(),
         std::chrono::duration_cast<std::chrono::nanoseconds>(now).count() % 1'000'000'000
     };
+}
+
+void send_network_state_message(const std::string& msg)
+{
+    if (dash_server)
+    {
+        dash_server->send_message(msg);
+    }
 }
 
 std::string state_string(UUBLA::Network* uubla)
@@ -277,7 +286,7 @@ void state_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssSer
     }
 }
 
-void publish_positions_on_websocket(arwain::WebSocketServer& server, UUBLA::Network& uubla)
+void publish_positions_on_websocket(UUBLA::Network& uubla)
 {
     Message<PositionData> message;
 
@@ -290,7 +299,7 @@ void publish_positions_on_websocket(arwain::WebSocketServer& server, UUBLA::Netw
             message.set_header({v.id(), MessageType::position, {123, 123}});
             message.set_data({pos.x, pos.y, pos.z, v.position_fixed() ? 1 : 0});
             // server.add_history(message);
-            server.send_message(message.to_string());
+            websocket_server->send_message(message.to_string());
         }
     }
     else if (arwain::config.pos_to_publish == "hybrid")
@@ -301,7 +310,7 @@ void publish_positions_on_websocket(arwain::WebSocketServer& server, UUBLA::Netw
             auto pos = hyb->get_position();
             message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
             message.set_data({pos.x, pos.y, pos.z, 0});
-            server.send_message(message.to_string());
+            websocket_server->send_message(message.to_string());
         }
     }
     else if (arwain::config.pos_to_publish == "inertial")
@@ -312,7 +321,7 @@ void publish_positions_on_websocket(arwain::WebSocketServer& server, UUBLA::Netw
             auto pos = inferrer->get_position();
             message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
             message.set_data({pos.x, pos.y, pos.z, 0});
-            server.send_message(message.to_string());
+            websocket_server->send_message(message.to_string());
         }
     }
 }
@@ -350,5 +359,21 @@ void dash_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssServ
         default:
             // Nothing else handled on this socket
             break;
+    }
+}
+
+bool once_only = true;
+WsMessenger::WsMessenger()
+{
+    if (once_only)
+    {
+        // TODO Currently this initializes file-local data. Wrap everything up into a class.
+        once_only = false;
+        websocket_server = std::make_unique<arwain::WebSocketServer>(8081, state_messages_callback);
+        dash_server = std::make_unique<arwain::WebSocketServer>(8082, dash_messages_callback);
+    }
+    else
+    {
+        throw std::runtime_error{"This is supposed to only exist once."};
     }
 }

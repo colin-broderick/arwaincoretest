@@ -14,20 +14,13 @@
 #include "arwain/hybrid_positioner.hpp"
 #include "arwain/velocity_prediction.hpp"
 
-#include "arwain/websocket.hpp"
-#include "arwain/ws_includes.hpp"
+// #include "arwain/ws_includes.hpp"
 
 #include "uubla/utils.hpp"
 #include "uubla/events.hpp"
 
-// TODO These should be accessed via the service_manager or some other appropriate means.
-extern std::unique_ptr<arwain::WebSocketServer> websocket_server;
-extern std::unique_ptr<arwain::WebSocketServer> dash_server;
-
 #define PUBLISH_HYBRID_POSITIONS
 
-void dash_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssServer::Connection> cn, std::string& msg);
-void state_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssServer::Connection> cn, std::string& msg);
 UublaWrapper::UublaWrapper()
 {
     ServiceManager::register_service(this, service_name);
@@ -35,8 +28,6 @@ UublaWrapper::UublaWrapper()
     // The websocket server exists to receive position data from the Unity front end.
     // Upon reception, data is fed to the UUBLA instance running here and there it is
     // used for solving for tag position.
-    websocket_server = std::make_unique<arwain::WebSocketServer>(8081, state_messages_callback);
-    dash_server = std::make_unique<arwain::WebSocketServer>(8082, dash_messages_callback);
     core_setup();
     job_thread = std::jthread{std::bind_front(&UublaWrapper::run, this)};
 }
@@ -111,8 +102,9 @@ void publish_inertial_on_uwb()
     }
 }
 
+void send_network_state_message(const std::string& msg);
 std::string state_string(UUBLA::Network* uubla);
-void publish_positions_on_websocket(arwain::WebSocketServer& server, UUBLA::Network& uubla);
+void publish_positions_on_websocket(UUBLA::Network& uubla);
 void UublaWrapper::run_inference()
 {
     setup_inference();
@@ -140,11 +132,11 @@ void UublaWrapper::run_inference()
 
         if (frame_counter % 3 == 0)
         {
-            dash_server->send_message(state_string(m_uubla.get()));
+            send_network_state_message(state_string(m_uubla.get()));
         }
 
         // We still want to publish positions over WebSocket, even if we aren't using UWB positioning.
-        publish_positions_on_websocket(*websocket_server, *m_uubla);
+        publish_positions_on_websocket(*m_uubla);
         // publish_inertial_on_uwb();
         timer.await();
     }
