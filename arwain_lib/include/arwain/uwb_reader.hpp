@@ -25,6 +25,9 @@ class UublaWrapper : public ArwainJob, protected IArwainJobSpec
     public:
         UublaWrapper();
         ~UublaWrapper();
+
+        bool network_contains(int node_id);
+        void fix_node_at(int node_id, const Vector3& new_position);
         static inline std::string service_name = "UublaWrapper";
         bool join() override;
         double get_distance(const int position);

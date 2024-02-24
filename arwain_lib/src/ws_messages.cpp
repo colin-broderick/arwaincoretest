@@ -173,3 +173,182 @@ void Message<ConfigurationData>::set_data(ConfigurationData data)
 {
     throw std::runtime_error{"Not implemented: void Message<ConfigurationData>::set_data(ConfigurationData data)"};
 }
+
+
+
+#include <arwain/websocket.hpp>
+#include <uubla/node.hpp>
+#include <uubla/network.hpp>
+
+#include "arwain/service_manager.hpp"
+#include "arwain/hybrid_positioner.hpp"
+#include "arwain/velocity_prediction.hpp"
+#include "arwain/uwb_reader.hpp"
+
+std::unique_ptr<arwain::WebSocketServer> websocket_server;
+std::unique_ptr<arwain::WebSocketServer> dash_server;
+
+TimeStamp get_time()
+{
+    auto now = std::chrono::high_resolution_clock::now().time_since_epoch();
+    return {
+        std::chrono::duration_cast<std::chrono::seconds>(now).count(),
+        std::chrono::duration_cast<std::chrono::nanoseconds>(now).count() % 1'000'000'000
+    };
+}
+
+std::string state_string(UUBLA::Network* uubla)
+{
+    JsonObject message;
+
+    auto time = get_time();
+    message["header"]["message_type"] = MessageType::diagnostic;
+    message["header"]["Node_ID"] = 0xEF;
+    message["header"]["time_stamp"]["seconds"] = time.seconds;
+    message["header"]["time_stamp"]["nanoseconds"] = time.nanoseconds;
+
+    for (auto& [trusting_node_name, node] : uubla->get_nodes())
+    {
+        for (auto& [trusted_node_name, trust] : node.beacon_trust)
+        {
+            message["data"]["trust"][trusting_node_name][trusted_node_name] = trust;
+            if (node.beacon_trust.size() > 0)
+            {
+                message["data"]["rssi"][trusting_node_name][trusted_node_name] = uubla->distances[trusted_node_name+trusting_node_name].rssi;
+                message["data"]["rssi_band"][trusting_node_name][trusted_node_name] = UUBLA::bandify_rssi(uubla->distances[trusted_node_name+trusting_node_name].rssi);
+                message["data"]["range"][trusting_node_name][trusted_node_name] = uubla->distances[trusted_node_name+trusting_node_name].distance;
+            }
+        }
+    }
+    for (auto& [node_name, node] : uubla->get_nodes())
+    {
+        auto pos = node.get_position();
+        message["data"]["position"][node_name]["x"] = pos.x;
+        message["data"]["position"][node_name]["y"] = pos.y;
+        message["data"]["position"][node_name]["z"] = pos.z;
+    }
+
+    return message.dump();
+}
+
+void position_callback(int nodeID, double x, double y, double z)
+{
+    auto u = ServiceManager::get_service<UublaWrapper>(UublaWrapper::service_name);
+    if (u == nullptr)
+    {
+        return;
+    }
+
+    if (!u->network_contains(nodeID))
+    {
+        return;
+    }
+
+    u->fix_node_at(nodeID, {x, y, z});
+}
+
+void state_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssServer::Connection> cn, std::string& msg)
+{
+    Header header;
+    header.deserialise(msg);
+
+    switch (header.type)
+    {
+        case MessageType::history_request:
+            // ws->send_history();
+            break;
+        case MessageType::position:
+        {
+            Message<PositionData> position_message;
+            position_message.deserialize(msg);
+            position_callback(
+                position_message.get_header().node_id,
+                position_message.get_data().X,
+                position_message.get_data().Y,
+                position_message.get_data().Z);
+            break;
+        }
+        case MessageType::rotation:
+            // TODO
+            break;
+        case MessageType::stance:
+            // TODO
+            break;
+    }
+}
+
+void publish_positions_on_websocket(arwain::WebSocketServer& server, UUBLA::Network& uubla)
+{
+    Message<PositionData> message;
+
+    if (arwain::config.pos_to_publish == "uubla")
+    {
+        auto data = uubla.get_nodes();
+        for (auto& [k, v] : data)
+        {
+            Vector3 pos = v.get_position();
+            message.set_header({v.id(), MessageType::position, {123, 123}});
+            message.set_data({pos.x, pos.y, pos.z, v.position_fixed() ? 1 : 0});
+            // server.add_history(message);
+            server.send_message(message.to_string());
+        }
+    }
+    else if (arwain::config.pos_to_publish == "hybrid")
+    {
+        auto hyb = ServiceManager::get_service<HybridPositioner>(HybridPositioner::service_name);
+        if (hyb)
+        {
+            auto pos = hyb->get_position();
+            message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
+            message.set_data({pos.x, pos.y, pos.z, 0});
+            server.send_message(message.to_string());
+        }
+    }
+    else if (arwain::config.pos_to_publish == "inertial")
+    {
+        auto inferrer = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
+        if (inferrer)
+        {
+            auto pos = inferrer->get_position();
+            message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
+            message.set_data({pos.x, pos.y, pos.z, 0});
+            server.send_message(message.to_string());
+        }
+    }
+}
+
+void dash_messages_callback(arwain::WebSocketServer* ws, std::shared_ptr<WssServer::Connection> cn, std::string& msg)
+{
+    Header header;
+    header.deserialise(msg);
+
+    switch (header.type)
+    {
+        case MessageType::configuration:
+        {
+            Message<ConfigurationData> config_message;
+            auto& data = config_message.deserialize(msg);
+
+            if (!std::isnan(data.spring_factor))
+            {
+                UUBLA::Configuration::set_overtight_spring_factor(data.spring_factor);
+            }
+            if (!std::isnan(data.maximum_expected_rssi))
+            {
+                UUBLA::Configuration::set_max_expected_rssi(data.maximum_expected_rssi);
+            }
+            if (!std::isnan(data.minimum_viable_rssi))
+            {
+                UUBLA::Configuration::set_min_viable_rssi(data.minimum_viable_rssi);
+            }
+            if (!std::isnan(data.position_gain))
+            {
+                UUBLA::Configuration::set_position_gain(data.position_gain);
+            }
+            break;
+        }
+        default:
+            // Nothing else handled on this socket
+            break;
+    }
+}
