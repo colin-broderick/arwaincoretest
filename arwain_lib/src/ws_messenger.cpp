@@ -189,7 +189,7 @@ void Message<ConfigurationData>::set_data(ConfigurationData data)
 std::unique_ptr<arwain::WebSocketServer> websocket_server;
 std::unique_ptr<arwain::WebSocketServer> dash_server;
 
-TimeStamp get_time()
+static inline TimeStamp get_time()
 {
     auto now = std::chrono::high_resolution_clock::now().time_since_epoch();
     return {

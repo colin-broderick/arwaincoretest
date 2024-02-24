@@ -14,8 +14,6 @@
 #include "arwain/hybrid_positioner.hpp"
 #include "arwain/velocity_prediction.hpp"
 
-// #include "arwain/ws_includes.hpp"
-
 #include "uubla/utils.hpp"
 #include "uubla/events.hpp"
 
@@ -43,7 +41,6 @@ UublaWrapper::~UublaWrapper()
 void UublaWrapper::core_setup()
 {
     m_uubla = std::make_unique<UUBLA::Network>();
-    // TODO Make this optional from config file
     m_uubla->force_plane(arwain::config.force_z_zero);
 }
 
