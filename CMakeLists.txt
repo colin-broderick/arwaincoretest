@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 find_package(GTest CONFIG REQUIRED)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"                     ON)
 option(USE_ROS              "Use ROS topics to publish diagnostic data"                      OFF)
 option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"                  OFF)
@@ -27,8 +30,6 @@ if(USE_REALSENSE)
     add_definitions(-DUSE_REALSENSE)
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(ALL_ARWAIN_LIBRARIES
     arwain_lib
     arwain_rfm95w
