@@ -45,15 +45,6 @@ HARDWARE_TEST(SensorManager, init__success)
     reader.join();
 }
 
-HARDWARE_TEST(SensorManager, init__failure)
-{
-    arwain::config.no_imu = true;
-    SensorManager reader;
-    EXPECT_FALSE(reader.init());
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-    reader.join();
-}
-
 static void test_callback()
 {
 

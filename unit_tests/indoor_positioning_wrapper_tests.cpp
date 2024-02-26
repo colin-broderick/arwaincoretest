@@ -4,27 +4,6 @@
 #include "arwain/arwain.hpp"
 #include "arwain/events.hpp"
 
-/** \brief After running init() successfully, the job thread should be running and joinable. */
-TEST(IndoorPositioningSystem, init__success)
-{
-    GTEST_SKIP(); // Tested by constructor. No reason to do this test.
-    IndoorPositioningSystem ips;
-    arwain::config.use_ips = true;
-    EXPECT_TRUE(ips.init());
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-    ips.join();
-}
-
-TEST(IndoorPositioningSystem, init__failure)
-{
-    GTEST_SKIP(); // Currently no effective way to detect run state of IPS.
-    arwain::config.use_ips = false;
-    IndoorPositioningSystem ips;
-    EXPECT_FALSE(ips.init());
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
-    ips.join();
-}
-
 TEST(IndoorPositioningSystem, join)
 {
     arwain::config.use_ips = true;
