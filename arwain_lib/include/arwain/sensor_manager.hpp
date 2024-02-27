@@ -11,9 +11,10 @@
 #include "arwain/i2c_interface.hpp"
 #include "arwain/utils.hpp"
 #include "arwain/job_interface.hpp"
+#include "arwain/service_interface.hpp"
 
 
-class SensorManager : public ArwainJob, protected IArwainJobSpec
+class SensorManager : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void run() override;
