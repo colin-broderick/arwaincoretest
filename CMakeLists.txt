@@ -18,6 +18,7 @@ add_definitions(-DNUMCPP_NO_USE_BOOST)
 include(arwain_libs.cmake)
 
 include(CTest)
+enable_testing()
 
 if(THREAD_NAMES)
     message("Thread naming is enabled (unstable, for debug only)")

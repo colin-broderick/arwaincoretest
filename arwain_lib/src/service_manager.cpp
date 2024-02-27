@@ -2,14 +2,14 @@
 #include <memory>
 
 #include "arwain/service_manager.hpp"
-#include "arwain/job_interface.hpp"
+#include "arwain/service_interface.hpp"
 
 /** \brief Register a service so it can be retrieved later.
  * The caller must remember the name they used so they can unregister later.
  * \param service_ref: Point to ArwainJob base interface (usually just "this" is sufficient)
  * \param service_name: String description that can be known to other services and used to get the pointer.
  */
-void ServiceManager::register_service(IArwainJob* service_ref, const std::string& service_name)
+void ServiceManager::register_service(IArwainService* service_ref, const std::string& service_name)
 {
     ServiceManager::services[service_name] = service_ref;
 }

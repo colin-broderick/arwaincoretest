@@ -7,8 +7,9 @@
 #include <tensorflow/lite/tools/gen_op_registration.h>
 
 #include "arwain/arwain.hpp"
+#include "arwain/service_interface.hpp"
 
-class PositionVelocityInference : public ArwainJob, protected IArwainJobSpec
+class PositionVelocityInference : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void run_inference() override;
