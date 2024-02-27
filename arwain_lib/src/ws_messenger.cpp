@@ -376,4 +376,11 @@ WsMessenger::WsMessenger()
     {
         throw std::runtime_error{"This is supposed to only exist once."};
     }
+
+    ServiceManager::register_service(this, service_name);
+}
+
+WsMessenger::~WsMessenger()
+{
+    ServiceManager::unregister_service(service_name);
 }
