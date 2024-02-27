@@ -13,11 +13,15 @@
 #include "arwain/service_manager.hpp"
 #include "arwain/hybrid_positioner.hpp"
 #include "arwain/velocity_prediction.hpp"
+#include "arwain/ws_messenger.hpp"
 
 #include "uubla/utils.hpp"
 #include "uubla/events.hpp"
 
 #define PUBLISH_HYBRID_POSITIONS
+
+std::string state_string(UUBLA::Network* uubla);
+void pin_thread(std::jthread& th, int core_number);
 
 UublaWrapper::UublaWrapper()
 {
@@ -34,8 +38,6 @@ UublaWrapper::~UublaWrapper()
 {
     UUBLA::run_flag = false;
     ServiceManager::unregister_service(service_name);
-    // UUBLA::Events::serial_event.remove_callback(eventkey_serial);
-    // UUBLA::Events::position_event.remove_callback(eventkey_position);
 }
 
 void UublaWrapper::core_setup()
@@ -70,8 +72,6 @@ void UublaWrapper::run()
     }
 }
 
-void pin_thread(std::jthread& th, int core_number);
-
 void UublaWrapper::setup_inference()
 {
     m_uubla->set_ewma_gain(0.1);
@@ -80,8 +80,6 @@ void UublaWrapper::setup_inference()
     serial_reader_th = std::jthread{serial_reader_fn, m_uubla.get(), arwain::config.uubla_serial_port, 115200};
     pin_thread(serial_reader_th, 3);
 }
-
-std::atomic<bool> runflag = true;
 
 bool UublaWrapper::cleanup_inference()
 {
@@ -99,9 +97,6 @@ void publish_inertial_on_uwb()
     }
 }
 
-void send_network_state_message(const std::string& msg);
-std::string state_string(UUBLA::Network* uubla);
-void publish_positions_on_websocket(UUBLA::Network& uubla);
 void UublaWrapper::run_inference()
 {
     setup_inference();
@@ -127,13 +122,18 @@ void UublaWrapper::run_inference()
             last_count = now_count;
         }
 
-        if (frame_counter % 3 == 0)
+        auto messenger = ServiceManager::get_service<WsMessenger>(WsMessenger::service_name);
+        if (messenger && frame_counter % 3 == 0)
         {
-            send_network_state_message(state_string(m_uubla.get()));
+            messenger->send_dash_message(state_string(m_uubla.get()));
         }
 
         // We still want to publish positions over WebSocket, even if we aren't using UWB positioning.
-        publish_positions_on_websocket(*m_uubla);
+        if (messenger)
+        {
+            messenger->publish_positions_on_websocket(*m_uubla);
+        }
+
         // publish_inertial_on_uwb();
         timer.await();
     }
