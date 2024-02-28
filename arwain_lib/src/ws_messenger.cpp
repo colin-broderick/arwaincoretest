@@ -240,21 +240,25 @@ std::string state_string(UUBLA::Network *uubla)
 /** \brief Triggered when a position message is received from a websocket client.
  * If an UublaWrapper can be found by the service manager, submits that position
  * data to the UUBLA network and instructs it to lock that node's position.
+ * \param node_id: Identifying network address for the node.
+ * \param x, y, z: Position of the node.
+ * \return True if the position was set. False if not set - this could be because
+ * the UublaWrapper service isn't available, or it is available but the node 
+ * does not exist in the network.
  */
-void position_callback(int nodeID, double x, double y, double z)
+bool position_callback(int node_id, double x, double y, double z)
 {
-    auto u = ServiceManager::get_service<UublaWrapper>(UublaWrapper::service_name);
-    if (u == nullptr)
+    auto uubla = ServiceManager::get_service<UublaWrapper>(UublaWrapper::service_name);
+    if (uubla == nullptr)
     {
-        return;
+        return false;
     }
-
-    if (!u->network_contains(nodeID))
+    if (!uubla->network_contains(node_id))
     {
-        return;
+        return false;
     }
-
-    u->fix_node_at(nodeID, {x, y, z});
+    uubla->fix_node_at(node_id, {x, y, z});
+    return true;
 }
 
 /** \brief This callback is triggered each time position or similar data is
