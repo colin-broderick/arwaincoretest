@@ -1,6 +1,0 @@
-[Socket]
-ListenFIFO=/tmp/arwain.stdin
-Service=arwain.service
-
-[Install]
-WantedBy=sockets.target
