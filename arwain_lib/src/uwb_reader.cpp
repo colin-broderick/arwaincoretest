@@ -17,6 +17,7 @@
 
 #include "uubla/utils.hpp"
 #include "uubla/events.hpp"
+#include "uubla/network.hpp"
 
 #define PUBLISH_HYBRID_POSITIONS
 
@@ -114,7 +115,6 @@ void UublaWrapper::run_inference()
         {
             m_uubla->process_queue();
             m_uubla->solve_map();
-            m_uubla->process_callbacks();
             auto now_count = timer.count();
             // TODO The maths below is because interval timer.count doesn't return the milisecond count as it should.
             // Consider also the timing in other inetval timer locations before making changes.
