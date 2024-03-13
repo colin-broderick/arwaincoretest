@@ -87,5 +87,6 @@ target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --cove
 ## Install configuration and related files to correct locations.
 install(TARGETS ${PROJECT_NAME} DESTINATION /usr/bin)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/models/tflite/model_float32.tflite DESTINATION /etc)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/arwain.conf DESTINATION /etc)
 
 add_test(NAME arwain_test COMMAND arwain_test)
