@@ -134,7 +134,7 @@ void UublaWrapper::run_inference()
             messenger->publish_positions_on_websocket(*m_uubla);
         }
 
-        // publish_inertial_on_uwb();
+        publish_inertial_on_uwb();
         timer.await();
     }
 
