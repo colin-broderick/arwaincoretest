@@ -92,7 +92,7 @@ void PositionVelocityInference::run_idle()
 
 void PositionVelocityInference::setup_inference()
 {
-    position = {0, 0, 0};
+    position = {0, 0, 1.5};
     velocity = {0, 0, 0};
     velocity_file.open(arwain::folder_date_string + "/velocity.txt");
     position_file.open(arwain::folder_date_string + "/position.txt");
@@ -190,7 +190,7 @@ void PositionVelocityInference::run_inference()
 
 bool PositionVelocityInference::cleanup_inference()
 {
-    position = {0, 0, 0};
+    position = {0, 0, 1.5};
     velocity = {0, 0, 0};
     return position_file.close() && velocity_file.close();
 }
