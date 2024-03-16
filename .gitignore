@@ -77,3 +77,4 @@ magn_log.csv
 *.tflite
 *.bin
 .vscode/
+.cache/

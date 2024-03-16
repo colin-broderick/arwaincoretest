@@ -1,5 +1,5 @@
 #include <sstream>
-#include <fstream>
+#include <stdexcept>
 
 #include <arwain/websocket.hpp>
 
@@ -208,7 +208,7 @@ std::string state_string(UUBLA::Network *uubla)
     JsonObject message;
 
     auto time = get_time();
-    message["header"]["message_type"] = MessageType::diagnostic;
+    message["header"]["message_type"] = MessageType::Diagnostic;
     message["header"]["Node_ID"] = 0xEF;
     message["header"]["time_stamp"]["seconds"] = time.seconds;
     message["header"]["time_stamp"]["nanoseconds"] = time.nanoseconds;
@@ -273,10 +273,10 @@ void state_messages_callback(arwain::WebSocketServer *ws, std::shared_ptr<WssSer
 
     switch (header.type)
     {
-    case MessageType::history_request:
-        // ws->send_history();
+    case MessageType::HistoryRequest:
+        throw std::runtime_error("Handing of WS HistoryRequest messages not implemented.");
         break;
-    case MessageType::position:
+    case MessageType::Position:
     {
         Message<PositionData> position_message;
         position_message.deserialize(msg);
@@ -287,11 +287,20 @@ void state_messages_callback(arwain::WebSocketServer *ws, std::shared_ptr<WssSer
             position_message.get_data().Z);
         break;
     }
-    case MessageType::rotation:
-        // TODO
+    case MessageType::Rotation:
+        throw std::runtime_error("Handing of WS Rotation messages not implemented.");
         break;
-    case MessageType::stance:
-        // TODO
+    case MessageType::Stance:
+        throw std::runtime_error("Handing of WS Stance messages not implemented.");
+        break;
+    case MessageType::Configuration:
+        throw std::runtime_error("Handing of WS Configuration messages not implemented.");
+        break;
+    case MessageType::Diagnostic:
+        throw std::runtime_error("Handing of WS Diagnostic messages not implemented.");
+        break;
+    case MessageType::Command:
+        throw std::runtime_error("Handing of WS Command messages not implemented.");
         break;
     }
 }
@@ -306,7 +315,7 @@ void dash_messages_callback(arwain::WebSocketServer *ws, std::shared_ptr<WssServ
 
     switch (header.type)
     {
-    case MessageType::configuration:
+    case MessageType::Configuration:
     {
         Message<ConfigurationData> config_message;
         auto &data = config_message.deserialize(msg);
@@ -396,7 +405,7 @@ void WsMessenger::publish_uubla(UUBLA::Network &uubla)
     for (auto &[k, v] : data)
     {
         Vector3 pos = v.get_position();
-        message.set_header({v.id(), MessageType::position, {123, 123}});
+        message.set_header({v.id(), MessageType::Position, {123, 123}});
         message.set_data({pos.x, pos.y, pos.z, v.position_fixed() ? 1 : 0});
         // server.add_history(message);
         websocket_server->send_message(message.to_string());
@@ -414,7 +423,7 @@ void WsMessenger::publish_hybrid()
     if (hyb)
     {
         auto pos = hyb->get_position();
-        message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
+        message.set_header({arwain::config.node_id, MessageType::Position, {123, 123}});
         message.set_data({pos.x, pos.y, pos.z, 0});
         websocket_server->send_message(message.to_string());
     }
@@ -431,7 +440,7 @@ void WsMessenger::publish_inertial()
     if (inferrer)
     {
         auto pos = inferrer->get_position();
-        message.set_header({arwain::config.node_id, MessageType::position, {123, 123}});
+        message.set_header({arwain::config.node_id, MessageType::Position, {123, 123}});
         message.set_data({pos.x, pos.y, pos.z, 0});
         websocket_server->send_message(message.to_string());
     }

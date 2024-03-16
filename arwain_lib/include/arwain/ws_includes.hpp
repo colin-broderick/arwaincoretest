@@ -16,21 +16,22 @@ struct TimeStamp
 
 enum class MessageType
 {
-    position,
-    rotation,
-    stance,
-    history_request,
-    configuration,
-    diagnostic
+    Position,
+    Rotation,
+    Stance,
+    HistoryRequest,
+    Configuration,
+    Diagnostic,
+    Command
 };
 
 enum class Stance
 {
-    walking,
-    running,
-    standing,
-    crawling,
-    freefall
+    Walking,
+    Running,
+    Standing,
+    Crawling,
+    Freefall
 };
 
 class Header
@@ -70,10 +71,6 @@ template <class DataClass>
 class Message
 {
     public:
-        Message()
-        {
-
-        }
         JsonObject serialise();
         DataClass& deserialize(const std::string& message);
         void set_data(DataClass data);
@@ -96,11 +93,6 @@ class Message
         std::string to_string()
         {
             return m_json_message.dump();
-        }
-        void read_from_file(const std::string& filename)
-        {
-            std::ifstream file(filename);
-            m_json_message = JsonObject::parse(file);
         }
 
     private:
