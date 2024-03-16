@@ -34,6 +34,16 @@ enum class Stance
     Freefall
 };
 
+/** \brief Defines valid command that can be sent over the WebSocket connection.
+ * Must be identically defined for all clients and servers that wish to use this
+ * interface.
+ */
+enum class WSCommand
+{
+    StartInertialTracking,
+    StopInertialTracking
+};
+
 class Header
 {
     public:
@@ -57,6 +67,11 @@ struct PositionData
     double Y = 0.0;
     double Z = 0.0;
     int is_fixed = 0;
+};
+
+struct CommandData
+{
+    WSCommand command;
 };
 
 struct ConfigurationData

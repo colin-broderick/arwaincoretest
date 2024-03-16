@@ -91,6 +91,43 @@ PositionData &Message<PositionData>::deserialize(const std::string &message)
 }
 
 /****************************************************************************/
+/************** COMMAND DATA SPECIALIZATIONS ********************************/
+/****************************************************************************/
+
+template <>
+JsonObject Message<CommandData>::serialise()
+{
+    JsonObject json;
+    json["header"]["message_type"] = m_header.type;
+    json["header"]["Node_ID"] = m_header.node_id;
+    json["header"]["time_stamp"]["seconds"] = m_header.stamp.seconds;
+    json["header"]["time_stamp"]["nanoseconds"] = m_header.stamp.nanoseconds;
+    json["data"]["command"] = m_data.command;
+    return json;
+}
+
+template <>
+CommandData &Message<CommandData>::deserialize(const std::string &message)
+{
+    JsonObject json;
+    std::stringstream ss;
+    ss << message;
+    ss >> json;
+    m_header.node_id = json["header"]["Node_ID"];
+    m_header.stamp.seconds = json["header"]["time_stamp"]["seconds"];
+    m_header.stamp.nanoseconds = json["header"]["time_stamp"]["nanoseconds"];
+    m_header.type = json["header"]["message_type"];
+    m_data.command = json["data"]["command"];
+    return m_data;
+}
+
+template <>
+void Message<CommandData>::set_data(CommandData command)
+{
+    m_json_message["data"]["command"] = command.command;
+}
+
+/****************************************************************************/
 /************** STANCE DATA SPECIALIZATIONS *********************************/
 /****************************************************************************/
 
@@ -261,6 +298,27 @@ bool position_callback(int node_id, double x, double y, double z)
     return true;
 }
 
+static void handle_command_message(std::string message)
+{
+    Message<CommandData> command_message;
+    auto command = command_message.deserialize(message).command;
+    switch (command)
+    {
+        case WSCommand::StartInertialTracking:
+        {
+            UWBCommandMessage x{UWBCommand::StartInertialTracking, command_message.get_header().node_id};
+            UUBLA::add_to_send_queue(x);
+            break;
+        }
+        case WSCommand::StopInertialTracking:
+        {
+            UWBCommandMessage x{UWBCommand::StopInertialTracking, command_message.get_header().node_id};
+            UUBLA::add_to_send_queue(x);
+            break;
+        }
+    }
+}
+
 /** \brief This callback is triggered each time position or similar data is
  * received from a websocket client. For example, when the UI sends position
  * data on placement of a beacon. Delegates handling of the message to an
@@ -300,7 +358,7 @@ void state_messages_callback(arwain::WebSocketServer *ws, std::shared_ptr<WssSer
         throw std::runtime_error("Handing of WS Diagnostic messages not implemented.");
         break;
     case MessageType::Command:
-        throw std::runtime_error("Handing of WS Command messages not implemented.");
+        handle_command_message(msg);
         break;
     }
 }
