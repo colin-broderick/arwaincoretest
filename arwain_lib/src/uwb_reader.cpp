@@ -94,7 +94,8 @@ void publish_inertial_on_uwb()
     if (inf)
     {
         auto pos = inf->get_position();
-        UUBLA::add_to_send_queue({pos, arwain::config.node_id});
+        UWBPosReport report{pos, arwain::config.node_id};
+        UUBLA::add_to_send_queue(report);
     }
 }
 
