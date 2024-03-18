@@ -32,6 +32,7 @@ class ArwainSerial
 		{
 			this->port.open(com_port);
 			this->port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
+			this->port.set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::even));
 			this->port_open = true;
 		}
 
