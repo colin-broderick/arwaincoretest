@@ -28,6 +28,20 @@ UublaWrapper::UublaWrapper()
 {
     ServiceManager::register_service(this, service_name);
 
+    start_inertial_event_key = UUBLA::Events::uwb_command_start_inertial.add_callback(
+        [](std::string)
+        {
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
+        }
+    );
+
+    stop_inertial_event_key = UUBLA::Events::uwb_command_stop_inertial.add_callback(
+        [](std::string)
+        {
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+        }
+    );
+
     // The websocket server exists to receive position data from the Unity front end.
     // Upon reception, data is fed to the UUBLA instance running here and there it is
     // used for solving for tag position.
@@ -38,6 +52,8 @@ UublaWrapper::UublaWrapper()
 UublaWrapper::~UublaWrapper()
 {
     UUBLA::run_flag = false;
+    UUBLA::Events::uwb_command_start_inertial.remove_callback(start_inertial_event_key);
+    UUBLA::Events::uwb_command_stop_inertial.remove_callback(stop_inertial_event_key);
     ServiceManager::unregister_service(service_name);
 }
 

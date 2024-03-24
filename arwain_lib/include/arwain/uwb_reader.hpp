@@ -22,6 +22,8 @@ class UublaWrapper : public ArwainJob, protected IArwainJobSpec, public IArwainS
         std::jthread job_thread;
         arwain::Logger uwb_log;
         std::unique_ptr<UUBLA::Network> m_uubla;
+        uint64_t start_inertial_event_key = 0;
+        uint64_t stop_inertial_event_key = 0;
 
     public:
         UublaWrapper();
