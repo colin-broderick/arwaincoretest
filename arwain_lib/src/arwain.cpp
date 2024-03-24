@@ -281,7 +281,7 @@ void arwain::setup_log_folder_name_suffix(const arwain::InputParser& input)
     }
 }
 
-std::unique_ptr<WsMessenger> ws_messenger;
+// std::unique_ptr<WsMessenger> ws_messenger;
 std::unique_ptr<HybridPositioner> hybrid_positioner;
 std::unique_ptr<UublaWrapper> uubla_wrapper;
 std::unique_ptr<SensorManager> sensor_manager;
@@ -300,7 +300,7 @@ std::unique_ptr<StatusReporting> status_reporting;                       // LoRa
 arwain::ReturnCode arwain::execute_jobs()
 {
     // Start worker threads.
-    ws_messenger = std::make_unique<WsMessenger>();
+    // ws_messenger = std::make_unique<WsMessenger>();                              // There should never have been a WS server in this code base!
     sensor_manager = std::make_unique<SensorManager>();                             // Reading IMU data, updating orientation filters.
     position_velocity_inference = std::make_unique<PositionVelocityInference>();    // Velocity and position inference.
     stance_detection = std::make_unique<StanceDetection>();;                        // Stance, freefall, entanglement detection.

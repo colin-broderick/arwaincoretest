@@ -115,7 +115,7 @@ void UublaWrapper::run_inference()
         if (arwain::config.use_uwb_positioning)
         {
             m_uubla->process_queue();
-            m_uubla->solve_map();
+            // m_uubla->solve_map();
             auto now_count = timer.count();
             // TODO The maths below is because interval timer.count doesn't return the milisecond count as it should.
             // Consider also the timing in other inetval timer locations before making changes.
@@ -123,17 +123,17 @@ void UublaWrapper::run_inference()
             last_count = now_count;
         }
 
-        auto messenger = ServiceManager::get_service<WsMessenger>(WsMessenger::service_name);
-        if (messenger && frame_counter % 3 == 0)
-        {
-            messenger->send_dash_message(state_string(m_uubla.get()));
-        }
+        // auto messenger = ServiceManager::get_service<WsMessenger>(WsMessenger::service_name);
+        // if (messenger && frame_counter % 3 == 0)
+        // {
+        //     messenger->send_dash_message(state_string(m_uubla.get()));
+        // }
 
         // We still want to publish positions over WebSocket, even if we aren't using UWB positioning.
-        if (messenger)
-        {
-            messenger->publish_positions_on_websocket(*m_uubla);
-        }
+        // if (messenger)
+        // {
+        //     messenger->publish_positions_on_websocket(*m_uubla);
+        // }
 
         publish_inertial_on_uwb();
         timer.await();
