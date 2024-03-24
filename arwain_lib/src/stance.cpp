@@ -16,11 +16,18 @@
 #include "arwain/logger.hpp"
 #include "arwain/arwain.hpp"
 #include "arwain/exceptions.hpp"
+#include "arwain/service_manager.hpp"
 
 StanceDetection::StanceDetection()
 {
     core_setup();
     job_thread = std::jthread{std::bind_front(&StanceDetection::run, this)};
+    ServiceManager::register_service(this, StanceDetection::service_name);
+}
+
+StanceDetection::~StanceDetection()
+{
+    ServiceManager::unregister_service(StanceDetection::service_name);
 }
 
 void StanceDetection::setup_inference()

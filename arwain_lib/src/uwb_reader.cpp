@@ -90,11 +90,16 @@ bool UublaWrapper::cleanup_inference()
 
 void publish_inertial_on_uwb()
 {
+    UWBPosReport report{Vector3::Zero, 0, arwain::config.node_id};
+    auto stance_service = ServiceManager::get_service<StanceDetection>(StanceDetection::service_name);
+    if (stance_service)
+    {
+        report.stance = static_cast<int>(stance_service->get_stance());
+    }
     auto inf = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
     if (inf)
     {
-        auto pos = inf->get_position();
-        UWBPosReport report{pos, arwain::config.node_id};
+        report.pos = inf->get_position();
         UUBLA::add_to_send_queue(report);
     }
 }
