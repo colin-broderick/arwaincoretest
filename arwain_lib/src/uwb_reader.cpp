@@ -101,7 +101,7 @@ void UublaWrapper::setup_inference()
 
 bool UublaWrapper::cleanup_inference()
 {
-    UUBLA::run_flag = false;
+    // UUBLA::run_flag = false;
     return true;
 }
 
