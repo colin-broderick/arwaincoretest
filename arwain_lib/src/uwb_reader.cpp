@@ -5,7 +5,6 @@
 #include <thread>
 
 #include "arwain/arwain.hpp"
-#include "arwain/serial.hpp"
 #include "arwain/logger.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/transmit_lora.hpp"
@@ -101,7 +100,7 @@ void UublaWrapper::setup_inference()
 
 bool UublaWrapper::cleanup_inference()
 {
-    // UUBLA::run_flag = false;
+    UUBLA::run_flag = false;
     return true;
 }
 
