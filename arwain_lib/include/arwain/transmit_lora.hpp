@@ -9,7 +9,7 @@
 class StanceDetection;
 class UublaWrapper;
 
-class StatusReporting : public ArwainJob, protected IArwainJobSpec
+class StatusReporting final : public ArwainJob, protected IArwainJobSpec
 {
 	private:
         void core_setup() override;

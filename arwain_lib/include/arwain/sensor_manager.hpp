@@ -14,7 +14,7 @@
 #include "arwain/service_interface.hpp"
 
 
-class SensorManager : public ArwainJob, protected IArwainJobSpec, public IArwainService
+class SensorManager final : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void run() override;

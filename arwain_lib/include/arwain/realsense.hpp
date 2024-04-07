@@ -9,7 +9,7 @@
 
 #include "t265.hpp"
 
-class CameraController : public ArwainJob, protected IArwainJobSpec
+class CameraController final : public ArwainJob, protected IArwainJobSpec
 {
     private:
         void setup_data_collection();

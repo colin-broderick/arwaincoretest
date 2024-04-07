@@ -46,7 +46,7 @@ class I_I2C
         virtual bool i2c_init(const int address, const std::string &bus_name) = 0;
 };
 
-class MockI2CDevice : public I_I2C
+class MockI2CDevice final : public I_I2C
 {
     /*  (void) casts are present to suppress unused parameter warnings. */
     public:
@@ -72,7 +72,7 @@ class MockI2CDevice : public I_I2C
         }
 };
 
-class LinuxSmbusI2CDevice : public I_I2C
+class LinuxSmbusI2CDevice final : public I_I2C
 {
     private:
         int handle;

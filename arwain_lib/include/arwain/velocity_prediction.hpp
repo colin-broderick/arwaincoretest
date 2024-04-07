@@ -9,7 +9,7 @@
 #include "arwain/arwain.hpp"
 #include "arwain/service_interface.hpp"
 
-class PositionVelocityInference : public ArwainJob, protected IArwainJobSpec, public IArwainService
+class PositionVelocityInference final : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void run_inference() override;

@@ -3,9 +3,9 @@
 
 #include "arwain/vel_infer_interface.hpp"
 
-class TFInferrer : public I_VelInferrer
+class TFInferrer final : public I_VelInferrer
 {
-
+    // TODO Why was this never finished? Implementing this class should simplify the PostionVelocityInference class.
 };
 
 #endif

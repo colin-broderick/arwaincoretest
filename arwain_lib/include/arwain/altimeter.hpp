@@ -10,7 +10,7 @@
 
 #include <arwain/devices/bmp384.hpp>
 
-class Altimeter : public ArwainJob, protected IArwainJobSpec
+class Altimeter final : public ArwainJob, protected IArwainJobSpec
 {
     private:
         void run() override;
