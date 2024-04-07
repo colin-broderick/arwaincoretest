@@ -6,6 +6,12 @@
 #include <fcntl.h>
 #include <cstring>
 
+#ifdef DEVENV
+#define PlatformI2CDevice MockI2CDevice
+#else
+#define PlatformI2CDevice LinuxSmbusI2CDevice
+#endif
+
 extern "C"
 {
     #include <linux/i2c-dev.h>
