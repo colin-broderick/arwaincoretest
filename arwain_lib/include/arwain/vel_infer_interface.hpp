@@ -9,8 +9,7 @@ struct ImuData;
 class I_VelInferrer
 {
     public:
-        virtual void init() = 0;
-        virtual Vector3 infer(const std::deque<ImuData>& imu_data) = 0;
+        virtual Vector3 infer(std::deque<ImuData>& imu_data) = 0;
 };
 
 #endif
