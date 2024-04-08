@@ -94,7 +94,18 @@ void publish_inertial_on_uwb()
     auto stance_service = ServiceManager::get_service<StanceDetection>(StanceDetection::service_name);
     if (stance_service)
     {
-        report.stance = static_cast<int>(stance_service->get_stance());
+        if (stance_service->get_falling_state() == StanceDetector::FallState::Falling)
+        {
+            report.stance = static_cast<int>(StanceDetector::Stance::FreefallStance);
+        }
+        else
+        {
+            report.stance = static_cast<int>(stance_service->get_stance());
+        }
+    }
+    else
+    {
+        report.stance = 25;
     }
     auto inf = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
     if (inf)

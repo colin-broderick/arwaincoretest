@@ -303,7 +303,7 @@ arwain::ReturnCode arwain::execute_jobs()
     ws_messenger = std::make_unique<WsMessenger>();
     sensor_manager = std::make_unique<SensorManager>();                             // Reading IMU data, updating orientation filters.
     position_velocity_inference = std::make_unique<PositionVelocityInference>();    // Velocity and position inference.
-    stance_detection = std::make_unique<StanceDetection>();;                        // Stance, freefall, entanglement detection.
+    stance_detection = std::make_unique<StanceDetection>();                         // Stance, freefall, entanglement detection.
     altimeter = std::make_unique<Altimeter>();                                      // Uses the BMP384 sensor to determine altitude.
     indoor_positioning_system = std::make_unique<IndoorPositioningSystem>();        // Floor, stair, corner snapping.
     uubla_wrapper = std::make_unique<UublaWrapper>();                               // Enable this node to operate as an UUBLA master node.
