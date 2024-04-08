@@ -25,7 +25,8 @@ class StanceDetector
             Searching,  // The wearer shows high kinetic activity but forward progress is slow.
             Crawling,   // The wearer has horizontal attitude and is moving at a crawling pace.
             Running,    // The wearer is moving at greater than walking pace.
-            Climbing    // The wearer is moving vertically; stairs or ladders.
+            Climbing,   // The wearer is moving vertically; stairs or ladders.
+            FreefallStance
         };
         enum FallState { 
             NotFalling,
