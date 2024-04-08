@@ -121,7 +121,7 @@ class StanceDetector
         FallState get_falling_status();
 };
 
-class StanceDetection : public ArwainJob, protected IArwainJobSpec, public IArwainService
+class StanceDetection final : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void setup_inference() override;

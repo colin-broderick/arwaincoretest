@@ -5,7 +5,6 @@
 #include <thread>
 
 #include "arwain/arwain.hpp"
-#include "arwain/serial.hpp"
 #include "arwain/logger.hpp"
 #include "arwain/exceptions.hpp"
 #include "arwain/transmit_lora.hpp"
@@ -28,6 +27,20 @@ UublaWrapper::UublaWrapper()
 {
     ServiceManager::register_service(this, service_name);
 
+    start_inertial_event_key = UUBLA::Events::uwb_command_start_inertial.add_callback(
+        [](std::string)
+        {
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
+        }
+    );
+
+    stop_inertial_event_key = UUBLA::Events::uwb_command_stop_inertial.add_callback(
+        [](std::string)
+        {
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+        }
+    );
+
     // The websocket server exists to receive position data from the Unity front end.
     // Upon reception, data is fed to the UUBLA instance running here and there it is
     // used for solving for tag position.
@@ -38,17 +51,22 @@ UublaWrapper::UublaWrapper()
 UublaWrapper::~UublaWrapper()
 {
     UUBLA::run_flag = false;
+    UUBLA::Events::uwb_command_start_inertial.remove_callback(start_inertial_event_key);
+    UUBLA::Events::uwb_command_stop_inertial.remove_callback(stop_inertial_event_key);
     ServiceManager::unregister_service(service_name);
 }
 
 void UublaWrapper::core_setup()
 {
     m_uubla = std::make_unique<UUBLA::Network>();
+    serial_reader_th = std::jthread{serial_reader_fn, m_uubla.get(), arwain::config.uubla_serial_port, 115200};
+    pin_thread(serial_reader_th, 3);
     m_uubla->force_plane(arwain::config.force_z_zero);
 }
 
 void UublaWrapper::run_idle()
 {
+    m_uubla->process_queue();
     sleep_ms(10);
 }
 
@@ -78,8 +96,6 @@ void UublaWrapper::setup_inference()
     m_uubla->set_ewma_gain(0.1);
     // m_uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
     // m_uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
-    serial_reader_th = std::jthread{serial_reader_fn, m_uubla.get(), arwain::config.uubla_serial_port, 115200};
-    pin_thread(serial_reader_th, 3);
 }
 
 bool UublaWrapper::cleanup_inference()
@@ -131,7 +147,7 @@ void UublaWrapper::run_inference()
         if (arwain::config.use_uwb_positioning)
         {
             m_uubla->process_queue();
-            m_uubla->solve_map();
+            // m_uubla->solve_map();
             auto now_count = timer.count();
             // TODO The maths below is because interval timer.count doesn't return the milisecond count as it should.
             // Consider also the timing in other inetval timer locations before making changes.
@@ -139,17 +155,17 @@ void UublaWrapper::run_inference()
             last_count = now_count;
         }
 
-        auto messenger = ServiceManager::get_service<WsMessenger>(WsMessenger::service_name);
-        if (messenger && frame_counter % 3 == 0)
-        {
-            messenger->send_dash_message(state_string(m_uubla.get()));
-        }
+        // auto messenger = ServiceManager::get_service<WsMessenger>(WsMessenger::service_name);
+        // if (messenger && frame_counter % 3 == 0)
+        // {
+        //     messenger->send_dash_message(state_string(m_uubla.get()));
+        // }
 
         // We still want to publish positions over WebSocket, even if we aren't using UWB positioning.
-        if (messenger)
-        {
-            messenger->publish_positions_on_websocket(*m_uubla);
-        }
+        // if (messenger)
+        // {
+        //     messenger->publish_positions_on_websocket(*m_uubla);
+        // }
 
         publish_inertial_on_uwb();
         timer.await();

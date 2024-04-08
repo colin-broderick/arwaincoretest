@@ -7,7 +7,7 @@
 
 class PositionVelocityInference;
 
-class ArwainCLI : public ArwainJob, protected IArwainJobSpec
+class ArwainCLI final : public ArwainJob, protected IArwainJobSpec
 {
     private:
         void run() override;

@@ -22,34 +22,34 @@ ArwainBIT arwain_bit(int argc, char **argv)
     }
 
     // Test IMUs.
-    IIM42652<LinuxSmbusI2CDevice> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
-    if (imu1.whoami() != IIM42652<LinuxSmbusI2CDevice>::chip_id)
+    IIM42652<PlatformI2CDevice> imu1{arwain::config.imu1_address, arwain::config.imu1_bus};
+    if (imu1.whoami() != IIM42652<PlatformI2CDevice>::chip_id)
     {
         return ArwainBIT::IMU1_FAILED;
     }
-    IIM42652<LinuxSmbusI2CDevice> imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
-    if (imu2.whoami() != IIM42652<LinuxSmbusI2CDevice>::chip_id)
+    IIM42652<PlatformI2CDevice> imu2{arwain::config.imu2_address, arwain::config.imu2_bus};
+    if (imu2.whoami() != IIM42652<PlatformI2CDevice>::chip_id)
     {
         return ArwainBIT::IMU2_FAILED;
     }
-    IIM42652<LinuxSmbusI2CDevice> imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
-    if (imu3.whoami() != IIM42652<LinuxSmbusI2CDevice>::chip_id)
+    IIM42652<PlatformI2CDevice> imu3{arwain::config.imu3_address, arwain::config.imu3_bus};
+    if (imu3.whoami() != IIM42652<PlatformI2CDevice>::chip_id)
     {
         return ArwainBIT::IMU3_FAILED;
     }
 
     // Test pressure
-    BMP384<LinuxSmbusI2CDevice> pressure_sensor{arwain::config.pressure_address, arwain::config.pressure_bus};
+    BMP384<PlatformI2CDevice> pressure_sensor{arwain::config.pressure_address, arwain::config.pressure_bus};
     auto chip_id = pressure_sensor.whoami();
-    bool condition = (chip_id == BMP384<LinuxSmbusI2CDevice>::BMP384_chip_id) || (chip_id == BMP384<LinuxSmbusI2CDevice>::BMP390_chip_id);
+    bool condition = (chip_id == BMP384<PlatformI2CDevice>::BMP384_chip_id) || (chip_id == BMP384<PlatformI2CDevice>::BMP390_chip_id);
     if (!condition)
     {
         return ArwainBIT::PRESSURE_FAILED;
     }
 
     // Test magnetometer
-    LIS3MDL<LinuxSmbusI2CDevice> magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
-    if (magnetometer.whoami() != LIS3MDL<LinuxSmbusI2CDevice>::chip_id)
+    LIS3MDL<PlatformI2CDevice> magnetometer{arwain::config.magn_address, arwain::config.magn_bus};
+    if (magnetometer.whoami() != LIS3MDL<PlatformI2CDevice>::chip_id)
     {
         return ArwainBIT::MAG_FAILED;
     }

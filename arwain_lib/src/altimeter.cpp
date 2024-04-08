@@ -44,7 +44,7 @@ void Altimeter::run_inference()
     {
         auto [pressure, temperature] = bmp384.read();
         pressure = pressure - arwain::config.pressure_offset;
-        altitude = BMP384<LinuxSmbusI2CDevice>::calculate_altitude(pressure / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
+        altitude = BMP384<PlatformI2CDevice>::calculate_altitude(pressure / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
         altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
         arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
 
@@ -65,7 +65,7 @@ void Altimeter::run_idle()
     {
         auto [pressure, temperature] = bmp384.read();
         pressure = pressure - arwain::config.pressure_offset;
-        altitude = BMP384<LinuxSmbusI2CDevice>::calculate_altitude(pressure / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
+        altitude = BMP384<PlatformI2CDevice>::calculate_altitude(pressure / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
         altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
         arwain::Buffers::PRESSURE_BUFFER.push_back({pressure / 100.0, temperature, altitude - altitude_zero});
 
@@ -100,10 +100,10 @@ void Altimeter::run()
 
 void Altimeter::core_setup()
 {
-    bmp384 = BMP384<LinuxSmbusI2CDevice>{arwain::config.pressure_address, arwain::config.pressure_bus};
+    bmp384 = BMP384<PlatformI2CDevice>{arwain::config.pressure_address, arwain::config.pressure_bus};
     auto [p0, t0] = bmp384.read();
     p0 = p0 - arwain::config.pressure_offset;
-    altitude = BMP384<LinuxSmbusI2CDevice>::calculate_altitude(p0 / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
+    altitude = BMP384<PlatformI2CDevice>::calculate_altitude(p0 / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
     sabatini_filter = arwain::Filters::SabatiniAltimeter{
         altitude,                                                          // Initial altitude.
         0,                                                                 // Initial vertical velocity.
@@ -116,7 +116,7 @@ void Altimeter::core_setup()
     {
         auto [p, t] = bmp384.read();
         p = p - arwain::config.pressure_offset;
-        altitude = BMP384<LinuxSmbusI2CDevice>::calculate_altitude(p / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
+        altitude = BMP384<PlatformI2CDevice>::calculate_altitude(p / 100.0, CONSTANT_ROOM_TEMPERATURE, arwain::config.sea_level_pressure);
         altitude = sabatini_filter.update(arwain::rolling_average_accel_z_for_altimeter.get_value() - arwain::config.gravity, altitude);
         sleep_ms(50);
     }

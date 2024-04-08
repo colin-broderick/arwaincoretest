@@ -10,7 +10,7 @@
 #include "arwain/floor_tracker.hpp"
 #include "arwain/job_interface.hpp"
 
-class IndoorPositioningSystem : public ArwainJob, protected IArwainJobSpec
+class IndoorPositioningSystem final : public ArwainJob, protected IArwainJobSpec
 {
     private:
         void core_setup() override;
