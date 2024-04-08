@@ -50,7 +50,7 @@ UublaWrapper::UublaWrapper()
 
 UublaWrapper::~UublaWrapper()
 {
-    UUBLA::run_flag = false;
+    serial_reader_th.request_stop();
     UUBLA::Events::uwb_command_start_inertial.remove_callback(start_inertial_event_key);
     UUBLA::Events::uwb_command_stop_inertial.remove_callback(stop_inertial_event_key);
     ServiceManager::unregister_service(service_name);
@@ -94,13 +94,10 @@ void UublaWrapper::run()
 void UublaWrapper::setup_inference()
 {
     m_uubla->set_ewma_gain(0.1);
-    // m_uubla->add_node_callback = inform_new_uubla_node; // Replaced with event registrations.
-    // m_uubla->remove_node_callback = inform_remove_uubla_node; // Replaced with event registrations.
 }
 
 bool UublaWrapper::cleanup_inference()
 {
-    UUBLA::run_flag = false;
     return true;
 }
 
@@ -213,7 +210,6 @@ bool UublaWrapper::network_contains(int node_id)
 {
     auto str_node_id = UUBLA::Node::name_from_int(node_id);
     return m_uubla->get_nodes().count(str_node_id) > 0;
-
 }
 
 void UublaWrapper::fix_node_at(int node_id, const Vector3& new_position)
