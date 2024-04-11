@@ -30,14 +30,14 @@ UublaWrapper::UublaWrapper()
     start_inertial_event_key = UUBLA::Events::uwb_command_start_inertial.add_callback(
         [](std::string)
         {
-            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
         }
     );
 
     stop_inertial_event_key = UUBLA::Events::uwb_command_stop_inertial.add_callback(
         [](std::string)
         {
-            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
+            arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
         }
     );
 
