@@ -12,7 +12,6 @@
 #include "arwain/service_manager.hpp"
 #include "arwain/hybrid_positioner.hpp"
 #include "arwain/velocity_prediction.hpp"
-#include "arwain/ws_messenger.hpp"
 
 #include "uubla/utils.hpp"
 #include "uubla/events.hpp"
