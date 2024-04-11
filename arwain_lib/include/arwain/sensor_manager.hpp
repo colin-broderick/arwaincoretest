@@ -14,7 +14,7 @@
 #include "arwain/service_interface.hpp"
 
 
-class SensorManager : public ArwainJob, protected IArwainJobSpec, public IArwainService
+class SensorManager final : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void run() override;
@@ -36,10 +36,10 @@ class SensorManager : public ArwainJob, protected IArwainJobSpec, public IArwain
 
         std::jthread job_thread;
         std::jthread quick_madgwick_convergence_thread;
-        IIM42652<LinuxSmbusI2CDevice> imu1;
-        IIM42652<LinuxSmbusI2CDevice> imu2;
-        IIM42652<LinuxSmbusI2CDevice> imu3;
-        LIS3MDL<LinuxSmbusI2CDevice> magnetometer;
+        IIM42652<PlatformI2CDevice> imu1;
+        IIM42652<PlatformI2CDevice> imu2;
+        IIM42652<PlatformI2CDevice> imu3;
+        LIS3MDL<PlatformI2CDevice> magnetometer;
         arwain::Madgwick madgwick_filter_1;
         arwain::Madgwick madgwick_filter_mag_1;
 

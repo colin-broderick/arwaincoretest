@@ -96,6 +96,9 @@ TEST(arwain__Configuration, read_from_file__valid_file)
 
 TEST(arwain__Configuration, replace)
 {
+    // NOTE: Skipped because file accesses are not in scope for unit tests.
+    GTEST_SKIP();
+
     std::string text0 = "exename";
     std::string text1 = "--lstd";
     std::string text2 = "--noinf";

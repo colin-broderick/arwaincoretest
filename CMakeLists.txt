@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 find_package(GTest CONFIG REQUIRED)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"                     ON)
 option(USE_ROS              "Use ROS topics to publish diagnostic data"                      OFF)
 option(USE_REALSENSE        "Use the Realsense T265 camera for positioning"                  OFF)
@@ -28,8 +31,6 @@ if(USE_REALSENSE)
     add_definitions(-DUSE_REALSENSE)
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(ALL_ARWAIN_LIBRARIES
     arwain_lib
     arwain_rfm95w
@@ -86,5 +87,6 @@ target_link_libraries(${PROJECT_NAME}_test ${ALL_ARWAIN_LIBRARIES} -lgcov --cove
 ## Install configuration and related files to correct locations.
 install(TARGETS ${PROJECT_NAME} DESTINATION /usr/bin)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/models/tflite/model_float32.tflite DESTINATION /etc)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/arwain.conf DESTINATION /etc)
 
 add_test(NAME arwain_test COMMAND arwain_test)

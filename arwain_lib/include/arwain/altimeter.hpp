@@ -10,7 +10,7 @@
 
 #include <arwain/devices/bmp384.hpp>
 
-class Altimeter : public ArwainJob, protected IArwainJobSpec
+class Altimeter final : public ArwainJob, protected IArwainJobSpec
 {
     private:
         void run() override;
@@ -27,7 +27,7 @@ class Altimeter : public ArwainJob, protected IArwainJobSpec
 
         std::jthread job_thread;
         arwain::Logger pressure_log;
-        BMP384<LinuxSmbusI2CDevice> bmp384;
+        BMP384<PlatformI2CDevice> bmp384;
         arwain::Filters::SabatiniAltimeter sabatini_filter;
 
     public:

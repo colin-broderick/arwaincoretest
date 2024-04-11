@@ -12,6 +12,17 @@
 #include "arwain/command_line.hpp"
 #include "arwain/events.hpp"
 
+// TODO The UWBOff stuff should be part of the uubla library.
+#include "uubla/network.hpp"
+
+class UWBOff : public IUWBMessage
+{
+    std::string to_uart_string()
+    {
+        return "[OFF]";
+    }
+};
+
 ArwainCLI::ArwainCLI()
 : ArwainCLI(std::cin)
 {
@@ -84,7 +95,9 @@ void ArwainCLI::fail_to_switch_to(arwain::OperatingMode mode)
 bool ArwainCLI::switch_to_exit_mode()
 {
     std::cout << "Cleaning up before closing, please wait ..." << std::endl;
-    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Idle);
+    UWBOff off;
+    UUBLA::add_to_send_queue(off);
     return true;
 }
 

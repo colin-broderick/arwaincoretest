@@ -1,15 +1,11 @@
 #ifndef PREDICT_VELOCITY_H
 #define PREDICT_VELOCITY_H
 
-#include <tensorflow/lite/interpreter.h>
-#include <tensorflow/lite/kernels/register.h>
-#include <tensorflow/lite/model.h>
-#include <tensorflow/lite/tools/gen_op_registration.h>
-
 #include "arwain/arwain.hpp"
 #include "arwain/service_interface.hpp"
+#include "arwain/tf_inferrer.hpp"
 
-class PositionVelocityInference : public ArwainJob, protected IArwainJobSpec, public IArwainService
+class PositionVelocityInference final : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void run_inference() override;
@@ -19,13 +15,7 @@ class PositionVelocityInference : public ArwainJob, protected IArwainJobSpec, pu
         void run() override;
         bool cleanup_inference() override;
 
-        std::unique_ptr<tflite::FlatBufferModel> model;
-        tflite::ops::builtin::BuiltinOpResolver resolver;
-        std::unique_ptr<tflite::Interpreter> interpreter;
-        float* input;
-
-        // Local copy of IMU buffer data.
-        std::deque<ImuData> imu;
+        std::unique_ptr<TFInferrer> inferrer;
 
         Vector3 position;
         Vector3 velocity;

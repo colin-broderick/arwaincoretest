@@ -11,6 +11,7 @@
 #include <arwain/quaternion.hpp>
 #include <arwain/devices/iim42652.hpp>
 
+#include "arwain/service_interface.hpp"
 #include "arwain/logger.hpp"
 #include "arwain/job_interface.hpp"
 
@@ -24,7 +25,8 @@ class StanceDetector
             Searching,  // The wearer shows high kinetic activity but forward progress is slow.
             Crawling,   // The wearer has horizontal attitude and is moving at a crawling pace.
             Running,    // The wearer is moving at greater than walking pace.
-            Climbing    // The wearer is moving vertically; stairs or ladders.
+            Climbing,   // The wearer is moving vertically; stairs or ladders.
+            FreefallStance
         };
         enum FallState { 
             NotFalling,
@@ -119,7 +121,7 @@ class StanceDetector
         FallState get_falling_status();
 };
 
-class StanceDetection : public ArwainJob, protected IArwainJobSpec
+class StanceDetection final : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void setup_inference() override;
@@ -146,11 +148,13 @@ class StanceDetection : public ArwainJob, protected IArwainJobSpec
 
     public:
         StanceDetection();
+        ~StanceDetection();
         bool join() override;
         StanceDetector::FallState get_falling_state();
         StanceDetector::EntangleState get_entangled_state();
         StanceDetector::Attitude get_attitude();
         StanceDetector::Stance get_stance();
+        static inline std::string service_name = "StanceDetection";
 };
 
 StanceDetector::FallState operator|(const StanceDetector::FallState &stance1, const StanceDetector::FallState &stance2);

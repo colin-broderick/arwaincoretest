@@ -8,7 +8,7 @@
 #include "arwain/job_interface.hpp"
 #include "arwain/service_interface.hpp"
 
-class UublaWrapper : public ArwainJob, protected IArwainJobSpec, public IArwainService
+class UublaWrapper final : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void run_inference() override;
@@ -22,10 +22,15 @@ class UublaWrapper : public ArwainJob, protected IArwainJobSpec, public IArwainS
         std::jthread job_thread;
         arwain::Logger uwb_log;
         std::unique_ptr<UUBLA::Network> m_uubla;
+        uint64_t start_inertial_event_key = 0;
+        uint64_t stop_inertial_event_key = 0;
 
     public:
         UublaWrapper();
         ~UublaWrapper();
+
+        bool network_contains(int node_id);
+        void fix_node_at(int node_id, const Vector3& new_position);
         static inline std::string service_name = "UublaWrapper";
         bool join() override;
         double get_distance(const int position);

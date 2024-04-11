@@ -9,7 +9,7 @@
 #include "arwain/service_interface.hpp"
 #include "arwain/utils.hpp"
 
-class HybridPositioner : public ArwainJob, protected IArwainJobSpec, public IArwainService
+class HybridPositioner final : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         class PositionHybridizer

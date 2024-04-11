@@ -14,6 +14,7 @@
 #include "arwain/service_manager.hpp"
 #include "arwain/uwb_reader.hpp"
 #include "arwain/hybrid_positioner.hpp"
+#include "arwain/tf_inferrer.hpp"
 
 void pin_thread(std::jthread& th, int core_number)
 {
@@ -36,6 +37,7 @@ PositionVelocityInference::PositionVelocityInference()
     {
         job_thread.join();
     }
+    inferrer = std::make_unique<TFInferrer>(arwain::config.inference_model_path.c_str());
     job_thread = std::jthread{std::bind_front(&PositionVelocityInference::run, this)};
     pin_thread(job_thread, 1);
 }
@@ -49,19 +51,6 @@ void PositionVelocityInference::core_setup()
 {
     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
     std::this_thread::sleep_for(std::chrono::milliseconds{1000});
-    
-    // TODO Create inferencer.
-    // If the model file cannot be found or loaded, set mode to terminate and break loop.
-    model = tflite::FlatBufferModel::BuildFromFile(arwain::config.inference_model_path.c_str());
-    if (!model)
-    {
-        std::cout << "Failed to map model\n";
-        throw std::exception{};
-    }
-    // Configure interpreter.
-    tflite::InterpreterBuilder(*model.get(), resolver)(&interpreter);
-    interpreter->AllocateTensors();
-    input = interpreter->typed_input_tensor<float>(0);
 }
 
 void PositionVelocityInference::run()
@@ -92,7 +81,7 @@ void PositionVelocityInference::run_idle()
 
 void PositionVelocityInference::setup_inference()
 {
-    position = {0, 0, 0};
+    position = {0, 0, 1.5};
     velocity = {0, 0, 0};
     velocity_file.open(arwain::folder_date_string + "/velocity.txt");
     position_file.open(arwain::folder_date_string + "/position.txt");
@@ -116,27 +105,14 @@ void PositionVelocityInference::run_inference()
 
     while (mode == arwain::OperatingMode::Inference)
     {
-        imu = arwain::Buffers::IMU_WORLD_BUFFER.get_data();
+        auto imu_data = arwain::Buffers::IMU_WORLD_BUFFER.get_data();
         // Check what the time really is since it might not be accurate.
         time = std::chrono::high_resolution_clock::now();
         // Get dt in seconds since last udpate, and update lastTime.
         double dt = std::chrono::duration_cast<std::chrono::milliseconds>(time - last_time).count()/1000.0;
         last_time = time;
 
-        // Load data into inference and run inference.
-        unsigned int input_index = 0;
-        for (int i = 0; i < 6; i++)
-        {
-            for (int j = 0; j < 200; j++)
-            {
-                *(input + input_index) = imu[j][i];
-                input_index++;
-            }
-        }
-
-        interpreter->Invoke();
-        float* output = interpreter->typed_output_tensor<float>(0);
-        velocity = {output[0], output[1], output[2]};
+        velocity = inferrer->infer(imu_data);
 
         // TODO Temporary to suppress errors in vertical velocity inference;
         // Remove when root issue resolved.
@@ -149,7 +125,7 @@ void PositionVelocityInference::run_inference()
         arwain::activity_metric.feed_velocity(velocity);
 
         Vector3 average_acceleration{0, 0, 0};
-        for (std::deque<ImuData>::iterator it = imu.end() - 10; it != imu.end(); ++it)
+        for (std::deque<ImuData>::iterator it = imu_data.end() - 10; it != imu_data.end(); ++it)
         {
             average_acceleration = average_acceleration + (*it).acce;
         }
@@ -190,7 +166,7 @@ void PositionVelocityInference::run_inference()
 
 bool PositionVelocityInference::cleanup_inference()
 {
-    position = {0, 0, 0};
+    position = {0, 0, 1.5};
     velocity = {0, 0, 0};
     return position_file.close() && velocity_file.close();
 }
@@ -203,8 +179,6 @@ bool PositionVelocityInference::join()
         return true;
     }
     return false;
-
-    delete input;
 }
 
 Vector3 PositionVelocityInference::get_position() const

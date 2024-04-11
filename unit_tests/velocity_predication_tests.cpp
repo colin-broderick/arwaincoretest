@@ -115,7 +115,7 @@ TEST(PositionVelocityInference, run)
 
 TEST(PositionVelocityInference, set_mode)
 {
-    arwain::config.inference_model_path = "/mnt/yocto/x004-yocto/sources/meta-arwain/recipes-arwain/arwain-inference-core/files/models/tflite/model_float32.tflite";
+    arwain::config.inference_model_path = "../models/tflite/model_float32.tflite";
     {
         arwain::config.no_inference = true;
         PositionVelocityInference inferrer;
