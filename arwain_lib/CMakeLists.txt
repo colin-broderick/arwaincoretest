@@ -7,6 +7,15 @@ find_package(OpenSSL REQUIRED)
 
 include_directories(include)
 
+FetchContent_Declare(
+    fdlts_common
+    GIT_REPOSITORY "git@bitbucket.org:arwain/fdlts-common"
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    GIT_TAG serialprotocol)
+FetchContent_MakeAvailable(fdlts_common)
+include_directories(${fdlts_common_SOURCE_DIR}/include)
+
 file(GLOB SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
 list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/arwain_lib/src/realsense.cpp)
 
