@@ -29,6 +29,7 @@ UublaWrapper::UublaWrapper()
     start_inertial_event_key = UUBLA::Events::uwb_command_start_inertial.add_callback(
         [](std::string)
         {
+            arwain::setup_log_directory();
             arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
         }
     );
