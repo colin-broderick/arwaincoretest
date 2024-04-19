@@ -12,7 +12,6 @@
 #include "arwain/command_line.hpp"
 #include "arwain/events.hpp"
 
-// TODO The UWBOff stuff should be part of the uubla library.
 #include "uubla/network.hpp"
 
 ArwainCLI::ArwainCLI()
