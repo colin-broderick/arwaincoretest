@@ -45,7 +45,7 @@ provide_library("git@bitbucket.org:arwain/input_parser"         input_parser    
 provide_library("git@bitbucket.org:arwain/arwain_rfm95w"        arwain_rfm95w       master)
 provide_library("git@bitbucket.org:arwain/iim42652"             iim42652            master)
 provide_library("git@bitbucket.org:arwain/arwain_event"         arwain_event        master)
-provide_library("git@bitbucket.org:arwain/uublacpp"             uublacpp            serialprotocol)
+provide_library("git@bitbucket.org:arwain/uublacpp"             uublacpp            master)
 provide_library("git@bitbucket.org:arwain/lis3mdl"              lis3mdl             master)
 provide_library("git@bitbucket.org:arwain/arwain_orientation"   arwain_orientation  master)
 provide_library("git@bitbucket.org:arwain/arwain_icp"           arwain_icp          master)
