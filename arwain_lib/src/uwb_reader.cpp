@@ -19,6 +19,8 @@
 
 #define PUBLISH_HYBRID_POSITIONS
 
+std::unique_ptr<ACP_SerialPort> serial_port;
+
 std::string state_string(UUBLA::Network* uubla);
 void pin_thread(std::jthread& th, int core_number);
 
@@ -59,9 +61,10 @@ UublaWrapper::~UublaWrapper()
 void UublaWrapper::core_setup()
 {
     m_uubla = std::make_unique<UUBLA::Network>();
-    serial_reader_th = std::jthread{serial_reader_fn, m_uubla.get(), arwain::config.uubla_serial_port, 115200};
-    pin_thread(serial_reader_th, 3);
     m_uubla->force_plane(arwain::config.force_z_zero);
+    serial_port = std::make_unique<ACP_SerialPort>(arwain::config.uubla_serial_port, arwain::config.uubla_baud_rate);
+    serial_reader_th = std::jthread{serial_reader_fn, m_uubla.get(), serial_port.get()};
+    pin_thread(serial_reader_th, 3);
 }
 
 void UublaWrapper::run_idle()
@@ -103,7 +106,9 @@ bool UublaWrapper::cleanup_inference()
 
 void publish_inertial_on_uwb()
 {
-    UWBPosReport report{Vector3::Zero, 0, arwain::config.node_id};
+    ACP_PositionReport_t report = ACP_PositionReport_f(0, 0, 0, 0, arwain::config.node_id);
+    report.header.target_address = 239;
+    
     auto stance_service = ServiceManager::get_service<StanceDetection>(StanceDetection::service_name);
     if (stance_service)
     {
@@ -123,8 +128,11 @@ void publish_inertial_on_uwb()
     auto inf = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
     if (inf)
     {
-        report.pos = inf->get_position();
-        UUBLA::add_to_send_queue(report);
+        auto pos = inf->get_position();
+        report.pos_x = pos.x;
+        report.pos_y = pos.y;
+        report.pos_z = pos.z;
+        serial_port->add_to_send_queue(report);
     }
 }
 
@@ -151,18 +159,6 @@ void UublaWrapper::run_inference()
             arwain::Events::new_uwb_position_event.invoke({get_own_position(), (now_count - last_count) / 1000.0 / 1000.0 / 1000.0});
             last_count = now_count;
         }
-
-        // auto messenger = ServiceManager::get_service<WsMessenger>(WsMessenger::service_name);
-        // if (messenger && frame_counter % 3 == 0)
-        // {
-        //     messenger->send_dash_message(state_string(m_uubla.get()));
-        // }
-
-        // We still want to publish positions over WebSocket, even if we aren't using UWB positioning.
-        // if (messenger)
-        // {
-        //     messenger->publish_positions_on_websocket(*m_uubla);
-        // }
 
         publish_inertial_on_uwb();
         timer.await();
