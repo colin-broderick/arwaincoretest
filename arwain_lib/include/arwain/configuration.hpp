@@ -22,7 +22,7 @@ namespace arwain
     {
     public:
         Configuration(){};
-        Configuration(const arwain::InputParser &input);
+        Configuration(std::filesystem::path);
         arwain::ReturnCode read_from_file();
 
     public:

@@ -14,7 +14,7 @@ ArwainBIT arwain_bit(int argc, char **argv)
     try
     {
         arwain::InputParser input{argc, argv};
-        arwain::config = arwain::Configuration{input};
+        arwain::config = arwain::Configuration{input.get_cmd_option("--conf")};
     }
     catch (const std::exception &e)
     {

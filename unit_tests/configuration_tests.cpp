@@ -33,7 +33,7 @@ TEST(arwain__Configuration, Configuration_all)
 
     arwain::InputParser input_parser{count, strings};
     EXPECT_NO_THROW(
-        (arwain::Configuration{input_parser})
+        (arwain::Configuration{input_parser.get_cmd_option(text6)})
     );
 }
 
@@ -60,7 +60,7 @@ TEST(arwain__Configuration, read_from_file__invalid_file)
     int count = 8;
     arwain::InputParser input_parser{count, strings};
 
-    arwain::Configuration conf{input_parser};
+    arwain::Configuration conf{input_parser.get_cmd_option(text6)};
     EXPECT_THROW((arwain::ReturnCode::NoConfigurationFile == conf.read_from_file()), std::runtime_error);
 }
 
@@ -90,7 +90,7 @@ TEST(arwain__Configuration, read_from_file__valid_file)
     int count = 8;
     arwain::InputParser input_parser{count, strings};
 
-    arwain::Configuration conf{input_parser};
+    arwain::Configuration conf{input_parser.get_cmd_option(text6)};
     EXPECT_TRUE((arwain::ReturnCode::Success == conf.read_from_file()));
 }
 
@@ -120,6 +120,6 @@ TEST(arwain__Configuration, replace)
     int count = 8;
     arwain::InputParser input_parser{count, strings};
 
-    arwain::Configuration conf{input_parser};
+    arwain::Configuration conf{input_parser.get_cmd_option(text6)};
     EXPECT_NO_THROW(conf.replace("mag_scale_x", 1));
 }

@@ -550,7 +550,11 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
     }
 
     // Attempt to read the config file and quit if failed.
-    arwain::config = arwain::Configuration{input};
+    if(input.contains("--conf"))
+    {
+        arwain::config = arwain::Configuration{input.get_cmd_option("--conf")};
+    }
+    
     if ((ret = arwain::config.read_from_file()) != arwain::ReturnCode::Success)
     {
         std::cout << "Got an error when reading config file:\n";
@@ -633,7 +637,10 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
         if (input.contains("--calib"))
         {
             arwain::calibrate_gyroscopes_offline();
-            arwain::config = arwain::Configuration{input}; // Reread the config file as it has now changed.
+            if (input.contains("--conf"))
+            {
+                arwain::config = arwain::Configuration{input.get_cmd_option("--conf")}; // Reread the config file as it has now changed.
+            }
         }
         arwain::setup_log_folder_name_suffix(input);
         ret = arwain::execute_jobs();
