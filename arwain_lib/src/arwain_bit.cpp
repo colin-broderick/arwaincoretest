@@ -11,10 +11,13 @@
 
 ArwainBIT arwain_bit(int argc, char **argv)
 {
+    // If configuration file cannot be read, no further tests can be executed and
+    // system operation is not possible.
     try
     {
         arwain::InputParser input{argc, argv};
         arwain::config = arwain::Configuration{input.get_cmd_option("--conf")};
+        arwain::config.read_from_file();
     }
     catch (const std::exception &e)
     {
@@ -60,9 +63,6 @@ ArwainBIT arwain_bit(int argc, char **argv)
     {
         return ArwainBIT::LORA_FAILED;
     }
-
-    // TODO Test UWB
-    // return ArwainBIT::UWB_FAILED;
 
     return ArwainBIT::ALL_OK;
 }
