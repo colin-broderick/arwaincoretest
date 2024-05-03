@@ -4,6 +4,8 @@
 #include <chrono>
 #include <thread>
 #include <deque>
+#include <array>
+#include <vector>
 
 void sleep_ms(int ms);
 
@@ -14,6 +16,7 @@ double unwrap_phase_degrees(double new_angle, double previous_angle);
 double unwrap_phase_radians(double new_angle, double previous_angle);
 int clamp_value(int value, int minimum, int maximum);
 std::string date_time_string();
+std::array<double, 3> vec_to_array3(std::vector<double> in_vector);
 
 struct EulerOrientation
 {
