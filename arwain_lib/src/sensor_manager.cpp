@@ -81,7 +81,7 @@ void SensorManager::run()
  * \return Will return false if autocalibration is turned onm, and calibration could not be
  * performed. Return true if calibration is performed.
  */
-bool calibrate_gyroscope_bias(IIM42652<PlatformI2CDevice>& imu, std::string configaddress)
+static bool calibrate_gyroscope_bias(IIM42652<PlatformI2CDevice>& imu, const std::string configaddress)
 {
     if (imu.auto_calib_enabled())
     {
@@ -97,7 +97,7 @@ bool calibrate_gyroscope_bias(IIM42652<PlatformI2CDevice>& imu, std::string conf
         calibrator.feed(imu.read_imu().gyro);
         sleep_ms(5);
     }
-    Vector3 gyroscope_bias = calibrator.get_params();
+    const Vector3 gyroscope_bias = calibrator.get_params();
 
     arwain::config.gyro1_bias = gyroscope_bias;
     arwain::config.replace(configaddress, gyroscope_bias.to_array());

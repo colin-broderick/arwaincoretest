@@ -1,5 +1,6 @@
 #include <cmath>
 #include <sstream>
+#include <numbers>
 #include <thread>
 
 #include <arwain/quaternion.hpp>
@@ -7,7 +8,7 @@
 
 #include "arwain/utils.hpp"
 
-void sleep_ms(int ms)
+void sleep_ms(const int ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds{ms});
 }
@@ -65,10 +66,10 @@ EulerOrientation arwain::compute_euler(Quaternion& quaternion_rotor)
 Vector3 arwain::apply_quat_rotor_to_vector3(const Vector3& vector, const Quaternion& quaternion)
 {
     // Convert the 3-vector into a quaternion.
-    Quaternion quat_vec{0, vector.x, vector.y, vector.z};
+    const Quaternion quat_vec{0, vector.x, vector.y, vector.z};
 
     // Compute the rotated vector as a quaternion.
-    Quaternion rotated_quaternion_vector = quaternion * quat_vec * quaternion.conjugate();
+    const Quaternion rotated_quaternion_vector = quaternion * quat_vec * quaternion.conjugate();
 
     // Cast the rotated quaternion back into a 3-vector.
     return Vector3{
@@ -80,18 +81,18 @@ Vector3 arwain::apply_quat_rotor_to_vector3(const Vector3& vector, const Quatern
 
 double unwrap_phase_radians(double new_angle, const double previous_angle)
 {
-    while (new_angle - previous_angle > 3.14159)
+    while (new_angle - previous_angle > std::numbers::pi)
     {
-        new_angle -= 2.0 * 3.14159;
+        new_angle -= 2.0 * std::numbers::pi;
     }
-    while (new_angle - previous_angle < -3.14159)
+    while (new_angle - previous_angle < -std::numbers::pi)
     {
-        new_angle += 2.0 * 3.14159;
+        new_angle += 2.0 * std::numbers::pi;
     }
     return new_angle;
 }
 
-double unwrap_phase_degrees(double new_angle, double previous_angle)
+double unwrap_phase_degrees(double new_angle, const double previous_angle)
 {
     while (new_angle - previous_angle > 180.0)
     {
