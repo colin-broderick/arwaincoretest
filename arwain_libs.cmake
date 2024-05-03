@@ -28,7 +28,7 @@ else()
         GIT_REPOSITORY https://github.com/tensorflow/tensorflow.git
         GIT_PROGRESS TRUE
         GIT_SHALLOW TRUE
-        GIT_TAG v2.10.0
+        GIT_TAG v2.14.0
         SOURCE_SUBDIR tensorflow/lite)
     FetchContent_MakeAvailable(tensorflow)
     include_directories(./build/_deps/tensorflow-src)
