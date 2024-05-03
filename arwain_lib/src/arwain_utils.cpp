@@ -78,29 +78,7 @@ Vector3 arwain::apply_quat_rotor_to_vector3(const Vector3& vector, const Quatern
     };
 }
 
-/** \brief Clamps a value between a min and max.
- * \param value The value to be clamped.
- * \param minimum The minimum the value is allowed to be.
- * \param maximum The maximum the value is allowed to be.
- * \return value < minimum ? minimum : (value > maximum ? maximum : value).
-*/
-int clamp_value(int value, int minimum, int maximum)
-{
-    if (value < minimum)
-    {
-        return minimum;
-    }
-    else if (value > maximum)
-    {
-        return maximum;
-    }
-    else
-    {
-        return value;
-    }
-}
-
-double unwrap_phase_radians(double new_angle, double previous_angle)
+double unwrap_phase_radians(double new_angle, const double previous_angle)
 {
     while (new_angle - previous_angle > 3.14159)
     {
