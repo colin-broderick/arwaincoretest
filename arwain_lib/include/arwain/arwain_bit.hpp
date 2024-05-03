@@ -10,7 +10,6 @@ enum class ArwainBIT
     PRESSURE_FAILED,
     MAG_FAILED,
     LORA_FAILED,
-    UWB_FAILED,
     CONFIG_FAILED,
 };
 
