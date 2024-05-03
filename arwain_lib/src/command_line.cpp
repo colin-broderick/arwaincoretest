@@ -46,24 +46,22 @@ void ArwainCLI::run()
     }
 }
 
-constexpr int ArwainCLI::s2i(std::string_view input)
+constexpr ArwainCLI::Command ArwainCLI::s2i(std::string_view input)
 {
-    enum { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT, DATACOLLECTION, HELP, ZEROPOS };
+    if (input == "quit" || input == "stop" || input == "shutdown" || input == "exit") return ArwainCLI::Command::QUIT;
+    if (input == "infer" || input == "inference") return ArwainCLI::Command::INFER;
+    if (input == "autocal" || input == "idle") return ArwainCLI::Command::AUTOCAL;
+    if (input == "mode") return ArwainCLI::Command::MODE;
+    if (input == "calibg") return ArwainCLI::Command::CALIBG;
+    if (input == "calibm") return ArwainCLI::Command::CALIBM;
+    if (input == "caliba") return ArwainCLI::Command::CALIBA;
+    if (input == "record") return ArwainCLI::Command::DATACOLLECTION;
+    if (input == "name") return ArwainCLI::Command::NAME;
+    if (input == "help") return ArwainCLI::Command::HELP;
+    if (input == "zeropos") return ArwainCLI::Command::ZEROPOS;
+    if (input.substr(0, 4) == "name") return ArwainCLI::Command::NAME;
 
-    if (input == "quit" || input == "stop" || input == "shutdown" || input == "exit") return QUIT;
-    if (input == "infer" || input == "inference") return INFER;
-    if (input == "autocal" || input == "idle") return AUTOCAL;
-    if (input == "mode") return MODE;
-    if (input == "calibg") return CALIBG;
-    if (input == "calibm") return CALIBM;
-    if (input == "caliba") return CALIBA;
-    if (input == "record") return DATACOLLECTION;
-    if (input == "name") return NAME;
-    if (input == "help") return HELP;
-    if (input == "zeropos") return ZEROPOS;
-    if (input.substr(0, 4) == "name") return NAME;
-
-    else return DEFAULT;
+    else return ArwainCLI::Command::DEFAULT;
 }
 
 /** \brief Reports the current system mode. */

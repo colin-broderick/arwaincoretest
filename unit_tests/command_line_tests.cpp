@@ -7,8 +7,6 @@
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/events.hpp"
 
-extern std::streambuf* original_cout_buffer;
-
 TEST(ArwainCLI, run)
 {
     SUCCEED(); // This is definitely tested by other functions.
@@ -25,7 +23,7 @@ TEST(ArwainCLI, s2i__exit)
     ArwainCLI command_line;
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("exit"), 0);
+    EXPECT_EQ(command_line.s2i("exit"), ArwainCLI::Command::QUIT);
     std::cin.rdbuf(orig);
 }
 
@@ -38,7 +36,7 @@ TEST(ArwainCLI, s2i__stop)
 
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("stop"), 0);
+    EXPECT_EQ(command_line.s2i("stop"), ArwainCLI::Command::QUIT);
     std::cin.rdbuf(orig);
 }
 
@@ -50,7 +48,7 @@ TEST(ArwainCLI, s2i__shutdown)
     ArwainCLI command_line;
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("shutdown"), 0);
+    EXPECT_EQ(command_line.s2i("shutdown"), ArwainCLI::Command::QUIT);
     std::cin.rdbuf(orig);
 }
 
@@ -62,7 +60,7 @@ TEST(ArwainCLI, s2i__quit)
     ArwainCLI command_line;
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("quit"), 0);
+    EXPECT_EQ(command_line.s2i("quit"), ArwainCLI::Command::QUIT);
     std::cin.rdbuf(orig);
 }
 
@@ -82,7 +80,7 @@ TEST(ArwainCLI, s2i__infer)
     command_line.join();
     inferrer.join();
 
-    EXPECT_EQ(command_line.s2i("infer"), 1);
+    EXPECT_EQ(command_line.s2i("infer"), ArwainCLI::Command::INFER);
     std::cin.rdbuf(orig);
 }
 
@@ -101,7 +99,7 @@ TEST(ArwainCLI, s2i__inference)
     command_line.join();
     inferrer.join();
 
-    EXPECT_EQ(command_line.s2i("inference"), 1);
+    EXPECT_EQ(command_line.s2i("inference"), ArwainCLI::Command::INFER);
     std::cin.rdbuf(orig);
 }
 
@@ -115,7 +113,7 @@ TEST(ArwainCLI, s2i__autocal)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("autocal"), 2);
+    EXPECT_EQ(command_line.s2i("autocal"), ArwainCLI::Command::AUTOCAL);
     std::cin.rdbuf(orig);
 }
 
@@ -129,7 +127,7 @@ TEST(ArwainCLI, s2i__idle)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("idle"), 2);
+    EXPECT_EQ(command_line.s2i("idle"), ArwainCLI::Command::AUTOCAL);
     std::cin.rdbuf(orig);
 }
 
@@ -143,7 +141,7 @@ TEST(ArwainCLI, s2i__mode)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("mode"), 3);
+    EXPECT_EQ(command_line.s2i("mode"), ArwainCLI::Command::MODE);
     std::cin.rdbuf(orig);
 }
 
@@ -157,7 +155,7 @@ TEST(ArwainCLI, s2i__calibg)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("calibg"), 4);
+    EXPECT_EQ(command_line.s2i("calibg"), ArwainCLI::Command::CALIBG);
     std::cin.rdbuf(orig);
 }
 
@@ -171,7 +169,7 @@ TEST(ArwainCLI, s2i__calibm)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("calibm"), 6);
+    EXPECT_EQ(command_line.s2i("calibm"), ArwainCLI::Command::CALIBM);
     std::cin.rdbuf(orig);
 }
 
@@ -185,7 +183,7 @@ TEST(ArwainCLI, s2i__caliba)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("caliba"), 5);
+    EXPECT_EQ(command_line.s2i("caliba"), ArwainCLI::Command::CALIBA);
     std::cin.rdbuf(orig);
 }
 
@@ -199,7 +197,7 @@ TEST(ArwainCLI, s2i__record)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("record"), 9);
+    EXPECT_EQ(command_line.s2i("record"), ArwainCLI::Command::DATACOLLECTION);
     std::cin.rdbuf(orig);
 }
 
@@ -213,7 +211,7 @@ TEST(ArwainCLI, s2i__name)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("name"), 7);
+    EXPECT_EQ(command_line.s2i("name"), ArwainCLI::Command::NAME);
     std::cin.rdbuf(orig);
 }
 
@@ -227,7 +225,7 @@ TEST(ArwainCLI, s2i__help)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("help"), 10);
+    EXPECT_EQ(command_line.s2i("help"), ArwainCLI::Command::HELP);
     std::cin.rdbuf(orig);
 }
 
@@ -241,7 +239,7 @@ TEST(ArwainCLI, s2i__zeropos)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("zeropos"), 11);
+    EXPECT_EQ(command_line.s2i("zeropos"), ArwainCLI::Command::ZEROPOS);
     std::cin.rdbuf(orig);
 }
 
@@ -255,7 +253,7 @@ TEST(ArwainCLI, s2i__name_substr)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("name_test"), 7);
+    EXPECT_EQ(command_line.s2i("name_test"), ArwainCLI::Command::NAME);
     std::cin.rdbuf(orig);
 }
 
@@ -269,7 +267,7 @@ TEST(ArwainCLI, s2i__default)
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 
     command_line.join();
-    EXPECT_EQ(command_line.s2i("test"), 8);
+    EXPECT_EQ(command_line.s2i("test"), ArwainCLI::Command::DEFAULT);
     std::cin.rdbuf(orig);
 }
 
