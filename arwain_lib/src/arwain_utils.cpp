@@ -1,5 +1,6 @@
 #include <cmath>
 #include <sstream>
+#include <thread>
 
 #include <arwain/quaternion.hpp>
 #include <arwain/vector3.hpp>
@@ -24,6 +25,19 @@ std::array<double, 3> vec_to_array3(const std::vector<double> in_vector)
     else
     {
         throw std::exception{};
+    }
+}
+
+void pin_thread(std::jthread& th, const int core_number)
+{
+    pthread_t native_handle = static_cast<pthread_t>(th.native_handle());
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_number, &cpuset);
+    int result = pthread_setaffinity_np(native_handle, sizeof(cpu_set_t), &cpuset);
+    if (result != 0)
+    {
+        std::cerr << "Could not set thread affinity: " << result << '\n';
     }
 }
 

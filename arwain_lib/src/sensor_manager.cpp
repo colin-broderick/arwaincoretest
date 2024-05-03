@@ -33,8 +33,6 @@ Vector3 SensorManager::world_align(const Vector3& vec, const Quaternion& rotatio
     return arwain::apply_quat_rotor_to_vector3(vec, rotation);
 }
 
-void pin_thread(std::jthread& th, int core_number);
-
 /** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does sleep if in non-relevant mode. */
 void SensorManager::run()
 {

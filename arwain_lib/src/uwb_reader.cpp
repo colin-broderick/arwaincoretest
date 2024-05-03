@@ -22,7 +22,6 @@
 std::unique_ptr<ACP_SerialPort> serial_port;
 
 std::string state_string(UUBLA::Network* uubla);
-void pin_thread(std::jthread& th, int core_number);
 
 UublaWrapper::UublaWrapper()
 {

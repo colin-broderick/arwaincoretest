@@ -17,6 +17,7 @@ double unwrap_phase_radians(double new_angle, double previous_angle);
 int clamp_value(int value, int minimum, int maximum);
 std::string date_time_string();
 std::array<double, 3> vec_to_array3(std::vector<double> in_vector);
+void pin_thread(std::jthread& th, int core_number);
 
 struct EulerOrientation
 {
