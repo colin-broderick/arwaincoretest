@@ -4,16 +4,42 @@
 #include <chrono>
 #include <thread>
 #include <deque>
+#include <array>
+#include <vector>
 
 void sleep_ms(int ms);
 
 class Quaternion;
 class Vector3;
 
-double unwrap_phase_degrees(double new_angle, double previous_angle);
-double unwrap_phase_radians(double new_angle, double previous_angle);
-int clamp_value(int value, int minimum, int maximum);
+double unwrap_phase_degrees(double new_angle, const double previous_angle);
+double unwrap_phase_radians(double new_angle, const double previous_angle);
 std::string date_time_string();
+std::array<double, 3> vec_to_array3(std::vector<double> in_vector);
+void pin_thread(std::jthread& th, int core_number);
+
+/** \brief Clamps a value between a min and max.
+ * \param value The value to be clamped.
+ * \param minimum The minimum the value is allowed to be.
+ * \param maximum The maximum the value is allowed to be.
+ * \return value < minimum ? minimum : (value > maximum ? maximum : value).
+*/
+template <typename T>
+constexpr int clamp_value(const T value, const T minimum, const T maximum)
+{
+    if (value < minimum)
+    {
+        return minimum;
+    }
+    else if (value > maximum)
+    {
+        return maximum;
+    }
+    else
+    {
+        return value;
+    }
+}
 
 struct EulerOrientation
 {

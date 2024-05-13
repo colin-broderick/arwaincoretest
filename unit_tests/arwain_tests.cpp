@@ -9,8 +9,6 @@
 #include "arwain/events.hpp"
 #include "test_base.hpp"
 
-extern std::streambuf* original_cout_buffer;
-
 namespace arwain
 {
     arwain::ReturnCode test_pressure();

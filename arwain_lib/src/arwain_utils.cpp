@@ -1,14 +1,45 @@
 #include <cmath>
 #include <sstream>
+#include <numbers>
+#include <thread>
 
 #include <arwain/quaternion.hpp>
 #include <arwain/vector3.hpp>
 
 #include "arwain/utils.hpp"
 
-void sleep_ms(int ms)
+void sleep_ms(const int ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds{ms});
+}
+
+std::array<double, 3> vec_to_array3(const std::vector<double> in_vector)
+{
+    if (in_vector.size() == 3)
+    {
+        return {
+            in_vector[0],
+            in_vector[1],
+            in_vector[2],
+        };
+    }
+    else
+    {
+        throw std::exception{};
+    }
+}
+
+void pin_thread(std::jthread& th, const int core_number)
+{
+    pthread_t native_handle = static_cast<pthread_t>(th.native_handle());
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_number, &cpuset);
+    int result = pthread_setaffinity_np(native_handle, sizeof(cpu_set_t), &cpuset);
+    if (result != 0)
+    {
+        std::cerr << "Could not set thread affinity: " << result << '\n';
+    }
 }
 
 /** \brief Converts a rotation quaternion to Euler angles, i.e. roll, pitch, and yaw.
@@ -35,10 +66,10 @@ EulerOrientation arwain::compute_euler(Quaternion& quaternion_rotor)
 Vector3 arwain::apply_quat_rotor_to_vector3(const Vector3& vector, const Quaternion& quaternion)
 {
     // Convert the 3-vector into a quaternion.
-    Quaternion quat_vec{0, vector.x, vector.y, vector.z};
+    const Quaternion quat_vec{0, vector.x, vector.y, vector.z};
 
     // Compute the rotated vector as a quaternion.
-    Quaternion rotated_quaternion_vector = quaternion * quat_vec * quaternion.conjugate();
+    const Quaternion rotated_quaternion_vector = quaternion * quat_vec * quaternion.conjugate();
 
     // Cast the rotated quaternion back into a 3-vector.
     return Vector3{
@@ -48,42 +79,20 @@ Vector3 arwain::apply_quat_rotor_to_vector3(const Vector3& vector, const Quatern
     };
 }
 
-/** \brief Clamps a value between a min and max.
- * \param value The value to be clamped.
- * \param minimum The minimum the value is allowed to be.
- * \param maximum The maximum the value is allowed to be.
- * \return value < minimum ? minimum : (value > maximum ? maximum : value).
-*/
-int clamp_value(int value, int minimum, int maximum)
+double unwrap_phase_radians(double new_angle, const double previous_angle)
 {
-    if (value < minimum)
+    while (new_angle - previous_angle > std::numbers::pi)
     {
-        return minimum;
+        new_angle -= 2.0 * std::numbers::pi;
     }
-    else if (value > maximum)
+    while (new_angle - previous_angle < -std::numbers::pi)
     {
-        return maximum;
-    }
-    else
-    {
-        return value;
-    }
-}
-
-double unwrap_phase_radians(double new_angle, double previous_angle)
-{
-    while (new_angle - previous_angle > 3.14159)
-    {
-        new_angle -= 2.0 * 3.14159;
-    }
-    while (new_angle - previous_angle < -3.14159)
-    {
-        new_angle += 2.0 * 3.14159;
+        new_angle += 2.0 * std::numbers::pi;
     }
     return new_angle;
 }
 
-double unwrap_phase_degrees(double new_angle, double previous_angle)
+double unwrap_phase_degrees(double new_angle, const double previous_angle)
 {
     while (new_angle - previous_angle > 180.0)
     {

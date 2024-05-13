@@ -9,9 +9,11 @@ class PositionVelocityInference;
 
 class ArwainCLI final : public ArwainJob, protected IArwainJobSpec
 {
+    enum class Command { QUIT, INFER, AUTOCAL, MODE, CALIBG, CALIBA, CALIBM, NAME, DEFAULT, DATACOLLECTION, HELP, ZEROPOS };
+
     private:
         void run() override;
-        static constexpr int s2i(std::string_view input);
+        static constexpr ArwainCLI::Command s2i(std::string_view input);
         bool switch_to_exit_mode();
         arwain::OperatingMode report_current_mode() const;
         bool switch_to_idle_autocal_mode();

@@ -33,10 +33,6 @@ Vector3 SensorManager::world_align(const Vector3& vec, const Quaternion& rotatio
     return arwain::apply_quat_rotor_to_vector3(vec, rotation);
 }
 
-std::array<double, 3> vec_to_array3(std::vector<double> in_vector);
-
-void pin_thread(std::jthread& th, int core_number);
-
 /** \brief The main job thread. Executes a specific job thread when in appropriate mode, or does sleep if in non-relevant mode. */
 void SensorManager::run()
 {
@@ -85,7 +81,7 @@ void SensorManager::run()
  * \return Will return false if autocalibration is turned onm, and calibration could not be
  * performed. Return true if calibration is performed.
  */
-bool calibrate_gyroscope_bias(IIM42652<PlatformI2CDevice>& imu, std::string configaddress)
+static bool calibrate_gyroscope_bias(IIM42652<PlatformI2CDevice>& imu, const std::string configaddress)
 {
     if (imu.auto_calib_enabled())
     {
@@ -101,7 +97,7 @@ bool calibrate_gyroscope_bias(IIM42652<PlatformI2CDevice>& imu, std::string conf
         calibrator.feed(imu.read_imu().gyro);
         sleep_ms(5);
     }
-    Vector3 gyroscope_bias = calibrator.get_params();
+    const Vector3 gyroscope_bias = calibrator.get_params();
 
     arwain::config.gyro1_bias = gyroscope_bias;
     arwain::config.replace(configaddress, gyroscope_bias.to_array());

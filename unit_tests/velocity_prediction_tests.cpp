@@ -6,8 +6,6 @@
 #include "arwain/velocity_prediction.hpp"
 #include "arwain/events.hpp"
 
-extern std::streambuf* original_cout_buffer;
-
 TEST(PositionVelocityInference, join)
 {
     PositionVelocityInference inference;

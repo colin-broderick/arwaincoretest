@@ -78,22 +78,6 @@ namespace arwain::Buffers
     GlobalBuffer<double, arwain::BufferSizes::MAG_EULER_BUFFER_LEN> MAG_EULER_BUFFER;
 }
 
-std::array<double, 3> vec_to_array3(std::vector<double> in_vector)
-{
-    if (in_vector.size() == 3)
-    {
-        return {
-            in_vector[0],
-            in_vector[1],
-            in_vector[2],
-        };
-    }
-    else
-    {
-        throw std::exception{};
-    }
-}
-
 /** \brief Reads the position.txt file from the given location, and 
  * runs the floor tracking algorithm against that data.
  */
