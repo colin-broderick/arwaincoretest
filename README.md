@@ -18,3 +18,7 @@ Most dependencies are managed by the CMake project. These additional apt package
 * libyaml-cpp-dev
 * nlohmann-json3-dev
 * libgtest-dev
+* libboost-all-dev
+* libssl-dev
+* libi2c-dev
+* libeigen3-dev
