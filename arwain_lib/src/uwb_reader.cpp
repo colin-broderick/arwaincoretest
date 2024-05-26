@@ -142,8 +142,7 @@ void UublaWrapper::run_inference()
 {
     setup_inference();
 
-    // TODO: Get the framerate (30?) from somewhere sensible, or hard code?
-    IntervalTimer<std::chrono::milliseconds> timer{100};
+    IntervalTimer<std::chrono::milliseconds> timer{200};
 
     auto last_count = timer.count();
     auto frame_counter = 0;
