@@ -108,7 +108,7 @@ bool UublaWrapper::cleanup_inference()
 
 void publish_inertial_on_uwb()
 {
-    ACP_PositionReport_t report = ACP_PositionReport_f(0, 0, 0, 0, arwain::config.node_id);
+    ACP_PositionReport_t report = ACP_PositionReport_f(0, 0, 0, 0, arwain::config.node_id, TrackingMode__Inertial);
     report.header.target_address = 239;
     
     auto stance_service = ServiceManager::get_service<StanceDetection>(StanceDetection::service_name);
@@ -125,7 +125,7 @@ void publish_inertial_on_uwb()
     }
     else
     {
-        report.stance = 25;
+        report.stance = 25; // Made up number to indicate error state.
     }
     auto inf = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
     if (inf)
