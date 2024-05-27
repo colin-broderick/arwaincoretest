@@ -144,5 +144,5 @@ bool Altimeter::join()
 
 double Altimeter::get_altitude() const
 {
-    return altitude;
+    return altitude - altitude_zero;
 }
