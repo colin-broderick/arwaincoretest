@@ -7,10 +7,11 @@
 #include "arwain/logger.hpp"
 #include "arwain/job_interface.hpp"
 #include "arwain/i2c_interface.hpp"
+#include "arwain/service_interface.hpp"
 
 #include <arwain/devices/bmp384.hpp>
 
-class Altimeter final : public ArwainJob, protected IArwainJobSpec
+class Altimeter final : public ArwainJob, protected IArwainJobSpec, public IArwainService
 {
     private:
         void run() override;
@@ -31,8 +32,12 @@ class Altimeter final : public ArwainJob, protected IArwainJobSpec
         arwain::Filters::SabatiniAltimeter sabatini_filter;
 
     public:
+        static inline std::string service_name = "AltimeterService";
+
+    public:
         Altimeter();
         bool join();
+        double get_altitude() const;
 };
 
 #endif

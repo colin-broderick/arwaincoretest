@@ -11,10 +11,12 @@
 #include "arwain/sabatini_altimeter.hpp"
 #include "arwain/altimeter.hpp"
 #include "arwain/utils.hpp"
-
+#include "arwain/service_manager.hpp"
 
 Altimeter::Altimeter()
 {
+    ServiceManager::register_service(this, service_name);
+
     core_setup();
     if (job_thread.joinable())
     {
@@ -138,4 +140,9 @@ bool Altimeter::join()
         return true;
     }
     return false;
+}
+
+double Altimeter::get_altitude() const
+{
+    return altitude;
 }
