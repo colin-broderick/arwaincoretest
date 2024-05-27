@@ -12,6 +12,7 @@
 #include "arwain/service_manager.hpp"
 #include "arwain/hybrid_positioner.hpp"
 #include "arwain/velocity_prediction.hpp"
+#include "arwain/altimeter.hpp"
 
 #include "uubla/utils.hpp"
 #include "uubla/events.hpp"
@@ -128,12 +129,13 @@ void publish_inertial_on_uwb()
         report.stance = 25; // Made up number to indicate error state.
     }
     auto inf = ServiceManager::get_service<PositionVelocityInference>(PositionVelocityInference::service_name);
-    if (inf)
+    auto alt = ServiceManager::get_service<Altimeter>(Altimeter::service_name);
+    if (inf && alt)
     {
         auto pos = inf->get_position();
         report.pos_x = pos.x;
         report.pos_y = pos.y;
-        report.pos_z = pos.z;
+        report.pos_z = alt->get_altitude();
         serial_port->add_to_send_queue(report);
     }
 }
