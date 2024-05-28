@@ -486,11 +486,15 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
  */
 void sigint_handler(int signal)
 {
+    if (signal == SIGTERM)
+    {
+        std::cout << "\nReceived SIGTERM - closing\n" << "\n";
+    }
     if (signal == SIGINT)
     {
         std::cout << "\nReceived SIGINT - closing\n" << "\n";
-        arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     }
+    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
 }
 
 namespace arwain
@@ -517,6 +521,7 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
 
     // Prepare keyboard interrupt signal handler to enable graceful exit.
     std::signal(SIGINT, sigint_handler);
+    std::signal(SIGTERM, sigint_handler);
     
     // Determine behaviour from command line arguments.
     arwain::InputParser input{argc, argv};
