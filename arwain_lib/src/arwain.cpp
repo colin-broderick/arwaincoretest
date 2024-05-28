@@ -47,6 +47,7 @@
 
 #include "arwain/i2c_interface.hpp"
 #include "arwain/hybrid_positioner.hpp"
+#include "uubla/acp_events.hpp"
 
 // General configuration data.
 namespace arwain
@@ -480,6 +481,9 @@ arwain::ReturnCode arwain::calibrate_accelerometers_simple()
     return arwain::ReturnCode::Success;
 }
 
+static bool killed_by_sigterm = false;
+static bool killed_by_goodbye_message = false;
+
 /** \brief Capture the SIGINT signal for clean exit.
  * After calling, the system mode is Terminate, which instructs all threads to clean up and exit.
  * \param signal The signal to capture.
@@ -489,6 +493,7 @@ void sigint_handler(int signal)
     if (signal == SIGTERM)
     {
         std::cout << "\nReceived SIGTERM - closing\n" << "\n";
+        killed_by_sigterm = true;
     }
     if (signal == SIGINT)
     {
@@ -619,7 +624,6 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
         ret = arwain::test_uubla_integration();
     }
     #endif
-
     else
     {
         // Attempt to calibrate the gyroscope before commencing other activities.
@@ -631,8 +635,25 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
                 arwain::config = arwain::Configuration{input.get_cmd_option("--conf")}; // Reread the config file as it has now changed.
             }
         }
+
+        UUBLA::Events::ACP::ACP_GoodbyeMessage_e.add_callback(
+            [](ACP_GoodbyeMessage_t message)
+            {
+                if (message.node_id == arwain::config.node_id)
+                {
+                    arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
+                    killed_by_goodbye_message = true;
+                }
+            }
+        );
+
         arwain::setup_log_folder_name_suffix(input);
         ret = arwain::execute_jobs();
+    }
+
+    if (killed_by_sigterm || killed_by_goodbye_message)
+    {
+        system("shutdown -h now");
     }
 
     return ret;
