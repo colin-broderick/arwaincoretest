@@ -651,9 +651,14 @@ arwain::ReturnCode arwain_main(int argc, char **argv)
         ret = arwain::execute_jobs();
     }
 
-    if (killed_by_sigterm || killed_by_goodbye_message)
+    if (killed_by_goodbye_message)
     {
-        system("shutdown -h now");
+        std::system("shutdown -h now");
+        std::abort();
+    }
+    if (killed_by_sigterm)
+    {
+        std::abort();
     }
 
     return ret;
