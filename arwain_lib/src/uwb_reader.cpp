@@ -109,7 +109,7 @@ bool UublaWrapper::cleanup_inference()
 
 void publish_inertial_on_uwb()
 {
-    ACP_PositionReport_t report = ACP_PositionReport_f(0, 0, 0, 0, arwain::config.node_id, TrackingMode__Inertial);
+    ACP_PositionReport_t report = ACP_PositionReport_f(0, 0, 0, 0, arwain::config.node_id, 0, TrackingMode__Inertial);
     report.header.target_address = 239;
     
     auto stance_service = ServiceManager::get_service<StanceDetection>(StanceDetection::service_name);
