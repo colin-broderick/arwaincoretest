@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(arwain)
 find_package(GTest CONFIG REQUIRED)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 option(NUMCPP_NO_USE_BOOST  "Build NumCpp without Boost as a dependency"                     ON)
