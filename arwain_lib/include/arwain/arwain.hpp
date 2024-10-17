@@ -39,19 +39,19 @@ struct ImuData;
 
 namespace arwain::BufferSizes
 {
-    inline const unsigned int POSITION_BUFFER_LEN = 200;
-    inline const unsigned int MAG_BUFFER_LEN = 200;
-    inline const unsigned int VELOCITY_BUFFER_LEN = 200;
-    inline const unsigned int ORIENTATION_BUFFER_LEN = 200;
-    inline const unsigned int IMU_BUFFER_LEN = 200;
-    inline const unsigned int IPS_BUFFER_LEN = 50;
-    inline const unsigned int LORA_MESSAGE_LENGTH = 11;
-    inline const unsigned int PRESSURE_BUFFER_LEN = 100;
-    inline const unsigned int MAG_ORIENTATION_BUFFER_LEN = 100;
-    inline const unsigned int MAG_EULER_BUFFER_LEN = 100;
+    constexpr std::size_t POSITION_BUFFER_LEN = 200;
+    constexpr std::size_t MAG_BUFFER_LEN = 200;
+    constexpr std::size_t VELOCITY_BUFFER_LEN = 200;
+    constexpr std::size_t ORIENTATION_BUFFER_LEN = 200;
+    constexpr std::size_t IMU_BUFFER_LEN = 200;
+    constexpr std::size_t IPS_BUFFER_LEN = 50;
+    constexpr std::size_t LORA_MESSAGE_LENGTH = 11;
+    constexpr std::size_t PRESSURE_BUFFER_LEN = 100;
+    constexpr std::size_t MAG_ORIENTATION_BUFFER_LEN = 100;
+    constexpr std::size_t MAG_EULER_BUFFER_LEN = 100;
     
     #if USE_UUBLA
-    inline const unsigned int LORA_BEACON_MESSAGE_LENGTH = 2;
+    constexpr std::size_t LORA_BEACON_MESSAGE_LENGTH = 2;
     #endif
 }
 

@@ -18,7 +18,7 @@ struct ImuData;
  * \tparam DataType; the type to be stored in the container.
  * \tparam BufferSize; the container maintains this fixed size.
  */
-template <class DataType, uint32_t BufferSize>
+template <class DataType, std::size_t BufferSize>
 class GlobalBuffer
 {
     public:
@@ -26,8 +26,9 @@ class GlobalBuffer
          * zero-initialized DataType objects.
          */
         GlobalBuffer()
+        : data(std::deque<DataType>(BufferSize))
         {
-            data = std::deque<DataType>(BufferSize);
+            // Empty
         }
 
         /** \brief Get a copy of internal buffer as an std::deque.
@@ -52,7 +53,7 @@ class GlobalBuffer
         /** \brief Get a copy of the last element in the container. 
          * \return A copy of the last element in the container.
          */
-        DataType back()
+        DataType back() const
         {
             std::lock_guard<std::mutex> lock_guard{lock};
             return data.back();
