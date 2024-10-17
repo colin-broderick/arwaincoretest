@@ -58,7 +58,7 @@ namespace arwain
     std::string folder_date_string_suffix;
     arwain::Logger error_log;
     unsigned int velocity_inference_rate = 20;
-    RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0*(1000/arwain::Intervals::IMU_READING_INTERVAL))};
+    RollingAverage rolling_average_accel_z_for_altimeter{static_cast<int>(static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL.count())/1000.0*(1000/arwain::Intervals::IMU_READING_INTERVAL.count()))};
     ActivityMetric activity_metric{200, 20};
 }
 
@@ -138,8 +138,8 @@ arwain::ReturnCode arwain::rerun_orientation_filter(const std::string& data_loca
     std::getline(acce, acce_line);
     std::getline(gyro, gyro_line);
 
-    arwain::Madgwick slow_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.1};
-    arwain::Madgwick fast_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL, 0.9};
+    arwain::Madgwick slow_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL.count(), 0.1};
+    arwain::Madgwick fast_filter{1000.0/arwain::Intervals::IMU_READING_INTERVAL.count(), 0.9};
     FusionBias fusionBias;
     FusionAhrs fusionAhrs;
     FusionBiasInitialise(&fusionBias, 0.5, 0.005);

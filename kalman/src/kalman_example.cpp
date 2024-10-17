@@ -13,7 +13,7 @@ extern std::deque<ImuData> IMU_WORLD_BUFFER;
 /** \brief runs a kalman filter to determine the altiude*/ //errors to be determined
 void kalman()
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds{2000});
+    std::this_thread::sleep_for(2000_ms);
 
     double altitude_offset;
     {
@@ -109,6 +109,6 @@ void kalman()
         alt_prev = alt;
 
 
-        std::this_thread::sleep_for(std::chrono::milliseconds{100});
+        std::this_thread::sleep_for(100_ms);
     }
 }

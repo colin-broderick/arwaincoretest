@@ -37,7 +37,7 @@ PositionVelocityInference::~PositionVelocityInference()
 void PositionVelocityInference::core_setup()
 {
     // Wait for enough time to ensure the IMU buffer contains valid and useful data before starting.
-    std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+    std::this_thread::sleep_for(1000_ms);
 }
 
 void PositionVelocityInference::run()
@@ -98,7 +98,7 @@ void PositionVelocityInference::run_inference()
     // TODO Use JobInterval if possible; the timing here is different to other threads.
     std::chrono::time_point<std::chrono::high_resolution_clock> last_time = std::chrono::high_resolution_clock::now();
     std::chrono::time_point<std::chrono::high_resolution_clock> time = std::chrono::high_resolution_clock::now();
-    const std::chrono::milliseconds interval{arwain::Intervals::VELOCITY_PREDICTION_INTERVAL};
+    constexpr auto interval = arwain::Intervals::VELOCITY_PREDICTION_INTERVAL;
 
     while (mode == arwain::OperatingMode::Inference)
     {

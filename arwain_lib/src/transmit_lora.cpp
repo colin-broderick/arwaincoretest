@@ -44,8 +44,8 @@ StatusReporting::StatusReporting()
 /** \brief Computes the next slot in the LoRa schedule where this node is allowed to transmit LoRa messages. */
 std::chrono::time_point<std::chrono::high_resolution_clock> StatusReporting::get_next_time_slot(int node_id)
 {
-    auto node_window_sep = std::chrono::milliseconds{300};
-    auto window_size = std::chrono::milliseconds{1000};
+    auto node_window_sep = 300_ms;
+    auto window_size = 1000_ms;
     auto offset = (node_id - 1) * node_window_sep;
     auto slot_time = std::chrono::high_resolution_clock::now();
     auto sec_count = std::chrono::duration_cast<std::chrono::seconds>(slot_time.time_since_epoch());

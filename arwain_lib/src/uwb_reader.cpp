@@ -144,7 +144,7 @@ void UublaWrapper::run_inference()
 {
     setup_inference();
 
-    IntervalTimer<std::chrono::milliseconds> timer{200};
+    Timers::IntervalTimer timer{200_ms};
 
     auto last_count = timer.count();
     auto frame_counter = 0;

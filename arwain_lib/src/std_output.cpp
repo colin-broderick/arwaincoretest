@@ -62,7 +62,7 @@ void DebugPrints::run_inference()
     setup_inference();
 
     // Set up timing, including pause while IMU warms up.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STD_OUT_INTERVAL, "arwain_cout_run_infer"};
+    Timers::IntervalTimer loop_scheduler{arwain::Intervals::STD_OUT_INTERVAL, "arwain_cout_run_infer"};
 
     while (mode == arwain::OperatingMode::Inference)
     {

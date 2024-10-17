@@ -102,8 +102,8 @@ arwain::ReturnCode arwain::test_pressure()
 
     sleep_ms(50);
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50, "arwain_test_pressure"};
-    Timers::CountdownTimer loop_timer{3000};
+    Timers::IntervalTimer loop_scheduler{50_ms, "arwain_test_pressure"};
+    Timers::CountdownTimer loop_timer{3000_ms};
 
     while (!loop_timer.finished())
     {
@@ -135,8 +135,8 @@ arwain::ReturnCode arwain::test_imu(const std::string& i2c_bus, const int i2c_ad
     imu.set_gyro_bias(arwain::config.gyro1_bias.x, arwain::config.gyro1_bias.y, arwain::config.gyro1_bias.z);
 
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50, "arwain_test_imu"};
-    Timers::CountdownTimer loop_timer{3000};
+    Timers::IntervalTimer loop_scheduler{50_ms, "arwain_test_imu"};
+    Timers::CountdownTimer loop_timer{3000_ms};
 
     while (!loop_timer.finished())
     {
@@ -190,11 +190,11 @@ arwain::ReturnCode arwain::test_inference()
 
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Inference);
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{50, "arwain_test_infer"};
+    Timers::IntervalTimer loop_scheduler{50_ms, "arwain_test_infer"};
 
     loop_scheduler.await();
 
-    Timers::CountdownTimer loop_timer{3000};
+    Timers::CountdownTimer loop_timer{3000_ms};
     while (!loop_timer.finished())
     {
         std::cout << "Velocity: " << std::setprecision(6) << arwain::Buffers::VELOCITY_BUFFER.back() << "\n";
@@ -340,13 +340,13 @@ arwain::ReturnCode arwain::test_mag()
     }
     std::cout << "Chip ID: " << std::hex << std::showbase << magn.test_chip() << std::dec << std::endl;
 
-    Timers::CountdownTimer loop_timer{3000};
+    Timers::CountdownTimer loop_timer{3000_ms};
 
     while (!loop_timer.finished())
     {
         Vector3 reading = magn.read();
         std::cout << "Magnetometer readings: " << reading << " .... " << reading.magnitude() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds{100});
+        std::this_thread::sleep_for(100_ms);
     }
 
     return arwain::ReturnCode::Success;
@@ -367,8 +367,8 @@ arwain::ReturnCode arwain::test_lora_tx()
 
     int i = 0;
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{1000, "arwain_test_lora_tx"};
-    Timers::CountdownTimer loop_timer{5000};
+    Timers::IntervalTimer loop_scheduler{1000_ms, "arwain_test_lora_tx"};
+    Timers::CountdownTimer loop_timer{5000_ms};
 
     while (!loop_timer.finished())
     {
@@ -390,13 +390,13 @@ arwain::ReturnCode arwain::test_ori(int frequency)
     arwain::Madgwick filter{static_cast<double>(frequency), config.madgwick_beta};
     // arwain::eFaroe filter{{1, 0, 0, 0}, config.gyro1_bias, 0, config.efaroe_beta, config.efaroe_zeta};
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{static_cast<unsigned int>(1000/frequency), "arwain_test_ori"};
+    Timers::IntervalTimer loop_scheduler{1000_ms / frequency, "arwain_test_ori"};
     EulerOrientation euler;
     Quaternion quat;
 
     std::cout << "Starting orientation filter at " << frequency << " Hz" << std::endl;
 
-    Timers::CountdownTimer loop_timer{3000};
+    Timers::CountdownTimer loop_timer{3000_ms};
 
     while (!loop_timer.finished())
     {

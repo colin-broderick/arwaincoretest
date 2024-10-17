@@ -46,7 +46,7 @@ void StanceDetection::run_inference()
     setup_inference();
 
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_infer"};
+    Timers::IntervalTimer loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_infer"};
 
     while (mode == arwain::OperatingMode::Inference)
     {
@@ -84,7 +84,7 @@ void StanceDetection::run()
         return;
     }
     // A little presleep to give IMU data a chance to collect and orientation filter chance to converge.
-    std::this_thread::sleep_for(std::chrono::milliseconds{3000});
+    std::this_thread::sleep_for(3000_ms);
     
     while (mode != arwain::OperatingMode::Terminate)
     {
@@ -118,7 +118,7 @@ void StanceDetection::cleanup_stance_detector()
 void StanceDetection::run_test_stance_detector()
 {
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_idle"};
+    Timers::IntervalTimer loop_scheduler{arwain::Intervals::STANCE_DETECTION_INTERVAL, "arwain_stance_run_idle"};
 
     while (mode == arwain::OperatingMode::TestStanceDetector)
     {

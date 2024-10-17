@@ -40,7 +40,7 @@ void Altimeter::run_inference()
 {
     setup_inference();
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL, "altimeter_infer"};
+    Timers::IntervalTimer loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL, "altimeter_infer"};
 
     while (mode == arwain::OperatingMode::Inference)
     {
@@ -61,7 +61,7 @@ void Altimeter::run_inference()
 
 void Altimeter::run_idle()
 {
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL, "altimeter_idle"};
+    Timers::IntervalTimer loop_scheduler{arwain::Intervals::ALTIMETER_INTERVAL, "altimeter_idle"};
 
     while (mode == arwain::OperatingMode::Idle)
     {
@@ -109,7 +109,7 @@ void Altimeter::core_setup()
     sabatini_filter = arwain::Filters::SabatiniAltimeter{
         altitude,                                                          // Initial altitude.
         0,                                                                 // Initial vertical velocity.
-        static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL)/1000.0, // Time between samples in seconds.
+        static_cast<double>(arwain::Intervals::ALTIMETER_INTERVAL.count())/1000.0, // Time between samples in seconds.
         arwain::config.altimeter_z_accel_stdev,                            // STDEV accelerometer.
         arwain::config.pressure_altitude_stdev                             // STDEV pressure altitude.
     };

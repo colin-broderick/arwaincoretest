@@ -70,7 +70,7 @@ HARDWARE_TEST(Altimeter, run_idle)
     std::jthread mode_thread = std::jthread{
         []()
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+            std::this_thread::sleep_for(1000_ms);
             arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };

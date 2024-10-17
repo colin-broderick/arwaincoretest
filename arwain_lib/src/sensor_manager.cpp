@@ -219,7 +219,7 @@ void SensorManager::run_accel_calibration()
 
 void SensorManager::run_idle()
 {
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL, "arwain_sensor_manager_run_idle"};
+    Timers::IntervalTimer loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL, "arwain_sensor_manager_run_idle"};
 
     while (mode == arwain::OperatingMode::Idle || mode == arwain::OperatingMode::TestStanceDetector)
     {
@@ -294,7 +294,7 @@ void SensorManager::run_inference()
     setup_inference();
 
     // Set up timing.
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL, "arwain_sensor_manager_run_infer"};
+    Timers::IntervalTimer loop_scheduler{arwain::Intervals::IMU_READING_INTERVAL, "arwain_sensor_manager_run_infer"};
 
     while (mode == arwain::OperatingMode::Inference)
     {
@@ -430,8 +430,8 @@ void SensorManager::core_setup()
     );
 
     // Choose an orientation filter depending on configuration, with Madgwick as default.
-    madgwick_filter_1 = arwain::Madgwick{1000.0/static_cast<double>(arwain::Intervals::IMU_READING_INTERVAL), 0.1};
-    madgwick_filter_mag_1 = arwain::Madgwick{1000.0/static_cast<double>(arwain::Intervals::IMU_READING_INTERVAL), arwain::config.madgwick_beta_conv};
+    madgwick_filter_1 = arwain::Madgwick{1000.0/static_cast<double>(arwain::Intervals::IMU_READING_INTERVAL.count()), 0.1};
+    madgwick_filter_mag_1 = arwain::Madgwick{1000.0/static_cast<double>(arwain::Intervals::IMU_READING_INTERVAL.count()), arwain::config.madgwick_beta_conv};
     
     // After the specificed period has passed, set the magnetic filter gain to the standard value.
     // This thread is joined when the namespace is joined, to simulate a destructor cleanup.
@@ -439,7 +439,7 @@ void SensorManager::core_setup()
     quick_madgwick_convergence_thread = std::jthread{
         [this]()
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds{5000});
+            std::this_thread::sleep_for(5000_ms);
             this->madgwick_filter_mag_1.set_beta(arwain::config.madgwick_beta);
         }
     };

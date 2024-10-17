@@ -129,7 +129,7 @@ HARDWARE_TEST(arwain__FreeFuncs, test_lora_rx)
     // Set mode to terminate after a short delay.
     std::jthread th{
         []{
-            std::this_thread::sleep_for(std::chrono::milliseconds{100});
+            std::this_thread::sleep_for(100_ms);
             arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
         }
     };
@@ -315,7 +315,7 @@ HARDWARE_TEST(FreeFuncs, arwain_main)
     {
         std::jthread th{
             []{
-                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                std::this_thread::sleep_for(100_ms);
                 arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
             }
         };

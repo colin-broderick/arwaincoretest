@@ -22,7 +22,7 @@
 #include "arwain/global_buffer.hpp"
 #include "arwain/activity_metric.hpp"
 #include "arwain/modes.hpp"
-
+#include "arwain/timers.hpp"
 
 class StanceDetection;
 
@@ -63,15 +63,15 @@ namespace arwain
 namespace arwain::Intervals
 {
     // Time intervals, all in milliseconds.
-    inline const unsigned int IMU_READING_INTERVAL = 5;
-    inline const unsigned int VELOCITY_PREDICTION_INTERVAL = 50;
-    inline const unsigned int LORA_TRANSMISSION_INTERVAL = 1000;
-    inline const unsigned int STANCE_DETECTION_INTERVAL = 1000;
-    inline const unsigned int INDOOR_POSITIONING_INTERVAL = 50;
-    inline const unsigned int STD_OUT_INTERVAL = 1000;
-    inline const unsigned int IPS_INTERVAL = 500;
-    inline const unsigned int MAG_READ_INTERVAL = 100;
-    inline const unsigned int ALTIMETER_INTERVAL = 20;
+    inline constexpr auto IMU_READING_INTERVAL = 5_ms;
+    inline constexpr auto VELOCITY_PREDICTION_INTERVAL = 50_ms;
+    inline constexpr auto LORA_TRANSMISSION_INTERVAL = 1000_ms;
+    inline constexpr auto STANCE_DETECTION_INTERVAL = 1000_ms;
+    inline constexpr auto INDOOR_POSITIONING_INTERVAL = 50_ms;
+    inline constexpr auto STD_OUT_INTERVAL = 1000_ms;
+    inline constexpr auto IPS_INTERVAL = 500_ms;
+    inline constexpr auto MAG_READ_INTERVAL = 100_ms;
+    inline constexpr auto ALTIMETER_INTERVAL = 20_ms;
 }
 
 namespace arwain

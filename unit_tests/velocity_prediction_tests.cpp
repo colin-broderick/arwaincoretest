@@ -19,9 +19,9 @@ TEST(PositionVelocityInference, run_inference)
     PositionVelocityInference inference;
     inference.run_idle();
 
-    Timers::CountdownTimer timer{100};
+    Timers::CountdownTimer timer{100_ms};
     ASSERT_EQ(timer.finished(), false);
-    std::this_thread::sleep_for(std::chrono::milliseconds{100});
+    std::this_thread::sleep_for(100_ms);
     ASSERT_EQ(timer.finished(), true);
     arwain::Events::switch_mode_event.invoke(arwain::OperatingMode::Terminate);
     inference.join();

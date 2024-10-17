@@ -216,7 +216,7 @@ void HybridPositioner::run_inference()
 
     setup_inference();
 
-    Timers::IntervalTimer<std::chrono::milliseconds> loop_scheduler{100, "hybrid_position_timer"};
+    Timers::IntervalTimer loop_scheduler{100_ms, "hybrid_position_timer"};
 
     auto loop_count = 1;
     while (mode == arwain::OperatingMode::Inference)
