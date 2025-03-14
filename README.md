@@ -15,7 +15,6 @@ The project can also be built on any standard Linux machine provided dependencie
 
 Most dependencies are managed by the CMake project. These additional apt packages are required:
 
-* libyaml-cpp-dev
 * nlohmann-json3-dev
 * libgtest-dev
 * libboost-all-dev

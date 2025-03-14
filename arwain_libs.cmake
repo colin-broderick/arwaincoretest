@@ -21,6 +21,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(simple-websocket-server)
 include_directories(${CMAKE_BINARY_DIR}/_deps/sws)
 
+FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_SHALLOW TRUE
+    GIT_TAG 0.8.0)
+FetchContent_MakeAvailable(yaml-cpp)
+include_directories(${yaml-cpp_SOURCE_DIR}/include)
+
 if(BUILT_WITH_YOCTO)
 else()
     FetchContent_Declare(
@@ -35,18 +43,18 @@ else()
     include_directories(./build/flatbuffers/include)
 endif()
 
-provide_library("https://github.com/dpilger26/NumCpp.git"       NumCpp              Version_2.12.1)
-provide_library("git@bitbucket.org:arwain/arwain_math"          arwain_math         master)
-provide_library("git@bitbucket.org:arwain/arwain_config"        arwain_config       master)
-provide_library("git@bitbucket.org:arwain/bmp384"               bmp384              master)
-provide_library("git@bitbucket.org:arwain/logger"               logger              master)
-provide_library("git@bitbucket.org:arwain/timers"               timers              master)
-provide_library("git@bitbucket.org:arwain/input_parser"         input_parser        master)
-provide_library("git@bitbucket.org:arwain/arwain_rfm95w"        arwain_rfm95w       master)
-provide_library("git@bitbucket.org:arwain/iim42652"             iim42652            master)
-provide_library("git@bitbucket.org:arwain/arwain_event"         arwain_event        master)
-provide_library("git@bitbucket.org:arwain/uublacpp"             uublacpp            master)
-provide_library("git@bitbucket.org:arwain/lis3mdl"              lis3mdl             master)
-provide_library("git@bitbucket.org:arwain/arwain_orientation"   arwain_orientation  master)
-provide_library("git@bitbucket.org:arwain/arwain_icp"           arwain_icp          master)
-provide_library("git@bitbucket.org:arwain/arwain_websocket"     arwain_websocket    master)
+provide_library("https://github.com/dpilger26/NumCpp.git"                 NumCpp      Version_2.12.1)
+provide_library("https://github.com/colin-broderick/arwain_math"          arwain_math         master)
+provide_library("https://github.com/colin-broderick/arwain_config"        arwain_config       master)
+provide_library("https://github.com/colin-broderick/bmp384"               bmp384              master)
+provide_library("https://github.com/colin-broderick/logger"               logger              master)
+provide_library("https://github.com/colin-broderick/timers"               timers              master)
+provide_library("https://github.com/colin-broderick/input_parser"         input_parser        master)
+provide_library("https://github.com/colin-broderick/arwain_rfm95w"        arwain_rfm95w       master)
+provide_library("https://github.com/colin-broderick/iim42652"             iim42652            master)
+provide_library("https://github.com/colin-broderick/arwain_event"         arwain_event        master)
+provide_library("https://github.com/colin-broderick/uublacpp-"            uublacpp            master)
+provide_library("https://github.com/colin-broderick/lis3mdl"              lis3mdl             master)
+provide_library("https://github.com/colin-broderick/arwain_orientation"   arwain_orientation  master)
+provide_library("https://github.com/colin-broderick/arwain_icp"           arwain_icp          master)
+provide_library("https://github.com/colin-broderick/arwain_websocket"     arwain_websocket    master)
