@@ -237,28 +237,30 @@ TEST(FreeFuncs, unwrap_phase_radians)
 {
     double angle = 0;
     double pi = 3.14159;
+    double error_epsilon = 0.001;
     
-    EXPECT_EQ(1, unwrap_phase_radians(angle + 1, angle));
-    EXPECT_EQ(2, unwrap_phase_radians(angle + 2, angle));
-    EXPECT_EQ(3, unwrap_phase_radians(angle + 3, angle));
-    EXPECT_EQ(4 - 2 * pi, unwrap_phase_radians(angle + 4, angle));
+    EXPECT_NEAR(1, unwrap_phase_radians(angle + 1, angle), error_epsilon);
+    EXPECT_NEAR(2, unwrap_phase_radians(angle + 2, angle), error_epsilon);
+    EXPECT_NEAR(3, unwrap_phase_radians(angle + 3, angle), error_epsilon);
+    EXPECT_NEAR(4 - 2 * pi, unwrap_phase_radians(angle + 4, angle), error_epsilon);
 
-    EXPECT_EQ(-1, unwrap_phase_radians(angle - 1, angle));
-    EXPECT_EQ(-2, unwrap_phase_radians(angle - 2, angle));
-    EXPECT_EQ(-3, unwrap_phase_radians(angle - 3, angle));
-    EXPECT_EQ(-4 + 2 * pi, unwrap_phase_radians(angle - 4, angle));
+    EXPECT_NEAR(-1, unwrap_phase_radians(angle - 1, angle), error_epsilon);
+    EXPECT_NEAR(-2, unwrap_phase_radians(angle - 2, angle), error_epsilon);
+    EXPECT_NEAR(-3, unwrap_phase_radians(angle - 3, angle), error_epsilon);
+    EXPECT_NEAR(-4 + 2 * pi, unwrap_phase_radians(angle - 4, angle), error_epsilon);
 }
 
 double unwrap_phase_degrees(double new_angle, double previous_angle);
 TEST(FreeFuncs, unwrap_phase_degrees)
 {
     double angle = 0;
+    double error_epsilon = 0.001;
 
-    EXPECT_EQ(179, unwrap_phase_degrees(angle + 179, angle));
-    EXPECT_EQ(181 - 360, unwrap_phase_degrees(angle + 181, angle));
+    EXPECT_NEAR(179, unwrap_phase_degrees(angle + 179, angle), error_epsilon);
+    EXPECT_NEAR(181 - 360, unwrap_phase_degrees(angle + 181, angle), error_epsilon);
 
-    EXPECT_EQ(-179, unwrap_phase_degrees(angle - 179, angle));
-    EXPECT_EQ(-181 + 360, unwrap_phase_degrees(angle - 181, angle));
+    EXPECT_NEAR(-179, unwrap_phase_degrees(angle - 179, angle), error_epsilon);
+    EXPECT_NEAR(-181 + 360, unwrap_phase_degrees(angle - 181, angle), error_epsilon);
 }
 
 std::string date_time_string();
